@@ -38,17 +38,13 @@ struct AppRowView: View {
         HStack(spacing: 8) {
             // Checkbox (visual only; click handled by row)
             ZStack {
-                RoundedRectangle(cornerRadius: 3.5)
-                    .stroke(isSelected ? goldColor : Color.white.opacity(0.3), lineWidth: 1.3)
-                    .background(
-                        RoundedRectangle(cornerRadius: 3.5)
-                            .fill(isSelected ? goldColor : Color.clear)
-                    )
-                    .frame(width: 15, height: 15)
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(isSelected ? goldColor : Color.white.opacity(0.12))
+                    .frame(width: 14, height: 14)
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 8.5, weight: .bold))
+                        .font(.system(size: 8, weight: .bold))
                         .foregroundStyle(.black.opacity(0.9))
                 }
             }

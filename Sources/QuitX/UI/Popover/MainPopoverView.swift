@@ -93,7 +93,7 @@ struct MainPopoverView: View {
             if count == 0 || count == vm.filteredApps.count {
                 return isForced ? "Force Quit All" : "Quit All"
             }
-            return isForced ? "Force Quit (\(count))" : "Quit (\(count))"
+            return isForced ? "Force Quit Selected" : "Quit Selected"
         }()
 
         return Button {
@@ -137,22 +137,18 @@ struct MainPopoverView: View {
                 vm.toggleSelectAll()
             } label: {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 3.5)
-                        .stroke(vm.isAllSelected ? goldColor : Color.white.opacity(0.3), lineWidth: 1.3)
-                        .background(
-                            RoundedRectangle(cornerRadius: 3.5)
-                                .fill(vm.isAllSelected ? goldColor : Color.white.opacity(0.001))
-                        )
-                        .frame(width: 15, height: 15)
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(vm.isAllSelected || vm.isPartiallySelected ? goldColor : Color.white.opacity(0.12))
+                        .frame(width: 14, height: 14)
 
                     if vm.isAllSelected {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 8.5, weight: .bold))
+                            .font(.system(size: 8, weight: .bold))
                             .foregroundStyle(.black.opacity(0.9))
                     } else if vm.isPartiallySelected {
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(goldColor)
-                            .frame(width: 7, height: 7)
+                        RoundedRectangle(cornerRadius: 1)
+                            .fill(Color.black.opacity(0.9))
+                            .frame(width: 6, height: 2)
                     }
                 }
                 .frame(width: 22, height: 22)

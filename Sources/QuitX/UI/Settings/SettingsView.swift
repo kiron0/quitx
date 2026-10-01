@@ -16,11 +16,17 @@ enum SettingsTab: String, CaseIterable {
         }
     }
 
+    var contentHeight: CGFloat {
+        switch self {
+        case .general:   return 525
+        case .shortcuts: return 245
+        case .support:   return 235
+        case .about:     return 275
+        }
+    }
 }
 
-private final class SettingsTabState: ObservableObject {
-    @Published var activeTab: SettingsTab = .general
-}
+
 
 private final class GeneralState: ObservableObject {
     @Published var disableQuitTips: Bool = false
@@ -36,69 +42,15 @@ private final class ShortcutsState: ObservableObject {
 
 struct SettingsView: View {
     @EnvironmentObject private var configStore: ConfigStore
-    @StateObject private var tabState = SettingsTabState()
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Custom Toolbar Tabs (Matching Quit All)
-            HStack(spacing: 8) {
-                ForEach(SettingsTab.allCases, id: \.self) { tab in
-                    Button {
-                        tabState.activeTab = tab
-                        updateWindowTitle(tab.rawValue)
-                    } label: {
-                        VStack(spacing: 3) {
-                            Image(systemName: tab.iconName)
-                                .font(.system(size: 24, weight: tabState.activeTab == tab ? .medium : .regular))
-                            Text(tab.rawValue)
-                                .font(.system(size: 13, weight: tabState.activeTab == tab ? .semibold : .medium))
-                        }
-                        .foregroundStyle(tabState.activeTab == tab ? Color.white.opacity(0.82) : Color.white.opacity(0.32))
-                        .frame(width: 64, height: 50)
-                        .background(
-                            RoundedRectangle(cornerRadius: 9)
-                                .fill(tabState.activeTab == tab ? Color.white.opacity(0.11) : Color.clear)
-                        )
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.top, 7)
-            .padding(.bottom, 8)
-            .frame(maxWidth: .infinity)
-
-            Divider()
-                .background(Color.white.opacity(0.1))
-
-            // Tab Content
-            Group {
-                switch tabState.activeTab {
-                case .general:
-                    GeneralTabCloneView()
-                case .shortcuts:
-                    ShortcutsTabCloneView()
-                case .support:
-                    SupportTabCloneView()
-                case .about:
-                    AboutTabCloneView()
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .frame(width: 400)
-        .frame(maxHeight: .infinity)
-        .background(QuitAllTheme.windowBackground)
-        .preferredColorScheme(.dark)
-        .onAppear {
-            updateWindowTitle(tabState.activeTab.rawValue)
-        }
-    }
-
-    private func updateWindowTitle(_ title: String) {
-        NSApp.windows.first(where: { $0.title == "General" || $0.title == "Shortcuts" || $0.title == "Support" || $0.title == "About" || $0.title == "QuitX Preferences" })?.title = title
+        GeneralTabCloneView()
+            .environmentObject(configStore)
+            .background(QuitAllTheme.windowBackground)
+            .preferredColorScheme(.dark)
     }
 }
+
 
 // MARK: - Tab 1: General (Clone of Quit All General tab)
 
@@ -264,12 +216,8 @@ struct GeneralTabCloneView: View {
             } label: {
                 HStack(spacing: 7) {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 3.5)
-                            .stroke(isOn.wrappedValue ? QuitAllTheme.accent : Color.white.opacity(0.3), lineWidth: 1.2)
-                            .background(
-                                RoundedRectangle(cornerRadius: 3.5)
-                                    .fill(isOn.wrappedValue ? QuitAllTheme.accent : Color.clear)
-                            )
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(isOn.wrappedValue ? QuitAllTheme.accent : Color.white.opacity(0.12))
                             .frame(width: 14, height: 14)
 
                         if isOn.wrappedValue {
