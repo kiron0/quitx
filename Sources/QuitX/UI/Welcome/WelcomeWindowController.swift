@@ -33,12 +33,15 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         ).environmentObject(ConfigStore.shared)
 
         let hosting = NSHostingController(rootView: rootView)
-        let win = NSPanel(contentViewController: hosting)
-        win.styleMask = [.borderless, .nonactivatingPanel]
+        let win = NSWindow(contentViewController: hosting)
+        win.title = "Welcome to QuitX"
+        win.styleMask = [.titled, .closable, .fullSizeContentView]
+        win.titlebarAppearsTransparent = true
+        win.titleVisibility = .hidden
+        win.setContentSize(NSSize(width: 440, height: 520))
         win.isOpaque = false
         win.backgroundColor = .clear
         win.hasShadow = true
-        win.level = .floating
         win.isReleasedWhenClosed = false
         win.delegate = self
         self.window = win
@@ -50,6 +53,10 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
 
     func close() {
         window?.close()
+        window = nil
+    }
+
+    func windowWillClose(_ notification: Notification) {
         window = nil
     }
 

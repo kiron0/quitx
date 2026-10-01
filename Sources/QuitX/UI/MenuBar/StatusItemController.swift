@@ -13,8 +13,10 @@ final class StatusItemController: NSObject {
     override init() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         popover = NSPopover()
-        popover.behavior = .transient
-        popover.animates = true
+        // A transient popover closes as soon as its footer menu starts tracking,
+        // which makes the options button flash and discard the first click.
+        popover.behavior = .semitransient
+        popover.animates = false
 
         super.init()
         Self.shared = self
@@ -35,19 +37,9 @@ final class StatusItemController: NSObject {
     private func configureButton() {
         guard let button = statusItem.button else { return }
 
-        // Load PNG from bundle Resources or fallback path
-        if let iconURL = Bundle.main.url(forResource: "menubar", withExtension: "png"),
-           let img = NSImage(contentsOf: iconURL) {
-            img.isTemplate = true
-            img.size = NSSize(width: 18, height: 18)
-            button.image = img
-        } else if let img = NSImage(contentsOfFile: "Support/Icons/menubar.png") {
-            img.isTemplate = true
-            img.size = NSSize(width: 18, height: 18)
-            button.image = img
-        } else {
-            button.image = makeXIcon()
-        }
+        button.image = makeMenuBarIcon()
+        button.imagePosition = .imageOnly
+        button.toolTip = "QuitX"
 
         // Support both left and right click
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
@@ -55,20 +47,28 @@ final class StatusItemController: NSObject {
         button.target = self
     }
 
-    /// Draws a simple X icon programmatically — zero-dependency fallback.
-    private func makeXIcon() -> NSImage {
+    /// Monochrome menu-bar version of the current Q + bolt brand mark.
+    private func makeMenuBarIcon() -> NSImage {
         let size = NSSize(width: 18, height: 18)
         let image = NSImage(size: size)
         image.lockFocus()
-        NSColor.labelColor.setStroke()
-        let path = NSBezierPath()
-        path.lineWidth = 2.5
-        path.lineCapStyle = .round
-        path.move(to: NSPoint(x: 3, y: 15))
-        path.line(to: NSPoint(x: 15, y: 3))
-        path.move(to: NSPoint(x: 15, y: 15))
-        path.line(to: NSPoint(x: 3, y: 3))
-        path.stroke()
+
+        NSColor.black.setStroke()
+        let ring = NSBezierPath(ovalIn: NSRect(x: 2.2, y: 3.2, width: 11.8, height: 11.8))
+        ring.lineWidth = 2.6
+        ring.stroke()
+
+        NSColor.black.setFill()
+        let bolt = NSBezierPath()
+        bolt.move(to: NSPoint(x: 10.1, y: 10.1))
+        bolt.line(to: NSPoint(x: 14.1, y: 9.7))
+        bolt.line(to: NSPoint(x: 12.8, y: 16.2))
+        bolt.line(to: NSPoint(x: 17.0, y: 9.0))
+        bolt.line(to: NSPoint(x: 13.4, y: 9.2))
+        bolt.line(to: NSPoint(x: 14.6, y: 3.0))
+        bolt.close()
+        bolt.fill()
+
         image.unlockFocus()
         image.isTemplate = true
         return image
@@ -80,6 +80,13 @@ final class StatusItemController: NSObject {
             .environmentObject(ConfigStore.shared)
         popover.contentViewController = NSHostingController(rootView: rootView)
         updatePopoverSize()
+
+        // Prime the first popover size before it becomes visible. Otherwise the
+        // footer jumps when the initial app scan finishes.
+        Task { @MainActor [weak self] in
+            await AppListViewModel.shared.refresh()
+            self?.updatePopoverSize()
+        }
     }
 
     @MainActor
@@ -99,17 +106,15 @@ final class StatusItemController: NSObject {
     // MARK: - Click Handling
 
     @objc private func handleStatusItemClick(_ sender: Any?) {
-        Task { @MainActor in
-            guard let event = NSApp.currentEvent else {
-                self.togglePopover()
-                return
-            }
+        guard let event = NSApp.currentEvent else {
+            togglePopover()
+            return
+        }
 
-            if event.type == .rightMouseUp {
-                self.showContextMenu()
-            } else {
-                self.togglePopover()
-            }
+        if event.type == .rightMouseUp {
+            showContextMenu()
+        } else {
+            togglePopover()
         }
     }
 
@@ -127,9 +132,10 @@ final class StatusItemController: NSObject {
             popover.performClose(nil)
         } else {
             guard let button = statusItem.button else { return }
+            NSApp.activate(ignoringOtherApps: true)
             updatePopoverSize()
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            popover.contentViewController?.view.window?.makeKey()
+            popover.contentViewController?.view.window?.makeKeyAndOrderFront(nil)
         }
     }
 
