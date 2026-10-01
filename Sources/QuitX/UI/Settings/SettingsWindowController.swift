@@ -75,7 +75,8 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         let targetWindowFrame = win.frameRect(forContentRect: targetContentRect)
         let screenFrame = screen.visibleFrame
         let x = screenFrame.origin.x + (screenFrame.width - targetWindowFrame.width) / 2
-        let y = screenFrame.origin.y + (screenFrame.height - targetWindowFrame.height) / 2
+        // Top-center: positioned neatly below the menu bar
+        let y = screenFrame.origin.y + screenFrame.height - targetWindowFrame.height - 110
         win.setFrame(NSRect(x: x, y: y, width: targetWindowFrame.width, height: targetWindowFrame.height), display: true)
     }
 
@@ -91,6 +92,14 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         win.title = tab.rawValue
         win.toolbar?.selectedItemIdentifier = NSToolbarItem.Identifier(tab.rawValue)
 
+        if let toolbar = win.toolbar {
+            for item in toolbar.items {
+                if let tabItem = SettingsTab(rawValue: item.itemIdentifier.rawValue) {
+                    item.image = icon(for: tabItem, isSelected: tabItem == tab)
+                }
+            }
+        }
+
         let contentRect = NSRect(x: 0, y: 0, width: 400, height: tab.contentHeight)
         let targetWindowFrame = win.frameRect(forContentRect: contentRect)
         let currentFrame = win.frame
@@ -104,6 +113,30 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
             context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
             win.animator().setFrame(newFrame, display: true)
         }
+    }
+
+    private func icon(for tab: SettingsTab, isSelected: Bool) -> NSImage {
+        guard let base = NSImage(systemSymbolName: tab.iconName, accessibilityDescription: tab.rawValue) else {
+            return NSImage()
+        }
+        if !isSelected {
+            base.isTemplate = true
+            return base
+        }
+        let config = NSImage.SymbolConfiguration(paletteColors: [QuitAllTheme.accentNSColor])
+        if let configured = base.withSymbolConfiguration(config) {
+            configured.isTemplate = false
+            return configured
+        }
+        let size = base.size
+        let image = NSImage(size: size, flipped: false) { rect in
+            QuitAllTheme.accentNSColor.setFill()
+            rect.fill()
+            base.draw(in: rect, from: .zero, operation: .destinationIn, fraction: 1.0)
+            return true
+        }
+        image.isTemplate = false
+        return image
     }
 
     private func viewForTab(_ tab: SettingsTab) -> AnyView {
@@ -161,7 +194,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         let item = NSToolbarItem(itemIdentifier: itemIdentifier)
         item.label = tab.rawValue
         item.paletteLabel = tab.rawValue
-        item.image = NSImage(systemSymbolName: tab.iconName, accessibilityDescription: tab.rawValue)
+        item.image = icon(for: tab, isSelected: tab == activeTab)
         item.target = self
         item.action = #selector(toolbarItemClicked(_:))
         item.autovalidates = false

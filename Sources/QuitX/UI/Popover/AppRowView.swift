@@ -38,7 +38,7 @@ struct AppRowView: View {
         HStack(spacing: 8) {
             // Checkbox (visual only; click handled by row)
             ZStack {
-                RoundedRectangle(cornerRadius: 3)
+                RoundedRectangle(cornerRadius: 2.5)
                     .fill(isSelected ? goldColor : Color.white.opacity(0.12))
                     .frame(width: 14, height: 14)
 
@@ -56,9 +56,9 @@ struct AppRowView: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: 18, height: 18)
-                        .cornerRadius(4)
+                        .cornerRadius(3)
                 } else {
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: 3)
                         .fill(Color.white.opacity(0.1))
                         .frame(width: 18, height: 18)
                 }
@@ -122,7 +122,7 @@ struct AppRowView: View {
             onToggle()
         }
         .background(
-            RoundedRectangle(cornerRadius: 5)
+            RoundedRectangle(cornerRadius: 3.5)
                 .fill(state.isHovered ? Color.white.opacity(0.07) : Color.clear)
         )
         .onHover { h in state.isHovered = h }

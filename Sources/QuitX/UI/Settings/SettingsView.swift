@@ -93,8 +93,8 @@ struct GeneralTabCloneView: View {
             // Startup
             row(label: "Startup:") {
                 toggle("Open QuitX at login", isOn: Binding(
-                    get: { configStore.config.autoUpdate },
-                    set: { configStore.config.autoUpdate = $0; configStore.save() }
+                    get: { LaunchAtLoginService.isEnabled },
+                    set: { LaunchAtLoginService.setEnabled($0) }
                 ))
             } help: {
                 HelpPopoverButton(text: "Keep things running in ship-shape by setting an automatic Quit for inactive apps. 🛳")
@@ -308,32 +308,98 @@ struct GeneralTabCloneView: View {
 
 // MARK: - Tab 2: Shortcuts (Exact 1:1 Clone of QuitAll Shortcuts Tab)
 
-final class ShortcutsTabState: ObservableObject {
-    @Published var activateMenuEnabled = true
-    @Published var quitAllEnabled = false
-    @Published var forceQuitAllEnabled = false
+// MARK: - Tab 2: Shortcuts (Exact 1:1 Clone of QuitAll Shortcuts Tab)
+
+@MainActor
+final class ShortcutsViewState: ObservableObject {
+    @Published var recordingRow: String? = nil
+    var localMonitor: Any? = nil
+    var globalMonitor: Any? = nil
+
+    func startMonitor(sm: ShortcutManager) {
+        guard localMonitor == nil else { return }
+        localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self, weak sm] event in
+            guard let self = self, let row = self.recordingRow, let sm = sm else { return event }
+            if self.processEvent(event, row: row, sm: sm) {
+                return nil
+            }
+            return event
+        }
+        globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self, weak sm] event in
+            guard let self = self, let row = self.recordingRow, let sm = sm else { return }
+            _ = self.processEvent(event, row: row, sm: sm)
+        }
+    }
+
+    func stopMonitor() {
+        if let monitor = localMonitor {
+            NSEvent.removeMonitor(monitor)
+            localMonitor = nil
+        }
+        if let monitor = globalMonitor {
+            NSEvent.removeMonitor(monitor)
+            globalMonitor = nil
+        }
+    }
+
+    private func processEvent(_ event: NSEvent, row: String, sm: ShortcutManager) -> Bool {
+        if event.keyCode == 53 { // Esc
+            DispatchQueue.main.async { self.recordingRow = nil }
+            return true
+        }
+        if event.keyCode == 51 { // Delete
+            DispatchQueue.main.async {
+                self.applyKeys([], for: row, sm: sm)
+                self.recordingRow = nil
+            }
+            return true
+        }
+
+        let keys = ShortcutManager.eventToKeys(event)
+        if !keys.isEmpty {
+            DispatchQueue.main.async {
+                self.applyKeys(keys, for: row, sm: sm)
+                self.recordingRow = nil
+            }
+            return true
+        }
+        return false
+    }
+
+    func applyKeys(_ keys: [String], for row: String, sm: ShortcutManager) {
+        switch row {
+        case "activate": sm.activateMenuKeys = keys
+        case "quit": sm.quitAllKeys = keys
+        case "force": sm.forceQuitAllKeys = keys
+        default: break
+        }
+    }
 }
 
 struct ShortcutsTabCloneView: View {
-    @StateObject private var state = ShortcutsTabState()
+    @ObservedObject private var sm = ShortcutManager.shared
+    @StateObject private var viewState = ShortcutsViewState()
 
     var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: 12) {
                 shortcutLine(
+                    id: "activate",
                     label: "Activate menu:",
-                    isEnabled: $state.activateMenuEnabled,
-                    keys: ["^", "⌥", "A"]
+                    isEnabled: $sm.activateMenuEnabled,
+                    keys: $sm.activateMenuKeys
                 )
                 shortcutLine(
+                    id: "quit",
                     label: "Quit all:",
-                    isEnabled: $state.quitAllEnabled,
-                    keys: ["^", "⌥", "Q"]
+                    isEnabled: $sm.quitAllEnabled,
+                    keys: $sm.quitAllKeys
                 )
                 shortcutLine(
+                    id: "force",
                     label: "Force quit all:",
-                    isEnabled: $state.forceQuitAllEnabled,
-                    keys: ["^", "⌥", "⌘", "Q"]
+                    isEnabled: $sm.forceQuitAllEnabled,
+                    keys: $sm.forceQuitAllKeys
                 )
             }
             .padding(.horizontal, 24)
@@ -364,10 +430,18 @@ struct ShortcutsTabCloneView: View {
         }
         .frame(width: 400, height: 215)
         .background(QuitAllTheme.windowBackground)
+        .onAppear {
+            viewState.startMonitor(sm: sm)
+        }
+        .onDisappear {
+            viewState.stopMonitor()
+        }
     }
 
-    private func shortcutLine(label: String, isEnabled: Binding<Bool>, keys: [String]) -> some View {
+    private func shortcutLine(id: String, label: String, isEnabled: Binding<Bool>, keys: Binding<[String]>) -> some View {
         let active = isEnabled.wrappedValue
+        let isRecording = (viewState.recordingRow == id)
+        let keyList = keys.wrappedValue
 
         return HStack(spacing: 9) {
             Text(label)
@@ -375,7 +449,7 @@ struct ShortcutsTabCloneView: View {
                 .foregroundStyle(Color.white.opacity(0.92))
                 .frame(width: 105, alignment: .trailing)
 
-            // Neutral checkbox matching screenshot
+            // Neutral checkbox matching QuitAll
             Button {
                 isEnabled.wrappedValue.toggle()
             } label: {
@@ -393,44 +467,67 @@ struct ShortcutsTabCloneView: View {
             }
             .buttonStyle(.plain)
 
-            // Shortcut container box with rounded key pills
-            HStack(spacing: 3) {
-                ForEach(keys, id: \.self) { key in
-                    Text(key)
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
-                        .foregroundStyle(active ? Color.white.opacity(0.95) : Color.white.opacity(0.24))
-                        .frame(width: 20, height: 20)
-                        .background(
-                            RoundedRectangle(cornerRadius: 3.5)
-                                .fill(active ? Color(white: 0.42) : Color.white.opacity(0.06))
-                        )
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 4)
-            .frame(width: 105, height: 26)
-            .background(
-                RoundedRectangle(cornerRadius: 5)
-                    .fill(Color.white.opacity(active ? 0.12 : 0.06))
-            )
-
-            // Trash icon button
+            // Shortcut container box (Click to record)
             Button {
-                // Clear shortcut
+                if active {
+                    viewState.recordingRow = (viewState.recordingRow == id ? nil : id)
+                }
+            } label: {
+                HStack(spacing: 3) {
+                    if isRecording {
+                        Text("Type keys...")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(QuitAllTheme.accent)
+                    } else if keyList.isEmpty {
+                        Text("None")
+                            .font(.system(size: 11, weight: .regular))
+                            .foregroundStyle(Color.white.opacity(0.3))
+                    } else {
+                        ForEach(keyList, id: \.self) { key in
+                            Text(key)
+                                .font(.system(size: 12, weight: .medium, design: .rounded))
+                                .foregroundStyle(active ? Color.white.opacity(0.95) : Color.white.opacity(0.24))
+                                .frame(width: 20, height: 20)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 3.5)
+                                        .fill(active ? Color(white: 0.42) : Color.white.opacity(0.06))
+                                )
+                        }
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 4)
+                .frame(width: 105, height: 26)
+                .background(
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(Color.white.opacity(active ? 0.12 : 0.06))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 5)
+                        .stroke(isRecording ? QuitAllTheme.accent : Color.clear, lineWidth: 1.5)
+                )
+            }
+            .buttonStyle(.plain)
+
+            // Trash icon button (Click to clear shortcut)
+            Button {
+                viewState.applyKeys([], for: id, sm: sm)
+                if viewState.recordingRow == id { viewState.recordingRow = nil }
             } label: {
                 if let img = AssetImages.load("recorder-delete") {
                     Image(nsImage: img)
                         .renderingMode(.template)
                         .resizable()
                         .frame(width: 13, height: 13)
-                        .foregroundStyle(active ? Color.white.opacity(0.55) : Color.white.opacity(0.18))
+                        .foregroundStyle((active && !keyList.isEmpty) ? Color.white.opacity(0.55) : Color.white.opacity(0.18))
                 } else {
                     Image(systemName: "trash")
                         .font(.system(size: 12))
-                        .foregroundStyle(active ? Color.white.opacity(0.55) : Color.white.opacity(0.18))
+                        .foregroundStyle((active && !keyList.isEmpty) ? Color.white.opacity(0.55) : Color.white.opacity(0.18))
                 }
             }
             .buttonStyle(.plain)
+            .disabled(!active || keyList.isEmpty)
             .frame(width: 18, height: 18)
 
             Spacer()

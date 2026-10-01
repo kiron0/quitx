@@ -89,12 +89,7 @@ struct MainPopoverView: View {
     private var quitAllButton: some View {
         let isForced = vm.isOptionKeyPressed || configStore.config.force == .force
         let count = vm.selected.count
-        let title: String = {
-            if count == 0 || count == vm.filteredApps.count {
-                return isForced ? "Force Quit All" : "Quit All"
-            }
-            return isForced ? "Force Quit Selected" : "Quit Selected"
-        }()
+        let title = isForced ? "Force Quit All" : "Quit All"
         let isEnabled = count > 0
 
         return Button {
@@ -117,12 +112,12 @@ struct MainPopoverView: View {
             .frame(height: 24)
             .background(
                 isEnabled
-                    ? (isForced ? forceGradient : goldGradient)
+                    ? goldGradient
                     : LinearGradient(colors: [Color.white.opacity(0.12), Color.white.opacity(0.12)], startPoint: .top, endPoint: .bottom)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 5))
+            .clipShape(RoundedRectangle(cornerRadius: 3.5))
             .shadow(
-                color: isEnabled ? (isForced ? Color.red : goldColor).opacity(uiState.isQuitAllHovered ? 0.3 : 0.12) : Color.clear,
+                color: isEnabled ? goldColor.opacity(uiState.isQuitAllHovered ? 0.3 : 0.12) : Color.clear,
                 radius: 2,
                 y: 1
             )
@@ -187,7 +182,7 @@ struct MainPopoverView: View {
             .padding(.horizontal, 7)
             .frame(height: 24)
             .background(
-                RoundedRectangle(cornerRadius: 5)
+                RoundedRectangle(cornerRadius: 3.5)
                     .fill(Color.white.opacity(0.08))
             )
         }

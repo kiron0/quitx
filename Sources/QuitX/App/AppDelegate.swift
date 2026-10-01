@@ -9,6 +9,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
         statusItemController = StatusItemController()
         AutoQuitService.shared.startTracking()
+        _ = ShortcutManager.shared
         WelcomeWindowController.shared.showIfFirstLaunch()
 
         DistributedNotificationCenter.default().addObserver(
