@@ -2,16 +2,31 @@ import Foundation
 import ServiceManagement
 
 @MainActor
-enum LaunchAtLoginService {
-    static var isEnabled: Bool {
-        if #available(macOS 13.0, *) {
-            return SMAppService.mainApp.status == .enabled
+final class LaunchAtLoginService: ObservableObject {
+    static let shared = LaunchAtLoginService()
+
+    @Published var isEnabled: Bool {
+        didSet {
+            guard oldValue != isEnabled else { return }
+            UserDefaults.standard.set(isEnabled, forKey: "quitx_launch_at_login")
+            applyRegistration(isEnabled)
         }
-        return UserDefaults.standard.bool(forKey: "quitx_launch_at_login")
     }
 
-    static func setEnabled(_ enabled: Bool) {
-        UserDefaults.standard.set(enabled, forKey: "quitx_launch_at_login")
+    private init() {
+        if #available(macOS 13.0, *) {
+            let status = SMAppService.mainApp.status
+            if status == .enabled || status == .requiresApproval {
+                self.isEnabled = true
+            } else {
+                self.isEnabled = UserDefaults.standard.bool(forKey: "quitx_launch_at_login")
+            }
+        } else {
+            self.isEnabled = UserDefaults.standard.bool(forKey: "quitx_launch_at_login")
+        }
+    }
+
+    private func applyRegistration(_ enabled: Bool) {
         if #available(macOS 13.0, *) {
             do {
                 if enabled {
@@ -19,7 +34,7 @@ enum LaunchAtLoginService {
                         try SMAppService.mainApp.register()
                     }
                 } else {
-                    if SMAppService.mainApp.status == .enabled {
+                    if SMAppService.mainApp.status == .enabled || SMAppService.mainApp.status == .requiresApproval {
                         try SMAppService.mainApp.unregister()
                     }
                 }

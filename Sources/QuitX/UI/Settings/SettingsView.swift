@@ -26,7 +26,7 @@ enum SettingsTab: String, CaseIterable {
     }
 
     var totalHeight: CGFloat {
-        contentHeight + 85
+        contentHeight + 91
     }
 }
 
@@ -119,6 +119,7 @@ struct SettingsContainerView: View {
                         .buttonStyle(.plain)
                     }
                 }
+                .padding(.top, 6)
                 .padding(.bottom, 6)
 
                 // Row 3: 1pt subtle divider
@@ -126,7 +127,7 @@ struct SettingsContainerView: View {
                     .fill(Color.white.opacity(0.10))
                     .frame(height: 1)
             }
-            .frame(width: 400, height: 85)
+            .frame(width: 400, height: 91)
             .background(QuitXTheme.windowBackground)
 
             // Content
@@ -173,6 +174,7 @@ final class GeneralTabState: ObservableObject {
 
 struct GeneralTabCloneView: View {
     @EnvironmentObject private var configStore: ConfigStore
+    @ObservedObject private var launchService = LaunchAtLoginService.shared
     @StateObject private var state = GeneralTabState()
 
     private let gold = QuitXTheme.accent
@@ -181,10 +183,7 @@ struct GeneralTabCloneView: View {
         VStack(alignment: .leading, spacing: 5) {
             // Startup
             row(label: "Startup:") {
-                toggle("Open QuitX at login", isOn: Binding(
-                    get: { LaunchAtLoginService.isEnabled },
-                    set: { LaunchAtLoginService.setEnabled($0) }
-                ))
+                toggle("Open QuitX at login", isOn: $launchService.isEnabled)
             } help: {
                 HelpPopoverButton(text: "Keep things running in ship-shape by setting an automatic Quit for inactive apps. 🛳")
             }
