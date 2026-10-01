@@ -8,14 +8,15 @@ final class StatusItemController: NSObject {
 
     private var statusItem: NSStatusItem
     private var popover: NSPopover
-    private var eventMonitor: Any?
+    private var globalEventMonitor: Any?
+    private var localEventMonitor: Any?
 
     override init() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         popover = NSPopover()
-        // A transient popover closes as soon as its footer menu starts tracking,
-        // which makes the options button flash and discard the first click.
-        popover.behavior = .semitransient
+        // Menus inside transient popovers can dismiss their parent before they
+        // receive the click. Explicit monitors provide predictable dismissal.
+        popover.behavior = .applicationDefined
         popover.animates = false
 
         super.init()
@@ -27,7 +28,10 @@ final class StatusItemController: NSObject {
     }
 
     deinit {
-        if let monitor = eventMonitor {
+        if let monitor = globalEventMonitor {
+            NSEvent.removeMonitor(monitor)
+        }
+        if let monitor = localEventMonitor {
             NSEvent.removeMonitor(monitor)
         }
     }
@@ -92,13 +96,12 @@ final class StatusItemController: NSObject {
     @MainActor
     func updatePopoverSize() {
         let count = AppListViewModel.shared.filteredApps.count
-        // Match QuitAll's 270 x 400 menu frame and compact row rhythm.
-        let baseHeight: CGFloat = 72
-        let rowHeight: CGFloat = 26
+        // Show every row. The list itself never scrolls or clips to a fixed cap.
+        let baseHeight: CGFloat = 80
+        let rowHeight: CGFloat = 29
         let itemCount = max(1, count)
         let calculated = baseHeight + (CGFloat(itemCount) * rowHeight)
-        let clampedHeight = min(400, max(145, calculated))
-        popover.contentSize = NSSize(width: 270, height: clampedHeight)
+        popover.contentSize = NSSize(width: 270, height: max(145, calculated))
     }
 
     // MARK: - Click Handling
@@ -206,10 +209,28 @@ final class StatusItemController: NSObject {
     // MARK: - Outside-click dismissal
 
     private func startEventMonitor() {
-        eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
-            if self?.popover.isShown == true {
-                self?.popover.performClose(nil)
+        globalEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+            Task { @MainActor in
+                self?.closePopover()
             }
+        }
+
+        localEventMonitor = NSEvent.addLocalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown, .keyDown]
+        ) { [weak self] event in
+            guard let self, self.popover.isShown else { return event }
+
+            if event.type == .keyDown, event.keyCode == 53 {
+                self.closePopover()
+                return nil
+            }
+
+            let popoverWindow = self.popover.contentViewController?.view.window
+            let statusWindow = self.statusItem.button?.window
+            if event.window !== popoverWindow, event.window !== statusWindow {
+                self.closePopover()
+            }
+            return event
         }
     }
 }

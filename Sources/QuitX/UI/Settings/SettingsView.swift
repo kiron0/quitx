@@ -76,6 +76,8 @@ struct SettingsView: View {
             }
             .padding(.top, 10)
             .padding(.bottom, 12)
+            .frame(maxWidth: .infinity)
+            .background(Color.black.opacity(0.16))
 
             Divider()
                 .background(Color.white.opacity(0.1))

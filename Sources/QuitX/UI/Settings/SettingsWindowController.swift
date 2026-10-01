@@ -22,12 +22,15 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         let hosting = NSHostingController(rootView: rootView)
         let win = NSWindow(contentViewController: hosting)
         win.title = "General"
-        win.styleMask = [.titled, .closable, .miniaturizable, .fullSizeContentView]
-        win.titlebarAppearsTransparent = true
+        win.styleMask = [.titled, .closable, .miniaturizable]
+        win.titlebarAppearsTransparent = false
         win.titleVisibility = .visible
         win.setContentSize(NSSize(width: 400, height: 555))
         win.isOpaque = false
-        win.backgroundColor = .clear
+        win.backgroundColor = .windowBackgroundColor
+        win.isMovableByWindowBackground = true
+        win.standardWindowButton(.closeButton)?.isEnabled = true
+        win.standardWindowButton(.closeButton)?.isHidden = false
         win.isReleasedWhenClosed = false
         win.delegate = self
         self.window = win
@@ -43,10 +46,11 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
     func updateHeight(for tab: SettingsTab) {
         guard let win = window else { return }
-        let newHeight = tab.contentHeight
+        let titlebarHeight = win.frame.height - win.contentLayoutRect.height
+        let newHeight = tab.contentHeight + titlebarHeight
         let currentFrame = win.frame
         let newY = currentFrame.maxY - newHeight // Anchor top edge so resize animates downwards
-        let newFrame = NSRect(x: currentFrame.origin.x, y: newY, width: 400, height: newHeight)
+        let newFrame = NSRect(x: currentFrame.origin.x, y: newY, width: currentFrame.width, height: newHeight)
         win.setFrame(newFrame, display: true, animate: true)
     }
 

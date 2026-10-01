@@ -28,7 +28,6 @@ struct MainPopoverView: View {
                 emptyAppsView
             } else {
                 AppListView(vm: vm)
-                    .frame(maxHeight: .infinity)
             }
 
             Spacer(minLength: 0)

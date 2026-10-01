@@ -35,12 +35,15 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         let hosting = NSHostingController(rootView: rootView)
         let win = NSWindow(contentViewController: hosting)
         win.title = "Welcome to QuitX"
-        win.styleMask = [.titled, .closable, .fullSizeContentView]
-        win.titlebarAppearsTransparent = true
-        win.titleVisibility = .hidden
+        win.styleMask = [.titled, .closable]
+        win.titlebarAppearsTransparent = false
+        win.titleVisibility = .visible
         win.setContentSize(NSSize(width: 440, height: 520))
         win.isOpaque = false
-        win.backgroundColor = .clear
+        win.backgroundColor = .windowBackgroundColor
+        win.isMovableByWindowBackground = true
+        win.standardWindowButton(.closeButton)?.isEnabled = true
+        win.standardWindowButton(.closeButton)?.isHidden = false
         win.hasShadow = true
         win.isReleasedWhenClosed = false
         win.delegate = self
