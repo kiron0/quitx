@@ -85,14 +85,14 @@ final class StatusItemController: NSObject {
     @MainActor
     func updatePopoverSize() {
         let count = AppListViewModel.shared.filteredApps.count
-        // Header: quit button (32) + margins (22) + search (26) + margins (14) = 94
-        // Footer: footer text + menu (24) + margins (16) = 40
-        // App row: ~32pt each
-        let baseHeight: CGFloat = 134
-        let rowHeight: CGFloat = 32
+        // Header: search (26) + margins (16) = 42
+        // Footer: footer text + menu (24) + margins (14) = 38
+        // App row: ~30pt each
+        let baseHeight: CGFloat = 80
+        let rowHeight: CGFloat = 30
         let itemCount = max(1, count)
         let calculated = baseHeight + (CGFloat(itemCount) * rowHeight)
-        let clampedHeight = min(510, max(210, calculated))
+        let clampedHeight = min(500, max(150, calculated))
         popover.contentSize = NSSize(width: 294, height: clampedHeight)
     }
 

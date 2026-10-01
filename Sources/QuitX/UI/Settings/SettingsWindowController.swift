@@ -39,6 +39,15 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         window = nil
     }
 
+    func updateHeight(for tab: SettingsTab) {
+        guard let win = window else { return }
+        let newHeight = tab.contentHeight
+        let currentFrame = win.frame
+        let newY = currentFrame.maxY - newHeight // Anchor top edge so resize animates downwards
+        let newFrame = NSRect(x: currentFrame.origin.x, y: newY, width: 400, height: newHeight)
+        win.setFrame(newFrame, display: true, animate: true)
+    }
+
     private func positionTopCenter(_ win: NSWindow) {
         guard let screen = NSScreen.main else { return }
         let screenFrame = screen.frame

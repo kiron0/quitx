@@ -1,41 +1,18 @@
 import SwiftUI
 import AppKit
 
-private final class PopoverUIState: ObservableObject {
-    @Published var showConfirmQuitAll = false
-    @Published var isTopButtonHovered = false
-}
-
 struct MainPopoverView: View {
     @EnvironmentObject private var configStore: ConfigStore
     @ObservedObject private var vm = AppListViewModel.shared
-    @StateObject private var uiState = PopoverUIState()
-
-    private let goldGradient = LinearGradient(
-        colors: [Color(red: 250/255, green: 188/255, blue: 12/255), Color(red: 228/255, green: 150/255, blue: 6/255)],
-        startPoint: .top,
-        endPoint: .bottom
-    )
-
-    private let forceGradient = LinearGradient(
-        colors: [Color(red: 240/255, green: 68/255, blue: 48/255), Color(red: 210/255, green: 38/255, blue: 24/255)],
-        startPoint: .top,
-        endPoint: .bottom
-    )
 
     private let goldColor = Color(red: 247/255, green: 181/255, blue: 0/255)
 
     var body: some View {
         VStack(spacing: 0) {
-            // Top Primary "Quit All" button
-            quitAllButton
-                .padding(.horizontal, 12)
-                .padding(.top, 12)
-                .padding(.bottom, 8)
-
             // Search bar & Select All checkbox
             searchBarRow
                 .padding(.horizontal, 12)
+                .padding(.top, 10)
                 .padding(.bottom, 6)
 
             // Apps list
@@ -84,60 +61,6 @@ struct MainPopoverView: View {
         .task {
             await vm.refresh()
         }
-        .alert("Quit all selected apps?", isPresented: $uiState.showConfirmQuitAll) {
-            Button(vm.isOptionKeyPressed ? "Force Quit All" : "Quit All", role: .destructive) {
-                Task { await vm.quitAll(force: vm.isOptionKeyPressed || configStore.config.force == .force) }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This will close \(vm.selected.count) applications.")
-        }
-    }
-
-    // MARK: - Top Quit All Button
-
-    private var quitAllButton: some View {
-        let isForced = vm.isOptionKeyPressed
-        let count = vm.selected.count
-        let title: String = {
-            if count == 0 {
-                return "Quit All"
-            } else if count == vm.filteredApps.count {
-                return isForced ? "Force Quit All" : "Quit All"
-            } else {
-                return isForced ? "Force Quit (\(count))" : "Quit (\(count))"
-            }
-        }()
-
-        return Button {
-            if count >= 4 && configStore.config.confirmQuitAll {
-                uiState.showConfirmQuitAll = true
-            } else {
-                Task {
-                    await vm.quitAll(force: isForced || configStore.config.force == .force)
-                }
-            }
-        } label: {
-            HStack(spacing: 6) {
-                if isForced {
-                    Image(systemName: "bolt.fill")
-                        .font(.system(size: 13, weight: .bold))
-                }
-                Text(title)
-                    .font(.system(size: 14, weight: .semibold))
-            }
-            .foregroundStyle(.white)
-            .shadow(color: .black.opacity(0.25), radius: 1, y: 1)
-            .frame(maxWidth: .infinity)
-            .frame(height: 35)
-            .background(isForced ? forceGradient : goldGradient)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            .shadow(color: (isForced ? Color.red : goldColor).opacity(uiState.isTopButtonHovered ? 0.35 : 0.15), radius: 4, y: 2)
-        }
-        .buttonStyle(.plain)
-        .disabled(count == 0)
-        .opacity(count == 0 ? 0.5 : 1.0)
-        .onHover { h in uiState.isTopButtonHovered = h }
     }
 
     // MARK: - Search & Select All Row
