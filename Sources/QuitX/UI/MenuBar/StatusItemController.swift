@@ -44,6 +44,7 @@ final class StatusItemController: NSObject {
         button.image = makeMenuBarIcon()
         button.imagePosition = .imageOnly
         button.toolTip = "QuitX"
+        button.setAccessibilityLabel("QuitX")
 
         // Support both left and right click
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
