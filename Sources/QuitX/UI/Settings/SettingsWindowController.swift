@@ -15,24 +15,31 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
     private var activeTab: SettingsTab = .general
     private var hostingController: NSHostingController<AnyView>?
 
-    func show() {
+    func show(tab: SettingsTab? = nil) {
         StatusItemController.shared?.closePopover()
 
+        let initialTab = tab ?? .general
+
         if let win = window {
-            positionTopCenter(win)
+            if let tab = tab {
+                switchToTab(tab)
+            }
             win.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
         }
 
+        activeTab = initialTab
+        let contentRect = NSRect(x: 0, y: 0, width: 400, height: initialTab.contentHeight)
         let win = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 400, height: SettingsTab.general.contentHeight),
+            contentRect: contentRect,
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
         )
-        win.title = "General"
-        win.titleVisibility = .hidden
+        win.title = initialTab.rawValue
+        win.titleVisibility = .visible
+        win.titlebarAppearsTransparent = false
         win.toolbarStyle = .preference
         win.isOpaque = true
         win.backgroundColor = QuitAllTheme.windowBackgroundNSColor
@@ -43,17 +50,33 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         let toolbar = NSToolbar(identifier: "PreferencesToolbar")
         toolbar.delegate = self
         toolbar.displayMode = .iconAndLabel
-        toolbar.selectedItemIdentifier = .general
+        toolbar.selectedItemIdentifier = NSToolbarItem.Identifier(initialTab.rawValue)
         win.toolbar = toolbar
 
-        let hosting = NSHostingController(rootView: viewForTab(.general))
+        let hosting = NSHostingController(rootView: viewForTab(initialTab))
         self.hostingController = hosting
         win.contentViewController = hosting
         self.window = win
 
-        positionTopCenter(win)
+        centerWindow(win, contentHeight: initialTab.contentHeight)
+        win.alphaValue = 0
         win.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.18
+            win.animator().alphaValue = 1.0
+        }
+    }
+
+    private func centerWindow(_ win: NSWindow, contentHeight: CGFloat) {
+        guard let screen = NSScreen.main ?? NSScreen.screens.first else { return }
+        let targetContentRect = NSRect(x: 0, y: 0, width: 400, height: contentHeight)
+        let targetWindowFrame = win.frameRect(forContentRect: targetContentRect)
+        let screenFrame = screen.visibleFrame
+        let x = screenFrame.origin.x + (screenFrame.width - targetWindowFrame.width) / 2
+        let y = screenFrame.origin.y + (screenFrame.height - targetWindowFrame.height) / 2
+        win.setFrame(NSRect(x: x, y: y, width: targetWindowFrame.width, height: targetWindowFrame.height), display: true)
     }
 
     func windowWillClose(_ notification: Notification) {
@@ -62,7 +85,8 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
     }
 
     func switchToTab(_ tab: SettingsTab) {
-        guard let win = window, activeTab != tab else { return }
+        guard let win = window else { return }
+        if activeTab == tab && hostingController != nil { return }
         activeTab = tab
         win.title = tab.rawValue
         win.toolbar?.selectedItemIdentifier = NSToolbarItem.Identifier(tab.rawValue)
@@ -112,9 +136,22 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         }
     }
 
-    @objc private func toolbarItemClicked(_ sender: NSToolbarItem) {
-        guard let tab = SettingsTab(rawValue: sender.itemIdentifier.rawValue) else { return }
-        switchToTab(tab)
+    @objc private func toolbarItemClicked(_ sender: Any) {
+        if let item = sender as? NSToolbarItem,
+           let tab = SettingsTab(rawValue: item.itemIdentifier.rawValue) {
+            switchToTab(tab)
+            return
+        }
+        if let toolbar = window?.toolbar,
+           let selId = toolbar.selectedItemIdentifier,
+           let tab = SettingsTab(rawValue: selId.rawValue) {
+            switchToTab(tab)
+            return
+        }
+    }
+
+    func validateToolbarItem(_ item: NSToolbarItem) -> Bool {
+        return true
     }
 
     // MARK: - NSToolbarDelegate
@@ -127,6 +164,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         item.image = NSImage(systemSymbolName: tab.iconName, accessibilityDescription: tab.rawValue)
         item.target = self
         item.action = #selector(toolbarItemClicked(_:))
+        item.autovalidates = false
         return item
     }
 
@@ -140,14 +178,5 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
 
     func toolbarSelectableItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         return [.general, .shortcuts, .support, .about]
-    }
-
-    private func positionTopCenter(_ win: NSWindow) {
-        guard let screen = NSScreen.main else { return }
-        let screenFrame = screen.frame
-        let winSize = win.frame.size
-        let x = screenFrame.origin.x + (screenFrame.width - winSize.width) / 2
-        let y = screenFrame.origin.y + screenFrame.height - winSize.height - 105
-        win.setFrameOrigin(NSPoint(x: x, y: y))
     }
 }

@@ -118,6 +118,18 @@ final class AppListViewModel: ObservableObject {
         isLoading = false
     }
 
+    func updateLiveStats() async {
+        guard !isLoading else { return }
+        var cfg = configStore.config
+        if showBackgroundApps {
+            cfg.includeBackground = true
+        }
+        let fetched = AppListService.shared.fetchApps(config: cfg)
+        apps = sort(apps: fetched)
+        let validIds = Set(apps.map(\.id))
+        selected = selected.intersection(validIds)
+    }
+
     func quitSingle(app: AppInfo, force: Bool) async {
         SoundService.playQuitSingle()
         _ = await QuitService.shared.quit(apps: [app], force: force)

@@ -27,8 +27,8 @@ struct MainPopoverView: View {
         VStack(spacing: 0) {
             quitAllButton
                 .padding(.horizontal, 8)
-                .padding(.top, 6)
-                .padding(.bottom, 5)
+                .padding(.top, 5)
+                .padding(.bottom, 4)
 
             // Search bar & Select All checkbox
             searchBarRow
@@ -95,6 +95,7 @@ struct MainPopoverView: View {
             }
             return isForced ? "Force Quit Selected" : "Quit Selected"
         }()
+        let isEnabled = count > 0
 
         return Button {
             if count >= 4 && configStore.config.confirmQuitAll {
@@ -106,25 +107,28 @@ struct MainPopoverView: View {
             HStack(spacing: 5) {
                 if isForced {
                     Image(systemName: "bolt.fill")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.system(size: 10, weight: .bold))
                 }
                 Text(title)
-                    .font(.system(size: 12.5, weight: .bold))
+                    .font(.system(size: 12, weight: .bold))
             }
-            .foregroundStyle(isForced ? Color.white : Color(red: 0.14, green: 0.12, blue: 0.10))
+            .foregroundStyle(isEnabled ? Color.white : Color.white.opacity(0.45))
             .frame(maxWidth: .infinity)
-            .frame(height: 28)
-            .background(isForced ? forceGradient : goldGradient)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .frame(height: 24)
+            .background(
+                isEnabled
+                    ? (isForced ? forceGradient : goldGradient)
+                    : LinearGradient(colors: [Color.white.opacity(0.12), Color.white.opacity(0.12)], startPoint: .top, endPoint: .bottom)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 5))
             .shadow(
-                color: (isForced ? Color.red : goldColor).opacity(uiState.isQuitAllHovered ? 0.3 : 0.12),
-                radius: 3,
-                y: 1.5
+                color: isEnabled ? (isForced ? Color.red : goldColor).opacity(uiState.isQuitAllHovered ? 0.3 : 0.12) : Color.clear,
+                radius: 2,
+                y: 1
             )
         }
         .buttonStyle(.plain)
-        .disabled(count == 0)
-        .opacity(count == 0 ? 0.5 : 1)
+        .disabled(!isEnabled)
         .onHover { uiState.isQuitAllHovered = $0 }
     }
 
@@ -319,14 +323,17 @@ private struct PopoverOptionsButton: NSViewRepresentable {
         @objc private func restore() { parent.onRestore() }
 
         @objc private func openWelcome() {
+            StatusItemController.shared?.closePopover()
             WelcomeWindowController.shared.show()
         }
 
         @objc private func openPreferences() {
+            StatusItemController.shared?.closePopover()
             SettingsWindowController.shared.show()
         }
 
         @objc private func openHelp() {
+            StatusItemController.shared?.closePopover()
             guard let url = URL(string: "https://github.com/coreify/quitx") else { return }
             NSWorkspace.shared.open(url)
         }

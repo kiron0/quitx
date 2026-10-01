@@ -17,11 +17,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             queue: .main
         ) { notif in
             Task { @MainActor in
-                SettingsWindowController.shared.show()
-                if let tabName = notif.userInfo?["tab"] as? String,
-                   let tab = SettingsTab(rawValue: tabName) {
-                    SettingsWindowController.shared.switchToTab(tab)
-                }
+                let tab = (notif.userInfo?["tab"] as? String).flatMap { SettingsTab(rawValue: $0) }
+                SettingsWindowController.shared.show(tab: tab)
             }
         }
 

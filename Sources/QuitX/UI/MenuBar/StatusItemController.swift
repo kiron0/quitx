@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Owns the NSStatusItem and NSPopover. Single source of truth for menubar presence.
 @MainActor
-final class StatusItemController: NSObject {
+final class StatusItemController: NSObject, NSPopoverDelegate {
     static weak var shared: StatusItemController?
 
     private var statusItem: NSStatusItem
@@ -11,6 +11,7 @@ final class StatusItemController: NSObject {
     private var globalEventMonitor: Any?
     private var localEventMonitor: Any?
     private var refreshTask: Task<Void, Never>?
+    private var liveMonitoringTask: Task<Void, Never>?
 
     override init() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -22,6 +23,7 @@ final class StatusItemController: NSObject {
 
         super.init()
         Self.shared = self
+        popover.delegate = self
 
         configureButton()
         configurePopover()
@@ -160,9 +162,8 @@ final class StatusItemController: NSObject {
     // MARK: - Popover Actions
 
     func closePopover() {
-        if popover.isShown {
-            popover.performClose(nil)
-        }
+        stopLiveMonitoring()
+        popover.close()
     }
 
     @MainActor
@@ -175,7 +176,8 @@ final class StatusItemController: NSObject {
     @MainActor
     func togglePopover() {
         if popover.isShown {
-            popover.performClose(nil)
+            stopLiveMonitoring()
+            popover.close()
         } else {
             guard let button = statusItem.button else { return }
             NSApp.activate(ignoringOtherApps: true)
@@ -183,6 +185,30 @@ final class StatusItemController: NSObject {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             popover.contentViewController?.view.window?.makeKeyAndOrderFront(nil)
             refreshVisibleApps()
+            startLiveMonitoring()
+        }
+    }
+
+    private func startLiveMonitoring() {
+        liveMonitoringTask?.cancel()
+        liveMonitoringTask = Task { @MainActor [weak self] in
+            while let self = self, self.popover.isShown {
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                guard !Task.isCancelled, self.popover.isShown else { break }
+                await AppListViewModel.shared.updateLiveStats()
+                self.updatePopoverSize()
+            }
+        }
+    }
+
+    private func stopLiveMonitoring() {
+        liveMonitoringTask?.cancel()
+        liveMonitoringTask = nil
+    }
+
+    nonisolated func popoverDidClose(_ notification: Notification) {
+        Task { @MainActor in
+            StatusItemController.shared?.stopLiveMonitoring()
         }
     }
 
