@@ -654,6 +654,8 @@ struct SupportTabCloneView: View {
 // MARK: - Tab 4: About
 
 struct AboutTabCloneView: View {
+    @ObservedObject private var updateChecker = UpdateChecker.shared
+
     var body: some View {
         HStack(alignment: .center, spacing: 20) {
             QuitXAppIconView(size: 70, cornerRadius: 14)
@@ -664,7 +666,7 @@ struct AboutTabCloneView: View {
                         .font(.system(size: 14, weight: .bold))
                         .foregroundStyle(.white)
 
-                    Text("⚡️ Version 1.0.0")
+                    Text("⚡️ Version \(updateChecker.currentVersion)")
                         .font(.system(size: 11))
                         .foregroundStyle(Color.white.opacity(0.5))
                 }
@@ -681,11 +683,12 @@ struct AboutTabCloneView: View {
                     }
                     .font(.system(size: 11.5))
 
-                    Button("Check Updates") {
-                        if let url = URL(string: "https://github.com/coreify/quitx/releases") {
-                            NSWorkspace.shared.open(url)
+                    Button(updateChecker.isChecking ? "Checking..." : "Check Updates") {
+                        Task {
+                            await updateChecker.checkForUpdates(isUserInitiated: true)
                         }
                     }
+                    .disabled(updateChecker.isChecking)
                     .font(.system(size: 11.5))
                 }
                 .padding(.top, 4)
