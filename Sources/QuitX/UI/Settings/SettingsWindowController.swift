@@ -92,26 +92,42 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         win.contentViewController = hosting
         self.window = win
 
-        centerWindow(win, contentHeight: initialTab.contentHeight)
-        win.alphaValue = 0
-        win.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-
-        NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.18
-            win.animator().alphaValue = 1.0
-        }
+        let targetFrame = targetFrameFor(win, contentHeight: initialTab.contentHeight)
+        showAnimated(win: win, targetFrame: targetFrame)
     }
 
-    private func centerWindow(_ win: NSWindow, contentHeight: CGFloat) {
-        guard let screen = NSScreen.main ?? NSScreen.screens.first else { return }
+    private func targetFrameFor(_ win: NSWindow, contentHeight: CGFloat) -> NSRect {
+        guard let screen = NSScreen.main ?? NSScreen.screens.first else {
+            return win.frame
+        }
         let targetContentRect = NSRect(x: 0, y: 0, width: 400, height: contentHeight)
         let targetWindowFrame = win.frameRect(forContentRect: targetContentRect)
         let screenFrame = screen.visibleFrame
         let x = screenFrame.origin.x + (screenFrame.width - targetWindowFrame.width) / 2
         // Top-center: positioned neatly below the menu bar
         let y = screenFrame.origin.y + screenFrame.height - targetWindowFrame.height - 110
-        win.setFrame(NSRect(x: x, y: y, width: targetWindowFrame.width, height: targetWindowFrame.height), display: true)
+        return NSRect(x: x, y: y, width: targetWindowFrame.width, height: targetWindowFrame.height)
+    }
+
+    private func showAnimated(win: NSWindow, targetFrame: NSRect) {
+        // Fluid QuitAll-style glide down and fade in from below menu bar
+        let startFrame = NSRect(
+            x: targetFrame.origin.x,
+            y: targetFrame.origin.y + 16,
+            width: targetFrame.width,
+            height: targetFrame.height
+        )
+        win.setFrame(startFrame, display: false)
+        win.alphaValue = 0.0
+        win.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.22
+            ctx.timingFunction = CAMediaTimingFunction(controlPoints: 0.16, 1, 0.3, 1)
+            win.animator().setFrame(targetFrame, display: true)
+            win.animator().alphaValue = 1.0
+        }
     }
 
     func windowWillClose(_ notification: Notification) {
@@ -136,8 +152,8 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         hostingController?.rootView = viewForTab(tab)
 
         NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.16
-            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            context.duration = 0.20
+            context.timingFunction = CAMediaTimingFunction(controlPoints: 0.16, 1, 0.3, 1)
             win.animator().setFrame(newFrame, display: true)
         }
     }
@@ -181,7 +197,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
     func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
         guard let tab = SettingsTab(rawValue: itemIdentifier.rawValue) else { return nil }
         let item = NSToolbarItem(itemIdentifier: itemIdentifier)
-        item.label = tab.rawValue
+        item.label = ""
         item.paletteLabel = tab.rawValue
 
         let tabView = SettingsToolbarTabItemView(tab: tab, tabModel: tabModel) { [weak self] in

@@ -51,16 +51,34 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         win.delegate = self
         self.window = win
 
+        let targetFrame: NSRect
         if let screen = NSScreen.main ?? NSScreen.screens.first {
             let screenFrame = screen.visibleFrame
             let x = screenFrame.origin.x + (screenFrame.width - 440) / 2
             let y = screenFrame.origin.y + (screenFrame.height - 600) / 2
-            win.setFrame(NSRect(x: x, y: y, width: 440, height: 600), display: true)
+            targetFrame = NSRect(x: x, y: y, width: 440, height: 600)
         } else {
             win.center()
+            targetFrame = win.frame
         }
+
+        let startFrame = NSRect(
+            x: targetFrame.origin.x,
+            y: targetFrame.origin.y + 16,
+            width: targetFrame.width,
+            height: targetFrame.height
+        )
+        win.setFrame(startFrame, display: false)
+        win.alphaValue = 0.0
         win.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.22
+            ctx.timingFunction = CAMediaTimingFunction(controlPoints: 0.16, 1, 0.3, 1)
+            win.animator().setFrame(targetFrame, display: true)
+            win.animator().alphaValue = 1.0
+        }
     }
 
     func close() {

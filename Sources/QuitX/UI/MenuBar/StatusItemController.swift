@@ -12,6 +12,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     private var localEventMonitor: Any?
     private var refreshTask: Task<Void, Never>?
     private var liveMonitoringTask: Task<Void, Never>?
+    private var lastCloseTimestamp: Date = .distantPast
 
     override init() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -50,8 +51,8 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         button.toolTip = "QuitX"
         button.setAccessibilityLabel("QuitX")
 
-        // Support both left and right click
-        button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+        // Respond on mouse down for immediate toggle responsiveness
+        button.sendAction(on: [.leftMouseDown, .rightMouseDown])
         button.action = #selector(handleStatusItemClick(_:))
         button.target = self
     }
@@ -86,7 +87,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         }
 
         if loaded {
-            icon.isTemplate = false
+            icon.isTemplate = true
             return icon
         }
 
@@ -141,7 +142,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
             return
         }
 
-        if event.type == .rightMouseUp {
+        if event.type == .rightMouseDown || event.type == .rightMouseUp {
             showContextMenu()
         } else {
             togglePopover()
@@ -151,6 +152,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     // MARK: - Popover Actions
 
     func closePopover() {
+        lastCloseTimestamp = Date()
         stopLiveMonitoring()
         popover.close()
     }
@@ -165,9 +167,12 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     @MainActor
     func togglePopover() {
         if popover.isShown {
-            stopLiveMonitoring()
-            popover.close()
+            closePopover()
         } else {
+            // Avoid immediate re-opening if close was triggered just moments ago
+            if Date().timeIntervalSince(lastCloseTimestamp) < 0.25 {
+                return
+            }
             guard let button = statusItem.button else { return }
             NSApp.activate(ignoringOtherApps: true)
             updatePopoverSize()
@@ -280,8 +285,19 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
 
     private func startEventMonitor() {
         globalEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+            guard let self = self, self.popover.isShown else { return }
+
+            // If click is on the status bar button, let the button action handle the toggle
+            if let button = self.statusItem.button, let window = button.window {
+                let mouseLoc = NSEvent.mouseLocation
+                let buttonScreenFrame = window.convertToScreen(button.bounds)
+                if buttonScreenFrame.contains(mouseLoc) {
+                    return
+                }
+            }
+
             Task { @MainActor in
-                self?.closePopover()
+                self.closePopover()
             }
         }
 
