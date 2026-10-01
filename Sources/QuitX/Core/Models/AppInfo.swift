@@ -2,7 +2,7 @@ import Foundation
 
 /// Mirrors the CLI's AppInfo type.
 struct AppInfo: Identifiable, Hashable {
-    let id: UUID
+    let id: String
     let name: String
     let bundleId: String?
     let pid: pid_t?
@@ -24,7 +24,11 @@ struct AppInfo: Identifiable, Hashable {
         windowCount: Int = 0,
         memoryBytes: UInt64 = 0
     ) {
-        self.id = UUID()
+        if let p = pid {
+            self.id = "\(p)-\(bundleId ?? name)"
+        } else {
+            self.id = bundleId ?? name
+        }
         self.name = name
         self.bundleId = bundleId
         self.pid = pid

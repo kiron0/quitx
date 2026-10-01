@@ -63,12 +63,8 @@ struct MainPopoverView: View {
         }
         .frame(width: 330, height: 470)
         .background(
-            ZStack {
-                Color(red: 0.13, green: 0.13, blue: 0.14)
-                VisualEffectBlur(material: .popover, blendingMode: .withinWindow)
-            }
+            VisualEffectBlur(material: .popover, blendingMode: .behindWindow)
         )
-        .preferredColorScheme(.dark)
         .overlay(alignment: .bottom) {
             if vm.showToast {
                 ToastView(count: vm.lastQuitCount)
@@ -146,7 +142,7 @@ struct MainPopoverView: View {
             } label: {
                 ZStack {
                     RoundedRectangle(cornerRadius: 4)
-                        .stroke(vm.isAllSelected ? goldColor : Color.white.opacity(0.35), lineWidth: 1.5)
+                        .stroke(vm.isAllSelected ? goldColor : Color.primary.opacity(0.3), lineWidth: 1.5)
                         .background(
                             RoundedRectangle(cornerRadius: 4)
                                 .fill(vm.isAllSelected ? goldColor : Color.clear)
@@ -171,12 +167,12 @@ struct MainPopoverView: View {
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 12))
-                    .foregroundStyle(Color.white.opacity(0.4))
+                    .foregroundStyle(Color.secondary)
 
-                TextField("", text: $vm.searchQuery, prompt: Text("Search").foregroundColor(Color.white.opacity(0.35)))
+                TextField("", text: $vm.searchQuery, prompt: Text("Search").foregroundColor(Color.secondary))
                     .textFieldStyle(.plain)
                     .font(.system(size: 12.5))
-                    .foregroundStyle(Color.white.opacity(0.9))
+                    .foregroundStyle(Color.primary)
 
                 if !vm.searchQuery.isEmpty {
                     Button {
@@ -184,7 +180,7 @@ struct MainPopoverView: View {
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 12))
-                            .foregroundStyle(Color.white.opacity(0.4))
+                            .foregroundStyle(Color.secondary)
                     }
                     .buttonStyle(.plain)
                 }
@@ -193,7 +189,7 @@ struct MainPopoverView: View {
             .frame(height: 26)
             .background(
                 RoundedRectangle(cornerRadius: 6)
-                    .fill(Color.white.opacity(0.08))
+                    .fill(Color.primary.opacity(0.06))
             )
         }
     }
@@ -208,7 +204,7 @@ struct MainPopoverView: View {
                 .foregroundStyle(goldColor)
             Text(vm.searchQuery.isEmpty ? "All clean! No apps to quit." : "No running apps match '\(vm.searchQuery)'")
                 .font(.system(size: 12.5))
-                .foregroundStyle(Color.white.opacity(0.6))
+                .foregroundStyle(Color.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
             Spacer()
@@ -222,7 +218,7 @@ struct MainPopoverView: View {
         HStack {
             Text(vm.currentQuote)
                 .font(.system(size: 11, weight: .regular))
-                .foregroundStyle(Color.white.opacity(0.45))
+                .foregroundStyle(Color.secondary)
                 .lineLimit(1)
 
             Spacer()
@@ -280,12 +276,12 @@ struct MainPopoverView: View {
                     Image(nsImage: settingsImg)
                         .resizable()
                         .renderingMode(.template)
-                        .foregroundStyle(Color.white.opacity(0.55))
+                        .foregroundStyle(Color.secondary)
                         .frame(width: 16, height: 16)
                 } else {
                     Image(systemName: "line.3.horizontal")
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(Color.white.opacity(0.55))
+                        .foregroundStyle(Color.secondary)
                 }
             }
             .menuStyle(.borderlessButton)

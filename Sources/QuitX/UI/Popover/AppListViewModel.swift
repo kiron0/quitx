@@ -3,8 +3,10 @@ import AppKit
 
 @MainActor
 final class AppListViewModel: ObservableObject {
+    static let shared = AppListViewModel()
+
     @Published var apps: [AppInfo] = []
-    @Published var selected: Set<UUID> = []
+    @Published var selected: Set<String> = []
     @Published var searchQuery: String = ""
     @Published var showBackgroundApps: Bool = false
     @Published var isOptionKeyPressed: Bool = false
@@ -12,6 +14,8 @@ final class AppListViewModel: ObservableObject {
     @Published var lastQuitCount: Int = 0
     @Published var showToast: Bool = false
     @Published var currentQuote: String = "Don't give up quitting ⚡"
+
+    private var hasInitializedSelection = false
 
     private let quotes = [
         "Don't give up quitting ⚡",
@@ -74,6 +78,14 @@ final class AppListViewModel: ObservableObject {
         }
     }
 
+    func toggleSelection(for app: AppInfo) {
+        if selected.contains(app.id) {
+            selected.remove(app.id)
+        } else {
+            selected.insert(app.id)
+        }
+    }
+
     // MARK: - Actions
 
     func refresh() async {
@@ -85,12 +97,12 @@ final class AppListViewModel: ObservableObject {
         let fetched = AppListService.shared.fetchApps(config: cfg)
         apps = sort(apps: fetched)
 
-        // Default to all selected if selection was empty or initialized
-        if selected.isEmpty {
+        if !hasInitializedSelection {
             selected = Set(filteredApps.map(\.id))
+            hasInitializedSelection = true
         } else {
-            // Keep valid selections
-            selected = selected.filter { id in apps.contains { $0.id == id } }
+            let validIds = Set(apps.map(\.id))
+            selected = selected.intersection(validIds)
         }
         isLoading = false
     }

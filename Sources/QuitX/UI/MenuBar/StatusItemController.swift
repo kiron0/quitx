@@ -2,16 +2,21 @@ import AppKit
 import SwiftUI
 
 /// Owns the NSStatusItem and NSPopover. Single source of truth for menubar presence.
-final class StatusItemController {
+final class StatusItemController: NSObject {
+    static weak var shared: StatusItemController?
+
     private var statusItem: NSStatusItem
     private var popover: NSPopover
     private var eventMonitor: Any?
 
-    init() {
+    override init() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         popover = NSPopover()
         popover.behavior = .transient
         popover.animates = true
+
+        super.init()
+        Self.shared = self
 
         configureButton()
         configurePopover()
@@ -43,7 +48,9 @@ final class StatusItemController {
             button.image = makeXIcon()
         }
 
-        button.action = #selector(togglePopover)
+        // Support both left and right click
+        button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+        button.action = #selector(handleStatusItemClick(_:))
         button.target = self
     }
 
@@ -56,10 +63,8 @@ final class StatusItemController {
         let path = NSBezierPath()
         path.lineWidth = 2.5
         path.lineCapStyle = .round
-        // Diagonal 1: top-left to bottom-right
         path.move(to: NSPoint(x: 3, y: 15))
         path.line(to: NSPoint(x: 15, y: 3))
-        // Diagonal 2: top-right to bottom-left
         path.move(to: NSPoint(x: 15, y: 15))
         path.line(to: NSPoint(x: 3, y: 3))
         path.stroke()
@@ -75,9 +80,30 @@ final class StatusItemController {
         popover.contentSize = NSSize(width: 330, height: 470)
     }
 
-    // MARK: - Toggle
+    // MARK: - Click Handling
 
-    @objc private func togglePopover() {
+    @objc private func handleStatusItemClick(_ sender: Any?) {
+        guard let event = NSApp.currentEvent else {
+            togglePopover()
+            return
+        }
+
+        if event.type == .rightMouseUp {
+            showContextMenu()
+        } else {
+            togglePopover()
+        }
+    }
+
+    // MARK: - Popover Actions
+
+    func closePopover() {
+        if popover.isShown {
+            popover.performClose(nil)
+        }
+    }
+
+    func togglePopover() {
         if popover.isShown {
             popover.performClose(nil)
         } else {
@@ -85,6 +111,64 @@ final class StatusItemController {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             popover.contentViewController?.view.window?.makeKey()
         }
+    }
+
+    // MARK: - Context Menu on Right Click
+
+    private func showContextMenu() {
+        closePopover()
+        let menu = NSMenu()
+
+        let prefsItem = NSMenuItem(title: "Preferences...", action: #selector(openPreferences), keyEquivalent: ",")
+        prefsItem.target = self
+        menu.addItem(prefsItem)
+
+        menu.addItem(NSMenuItem.separator())
+
+        let stashItem = NSMenuItem(title: "Stash Session", action: #selector(stashSession), keyEquivalent: "")
+        stashItem.target = self
+        menu.addItem(stashItem)
+
+        let restoreItem = NSMenuItem(title: "Restore Session", action: #selector(restoreSession), keyEquivalent: "")
+        restoreItem.target = self
+        restoreItem.isEnabled = StashService.shared.hasStash
+        menu.addItem(restoreItem)
+
+        menu.addItem(NSMenuItem.separator())
+
+        let aboutItem = NSMenuItem(title: "About QuitX", action: #selector(openPreferences), keyEquivalent: "")
+        aboutItem.target = self
+        menu.addItem(aboutItem)
+
+        let quitItem = NSMenuItem(title: "Quit QuitX", action: #selector(quitApp), keyEquivalent: "q")
+        quitItem.target = self
+        menu.addItem(quitItem)
+
+        if let button = statusItem.button {
+            menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.height + 4), in: button)
+        }
+    }
+
+    @objc private func openPreferences() {
+        SettingsWindowController.shared.show()
+    }
+
+    @objc private func stashSession() {
+        let cfg = ConfigStore.shared.config
+        let apps = AppListService.shared.fetchApps(config: cfg)
+        Task {
+            _ = await StashService.shared.stash(apps: apps)
+        }
+    }
+
+    @objc private func restoreSession() {
+        Task {
+            _ = await StashService.shared.restore()
+        }
+    }
+
+    @objc private func quitApp() {
+        NSApplication.shared.terminate(nil)
     }
 
     // MARK: - Outside-click dismissal

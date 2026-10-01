@@ -12,11 +12,7 @@ struct AppListView: View {
                         isSelected: vm.selected.contains(app.id),
                         isOptionKeyPressed: vm.isOptionKeyPressed,
                         onToggle: {
-                            if vm.selected.contains(app.id) {
-                                vm.selected.remove(app.id)
-                            } else {
-                                vm.selected.insert(app.id)
-                            }
+                            vm.toggleSelection(for: app)
                         },
                         onQuit: { force in
                             Task { await vm.quitSingle(app: app, force: force) }
