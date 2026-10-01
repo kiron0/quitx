@@ -74,8 +74,8 @@ struct AppRowView: View {
 
             Spacer(minLength: 4)
 
-            // Memory / usage text
-            Text(app.memoryFormatted)
+            // CPU usage text (QuitAll style, e.g. "0.0%" or "1.5%")
+            Text(app.cpuFormatted)
                 .font(.system(size: 10.5, design: .monospaced))
                 .foregroundStyle(Color.white.opacity(0.45))
 
@@ -115,7 +115,7 @@ struct AppRowView: View {
             .menuIndicator(.hidden)
             .frame(width: 16)
         }
-        .padding(.horizontal, 9)
+        .padding(.horizontal, 8)
         .padding(.vertical, 3.5)
         .contentShape(Rectangle())
         .onTapGesture {

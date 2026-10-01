@@ -9,11 +9,16 @@ struct AppInfo: Identifiable, Hashable {
     let isBackground: Bool
     let windowCount: Int
     let memoryBytes: UInt64
+    let cpuUsage: Double
 
     var isWindowless: Bool { windowCount == 0 && !isBackground }
 
     var memoryFormatted: String {
         MemoryFormatter.format(bytes: memoryBytes)
+    }
+
+    var cpuFormatted: String {
+        return String(format: "%.1f%%", cpuUsage)
     }
 
     init(
@@ -22,7 +27,8 @@ struct AppInfo: Identifiable, Hashable {
         pid: pid_t? = nil,
         isBackground: Bool = false,
         windowCount: Int = 0,
-        memoryBytes: UInt64 = 0
+        memoryBytes: UInt64 = 0,
+        cpuUsage: Double = 0.0
     ) {
         if let p = pid {
             self.id = "\(p)-\(bundleId ?? name)"
@@ -35,6 +41,7 @@ struct AppInfo: Identifiable, Hashable {
         self.isBackground = isBackground
         self.windowCount = windowCount
         self.memoryBytes = memoryBytes
+        self.cpuUsage = cpuUsage
     }
 }
 

@@ -161,10 +161,30 @@ final class AppListViewModel: ObservableObject {
 
     private func sort(apps: [AppInfo]) -> [AppInfo] {
         switch configStore.config.sortBy {
-        case .memory:
-            return apps.sorted { $0.memoryBytes > $1.memoryBytes }
-        default:
+        case .cpuDesc:
+            return apps.sorted {
+                if $0.cpuUsage != $1.cpuUsage { return $0.cpuUsage > $1.cpuUsage }
+                return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+            }
+        case .cpuAsc:
+            return apps.sorted {
+                if $0.cpuUsage != $1.cpuUsage { return $0.cpuUsage < $1.cpuUsage }
+                return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+            }
+        case .memoryDesc:
+            return apps.sorted {
+                if $0.memoryBytes != $1.memoryBytes { return $0.memoryBytes > $1.memoryBytes }
+                return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+            }
+        case .memoryAsc:
+            return apps.sorted {
+                if $0.memoryBytes != $1.memoryBytes { return $0.memoryBytes < $1.memoryBytes }
+                return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+            }
+        case .name:
             return apps.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        case .nameDesc:
+            return apps.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedDescending }
         }
     }
 

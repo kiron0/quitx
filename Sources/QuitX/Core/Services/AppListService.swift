@@ -8,6 +8,7 @@ final class AppListService {
     func fetchApps(config: QuitXConfig) -> [AppInfo] {
         let running = NSWorkspace.shared.runningApplications
         let windowCounts = visibleWindowCounts()
+        let cpuUsages = fetchCpuUsages()
 
         var results: [AppInfo] = []
 
@@ -27,11 +28,17 @@ final class AppListService {
             if let bid = bundleId, config.exclude.contains(bid) { continue }
             if config.exclude.contains(name) { continue }
 
+            // Music exclusion
+            if config.neverQuitMusic && config.musicApps.contains(where: { name.localizedCaseInsensitiveContains($0) || bundleId?.localizedCaseInsensitiveContains($0) == true }) {
+                continue
+            }
+
             // Finder / Trash
             if !config.includeFinder && bundleId == "com.apple.finder" { continue }
             if !config.includeTrash && name == "Trash" { continue }
 
             let memory = memoryUsage(pid: pid)
+            let cpu = cpuUsages[pid, default: 0.0]
             let windows = windowCounts[pid, default: 0]
 
             results.append(AppInfo(
@@ -40,11 +47,59 @@ final class AppListService {
                 pid: pid,
                 isBackground: isBackground,
                 windowCount: windows,
-                memoryBytes: memory
+                memoryBytes: memory,
+                cpuUsage: cpu
             ))
         }
 
-        return results.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        switch config.sortBy {
+        case .cpuDesc:
+            return results.sorted {
+                if $0.cpuUsage != $1.cpuUsage { return $0.cpuUsage > $1.cpuUsage }
+                return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+            }
+        case .cpuAsc:
+            return results.sorted {
+                if $0.cpuUsage != $1.cpuUsage { return $0.cpuUsage < $1.cpuUsage }
+                return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+            }
+        case .memoryDesc:
+            return results.sorted {
+                if $0.memoryBytes != $1.memoryBytes { return $0.memoryBytes > $1.memoryBytes }
+                return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+            }
+        case .memoryAsc:
+            return results.sorted {
+                if $0.memoryBytes != $1.memoryBytes { return $0.memoryBytes < $1.memoryBytes }
+                return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+            }
+        case .name:
+            return results.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        case .nameDesc:
+            return results.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedDescending }
+        }
+    }
+
+    // MARK: - CPU
+
+    private func fetchCpuUsages() -> [pid_t: Double] {
+        let pipe = Pipe()
+        let proc = Process()
+        proc.executableURL = URL(fileURLWithPath: "/bin/ps")
+        proc.arguments = ["-c", "-A", "-o", "pid,%cpu"]
+        proc.standardOutput = pipe
+        try? proc.run()
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        proc.waitUntilExit()
+        guard let output = String(data: data, encoding: .utf8) else { return [:] }
+        var result: [pid_t: Double] = [:]
+        for line in output.split(separator: "\n").dropFirst() {
+            let parts = line.split(whereSeparator: { $0.isWhitespace })
+            if parts.count >= 2, let pid = pid_t(parts[0]), let cpu = Double(parts[1]) {
+                result[pid] = cpu
+            }
+        }
+        return result
     }
 
     // MARK: - Memory

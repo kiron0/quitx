@@ -18,27 +18,50 @@ enum SettingsTab: String, CaseIterable {
 
     var contentHeight: CGFloat {
         switch self {
-        case .general:   return 525
-        case .shortcuts: return 245
-        case .support:   return 235
-        case .about:     return 275
+        case .general:   return 443
+        case .shortcuts: return 215
+        case .support:   return 139
+        case .about:     return 130
         }
     }
 }
 
+// MARK: - Help Popover Button (Working ? popover matching QuitAll)
 
-
-private final class GeneralState: ObservableObject {
-    @Published var disableQuitTips: Bool = false
-    @Published var autoQuitUnit: String = "hour"
-    @Published var autoQuitValue: Int = 1
+final class HelpPopoverState: ObservableObject {
+    @Published var isShowing = false
 }
 
-private final class ShortcutsState: ObservableObject {
-    @Published var activateMenuEnabled = true
-    @Published var quitAllEnabled = false
-    @Published var forceQuitAllEnabled = false
+struct HelpPopoverButton: View {
+    let text: String
+    @StateObject private var state = HelpPopoverState()
+
+    var body: some View {
+        Button {
+            state.isShowing.toggle()
+        } label: {
+            Image(systemName: "questionmark.circle")
+                .font(.system(size: 13))
+                .foregroundStyle(state.isShowing ? Color.white.opacity(0.9) : Color.white.opacity(0.35))
+                .frame(width: 22, height: 22)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .popover(isPresented: $state.isShowing, arrowEdge: .trailing) {
+            Text(text)
+                .font(.system(size: 11.5))
+                .foregroundStyle(Color.white.opacity(0.92))
+                .lineSpacing(2.5)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .frame(width: 235)
+                .background(Color(red: 0.16, green: 0.16, blue: 0.16))
+                .preferredColorScheme(.dark)
+        }
+    }
 }
+
+// MARK: - Root SettingsView
 
 struct SettingsView: View {
     @EnvironmentObject private var configStore: ConfigStore
@@ -51,383 +74,421 @@ struct SettingsView: View {
     }
 }
 
+// MARK: - Tab 1: General (Exact 1:1 Clone of QuitAll General Tab)
 
-// MARK: - Tab 1: General (Clone of Quit All General tab)
+final class GeneralTabState: ObservableObject {
+    @Published var disableQuitTips: Bool = false
+    @Published var autoQuitValue: Int = 1
+    @Published var autoQuitUnit: String = "hours"
+}
 
 struct GeneralTabCloneView: View {
     @EnvironmentObject private var configStore: ConfigStore
-    @StateObject private var state = GeneralState()
+    @StateObject private var state = GeneralTabState()
+
+    private let gold = QuitAllTheme.accent
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 14) {
-                // Startup
-                settingRow(label: "Startup:") {
-                    checkbox(title: "Open QuitX at login", isOn: Binding(
-                        get: { configStore.config.autoUpdate },
-                        set: { configStore.config.autoUpdate = $0; configStore.save() }
-                    ), info: "Launch QuitX automatically when your Mac turns on.")
-                }
+        VStack(alignment: .leading, spacing: 5) {
+            // Startup
+            row(label: "Startup:") {
+                toggle("Open QuitX at login", isOn: Binding(
+                    get: { configStore.config.autoUpdate },
+                    set: { configStore.config.autoUpdate = $0; configStore.save() }
+                ))
+            } help: {
+                HelpPopoverButton(text: "Keep things running in ship-shape by setting an automatic Quit for inactive apps. 🛳")
+            }
 
-                // Sounds
-                settingRow(label: "Sounds:") {
-                    checkbox(title: "Play cool sounds", isOn: $configStore.config.playSounds, info: "Play satisfying audio feedback when quitting apps.")
-                }
+            // Sounds
+            row(label: "Sounds:") {
+                toggle("Play cool sounds", isOn: Binding(
+                    get: { configStore.config.playSounds },
+                    set: { configStore.config.playSounds = $0; configStore.save() }
+                ))
+            } help: {
+                HelpPopoverButton(text: "A deeply satisfying laser sound will play when quitting apps. 👾🔫")
+            }
 
-                // Advanced
-                settingRow(label: "Advanced:") {
-                    VStack(alignment: .leading, spacing: 8) {
-                        checkbox(title: "View background apps", isOn: $configStore.config.includeBackground, info: "Show background and windowless processes in list.")
-                        checkbox(title: "Group background instances", isOn: $configStore.config.groupBackground, info: "Keep background processes visually grouped.")
-                        checkbox(title: "Never quit music apps", isOn: $configStore.config.neverQuitMusic, info: "Protect Spotify, Apple Music, and other music players.")
-                        checkbox(title: "Deselect apps by default", isOn: $configStore.config.defaultSelectAll, info: "Start with apps unchecked when opening QuitX.")
-                        checkbox(title: "Disable quit tips", isOn: $state.disableQuitTips, info: "Turn off motivational footer quotes.")
-                    }
-                }
+            // Advanced
+            row(label: "Advanced:") {
+                toggle("View background apps", isOn: Binding(
+                    get: { configStore.config.includeBackground },
+                    set: { configStore.config.includeBackground = $0; configStore.save() }
+                ))
+            } help: {
+                HelpPopoverButton(text: "Heads up, some background apps will immediately restart after quitting them. It’s sorcery beyond our control. 🧙‍♂️")
+            }
 
-                // Extras
-                settingRow(label: "Extras:") {
-                    VStack(alignment: .leading, spacing: 8) {
-                        checkbox(title: "Include Finder Windows in list", isOn: $configStore.config.includeFinder, info: "Allow closing Finder windows.")
-                        checkbox(title: "Include Empty Trash in list", isOn: $configStore.config.includeTrash, info: "Allow emptying trash from QuitX.")
-                    }
-                }
+            row(label: "") {
+                toggle("Group background instances", isOn: Binding(
+                    get: { configStore.config.groupBackground },
+                    set: { configStore.config.groupBackground = $0; configStore.save() }
+                ))
+            } help: {
+                HelpPopoverButton(text: "Check this box to group multiple instances of the same background app into a single line item. Leave it unchecked to give each app instance its own line. 👨‍👨‍👦‍👦 -> 👨👨👨👨")
+            }
 
-                // Auto Quit
-                settingRow(label: "Auto Quit:") {
-                    VStack(alignment: .leading, spacing: 6) {
-                        checkbox(title: "Quit inactive apps after", isOn: Binding(
-                            get: { configStore.config.quitInactiveAfterMinutes > 0 },
-                            set: { enabled in
-                                configStore.config.quitInactiveAfterMinutes = enabled ? (state.autoQuitUnit == "hour" ? state.autoQuitValue * 60 : state.autoQuitValue) : 0
-                                configStore.save()
-                            }
-                        ), info: "Automatically close applications when left untouched.")
+            row(label: "") {
+                toggle("Never quit music apps", isOn: Binding(
+                    get: { configStore.config.neverQuitMusic },
+                    set: { configStore.config.neverQuitMusic = $0; configStore.save() }
+                ))
+            } help: {
+                HelpPopoverButton(text: "Don't stop believin', hold on to that feelin' — and your music! Exclude Spotify and Apple Music from auto or manual Quit actions. 🎵")
+            }
 
-                        if configStore.config.quitInactiveAfterMinutes > 0 {
-                            HStack(spacing: 8) {
-                                Picker("", selection: $state.autoQuitValue) {
-                                    Text("1").tag(1)
-                                    Text("2").tag(2)
-                                    Text("4").tag(4)
-                                    Text("8").tag(8)
-                                    Text("15").tag(15)
-                                    Text("30").tag(30)
-                                }
-                                .frame(width: 58)
-                                .labelsHidden()
+            row(label: "") {
+                toggle("Deselect apps by default", isOn: Binding(
+                    get: { configStore.config.defaultSelectAll },
+                    set: { configStore.config.defaultSelectAll = $0; configStore.save() }
+                ))
+            } help: {
+                HelpPopoverButton(text: "Some like the whole app list selected, some like ‘em all deselected. Now you get to choose. 🙌")
+            }
 
-                                Picker("", selection: $state.autoQuitUnit) {
-                                    Text("minute").tag("min")
-                                    Text("hour").tag("hour")
-                                    Text("day").tag("day")
-                                }
-                                .frame(width: 76)
-                                .labelsHidden()
-                            }
-                            .padding(.leading, 22)
-                            .onChange(of: state.autoQuitValue) { updateAutoQuitMinutes() }
-                            .onChange(of: state.autoQuitUnit) { updateAutoQuitMinutes() }
-                        }
-                    }
-                }
+            row(label: "") {
+                toggle("Disable quit tips", isOn: $state.disableQuitTips)
+            } help: {
+                HelpPopoverButton(text: "The rotating tips at the bottom of the QuitAll dropdown will cease to show. It’s okay. We can still be friends. 🤗")
+            }
 
-                // Sort
-                settingRow(label: "Sort:") {
-                    HStack(spacing: 8) {
-                        Picker("", selection: Binding(
-                            get: { configStore.config.sortBy == .memory ? "RAM Usage" : "A-Z Alphabetical" },
-                            set: { configStore.config.sortBy = ($0 == "RAM Usage" ? .memory : nil); configStore.save() }
-                        )) {
-                            Text("A-Z Alphabetical").tag("A-Z Alphabetical")
-                            Text("RAM Usage").tag("RAM Usage")
-                            Text("CPU Usage").tag("CPU Usage")
-                        }
-                        .frame(width: 145)
-                        .labelsHidden()
+            // Extras
+            row(label: "Extras:") {
+                toggle("Include Finder Windows in list", isOn: Binding(
+                    get: { configStore.config.includeFinder },
+                    set: { configStore.config.includeFinder = $0; configStore.save() }
+                ))
+            } help: {
+                HelpPopoverButton(text: "Find yourself finding Finder windows too often? Enable this to easily close them all when you QuitAll.")
+            }
 
-                        infoIcon("Sort apps by name or memory usage.")
-                    }
-                }
+            row(label: "") {
+                toggle("Include Empty Trash in list", isOn: Binding(
+                    get: { configStore.config.includeTrash },
+                    set: { configStore.config.includeTrash = $0; configStore.save() }
+                ))
+            } help: {
+                HelpPopoverButton(text: "A truly fresh start without a restart. Take out the trash at the same time you take out the apps! 🗑️🧹")
+            }
 
-                // Default
-                settingRow(label: "Default:") {
-                    HStack(spacing: 8) {
-                        Picker("", selection: $configStore.config.force) {
-                            Text("⏻ Normal quit").tag(QuitXConfig.ForceMode.normal)
-                            Text("⚡ Force quit").tag(QuitXConfig.ForceMode.force)
-                        }
-                        .frame(width: 145)
-                        .labelsHidden()
-                        .onChange(of: configStore.config.force) { configStore.save() }
-
-                        infoIcon("Choose whether standard click performs Graceful or Force quit.")
-                    }
-                }
-
-                // Reset
-                settingRow(label: "Reset:") {
-                    Button("Reset all") {
-                        configStore.config = QuitXConfig.default
+            // Auto Quit
+            row(label: "Auto Quit:") {
+                toggle("Quit inactive apps after", isOn: Binding(
+                    get: { configStore.config.quitInactiveAfterMinutes > 0 },
+                    set: { enabled in
+                        configStore.config.quitInactiveAfterMinutes = enabled ? (state.autoQuitUnit == "hours" ? state.autoQuitValue * 60 : state.autoQuitValue) : 0
                         configStore.save()
                     }
-                    .font(.system(size: 11.5, weight: .regular))
-                    .foregroundStyle(Color.white.opacity(0.85))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(Color.white.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 5))
-                    .buttonStyle(.plain)
-                }
+                ))
+            } help: {
+                HelpPopoverButton(text: "Keep things running in ship-shape by setting an automatic Quit for inactive apps. 🛳")
             }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 16)
+
+            // Auto Quit Stepper Row
+            row(label: "") {
+                HStack(spacing: 6) {
+                    TextField("", value: $state.autoQuitValue, format: .number)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 48)
+                        .font(.system(size: 11))
+                        .multilineTextAlignment(.center)
+
+                    Stepper("", value: $state.autoQuitValue, in: 1...60)
+                        .labelsHidden()
+
+                    Picker("", selection: $state.autoQuitUnit) {
+                        Text("minutes").tag("minutes")
+                        Text("hours").tag("hours")
+                        Text("days").tag("days")
+                    }
+                    .frame(width: 90)
+                    .labelsHidden()
+                }
+            } help: {
+                Color.clear.frame(width: 22, height: 22)
+            }
+
+            // Sort
+            row(label: "Sort:") {
+                Picker("", selection: Binding(
+                    get: { configStore.config.sortBy },
+                    set: { configStore.config.sortBy = $0; configStore.save() }
+                )) {
+                    ForEach(QuitXConfig.SortBy.allCases, id: \.self) { sortOpt in
+                        Text(sortOpt.rawValue).tag(sortOpt)
+                    }
+                }
+                .frame(width: 175)
+                .labelsHidden()
+            } help: {
+                HelpPopoverButton(text: "Sort the list of apps alphabetically or by CPU usage. Made possible by this magical sorting unicorn. ✨🦄")
+            }
+
+            // Default
+            row(label: "Default:") {
+                Picker("", selection: Binding(
+                    get: { configStore.config.force == .force ? "Force quit" : "Normal quit" },
+                    set: { configStore.config.force = ($0 == "Force quit" ? .force : .normal); configStore.save() }
+                )) {
+                    Text("Normal quit").tag("Normal quit")
+                    Text("Force quit").tag("Force quit")
+                }
+                .frame(width: 175)
+                .labelsHidden()
+            } help: {
+                HelpPopoverButton(text: "This one is pretty self explanatory, so here’s an easter egg instead of a helpful tooltip. 🐇🍳")
+            }
+
+            // Reset
+            row(label: "Reset:") {
+                Button("Reset all") {
+                    configStore.config = QuitXConfig.default
+                    configStore.save()
+                }
+                .font(.system(size: 11.5))
+            } help: {
+                Color.clear.frame(width: 22, height: 22)
+            }
+
+            Spacer(minLength: 0)
         }
+        .padding(.horizontal, 20)
+        .padding(.top, 14)
+        .padding(.bottom, 10)
+        .frame(width: 400, height: 443, alignment: .topLeading)
+        .background(QuitAllTheme.windowBackground)
     }
 
-    private func updateAutoQuitMinutes() {
-        let multiplier = (state.autoQuitUnit == "hour" ? 60 : (state.autoQuitUnit == "day" ? 1440 : 1))
-        configStore.config.quitInactiveAfterMinutes = state.autoQuitValue * multiplier
-        configStore.save()
-    }
-
-    // Helper: 2-column row
-    @ViewBuilder
-    private func settingRow<Content: View>(label: String, @ViewBuilder content: () -> Content) -> some View {
-        HStack(alignment: .top, spacing: 12) {
+    private func row<Content: View, Help: View>(
+        label: String,
+        @ViewBuilder content: () -> Content,
+        @ViewBuilder help: () -> Help
+    ) -> some View {
+        HStack(alignment: .center, spacing: 10) {
             Text(label)
                 .font(.system(size: 12, weight: .regular))
-                .foregroundStyle(Color.white.opacity(0.65))
-                .frame(width: 70, alignment: .trailing)
+                .foregroundStyle(Color.white.opacity(0.85))
+                .frame(width: 84, alignment: .trailing)
 
             content()
 
             Spacer(minLength: 0)
+
+            help()
         }
+        .frame(height: 25)
     }
 
-    // Helper: checkbox with info icon
-    @ViewBuilder
-    private func checkbox(title: String, isOn: Binding<Bool>, info: String) -> some View {
-        HStack(spacing: 8) {
-            Button {
-                isOn.wrappedValue.toggle()
-                configStore.save()
-            } label: {
-                HStack(spacing: 7) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(isOn.wrappedValue ? QuitAllTheme.accent : Color.white.opacity(0.12))
-                            .frame(width: 14, height: 14)
+    private func toggle(_ title: String, isOn: Binding<Bool>) -> some View {
+        Button {
+            isOn.wrappedValue.toggle()
+        } label: {
+            HStack(spacing: 8) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(isOn.wrappedValue ? gold : Color.white.opacity(0.12))
+                        .frame(width: 14, height: 14)
 
-                        if isOn.wrappedValue {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 8, weight: .bold))
-                                .foregroundStyle(.black.opacity(0.9))
-                        }
+                    if isOn.wrappedValue {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundStyle(.black.opacity(0.9))
                     }
-
-                    Text(title)
-                        .font(.system(size: 12, weight: .regular))
-                        .foregroundStyle(Color.white.opacity(0.9))
                 }
+
+                Text(title)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundStyle(Color.white.opacity(0.92))
             }
-            .buttonStyle(.plain)
-
-            Spacer(minLength: 4)
-
-            infoIcon(info)
         }
-    }
-
-    @ViewBuilder
-    private func infoIcon(_ text: String) -> some View {
-        Image(systemName: "questionmark.circle")
-            .font(.system(size: 11))
-            .foregroundStyle(Color.white.opacity(0.35))
-            .help(text)
+        .buttonStyle(.plain)
     }
 }
 
-// MARK: - Tab 2: Shortcuts
+// MARK: - Tab 2: Shortcuts (Exact 1:1 Clone of QuitAll Shortcuts Tab)
+
+final class ShortcutsTabState: ObservableObject {
+    @Published var activateMenuEnabled = true
+    @Published var quitAllEnabled = true
+    @Published var forceQuitAllEnabled = true
+}
 
 struct ShortcutsTabCloneView: View {
-    @StateObject private var state = ShortcutsState()
+    @StateObject private var state = ShortcutsTabState()
 
     var body: some View {
         VStack(spacing: 0) {
-            VStack(spacing: 8) {
-                shortcutRow(
-                    title: "Activate menu:",
+            VStack(spacing: 12) {
+                shortcutLine(
+                    label: "Activate menu:",
                     isEnabled: $state.activateMenuEnabled,
-                    keys: ["⌃", "⌥", "A"]
+                    shortcut: "⌥Q"
                 )
-                shortcutRow(
-                    title: "Quit all:",
+                shortcutLine(
+                    label: "Quit all:",
                     isEnabled: $state.quitAllEnabled,
-                    keys: ["⌃", "⌥", "Q"]
+                    shortcut: "⌥⌘Q"
                 )
-                shortcutRow(
-                    title: "Force quit all:",
+                shortcutLine(
+                    label: "Force quit all:",
                     isEnabled: $state.forceQuitAllEnabled,
-                    keys: ["⌃", "⌥", "⌘", "Q"]
+                    shortcut: "⌥⇧⌘Q"
                 )
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
+            .padding(.horizontal, 28)
+            .padding(.top, 24)
 
             Divider()
                 .background(Color.white.opacity(0.12))
-                .padding(.horizontal, 14)
-                .padding(.vertical, 13)
+                .padding(.horizontal, 20)
+                .padding(.top, 22)
+                .padding(.bottom, 16)
 
-            HStack(spacing: 9) {
+            HStack(spacing: 10) {
                 Text("⌥")
-                    .font(.system(size: 15, weight: .medium))
-                    .frame(width: 25, height: 25)
-                    .background(Color.white.opacity(0.16), in: RoundedRectangle(cornerRadius: 4))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color.white.opacity(0.85))
+                    .frame(width: 22, height: 22)
+                    .background(Color.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 4))
 
                 Text("Hold down Option to toggle “Quit” and “Force Quit”.")
-                    .font(.system(size: 12.5, weight: .medium))
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(Color.white.opacity(0.55))
 
-                Spacer(minLength: 0)
+                Spacer()
             }
-            .foregroundStyle(Color.white.opacity(0.55))
-            .padding(.horizontal, 14)
+            .padding(.horizontal, 28)
 
-            Spacer()
+            Spacer(minLength: 0)
         }
+        .frame(width: 400, height: 215)
+        .background(QuitAllTheme.windowBackground)
     }
 
-    private func shortcutRow(title: String, isEnabled: Binding<Bool>, keys: [String]) -> some View {
+    private func shortcutLine(label: String, isEnabled: Binding<Bool>, shortcut: String) -> some View {
         HStack(spacing: 10) {
-            Text(title)
-                .font(.system(size: 13, weight: .medium))
+            Text(label)
+                .font(.system(size: 12, weight: .regular))
                 .foregroundStyle(Color.white.opacity(0.85))
-                .frame(width: 105, alignment: .trailing)
+                .frame(width: 94, alignment: .trailing)
 
             Button {
                 isEnabled.wrappedValue.toggle()
             } label: {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 5)
-                        .fill(Color.white.opacity(isEnabled.wrappedValue ? 0.18 : 0.08))
-                        .frame(width: 22, height: 22)
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(isEnabled.wrappedValue ? QuitAllTheme.accent : Color.white.opacity(0.12))
+                        .frame(width: 14, height: 14)
+
                     if isEnabled.wrappedValue {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(Color.white.opacity(0.86))
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundStyle(.black.opacity(0.9))
                     }
                 }
             }
             .buttonStyle(.plain)
 
-            HStack(spacing: 2) {
-                ForEach(Array(keys.enumerated()), id: \.offset) { _, key in
-                    Text(key)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(Color.white.opacity(isEnabled.wrappedValue ? 0.82 : 0.24))
-                        .frame(minWidth: 22, minHeight: 24)
-                        .padding(.horizontal, 2)
-                        .background(
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(Color.white.opacity(isEnabled.wrappedValue ? 0.19 : 0.08))
-                        )
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(3)
-            .frame(width: 110, height: 30)
-            .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
+            Text(shortcut)
+                .font(.system(size: 11.5, weight: .medium, design: .monospaced))
+                .foregroundStyle(isEnabled.wrappedValue ? Color.white.opacity(0.9) : Color.white.opacity(0.3))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 4))
 
             Button {
-                isEnabled.wrappedValue = false
+                // Clear shortcut action
             } label: {
-                Image(systemName: "trash")
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color.white.opacity(isEnabled.wrappedValue ? 0.36 : 0.16))
-                    .frame(width: 20, height: 24)
+                Image(systemName: "xmark")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(Color.white.opacity(0.35))
+                    .frame(width: 20, height: 20)
             }
             .buttonStyle(.plain)
-            .disabled(!isEnabled.wrappedValue)
+
+            Spacer()
         }
-        .frame(height: 30)
     }
 }
 
-// MARK: - Tab 3: Support
+// MARK: - Tab 3: Support (Exact 1:1 Clone of QuitAll Support Tab)
 
 struct SupportTabCloneView: View {
     var body: some View {
-        VStack(spacing: 18) {
-            Spacer()
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Get in touch for any feedback, questions or feature requests!")
+                .font(.system(size: 13, weight: .regular))
+                .foregroundStyle(Color.white.opacity(0.92))
+                .lineSpacing(3)
+                .padding(.top, 24)
 
-            Image(systemName: "bubble.left.and.bubble.right.fill")
-                .font(.system(size: 40))
-                .foregroundStyle(QuitAllTheme.accent)
-
-            Text("Need Help or Have Feedback?")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white)
-
-            Text("QuitX is built for macOS speed and minimalism.\nFeel free to explore our documentation or report an issue on GitHub.")
-                .font(.system(size: 12))
-                .foregroundStyle(Color.white.opacity(0.6))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 24)
-
-            HStack(spacing: 14) {
-                Link("Documentation", destination: URL(string: "https://quitx.coreify.io")!)
-                Text("•").foregroundStyle(.secondary)
-                Link("GitHub Issues", destination: URL(string: "https://github.com/coreify/quitx-app/issues")!)
-            }
-            .font(.system(size: 12, weight: .medium))
-
-            Spacer()
-        }
-        .padding()
-    }
-}
-
-// MARK: - Tab 4: About
-
-struct AboutTabCloneView: View {
-    var body: some View {
-        VStack(spacing: 14) {
-            Spacer()
-
-            if let img = NSImage(contentsOfFile: "Support/Icons/icon_128x128.png") ?? Bundle.main.image(forResource: "AppIcon") {
-                Image(nsImage: img)
-                    .resizable()
-                    .frame(width: 64, height: 64)
-                    .clipShape(RoundedRectangle(cornerRadius: 15))
-                    .shadow(color: .black.opacity(0.3), radius: 6, y: 3)
-            }
-
-            VStack(spacing: 4) {
-                Text("QuitX for macOS")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(.white)
-
-                Text("Version 1.0.0 (Build 1)")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color.white.opacity(0.5))
-            }
-
-            Text("© 2026 Coreify / Toufiq Hasan Kiron\nInspired by Setapp Quit All.")
-                .font(.system(size: 11))
-                .foregroundStyle(Color.white.opacity(0.45))
-                .multilineTextAlignment(.center)
-
-            HStack(spacing: 14) {
-                Link("GitHub Repo", destination: URL(string: "https://github.com/coreify/quitx-app")!)
-                Text("•").foregroundStyle(.secondary)
-                Link("Website", destination: URL(string: "https://quitx.coreify.io")!)
+            Button("Contact") {
+                if let url = URL(string: "https://github.com/coreify/quitx/issues") {
+                    NSWorkspace.shared.open(url)
+                }
             }
             .font(.system(size: 12))
 
-            Spacer()
+            Spacer(minLength: 0)
         }
-        .padding()
+        .padding(.horizontal, 28)
+        .frame(width: 400, height: 139, alignment: .topLeading)
+        .background(QuitAllTheme.windowBackground)
+    }
+}
+
+// MARK: - Tab 4: About (Exact 1:1 Clone of QuitAll About Tab)
+
+struct AboutTabCloneView: View {
+    var body: some View {
+        HStack(alignment: .center, spacing: 20) {
+            // 70x70 app icon matching QuitAll
+            if let img = NSImage(contentsOfFile: "Support/Icons/icon_128x128.png") ?? NSImage(contentsOfFile: "Support/Icons/AppIcon.icns") ?? Bundle.main.image(forResource: "AppIcon") {
+                Image(nsImage: img)
+                    .resizable()
+                    .frame(width: 70, height: 70)
+                    .cornerRadius(14)
+                    .shadow(color: .black.opacity(0.3), radius: 6, y: 3)
+            }
+
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text("QuitX")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(.white)
+
+                    Text("⚡️ Version 1.0.0")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.white.opacity(0.5))
+                }
+
+                Text("Copyright © 2026 Coreify")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color.white.opacity(0.42))
+
+                HStack(spacing: 10) {
+                    Button("Say hi") {
+                        if let url = URL(string: "https://quitx.coreify.io") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }
+                    .font(.system(size: 11.5))
+
+                    Button("Check Updates") {
+                        if let url = URL(string: "https://github.com/coreify/quitx/releases") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }
+                    .font(.system(size: 11.5))
+                }
+                .padding(.top, 4)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 30)
+        .frame(width: 400, height: 130)
+        .background(QuitAllTheme.windowBackground)
     }
 }

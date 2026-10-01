@@ -54,17 +54,47 @@ final class StatusItemController: NSObject {
         button.target = self
     }
 
-    /// Monochrome menu-bar version of the current Q + bolt brand mark.
+    /// Monochrome menu-bar version matching QuitAll status-icon with full 1x and @2x Retina support.
     private func makeMenuBarIcon() -> NSImage {
+        let icon = NSImage(size: NSSize(width: 18, height: 18))
+        let iconNames = ["status-icon", "menubar"]
+        var loaded = false
+
+        for name in iconNames {
+            let path1x = Bundle.main.path(forResource: name, ofType: "png") ?? "Support/Icons/\(name).png"
+            let path2x = Bundle.main.path(forResource: "\(name)@2x", ofType: "png") ?? "Support/Icons/\(name)@2x.png"
+
+            var reps: [NSImageRep] = []
+            if FileManager.default.fileExists(atPath: path1x),
+               let rep1 = NSImageRep(contentsOfFile: path1x) {
+                rep1.size = NSSize(width: 18, height: 18)
+                reps.append(rep1)
+            }
+            if FileManager.default.fileExists(atPath: path2x),
+               let rep2 = NSImageRep(contentsOfFile: path2x) {
+                rep2.size = NSSize(width: 18, height: 18)
+                reps.append(rep2)
+            }
+
+            if !reps.isEmpty {
+                reps.forEach { icon.addRepresentation($0) }
+                loaded = true
+                break
+            }
+        }
+
+        if loaded {
+            icon.isTemplate = true
+            return icon
+        }
+
         let size = NSSize(width: 18, height: 18)
         let image = NSImage(size: size)
         image.lockFocus()
-
         NSColor.black.setStroke()
         let ring = NSBezierPath(ovalIn: NSRect(x: 2.2, y: 3.2, width: 11.8, height: 11.8))
         ring.lineWidth = 2.6
         ring.stroke()
-
         NSColor.black.setFill()
         let bolt = NSBezierPath()
         bolt.move(to: NSPoint(x: 10.1, y: 10.1))
@@ -75,7 +105,6 @@ final class StatusItemController: NSObject {
         bolt.line(to: NSPoint(x: 14.6, y: 3.0))
         bolt.close()
         bolt.fill()
-
         image.unlockFocus()
         image.isTemplate = true
         return image
@@ -133,6 +162,13 @@ final class StatusItemController: NSObject {
     func closePopover() {
         if popover.isShown {
             popover.performClose(nil)
+        }
+    }
+
+    @MainActor
+    func showPopover() {
+        if !popover.isShown {
+            togglePopover()
         }
     }
 

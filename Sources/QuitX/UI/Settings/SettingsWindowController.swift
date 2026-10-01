@@ -32,6 +32,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
             defer: false
         )
         win.title = "General"
+        win.titleVisibility = .hidden
         win.toolbarStyle = .preference
         win.isOpaque = true
         win.backgroundColor = QuitAllTheme.windowBackgroundNSColor
@@ -66,10 +67,11 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         win.title = tab.rawValue
         win.toolbar?.selectedItemIdentifier = NSToolbarItem.Identifier(tab.rawValue)
 
-        let targetHeight = tab.contentHeight
+        let contentRect = NSRect(x: 0, y: 0, width: 400, height: tab.contentHeight)
+        let targetWindowFrame = win.frameRect(forContentRect: contentRect)
         let currentFrame = win.frame
-        let newY = currentFrame.maxY - targetHeight
-        let newFrame = NSRect(x: currentFrame.origin.x, y: newY, width: 400, height: targetHeight)
+        let newY = currentFrame.maxY - targetWindowFrame.height
+        let newFrame = NSRect(x: currentFrame.origin.x, y: newY, width: 400, height: targetWindowFrame.height)
 
         hostingController?.rootView = viewForTab(tab)
 

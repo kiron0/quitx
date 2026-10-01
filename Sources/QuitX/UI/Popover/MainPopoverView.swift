@@ -151,7 +151,7 @@ struct MainPopoverView: View {
                             .frame(width: 6, height: 2)
                     }
                 }
-                .frame(width: 22, height: 22)
+                .frame(width: 14, height: 14)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
