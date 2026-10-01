@@ -71,11 +71,18 @@ final class AppListViewModel: ObservableObject {
         return !current.isEmpty && current.allSatisfy { selected.contains($0.id) }
     }
 
+    var isPartiallySelected: Bool {
+        let visibleIds = Set(filteredApps.map(\.id))
+        let visibleSelection = selected.intersection(visibleIds)
+        return !visibleSelection.isEmpty && visibleSelection.count < visibleIds.count
+    }
+
     func toggleSelectAll() {
-        if isAllSelected {
-            selected.removeAll()
+        let visibleIds = Set(filteredApps.map(\.id))
+        if visibleIds.isSubset(of: selected) {
+            selected.subtract(visibleIds)
         } else {
-            selected = Set(filteredApps.map(\.id))
+            selected.formUnion(visibleIds)
         }
     }
 
@@ -91,6 +98,7 @@ final class AppListViewModel: ObservableObject {
 
     func refresh() async {
         isLoading = true
+        let selectedAllBeforeRefresh = isAllSelected
         var cfg = configStore.config
         if showBackgroundApps {
             cfg.includeBackground = true
@@ -101,6 +109,8 @@ final class AppListViewModel: ObservableObject {
         if !hasInitializedSelection {
             selected = Set(filteredApps.map(\.id))
             hasInitializedSelection = true
+        } else if selectedAllBeforeRefresh {
+            selected = Set(filteredApps.map(\.id))
         } else {
             let validIds = Set(apps.map(\.id))
             selected = selected.intersection(validIds)

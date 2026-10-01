@@ -16,14 +16,6 @@ enum SettingsTab: String, CaseIterable {
         }
     }
 
-    var contentHeight: CGFloat {
-        switch self {
-        case .general:   return 555
-        case .shortcuts: return 260
-        case .support:   return 280
-        case .about:     return 310
-        }
-    }
 }
 
 private final class SettingsTabState: ObservableObject {
@@ -54,7 +46,6 @@ struct SettingsView: View {
                     Button {
                         tabState.activeTab = tab
                         updateWindowTitle(tab.rawValue)
-                        SettingsWindowController.shared.updateHeight(for: tab)
                     } label: {
                         VStack(spacing: 3) {
                             Image(systemName: tab.iconName)
@@ -76,7 +67,6 @@ struct SettingsView: View {
             .padding(.top, 7)
             .padding(.bottom, 8)
             .frame(maxWidth: .infinity)
-            .background(Color.black.opacity(0.16))
 
             Divider()
                 .background(Color.white.opacity(0.1))

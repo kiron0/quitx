@@ -100,7 +100,7 @@ final class StatusItemController: NSObject {
     func updatePopoverSize() {
         let count = AppListViewModel.shared.filteredApps.count
         // Grow naturally. Scroll only when rows exceed available screen height.
-        let baseHeight: CGFloat = 80
+        let baseHeight: CGFloat = 129
         let rowHeight: CGFloat = 29
         let itemCount = max(1, count)
         let calculated = baseHeight + (CGFloat(itemCount) * rowHeight)
@@ -108,7 +108,7 @@ final class StatusItemController: NSObject {
             ?? NSScreen.main?.visibleFrame.height
             ?? 800
         let maximumHeight = max(145, screenHeight - 48)
-        let targetHeight = min(maximumHeight, max(145, calculated))
+        let targetHeight = min(maximumHeight, max(190, calculated))
         AppListViewModel.shared.listNeedsScrolling = calculated > maximumHeight
         popover.contentSize = NSSize(width: 270, height: targetHeight)
     }

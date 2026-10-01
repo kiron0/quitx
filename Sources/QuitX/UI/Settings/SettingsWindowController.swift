@@ -23,11 +23,11 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         let win = NSWindow(contentViewController: hosting)
         win.title = "General"
         win.styleMask = [.titled, .closable, .miniaturizable]
-        win.titlebarAppearsTransparent = false
+        win.titlebarAppearsTransparent = true
         win.titleVisibility = .visible
         win.setContentSize(NSSize(width: 400, height: 555))
-        win.isOpaque = false
-        win.backgroundColor = .windowBackgroundColor
+        win.isOpaque = true
+        win.backgroundColor = QuitAllTheme.windowBackgroundNSColor
         win.isMovableByWindowBackground = true
         win.standardWindowButton(.closeButton)?.isEnabled = true
         win.standardWindowButton(.closeButton)?.isHidden = false
@@ -42,16 +42,6 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) {
         window = nil
-    }
-
-    func updateHeight(for tab: SettingsTab) {
-        guard let win = window else { return }
-        let titlebarHeight = win.frame.height - win.contentLayoutRect.height
-        let newHeight = tab.contentHeight + titlebarHeight
-        let currentFrame = win.frame
-        let newY = currentFrame.maxY - newHeight // Anchor top edge so resize animates downwards
-        let newFrame = NSRect(x: currentFrame.origin.x, y: newY, width: currentFrame.width, height: newHeight)
-        win.setFrame(newFrame, display: true, animate: true)
     }
 
     private func positionTopCenter(_ win: NSWindow) {

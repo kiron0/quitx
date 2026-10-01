@@ -1,18 +1,38 @@
 import SwiftUI
 import AppKit
 
+private final class PopoverUIState: ObservableObject {
+    @Published var showConfirmQuitAll = false
+    @Published var isQuitAllHovered = false
+}
+
 struct MainPopoverView: View {
     @EnvironmentObject private var configStore: ConfigStore
     @ObservedObject private var vm = AppListViewModel.shared
+    @StateObject private var uiState = PopoverUIState()
 
     private let goldColor = QuitAllTheme.accent
+    private let goldGradient = LinearGradient(
+        colors: [QuitAllTheme.accent, Color(red: 232/255, green: 155/255, blue: 0/255)],
+        startPoint: .top,
+        endPoint: .bottom
+    )
+    private let forceGradient = LinearGradient(
+        colors: [Color(red: 240/255, green: 70/255, blue: 50/255), Color(red: 210/255, green: 40/255, blue: 30/255)],
+        startPoint: .top,
+        endPoint: .bottom
+    )
 
     var body: some View {
         VStack(spacing: 0) {
+            quitAllButton
+                .padding(.horizontal, 9)
+                .padding(.top, 8)
+                .padding(.bottom, 7)
+
             // Search bar & Select All checkbox
             searchBarRow
                 .padding(.horizontal, 9)
-                .padding(.top, 8)
                 .padding(.bottom, 5)
 
             // Apps list
@@ -52,6 +72,60 @@ struct MainPopoverView: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: vm.showToast)
+        .alert("Quit all selected apps?", isPresented: $uiState.showConfirmQuitAll) {
+            Button(vm.isOptionKeyPressed ? "Force Quit All" : "Quit All", role: .destructive) {
+                Task {
+                    await vm.quitAll(force: vm.isOptionKeyPressed || configStore.config.force == .force)
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will close \(vm.selected.count) applications.")
+        }
+    }
+
+    // MARK: - Quit All
+
+    private var quitAllButton: some View {
+        let isForced = vm.isOptionKeyPressed || configStore.config.force == .force
+        let count = vm.selected.count
+        let title: String = {
+            if count == 0 || count == vm.filteredApps.count {
+                return isForced ? "Force Quit All" : "Quit All"
+            }
+            return isForced ? "Force Quit (\(count))" : "Quit (\(count))"
+        }()
+
+        return Button {
+            if count >= 4 && configStore.config.confirmQuitAll {
+                uiState.showConfirmQuitAll = true
+            } else {
+                Task { await vm.quitAll(force: isForced) }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                if isForced {
+                    Image(systemName: "bolt.fill")
+                        .font(.system(size: 12, weight: .bold))
+                }
+                Text(title)
+                    .font(.system(size: 13, weight: .semibold))
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 34)
+            .background(isForced ? forceGradient : goldGradient)
+            .clipShape(RoundedRectangle(cornerRadius: 7))
+            .shadow(
+                color: (isForced ? Color.red : goldColor).opacity(uiState.isQuitAllHovered ? 0.3 : 0.12),
+                radius: 4,
+                y: 2
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(count == 0)
+        .opacity(count == 0 ? 0.5 : 1)
+        .onHover { uiState.isQuitAllHovered = $0 }
     }
 
     // MARK: - Search & Select All Row
@@ -75,7 +149,7 @@ struct MainPopoverView: View {
                         Image(systemName: "checkmark")
                             .font(.system(size: 9, weight: .bold))
                             .foregroundStyle(.black.opacity(0.85))
-                    } else if !vm.selected.isEmpty {
+                    } else if vm.isPartiallySelected {
                         RoundedRectangle(cornerRadius: 2)
                             .fill(goldColor)
                             .frame(width: 8, height: 8)
