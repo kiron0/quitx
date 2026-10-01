@@ -52,9 +52,6 @@ struct MainPopoverView: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: vm.showToast)
-        .task {
-            await vm.refresh()
-        }
     }
 
     // MARK: - Search & Select All Row

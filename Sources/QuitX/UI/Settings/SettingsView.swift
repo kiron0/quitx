@@ -37,20 +37,19 @@ private final class GeneralState: ObservableObject {
 }
 
 private final class ShortcutsState: ObservableObject {
-    @Published var quitAllShortcut = "^ ⌥ Q"
-    @Published var forceQuitShortcut = "^ ⌥ ⇧ Q"
+    @Published var activateMenuEnabled = true
+    @Published var quitAllEnabled = false
+    @Published var forceQuitAllEnabled = false
 }
 
 struct SettingsView: View {
     @EnvironmentObject private var configStore: ConfigStore
     @StateObject private var tabState = SettingsTabState()
 
-    private let goldColor = QuitAllTheme.accent
-
     var body: some View {
         VStack(spacing: 0) {
             // Custom Toolbar Tabs (Matching Quit All)
-            HStack(spacing: 20) {
+            HStack(spacing: 8) {
                 ForEach(SettingsTab.allCases, id: \.self) { tab in
                     Button {
                         tabState.activeTab = tab
@@ -59,23 +58,23 @@ struct SettingsView: View {
                     } label: {
                         VStack(spacing: 3) {
                             Image(systemName: tab.iconName)
-                                .font(.system(size: 15, weight: tabState.activeTab == tab ? .semibold : .regular))
+                                .font(.system(size: 24, weight: tabState.activeTab == tab ? .medium : .regular))
                             Text(tab.rawValue)
-                                .font(.system(size: 10.5, weight: tabState.activeTab == tab ? .medium : .regular))
+                                .font(.system(size: 13, weight: tabState.activeTab == tab ? .semibold : .medium))
                         }
-                        .foregroundStyle(tabState.activeTab == tab ? goldColor : Color.white.opacity(0.55))
-                        .frame(width: 58, height: 42)
+                        .foregroundStyle(tabState.activeTab == tab ? Color.white.opacity(0.82) : Color.white.opacity(0.32))
+                        .frame(width: 64, height: 50)
                         .background(
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(tabState.activeTab == tab ? Color.white.opacity(0.12) : Color.clear)
+                            RoundedRectangle(cornerRadius: 9)
+                                .fill(tabState.activeTab == tab ? Color.white.opacity(0.11) : Color.clear)
                         )
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.top, 10)
-            .padding(.bottom, 12)
+            .padding(.top, 7)
+            .padding(.bottom, 8)
             .frame(maxWidth: .infinity)
             .background(Color.black.opacity(0.16))
 
@@ -318,44 +317,103 @@ struct ShortcutsTabCloneView: View {
     @StateObject private var state = ShortcutsState()
 
     var body: some View {
-        VStack(spacing: 20) {
-            VStack(spacing: 12) {
-                shortcutRow(title: "Quit all", shortcut: $state.quitAllShortcut)
-                shortcutRow(title: "Force quit all", shortcut: $state.forceQuitShortcut)
+        VStack(spacing: 0) {
+            VStack(spacing: 8) {
+                shortcutRow(
+                    title: "Activate menu:",
+                    isEnabled: $state.activateMenuEnabled,
+                    keys: ["⌃", "⌥", "A"]
+                )
+                shortcutRow(
+                    title: "Quit all:",
+                    isEnabled: $state.quitAllEnabled,
+                    keys: ["⌃", "⌥", "Q"]
+                )
+                shortcutRow(
+                    title: "Force quit all:",
+                    isEnabled: $state.forceQuitAllEnabled,
+                    keys: ["⌃", "⌥", "⌘", "Q"]
+                )
             }
-            .padding(.horizontal, 32)
-            .padding(.top, 24)
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
 
-            HStack(spacing: 6) {
-                Image(systemName: "command")
-                    .font(.system(size: 12))
-                Text("Hold down Option to toggle \"Quit\" and \"Force Quit\"")
-                    .font(.system(size: 11.5))
+            Divider()
+                .background(Color.white.opacity(0.12))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 13)
+
+            HStack(spacing: 9) {
+                Text("⌥")
+                    .font(.system(size: 15, weight: .medium))
+                    .frame(width: 25, height: 25)
+                    .background(Color.white.opacity(0.16), in: RoundedRectangle(cornerRadius: 4))
+
+                Text("Hold down Option to toggle “Quit” and “Force Quit”.")
+                    .font(.system(size: 12.5, weight: .medium))
+
+                Spacer(minLength: 0)
             }
             .foregroundStyle(Color.white.opacity(0.55))
-            .padding(.top, 16)
+            .padding(.horizontal, 14)
 
             Spacer()
         }
     }
 
-    @ViewBuilder
-    private func shortcutRow(title: String, shortcut: Binding<String>) -> some View {
-        HStack {
+    private func shortcutRow(title: String, isEnabled: Binding<Bool>, keys: [String]) -> some View {
+        HStack(spacing: 10) {
             Text(title)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(Color.white.opacity(0.85))
+                .frame(width: 105, alignment: .trailing)
 
-            Spacer()
+            Button {
+                isEnabled.wrappedValue.toggle()
+            } label: {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(Color.white.opacity(isEnabled.wrappedValue ? 0.18 : 0.08))
+                        .frame(width: 22, height: 22)
+                    if isEnabled.wrappedValue {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(Color.white.opacity(0.86))
+                    }
+                }
+            }
+            .buttonStyle(.plain)
 
-            Text(shortcut.wrappedValue)
-                .font(.system(size: 12, weight: .medium, design: .monospaced))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 4)
-                .background(Color.white.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 6))
+            HStack(spacing: 2) {
+                ForEach(Array(keys.enumerated()), id: \.offset) { _, key in
+                    Text(key)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(Color.white.opacity(isEnabled.wrappedValue ? 0.82 : 0.24))
+                        .frame(minWidth: 22, minHeight: 24)
+                        .padding(.horizontal, 2)
+                        .background(
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color.white.opacity(isEnabled.wrappedValue ? 0.19 : 0.08))
+                        )
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(3)
+            .frame(width: 110, height: 30)
+            .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
+
+            Button {
+                isEnabled.wrappedValue = false
+            } label: {
+                Image(systemName: "trash")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.white.opacity(isEnabled.wrappedValue ? 0.36 : 0.16))
+                    .frame(width: 20, height: 24)
+            }
+            .buttonStyle(.plain)
+            .disabled(!isEnabled.wrappedValue)
         }
+        .frame(height: 30)
     }
 }
 

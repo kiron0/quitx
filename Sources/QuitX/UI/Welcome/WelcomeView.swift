@@ -67,7 +67,7 @@ struct WelcomeView: View {
             .padding(.horizontal, 28)
             .padding(.bottom, 26)
         }
-        .frame(width: 440, height: 520)
+        .frame(width: 440, height: 600)
         .background(QuitAllTheme.windowBackground)
         .preferredColorScheme(.dark)
     }

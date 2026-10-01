@@ -14,6 +14,7 @@ final class AppListViewModel: ObservableObject {
     @Published var lastQuitCount: Int = 0
     @Published var showToast: Bool = false
     @Published var currentQuote: String = "Don't give up quitting ⚡"
+    @Published var listNeedsScrolling: Bool = false
 
     private var hasInitializedSelection = false
 

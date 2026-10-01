@@ -10,6 +10,7 @@ final class StatusItemController: NSObject {
     private var popover: NSPopover
     private var globalEventMonitor: Any?
     private var localEventMonitor: Any?
+    private var refreshTask: Task<Void, Never>?
 
     override init() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -34,6 +35,7 @@ final class StatusItemController: NSObject {
         if let monitor = localEventMonitor {
             NSEvent.removeMonitor(monitor)
         }
+        refreshTask?.cancel()
     }
 
     // MARK: - Setup
@@ -97,12 +99,18 @@ final class StatusItemController: NSObject {
     @MainActor
     func updatePopoverSize() {
         let count = AppListViewModel.shared.filteredApps.count
-        // Show every row. The list itself never scrolls or clips to a fixed cap.
+        // Grow naturally. Scroll only when rows exceed available screen height.
         let baseHeight: CGFloat = 80
         let rowHeight: CGFloat = 29
         let itemCount = max(1, count)
         let calculated = baseHeight + (CGFloat(itemCount) * rowHeight)
-        popover.contentSize = NSSize(width: 270, height: max(145, calculated))
+        let screenHeight = statusItem.button?.window?.screen?.visibleFrame.height
+            ?? NSScreen.main?.visibleFrame.height
+            ?? 800
+        let maximumHeight = max(145, screenHeight - 48)
+        let targetHeight = min(maximumHeight, max(145, calculated))
+        AppListViewModel.shared.listNeedsScrolling = calculated > maximumHeight
+        popover.contentSize = NSSize(width: 270, height: targetHeight)
     }
 
     // MARK: - Click Handling
@@ -138,6 +146,16 @@ final class StatusItemController: NSObject {
             updatePopoverSize()
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             popover.contentViewController?.view.window?.makeKeyAndOrderFront(nil)
+            refreshVisibleApps()
+        }
+    }
+
+    private func refreshVisibleApps() {
+        refreshTask?.cancel()
+        refreshTask = Task { @MainActor [weak self] in
+            await AppListViewModel.shared.refresh()
+            guard !Task.isCancelled else { return }
+            self?.updatePopoverSize()
         }
     }
 

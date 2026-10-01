@@ -3,7 +3,19 @@ import SwiftUI
 struct AppListView: View {
     @ObservedObject var vm: AppListViewModel
 
+    @ViewBuilder
     var body: some View {
+        if vm.listNeedsScrolling {
+            ScrollView(.vertical, showsIndicators: true) {
+                rows
+            }
+        } else {
+            rows
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var rows: some View {
         VStack(spacing: 2) {
             ForEach(vm.filteredApps) { app in
                 AppRowView(
@@ -30,6 +42,5 @@ struct AppListView: View {
             }
         }
         .padding(.vertical, 4)
-        .fixedSize(horizontal: false, vertical: true)
     }
 }

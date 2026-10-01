@@ -7,6 +7,7 @@ final class AppListService {
 
     func fetchApps(config: QuitXConfig) -> [AppInfo] {
         let running = NSWorkspace.shared.runningApplications
+        let windowCounts = visibleWindowCounts()
 
         var results: [AppInfo] = []
 
@@ -31,7 +32,7 @@ final class AppListService {
             if !config.includeTrash && name == "Trash" { continue }
 
             let memory = memoryUsage(pid: pid)
-            let windows = windowCount(pid: pid, bundleId: bundleId)
+            let windows = windowCounts[pid, default: 0]
 
             results.append(AppInfo(
                 name: name,
@@ -58,14 +59,17 @@ final class AppListService {
 
     // MARK: - Window count
 
-    private func windowCount(pid: pid_t, bundleId: String?) -> Int {
+    private func visibleWindowCounts() -> [pid_t: Int] {
         guard let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else {
-            return 0
+            return [:]
         }
-        return list.filter { window in
-            guard let ownerPid = window[kCGWindowOwnerPID as String] as? pid_t else { return false }
-            guard let layer = window[kCGWindowLayer as String] as? Int, layer == 0 else { return false }
-            return ownerPid == pid
-        }.count
+
+        var counts: [pid_t: Int] = [:]
+        for window in list {
+            guard let ownerPid = window[kCGWindowOwnerPID as String] as? pid_t else { continue }
+            guard let layer = window[kCGWindowLayer as String] as? Int, layer == 0 else { continue }
+            counts[ownerPid, default: 0] += 1
+        }
+        return counts
     }
 }

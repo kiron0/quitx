@@ -38,7 +38,7 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         win.styleMask = [.titled, .closable]
         win.titlebarAppearsTransparent = false
         win.titleVisibility = .visible
-        win.setContentSize(NSSize(width: 440, height: 520))
+        win.setContentSize(NSSize(width: 440, height: 600))
         win.isOpaque = false
         win.backgroundColor = .windowBackgroundColor
         win.isMovableByWindowBackground = true
