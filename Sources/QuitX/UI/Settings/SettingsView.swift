@@ -121,7 +121,6 @@ struct SettingsContainerView: View {
                     }
                 }
                 .padding(.bottom, 6)
-                .animation(.easeInOut(duration: 0.20), value: tabModel.activeTab)
 
                 // Row 3: 1pt subtle divider
                 Rectangle()
@@ -132,26 +131,19 @@ struct SettingsContainerView: View {
             .background(QuitXTheme.windowBackground)
 
             // Content
-            ZStack(alignment: .top) {
-                if tabModel.activeTab == .general {
-                    GeneralTabCloneView()
-                        .environmentObject(configStore)
-                        .transition(.opacity)
-                } else if tabModel.activeTab == .shortcuts {
-                    ShortcutsTabCloneView()
-                        .transition(.opacity)
-                } else if tabModel.activeTab == .support {
-                    SupportTabCloneView()
-                        .transition(.opacity)
-                } else if tabModel.activeTab == .about {
-                    AboutTabCloneView()
-                        .transition(.opacity)
-                }
+            switch tabModel.activeTab {
+            case .general:
+                GeneralTabCloneView()
+                    .environmentObject(configStore)
+            case .shortcuts:
+                ShortcutsTabCloneView()
+            case .support:
+                SupportTabCloneView()
+            case .about:
+                AboutTabCloneView()
             }
-            .frame(width: 400, height: tabModel.activeTab.contentHeight, alignment: .top)
-            .clipped()
         }
-        .frame(width: 400, height: tabModel.activeTab.totalHeight)
+        .frame(width: 400)
         .background(QuitXTheme.windowBackground)
         .ignoresSafeArea()
         .preferredColorScheme(.dark)

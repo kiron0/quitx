@@ -98,9 +98,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         if activeTab == tab { return }
         activeTab = tab
 
-        withAnimation(.easeInOut(duration: 0.22)) {
-            tabModel.activeTab = tab
-        }
+        tabModel.activeTab = tab
         win.title = tab.rawValue
 
         let targetHeight = tab.totalHeight
@@ -108,6 +106,6 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         let newY = currentFrame.maxY - targetHeight
         let newFrame = NSRect(x: currentFrame.origin.x, y: newY, width: 400, height: targetHeight)
 
-        win.setFrame(newFrame, display: true, animate: true)
+        win.setFrame(newFrame, display: true)
     }
 }
