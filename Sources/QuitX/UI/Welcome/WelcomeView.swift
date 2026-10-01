@@ -80,16 +80,7 @@ struct WelcomeView: View {
                     .frame(width: 100, height: 100)
                     .blur(radius: 18)
 
-                if let image = AssetImages.load("icon_128x128") {
-                    Image(nsImage: image)
-                        .resizable()
-                        .frame(width: 82, height: 82)
-                        .shadow(color: .black.opacity(0.4), radius: 12, y: 7)
-                } else {
-                    Image(systemName: "bolt.circle.fill")
-                        .font(.system(size: 70))
-                        .foregroundStyle(gold)
-                }
+                QuitXAppIconView(size: 82, cornerRadius: 18)
             }
 
             Text("Welcome to QuitX")

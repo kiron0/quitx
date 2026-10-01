@@ -121,6 +121,7 @@ struct SettingsContainerView: View {
                     }
                 }
                 .padding(.bottom, 6)
+                .animation(.easeInOut(duration: 0.20), value: tabModel.activeTab)
 
                 // Row 3: 1pt subtle divider
                 Rectangle()
@@ -131,19 +132,26 @@ struct SettingsContainerView: View {
             .background(QuitXTheme.windowBackground)
 
             // Content
-            switch tabModel.activeTab {
-            case .general:
-                GeneralTabCloneView()
-                    .environmentObject(configStore)
-            case .shortcuts:
-                ShortcutsTabCloneView()
-            case .support:
-                SupportTabCloneView()
-            case .about:
-                AboutTabCloneView()
+            ZStack(alignment: .top) {
+                if tabModel.activeTab == .general {
+                    GeneralTabCloneView()
+                        .environmentObject(configStore)
+                        .transition(.opacity)
+                } else if tabModel.activeTab == .shortcuts {
+                    ShortcutsTabCloneView()
+                        .transition(.opacity)
+                } else if tabModel.activeTab == .support {
+                    SupportTabCloneView()
+                        .transition(.opacity)
+                } else if tabModel.activeTab == .about {
+                    AboutTabCloneView()
+                        .transition(.opacity)
+                }
             }
+            .frame(width: 400, height: tabModel.activeTab.contentHeight, alignment: .top)
+            .clipped()
         }
-        .frame(width: 400)
+        .frame(width: 400, height: tabModel.activeTab.totalHeight)
         .background(QuitXTheme.windowBackground)
         .ignoresSafeArea()
         .preferredColorScheme(.dark)
@@ -657,14 +665,7 @@ struct SupportTabCloneView: View {
 struct AboutTabCloneView: View {
     var body: some View {
         HStack(alignment: .center, spacing: 20) {
-            // 70x70 app icon
-            if let img = NSImage(contentsOfFile: "Support/Icons/icon_128x128.png") ?? NSImage(contentsOfFile: "Support/Icons/AppIcon.icns") ?? Bundle.main.image(forResource: "AppIcon") {
-                Image(nsImage: img)
-                    .resizable()
-                    .frame(width: 70, height: 70)
-                    .cornerRadius(14)
-                    .shadow(color: .black.opacity(0.3), radius: 6, y: 3)
-            }
+            QuitXAppIconView(size: 70, cornerRadius: 14)
 
             VStack(alignment: .leading, spacing: 5) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {

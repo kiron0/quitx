@@ -74,21 +74,15 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     }
 
     private func showAnimated(win: NSWindow, targetFrame: NSRect) {
-        let startFrame = NSRect(
-            x: targetFrame.origin.x,
-            y: targetFrame.origin.y + 16,
-            width: targetFrame.width,
-            height: targetFrame.height
-        )
-        win.setFrame(startFrame, display: false)
+        win.setFrame(targetFrame, display: false)
         win.alphaValue = 0.0
+        win.layoutIfNeeded()
         win.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
 
         NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.22
-            ctx.timingFunction = CAMediaTimingFunction(controlPoints: 0.16, 1, 0.3, 1)
-            win.animator().setFrame(targetFrame, display: true)
+            ctx.duration = 0.20
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
             win.animator().alphaValue = 1.0
         }
     }
@@ -103,7 +97,10 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         guard let win = window else { return }
         if activeTab == tab { return }
         activeTab = tab
-        tabModel.activeTab = tab
+
+        withAnimation(.easeInOut(duration: 0.22)) {
+            tabModel.activeTab = tab
+        }
         win.title = tab.rawValue
 
         let targetHeight = tab.totalHeight
@@ -111,10 +108,6 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         let newY = currentFrame.maxY - targetHeight
         let newFrame = NSRect(x: currentFrame.origin.x, y: newY, width: 400, height: targetHeight)
 
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.20
-            context.timingFunction = CAMediaTimingFunction(controlPoints: 0.16, 1, 0.3, 1)
-            win.animator().setFrame(newFrame, display: true)
-        }
+        win.setFrame(newFrame, display: true, animate: true)
     }
 }
