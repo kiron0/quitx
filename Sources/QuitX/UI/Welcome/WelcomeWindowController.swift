@@ -42,7 +42,7 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         win.titleVisibility = .visible
         win.setContentSize(NSSize(width: 440, height: 600))
         win.isOpaque = true
-        win.backgroundColor = QuitAllTheme.windowBackgroundNSColor
+        win.backgroundColor = QuitXTheme.windowBackgroundNSColor
         win.isMovableByWindowBackground = true
         win.standardWindowButton(.closeButton)?.isEnabled = true
         win.standardWindowButton(.closeButton)?.isHidden = false

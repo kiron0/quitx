@@ -5,7 +5,7 @@ struct WelcomeView: View {
     var onDismiss: () -> Void
     var onOpenSettings: () -> Void
 
-    private let gold = QuitAllTheme.accent
+    private let gold = QuitXTheme.accent
 
     var body: some View {
         VStack(spacing: 0) {
@@ -16,7 +16,7 @@ struct WelcomeView: View {
                 guideRow(
                     icon: "menubar.rectangle",
                     title: "Open QuitX",
-                    detail: "Click the Q + bolt icon in your menu bar."
+                    detail: "Click the QuitX icon in your menu bar."
                 )
                 guideRow(
                     icon: "checklist",
@@ -68,7 +68,7 @@ struct WelcomeView: View {
             .padding(.bottom, 26)
         }
         .frame(width: 440, height: 600)
-        .background(QuitAllTheme.windowBackground)
+        .background(QuitXTheme.windowBackground)
         .preferredColorScheme(.dark)
     }
 

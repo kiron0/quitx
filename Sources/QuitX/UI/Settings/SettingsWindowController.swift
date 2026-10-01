@@ -8,11 +8,44 @@ extension NSToolbarItem.Identifier {
     static let about = NSToolbarItem.Identifier("About")
 }
 
+final class SettingsTabViewModel: ObservableObject {
+    @Published var activeTab: SettingsTab = .general
+}
+
+struct SettingsToolbarTabItemView: View {
+    let tab: SettingsTab
+    @ObservedObject var tabModel: SettingsTabViewModel
+    let onSelect: () -> Void
+
+    var isSelected: Bool {
+        tabModel.activeTab == tab
+    }
+
+    var body: some View {
+        Button(action: onSelect) {
+            VStack(spacing: 3) {
+                Image(systemName: tab.iconName)
+                    .font(.system(size: 16, weight: isSelected ? .semibold : .regular))
+                    .foregroundStyle(isSelected ? QuitXTheme.accent : Color.white.opacity(0.65))
+                    .frame(height: 18)
+
+                Text(tab.rawValue)
+                    .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
+                    .foregroundStyle(isSelected ? QuitXTheme.accent : Color.white.opacity(0.65))
+            }
+            .frame(width: 58, height: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 @MainActor
 final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDelegate {
     static let shared = SettingsWindowController()
     private var window: NSWindow?
     private var activeTab: SettingsTab = .general
+    private let tabModel = SettingsTabViewModel()
     private var hostingController: NSHostingController<AnyView>?
 
     func show(tab: SettingsTab? = nil) {
@@ -30,6 +63,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         }
 
         activeTab = initialTab
+        tabModel.activeTab = initialTab
         let contentRect = NSRect(x: 0, y: 0, width: 400, height: initialTab.contentHeight)
         let win = NSWindow(
             contentRect: contentRect,
@@ -42,7 +76,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         win.titlebarAppearsTransparent = false
         win.toolbarStyle = .preference
         win.isOpaque = true
-        win.backgroundColor = QuitAllTheme.windowBackgroundNSColor
+        win.backgroundColor = QuitXTheme.windowBackgroundNSColor
         win.isMovableByWindowBackground = true
         win.isReleasedWhenClosed = false
         win.delegate = self
@@ -89,16 +123,9 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         guard let win = window else { return }
         if activeTab == tab && hostingController != nil { return }
         activeTab = tab
+        tabModel.activeTab = tab
         win.title = tab.rawValue
         win.toolbar?.selectedItemIdentifier = NSToolbarItem.Identifier(tab.rawValue)
-
-        if let toolbar = win.toolbar {
-            for item in toolbar.items {
-                if let tabItem = SettingsTab(rawValue: item.itemIdentifier.rawValue) {
-                    item.image = icon(for: tabItem, isSelected: tabItem == tab)
-                }
-            }
-        }
 
         let contentRect = NSRect(x: 0, y: 0, width: 400, height: tab.contentHeight)
         let targetWindowFrame = win.frameRect(forContentRect: contentRect)
@@ -115,71 +142,33 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         }
     }
 
-    private func icon(for tab: SettingsTab, isSelected: Bool) -> NSImage {
-        guard let base = NSImage(systemSymbolName: tab.iconName, accessibilityDescription: tab.rawValue) else {
-            return NSImage()
-        }
-        if !isSelected {
-            base.isTemplate = true
-            return base
-        }
-        let config = NSImage.SymbolConfiguration(paletteColors: [QuitAllTheme.accentNSColor])
-        if let configured = base.withSymbolConfiguration(config) {
-            configured.isTemplate = false
-            return configured
-        }
-        let size = base.size
-        let image = NSImage(size: size, flipped: false) { rect in
-            QuitAllTheme.accentNSColor.setFill()
-            rect.fill()
-            base.draw(in: rect, from: .zero, operation: .destinationIn, fraction: 1.0)
-            return true
-        }
-        image.isTemplate = false
-        return image
-    }
-
     private func viewForTab(_ tab: SettingsTab) -> AnyView {
         switch tab {
         case .general:
             return AnyView(
                 GeneralTabCloneView()
                     .environmentObject(ConfigStore.shared)
-                    .background(QuitAllTheme.windowBackground)
+                    .background(QuitXTheme.windowBackground)
                     .preferredColorScheme(.dark)
             )
         case .shortcuts:
             return AnyView(
                 ShortcutsTabCloneView()
-                    .background(QuitAllTheme.windowBackground)
+                    .background(QuitXTheme.windowBackground)
                     .preferredColorScheme(.dark)
             )
         case .support:
             return AnyView(
                 SupportTabCloneView()
-                    .background(QuitAllTheme.windowBackground)
+                    .background(QuitXTheme.windowBackground)
                     .preferredColorScheme(.dark)
             )
         case .about:
             return AnyView(
                 AboutTabCloneView()
-                    .background(QuitAllTheme.windowBackground)
+                    .background(QuitXTheme.windowBackground)
                     .preferredColorScheme(.dark)
             )
-        }
-    }
-
-    @objc private func toolbarItemClicked(_ sender: Any) {
-        if let item = sender as? NSToolbarItem,
-           let tab = SettingsTab(rawValue: item.itemIdentifier.rawValue) {
-            switchToTab(tab)
-            return
-        }
-        if let toolbar = window?.toolbar,
-           let selId = toolbar.selectedItemIdentifier,
-           let tab = SettingsTab(rawValue: selId.rawValue) {
-            switchToTab(tab)
-            return
         }
     }
 
@@ -194,9 +183,15 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         let item = NSToolbarItem(itemIdentifier: itemIdentifier)
         item.label = tab.rawValue
         item.paletteLabel = tab.rawValue
-        item.image = icon(for: tab, isSelected: tab == activeTab)
-        item.target = self
-        item.action = #selector(toolbarItemClicked(_:))
+
+        let tabView = SettingsToolbarTabItemView(tab: tab, tabModel: tabModel) { [weak self] in
+            self?.switchToTab(tab)
+        }
+        let hosting = NSHostingView(rootView: tabView)
+        hosting.frame = NSRect(x: 0, y: 0, width: 58, height: 44)
+        item.view = hosting
+        item.minSize = NSSize(width: 52, height: 42)
+        item.maxSize = NSSize(width: 64, height: 46)
         item.autovalidates = false
         return item
     }

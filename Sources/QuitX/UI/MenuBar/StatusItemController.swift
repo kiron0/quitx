@@ -56,7 +56,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         button.target = self
     }
 
-    /// Monochrome menu-bar version matching QuitAll status-icon with full 1x and @2x Retina support.
+    /// Monochrome menu-bar icon for QuitX with Retina @2x support.
     private func makeMenuBarIcon() -> NSImage {
         let icon = NSImage(size: NSSize(width: 18, height: 18))
         let iconNames = ["status-icon", "menubar"]
@@ -86,27 +86,16 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         }
 
         if loaded {
-            icon.isTemplate = true
+            icon.isTemplate = false
             return icon
         }
 
         let size = NSSize(width: 18, height: 18)
         let image = NSImage(size: size)
         image.lockFocus()
-        NSColor.black.setStroke()
-        let ring = NSBezierPath(ovalIn: NSRect(x: 2.2, y: 3.2, width: 11.8, height: 11.8))
-        ring.lineWidth = 2.6
-        ring.stroke()
         NSColor.black.setFill()
-        let bolt = NSBezierPath()
-        bolt.move(to: NSPoint(x: 10.1, y: 10.1))
-        bolt.line(to: NSPoint(x: 14.1, y: 9.7))
-        bolt.line(to: NSPoint(x: 12.8, y: 16.2))
-        bolt.line(to: NSPoint(x: 17.0, y: 9.0))
-        bolt.line(to: NSPoint(x: 13.4, y: 9.2))
-        bolt.line(to: NSPoint(x: 14.6, y: 3.0))
-        bolt.close()
-        bolt.fill()
+        let rounded = NSBezierPath(roundedRect: NSRect(x: 1, y: 1, width: 16, height: 16), xRadius: 4, yRadius: 4)
+        rounded.fill()
         image.unlockFocus()
         image.isTemplate = true
         return image

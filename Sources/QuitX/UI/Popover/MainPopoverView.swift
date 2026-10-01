@@ -11,9 +11,9 @@ struct MainPopoverView: View {
     @ObservedObject private var vm = AppListViewModel.shared
     @StateObject private var uiState = PopoverUIState()
 
-    private let goldColor = QuitAllTheme.accent
+    private let goldColor = QuitXTheme.accent
     private let goldGradient = LinearGradient(
-        colors: [QuitAllTheme.accent, Color(red: 232/255, green: 155/255, blue: 0/255)],
+        colors: [QuitXTheme.accent, Color(red: 232/255, green: 155/255, blue: 0/255)],
         startPoint: .top,
         endPoint: .bottom
     )
@@ -59,7 +59,7 @@ struct MainPopoverView: View {
         }
         .frame(width: 270)
         .frame(maxHeight: .infinity)
-        .background(QuitAllTheme.popoverBackground)
+        .background(QuitXTheme.popoverBackground)
         .preferredColorScheme(.dark)
         .onChange(of: vm.filteredApps.count) {
             StatusItemController.shared?.updatePopoverSize()

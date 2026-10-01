@@ -1,8 +1,7 @@
 import SwiftUI
 import AppKit
 
-enum QuitAllTheme {
-    // QuitAll 1.3.6 AccentColor from its compiled asset catalog: #FEBC33.
+enum QuitXTheme {
     static let accent = Color(red: 254/255, green: 188/255, blue: 51/255)
     static let accentNSColor = NSColor(red: 254/255, green: 188/255, blue: 51/255, alpha: 1.0)
     static let windowBackgroundColor = Color(nsColor: .windowBackgroundColor)

@@ -26,7 +26,7 @@ enum SettingsTab: String, CaseIterable {
     }
 }
 
-// MARK: - Help Popover Button (Working ? popover matching QuitAll)
+// MARK: - Help Popover Button
 
 final class HelpPopoverState: ObservableObject {
     @Published var isShowing = false
@@ -69,12 +69,12 @@ struct SettingsView: View {
     var body: some View {
         GeneralTabCloneView()
             .environmentObject(configStore)
-            .background(QuitAllTheme.windowBackground)
+            .background(QuitXTheme.windowBackground)
             .preferredColorScheme(.dark)
     }
 }
 
-// MARK: - Tab 1: General (Exact 1:1 Clone of QuitAll General Tab)
+// MARK: - Tab 1: General
 
 final class GeneralTabState: ObservableObject {
     @Published var disableQuitTips: Bool = false
@@ -86,7 +86,7 @@ struct GeneralTabCloneView: View {
     @EnvironmentObject private var configStore: ConfigStore
     @StateObject private var state = GeneralTabState()
 
-    private let gold = QuitAllTheme.accent
+    private let gold = QuitXTheme.accent
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
@@ -150,7 +150,7 @@ struct GeneralTabCloneView: View {
             row(label: "") {
                 toggle("Disable quit tips", isOn: $state.disableQuitTips)
             } help: {
-                HelpPopoverButton(text: "The rotating tips at the bottom of the QuitAll dropdown will cease to show. It’s okay. We can still be friends. 🤗")
+                HelpPopoverButton(text: "The rotating tips at the bottom of the QuitX dropdown will cease to show. It’s okay. We can still be friends. 🤗")
             }
 
             // Extras
@@ -160,7 +160,7 @@ struct GeneralTabCloneView: View {
                     set: { configStore.config.includeFinder = $0; configStore.save() }
                 ))
             } help: {
-                HelpPopoverButton(text: "Find yourself finding Finder windows too often? Enable this to easily close them all when you QuitAll.")
+                HelpPopoverButton(text: "Find yourself finding Finder windows too often? Enable this to easily close them all when you quit all apps.")
             }
 
             row(label: "") {
@@ -173,9 +173,10 @@ struct GeneralTabCloneView: View {
             }
 
             // Auto Quit
+            let isAutoQuitEnabled = configStore.config.quitInactiveAfterMinutes > 0
             row(label: "Auto Quit:") {
                 toggle("Quit inactive apps after", isOn: Binding(
-                    get: { configStore.config.quitInactiveAfterMinutes > 0 },
+                    get: { isAutoQuitEnabled },
                     set: { enabled in
                         configStore.config.quitInactiveAfterMinutes = enabled ? (state.autoQuitUnit == "hours" ? state.autoQuitValue * 60 : state.autoQuitValue) : 0
                         configStore.save()
@@ -185,7 +186,7 @@ struct GeneralTabCloneView: View {
                 HelpPopoverButton(text: "Keep things running in ship-shape by setting an automatic Quit for inactive apps. 🛳")
             }
 
-            // Auto Quit Stepper Row
+            // Auto Quit Stepper Row (disabled when unchecked)
             row(label: "") {
                 HStack(spacing: 6) {
                     TextField("", value: $state.autoQuitValue, format: .number)
@@ -205,6 +206,8 @@ struct GeneralTabCloneView: View {
                     .frame(width: 90)
                     .labelsHidden()
                 }
+                .disabled(!isAutoQuitEnabled)
+                .opacity(isAutoQuitEnabled ? 1.0 : 0.42)
             } help: {
                 Color.clear.frame(width: 22, height: 22)
             }
@@ -257,7 +260,7 @@ struct GeneralTabCloneView: View {
         .padding(.top, 14)
         .padding(.bottom, 10)
         .frame(width: 400, height: 443, alignment: .topLeading)
-        .background(QuitAllTheme.windowBackground)
+        .background(QuitXTheme.windowBackground)
     }
 
     private func row<Content: View, Help: View>(
@@ -306,9 +309,7 @@ struct GeneralTabCloneView: View {
     }
 }
 
-// MARK: - Tab 2: Shortcuts (Exact 1:1 Clone of QuitAll Shortcuts Tab)
-
-// MARK: - Tab 2: Shortcuts (Exact 1:1 Clone of QuitAll Shortcuts Tab)
+// MARK: - Tab 2: Shortcuts
 
 @MainActor
 final class ShortcutsViewState: ObservableObject {
@@ -429,7 +430,7 @@ struct ShortcutsTabCloneView: View {
             Spacer(minLength: 0)
         }
         .frame(width: 400, height: 215)
-        .background(QuitAllTheme.windowBackground)
+        .background(QuitXTheme.windowBackground)
         .onAppear {
             viewState.startMonitor(sm: sm)
         }
@@ -449,7 +450,7 @@ struct ShortcutsTabCloneView: View {
                 .foregroundStyle(Color.white.opacity(0.92))
                 .frame(width: 105, alignment: .trailing)
 
-            // Neutral checkbox matching QuitAll
+            // Neutral checkbox
             Button {
                 isEnabled.wrappedValue.toggle()
             } label: {
@@ -477,7 +478,7 @@ struct ShortcutsTabCloneView: View {
                     if isRecording {
                         Text("Type keys...")
                             .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(QuitAllTheme.accent)
+                            .foregroundStyle(QuitXTheme.accent)
                     } else if keyList.isEmpty {
                         Text("None")
                             .font(.system(size: 11, weight: .regular))
@@ -491,7 +492,7 @@ struct ShortcutsTabCloneView: View {
                                 .background(
                                     RoundedRectangle(cornerRadius: 3.5)
                                         .fill(active ? Color(white: 0.42) : Color.white.opacity(0.06))
-                                )
+                                 )
                         }
                     }
                     Spacer(minLength: 0)
@@ -504,7 +505,7 @@ struct ShortcutsTabCloneView: View {
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 5)
-                        .stroke(isRecording ? QuitAllTheme.accent : Color.clear, lineWidth: 1.5)
+                        .stroke(isRecording ? QuitXTheme.accent : Color.clear, lineWidth: 1.5)
                 )
             }
             .buttonStyle(.plain)
@@ -535,7 +536,7 @@ struct ShortcutsTabCloneView: View {
     }
 }
 
-// MARK: - Tab 3: Support (Exact 1:1 Clone of QuitAll Support Tab)
+// MARK: - Tab 3: Support
 
 struct SupportTabCloneView: View {
     var body: some View {
@@ -557,16 +558,16 @@ struct SupportTabCloneView: View {
         }
         .padding(.horizontal, 28)
         .frame(width: 400, height: 139, alignment: .topLeading)
-        .background(QuitAllTheme.windowBackground)
+        .background(QuitXTheme.windowBackground)
     }
 }
 
-// MARK: - Tab 4: About (Exact 1:1 Clone of QuitAll About Tab)
+// MARK: - Tab 4: About
 
 struct AboutTabCloneView: View {
     var body: some View {
         HStack(alignment: .center, spacing: 20) {
-            // 70x70 app icon matching QuitAll
+            // 70x70 app icon
             if let img = NSImage(contentsOfFile: "Support/Icons/icon_128x128.png") ?? NSImage(contentsOfFile: "Support/Icons/AppIcon.icns") ?? Bundle.main.image(forResource: "AppIcon") {
                 Image(nsImage: img)
                     .resizable()
@@ -612,6 +613,6 @@ struct AboutTabCloneView: View {
         }
         .padding(.horizontal, 30)
         .frame(width: 400, height: 130)
-        .background(QuitAllTheme.windowBackground)
+        .background(QuitXTheme.windowBackground)
     }
 }

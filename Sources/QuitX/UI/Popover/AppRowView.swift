@@ -31,7 +31,7 @@ struct AppRowView: View {
     @StateObject private var state = RowState()
     @StateObject private var iconLoader = IconLoader()
 
-    private let goldColor = QuitAllTheme.accent
+    private let goldColor = QuitXTheme.accent
     private let forceColor = Color(red: 240/255, green: 70/255, blue: 50/255)
 
     var body: some View {
@@ -74,21 +74,7 @@ struct AppRowView: View {
 
             Spacer(minLength: 4)
 
-            // CPU usage text (QuitAll style, e.g. "0.0%" or "1.5%")
-            Text(app.cpuFormatted)
-                .font(.system(size: 10.5, design: .monospaced))
-                .foregroundStyle(Color.white.opacity(0.45))
-
-            // Quit single button
-            Button {
-                onQuit(isOptionKeyPressed)
-            } label: {
-                quitButtonIcon
-            }
-            .buttonStyle(.plain)
-            .onHover { h in state.isQuitHovered = h }
-
-            // More options menu (3 dots)
+            // More options menu (3 dots) - first
             Menu {
                 Button(isOptionKeyPressed ? "Force Quit" : "Quit") {
                     onQuit(isOptionKeyPressed)
@@ -114,6 +100,20 @@ struct AppRowView: View {
             .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)
             .frame(width: 16)
+
+            // CPU usage percentage - second
+            Text(app.cpuFormatted)
+                .font(.system(size: 10.5, design: .monospaced))
+                .foregroundStyle(Color.white.opacity(0.45))
+
+            // Quit single button - third at right (transparent bg, no ring)
+            Button {
+                onQuit(isOptionKeyPressed)
+            } label: {
+                quitButtonIcon
+            }
+            .buttonStyle(.plain)
+            .onHover { h in state.isQuitHovered = h }
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 3.5)
@@ -133,33 +133,20 @@ struct AppRowView: View {
         let isForced = isOptionKeyPressed
         let activeColor = isForced ? forceColor : goldColor
 
-        if state.isQuitHovered || isForced {
-            ZStack {
-                Circle()
-                    .fill(activeColor)
-                    .frame(width: 20, height: 20)
+        ZStack {
+            Color.clear
+                .frame(width: 18, height: 18)
 
-                if isForced {
-                    Image(systemName: "bolt.fill")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(.black.opacity(0.85))
-                } else {
-                    Image(systemName: "power")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(.black.opacity(0.85))
-                }
-            }
-        } else {
-            ZStack {
-                Circle()
-                    .stroke(Color.white.opacity(0.25), lineWidth: 1.2)
-                    .background(Circle().fill(Color.white.opacity(0.05)))
-                    .frame(width: 20, height: 20)
-
+            if isForced {
+                Image(systemName: "bolt.fill")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(activeColor)
+            } else {
                 Image(systemName: "power")
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundStyle(Color.white.opacity(0.45))
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(state.isQuitHovered ? activeColor : Color.white.opacity(0.45))
             }
         }
+        .frame(width: 18, height: 18)
     }
 }
