@@ -26,14 +26,14 @@ struct MainPopoverView: View {
     var body: some View {
         VStack(spacing: 0) {
             quitAllButton
-                .padding(.horizontal, 9)
-                .padding(.top, 8)
-                .padding(.bottom, 7)
+                .padding(.horizontal, 8)
+                .padding(.top, 6)
+                .padding(.bottom, 5)
 
             // Search bar & Select All checkbox
             searchBarRow
-                .padding(.horizontal, 9)
-                .padding(.bottom, 5)
+                .padding(.horizontal, 8)
+                .padding(.bottom, 4)
 
             // Apps list
             if vm.isLoading && vm.apps.isEmpty {
@@ -103,23 +103,23 @@ struct MainPopoverView: View {
                 Task { await vm.quitAll(force: isForced) }
             }
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: 5) {
                 if isForced {
                     Image(systemName: "bolt.fill")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.system(size: 11, weight: .bold))
                 }
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 12.5, weight: .bold))
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(isForced ? Color.white : Color(red: 0.14, green: 0.12, blue: 0.10))
             .frame(maxWidth: .infinity)
-            .frame(height: 34)
+            .frame(height: 28)
             .background(isForced ? forceGradient : goldGradient)
-            .clipShape(RoundedRectangle(cornerRadius: 7))
+            .clipShape(RoundedRectangle(cornerRadius: 6))
             .shadow(
                 color: (isForced ? Color.red : goldColor).opacity(uiState.isQuitAllHovered ? 0.3 : 0.12),
-                radius: 4,
-                y: 2
+                radius: 3,
+                y: 1.5
             )
         }
         .buttonStyle(.plain)
@@ -131,43 +131,46 @@ struct MainPopoverView: View {
     // MARK: - Search & Select All Row
 
     private var searchBarRow: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             // Select All Checkbox
             Button {
                 vm.toggleSelectAll()
             } label: {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 4)
-                        .stroke(vm.isAllSelected ? goldColor : Color.white.opacity(0.3), lineWidth: 1.5)
+                    RoundedRectangle(cornerRadius: 3.5)
+                        .stroke(vm.isAllSelected ? goldColor : Color.white.opacity(0.3), lineWidth: 1.3)
                         .background(
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(vm.isAllSelected ? goldColor : Color.clear)
+                            RoundedRectangle(cornerRadius: 3.5)
+                                .fill(vm.isAllSelected ? goldColor : Color.white.opacity(0.001))
                         )
-                        .frame(width: 16, height: 16)
+                        .frame(width: 15, height: 15)
 
                     if vm.isAllSelected {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(.black.opacity(0.85))
+                            .font(.system(size: 8.5, weight: .bold))
+                            .foregroundStyle(.black.opacity(0.9))
                     } else if vm.isPartiallySelected {
                         RoundedRectangle(cornerRadius: 2)
                             .fill(goldColor)
-                            .frame(width: 8, height: 8)
+                            .frame(width: 7, height: 7)
                     }
                 }
+                .frame(width: 22, height: 22)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .contentShape(Rectangle())
             .help(vm.isAllSelected ? "Deselect All" : "Select All")
 
             // Search input field
-            HStack(spacing: 6) {
+            HStack(spacing: 5) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 12))
+                    .font(.system(size: 11))
                     .foregroundStyle(Color.white.opacity(0.4))
 
                 TextField("", text: $vm.searchQuery, prompt: Text("Search").foregroundColor(Color.white.opacity(0.35)))
                     .textFieldStyle(.plain)
-                    .font(.system(size: 12.5))
+                    .font(.system(size: 11.5))
                     .foregroundStyle(Color.white.opacity(0.92))
 
                 if !vm.searchQuery.isEmpty {
@@ -175,16 +178,16 @@ struct MainPopoverView: View {
                         vm.searchQuery = ""
                     } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 12))
+                            .font(.system(size: 11))
                             .foregroundStyle(Color.white.opacity(0.45))
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 8)
-            .frame(height: 27)
+            .padding(.horizontal, 7)
+            .frame(height: 24)
             .background(
-                RoundedRectangle(cornerRadius: 6)
+                RoundedRectangle(cornerRadius: 5)
                     .fill(Color.white.opacity(0.08))
             )
         }
