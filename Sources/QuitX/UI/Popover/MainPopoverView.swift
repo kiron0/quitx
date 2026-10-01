@@ -8,17 +8,17 @@ private final class PopoverUIState: ObservableObject {
 
 struct MainPopoverView: View {
     @EnvironmentObject private var configStore: ConfigStore
-    @StateObject private var vm = AppListViewModel()
+    @ObservedObject private var vm = AppListViewModel.shared
     @StateObject private var uiState = PopoverUIState()
 
     private let goldGradient = LinearGradient(
-        colors: [Color(red: 247/255, green: 181/255, blue: 0/255), Color(red: 232/255, green: 155/255, blue: 0/255)],
+        colors: [Color(red: 250/255, green: 188/255, blue: 12/255), Color(red: 228/255, green: 150/255, blue: 6/255)],
         startPoint: .top,
         endPoint: .bottom
     )
 
     private let forceGradient = LinearGradient(
-        colors: [Color(red: 240/255, green: 70/255, blue: 50/255), Color(red: 210/255, green: 40/255, blue: 30/255)],
+        colors: [Color(red: 240/255, green: 68/255, blue: 48/255), Color(red: 210/255, green: 38/255, blue: 24/255)],
         startPoint: .top,
         endPoint: .bottom
     )
@@ -29,14 +29,14 @@ struct MainPopoverView: View {
         VStack(spacing: 0) {
             // Top Primary "Quit All" button
             quitAllButton
-                .padding(.horizontal, 14)
-                .padding(.top, 14)
-                .padding(.bottom, 10)
+                .padding(.horizontal, 12)
+                .padding(.top, 12)
+                .padding(.bottom, 8)
 
             // Search bar & Select All checkbox
             searchBarRow
-                .padding(.horizontal, 14)
-                .padding(.bottom, 8)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 6)
 
             // Apps list
             if vm.isLoading && vm.apps.isEmpty {
@@ -58,13 +58,21 @@ struct MainPopoverView: View {
 
             // Footer
             footerRow
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
         }
-        .frame(width: 330, height: 470)
+        .frame(width: 294)
+        .frame(maxHeight: .infinity)
         .background(
-            VisualEffectBlur(material: .popover, blendingMode: .behindWindow)
+            ZStack {
+                Color(red: 0.12, green: 0.12, blue: 0.13).opacity(0.96)
+                VisualEffectBlur(material: .popover, blendingMode: .withinWindow)
+            }
         )
+        .preferredColorScheme(.dark)
+        .onChange(of: vm.filteredApps.count) { _ in
+            StatusItemController.shared?.updatePopoverSize()
+        }
         .overlay(alignment: .bottom) {
             if vm.showToast {
                 ToastView(count: vm.lastQuitCount)
@@ -119,9 +127,9 @@ struct MainPopoverView: View {
                     .font(.system(size: 14, weight: .semibold))
             }
             .foregroundStyle(.white)
-            .shadow(color: .black.opacity(0.2), radius: 1, y: 1)
+            .shadow(color: .black.opacity(0.25), radius: 1, y: 1)
             .frame(maxWidth: .infinity)
-            .frame(height: 34)
+            .frame(height: 35)
             .background(isForced ? forceGradient : goldGradient)
             .clipShape(RoundedRectangle(cornerRadius: 8))
             .shadow(color: (isForced ? Color.red : goldColor).opacity(uiState.isTopButtonHovered ? 0.35 : 0.15), radius: 4, y: 2)
@@ -142,7 +150,7 @@ struct MainPopoverView: View {
             } label: {
                 ZStack {
                     RoundedRectangle(cornerRadius: 4)
-                        .stroke(vm.isAllSelected ? goldColor : Color.primary.opacity(0.3), lineWidth: 1.5)
+                        .stroke(vm.isAllSelected ? goldColor : Color.white.opacity(0.3), lineWidth: 1.5)
                         .background(
                             RoundedRectangle(cornerRadius: 4)
                                 .fill(vm.isAllSelected ? goldColor : Color.clear)
@@ -167,12 +175,12 @@ struct MainPopoverView: View {
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 12))
-                    .foregroundStyle(Color.secondary)
+                    .foregroundStyle(Color.white.opacity(0.4))
 
-                TextField("", text: $vm.searchQuery, prompt: Text("Search").foregroundColor(Color.secondary))
+                TextField("", text: $vm.searchQuery, prompt: Text("Search").foregroundColor(Color.white.opacity(0.35)))
                     .textFieldStyle(.plain)
                     .font(.system(size: 12.5))
-                    .foregroundStyle(Color.primary)
+                    .foregroundStyle(Color.white.opacity(0.92))
 
                 if !vm.searchQuery.isEmpty {
                     Button {
@@ -180,16 +188,16 @@ struct MainPopoverView: View {
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 12))
-                            .foregroundStyle(Color.secondary)
+                            .foregroundStyle(Color.white.opacity(0.45))
                     }
                     .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal, 8)
-            .frame(height: 26)
+            .frame(height: 27)
             .background(
                 RoundedRectangle(cornerRadius: 6)
-                    .fill(Color.primary.opacity(0.06))
+                    .fill(Color.white.opacity(0.08))
             )
         }
     }
@@ -204,7 +212,7 @@ struct MainPopoverView: View {
                 .foregroundStyle(goldColor)
             Text(vm.searchQuery.isEmpty ? "All clean! No apps to quit." : "No running apps match '\(vm.searchQuery)'")
                 .font(.system(size: 12.5))
-                .foregroundStyle(Color.secondary)
+                .foregroundStyle(Color.white.opacity(0.5))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
             Spacer()
@@ -218,7 +226,7 @@ struct MainPopoverView: View {
         HStack {
             Text(vm.currentQuote)
                 .font(.system(size: 11, weight: .regular))
-                .foregroundStyle(Color.secondary)
+                .foregroundStyle(Color.white.opacity(0.45))
                 .lineLimit(1)
 
             Spacer()
@@ -253,6 +261,12 @@ struct MainPopoverView: View {
                 Divider()
 
                 Button {
+                    WelcomeWindowController.shared.show()
+                } label: {
+                    Label("Welcome Guide...", systemImage: "hand.wave")
+                }
+
+                Button {
                     SettingsWindowController.shared.show()
                 } label: {
                     Label("Preferences...", systemImage: "gearshape")
@@ -272,20 +286,14 @@ struct MainPopoverView: View {
                     NSApplication.shared.terminate(nil)
                 }
             } label: {
-                if let settingsImg = AssetImages.load("settings") {
-                    Image(nsImage: settingsImg)
-                        .resizable()
-                        .renderingMode(.template)
-                        .foregroundStyle(Color.secondary)
-                        .frame(width: 16, height: 16)
-                } else {
-                    Image(systemName: "line.3.horizontal")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(Color.secondary)
-                }
+                Image(systemName: "line.3.horizontal")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color.white.opacity(0.55))
+                    .frame(width: 22, height: 22)
             }
             .menuStyle(.borderlessButton)
-            .frame(width: 20, height: 20)
+            .menuIndicator(.hidden)
+            .frame(width: 22, height: 22)
         }
     }
 }

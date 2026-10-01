@@ -1,257 +1,429 @@
 import SwiftUI
+import AppKit
+
+enum SettingsTab: String, CaseIterable {
+    case general = "General"
+    case shortcuts = "Shortcuts"
+    case support = "Support"
+    case about = "About"
+
+    var iconName: String {
+        switch self {
+        case .general:   return "gearshape"
+        case .shortcuts: return "command"
+        case .support:   return "bubble.left.and.bubble.right"
+        case .about:     return "bolt.fill"
+        }
+    }
+}
+
+private final class SettingsTabState: ObservableObject {
+    @Published var activeTab: SettingsTab = .general
+}
+
+private final class GeneralState: ObservableObject {
+    @Published var disableQuitTips: Bool = false
+    @Published var autoQuitUnit: String = "hour"
+    @Published var autoQuitValue: Int = 1
+}
+
+private final class ShortcutsState: ObservableObject {
+    @Published var quitAllShortcut = "^ ⌥ Q"
+    @Published var forceQuitShortcut = "^ ⌥ ⇧ Q"
+}
 
 struct SettingsView: View {
     @EnvironmentObject private var configStore: ConfigStore
+    @StateObject private var tabState = SettingsTabState()
+
+    private let goldColor = Color(red: 247/255, green: 181/255, blue: 0/255)
 
     var body: some View {
-        TabView {
-            GeneralSettingsTab()
-                .tabItem { Label("General", systemImage: "gearshape") }
-            FiltersSettingsTab()
-                .tabItem { Label("Filters", systemImage: "slider.horizontal.3") }
-            ExcludeSettingsTab()
-                .tabItem { Label("Exclude", systemImage: "shield") }
-            AboutSettingsTab()
-                .tabItem { Label("About", systemImage: "bolt.fill") }
-        }
-        .frame(width: 480, height: 440)
-        .environmentObject(configStore)
-    }
-}
-
-// MARK: - General Tab
-
-struct GeneralSettingsTab: View {
-    @EnvironmentObject private var configStore: ConfigStore
-
-    var body: some View {
-        Form {
-            Section("Automation") {
-                HStack {
-                    Text("Auto-quit inactive apps after:")
-                    Spacer()
-                    Picker("", selection: $configStore.config.quitInactiveAfterMinutes) {
-                        Text("Disabled").tag(0)
-                        Text("15 minutes").tag(15)
-                        Text("30 minutes").tag(30)
-                        Text("1 hour").tag(60)
-                        Text("2 hours").tag(120)
+        VStack(spacing: 0) {
+            // Custom Toolbar Tabs (Matching Quit All)
+            HStack(spacing: 20) {
+                ForEach(SettingsTab.allCases, id: \.self) { tab in
+                    Button {
+                        tabState.activeTab = tab
+                        updateWindowTitle(tab.rawValue)
+                    } label: {
+                        VStack(spacing: 3) {
+                            Image(systemName: tab.iconName)
+                                .font(.system(size: 15, weight: tabState.activeTab == tab ? .semibold : .regular))
+                            Text(tab.rawValue)
+                                .font(.system(size: 10.5, weight: tabState.activeTab == tab ? .medium : .regular))
+                        }
+                        .foregroundStyle(tabState.activeTab == tab ? goldColor : Color.white.opacity(0.55))
+                        .frame(width: 58, height: 42)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(tabState.activeTab == tab ? Color.white.opacity(0.12) : Color.clear)
+                        )
+                        .contentShape(Rectangle())
                     }
-                    .frame(width: 140)
+                    .buttonStyle(.plain)
                 }
             }
+            .padding(.top, 10)
+            .padding(.bottom, 12)
 
-            Section("Quit Behavior") {
-                Picker("Default Quit Mode", selection: $configStore.config.force) {
-                    Text("Graceful").tag(QuitXConfig.ForceMode.normal)
-                    Text("Force").tag(QuitXConfig.ForceMode.force)
+            Divider()
+                .background(Color.white.opacity(0.1))
+
+            // Tab Content
+            Group {
+                switch tabState.activeTab {
+                case .general:
+                    GeneralTabCloneView()
+                case .shortcuts:
+                    ShortcutsTabCloneView()
+                case .support:
+                    SupportTabCloneView()
+                case .about:
+                    AboutTabCloneView()
                 }
-                .pickerStyle(.segmented)
-
-                Picker("On Quit Failure", selection: Binding(
-                    get: { configStore.config.onQuitFailure ?? .prompt },
-                    set: { configStore.config.onQuitFailure = $0 }
-                )) {
-                    Text("Prompt").tag(OnQuitFailureMode.prompt)
-                    Text("Force Quit").tag(OnQuitFailureMode.force)
-                    Text("Show Error").tag(OnQuitFailureMode.error)
-                }
-                .pickerStyle(.segmented)
-
-                Toggle("Confirm before quitting 4+ apps", isOn: $configStore.config.confirmQuitAll)
-                Toggle("Play sound effects", isOn: $configStore.config.playSounds)
             }
-
-            Section("App List & Sorting") {
-                Toggle("Select all apps by default", isOn: $configStore.config.defaultSelectAll)
-
-                Picker("Sort Apps By", selection: $configStore.config.sortBy) {
-                    Text("Alphabetical (Name)").tag(QuitXConfig.SortBy?.none)
-                    Text("Memory Usage (RAM)").tag(Optional(QuitXConfig.SortBy.memory))
-                }
-                .pickerStyle(.segmented)
-            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .formStyle(.grouped)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .onChange(of: configStore.config.quitInactiveAfterMinutes) { configStore.save() }
-        .onChange(of: configStore.config.force) { configStore.save() }
-        .onChange(of: configStore.config.onQuitFailure) { configStore.save() }
-        .onChange(of: configStore.config.confirmQuitAll) { configStore.save() }
-        .onChange(of: configStore.config.playSounds) { configStore.save() }
-        .onChange(of: configStore.config.defaultSelectAll) { configStore.save() }
-        .onChange(of: configStore.config.sortBy) { configStore.save() }
+        .frame(width: 400, height: 555)
+        .background(
+            ZStack {
+                Color(red: 0.14, green: 0.14, blue: 0.15).opacity(0.98)
+                VisualEffectBlur(material: .hudWindow, blendingMode: .withinWindow)
+            }
+        )
+        .preferredColorScheme(.dark)
+        .onAppear {
+            updateWindowTitle(tabState.activeTab.rawValue)
+        }
+    }
+
+    private func updateWindowTitle(_ title: String) {
+        NSApp.windows.first(where: { $0.title == "General" || $0.title == "Shortcuts" || $0.title == "Support" || $0.title == "About" || $0.title == "QuitX Preferences" })?.title = title
     }
 }
 
-// MARK: - Filters & Rules Tab
+// MARK: - Tab 1: General (Clone of Quit All General tab)
 
-private final class MusicAppVM: ObservableObject {
-    @Published var newMusicApp: String = ""
-}
-
-struct FiltersSettingsTab: View {
+struct GeneralTabCloneView: View {
     @EnvironmentObject private var configStore: ConfigStore
-    @StateObject private var vm = MusicAppVM()
+    @StateObject private var state = GeneralState()
 
     var body: some View {
-        Form {
-            Section("System Apps") {
-                Toggle("Include Finder in app list", isOn: $configStore.config.includeFinder)
-                Toggle("Include Trash", isOn: $configStore.config.includeTrash)
-            }
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 14) {
+                // Startup
+                settingRow(label: "Startup:") {
+                    checkbox(title: "Open QuitX at login", isOn: Binding(
+                        get: { configStore.config.autoUpdate },
+                        set: { configStore.config.autoUpdate = $0; configStore.save() }
+                    ), info: "Launch QuitX automatically when your Mac turns on.")
+                }
 
-            Section("Background Apps") {
-                Toggle("Show background and windowless apps", isOn: $configStore.config.includeBackground)
-                Toggle("Group background apps separately", isOn: $configStore.config.groupBackground)
-            }
+                // Sounds
+                settingRow(label: "Sounds:") {
+                    checkbox(title: "Play cool sounds", isOn: $configStore.config.playSounds, info: "Play satisfying audio feedback when quitting apps.")
+                }
 
-            Section("Music Apps Protection") {
-                Toggle("Never quit music players", isOn: $configStore.config.neverQuitMusic)
-
-                if configStore.config.neverQuitMusic {
+                // Advanced
+                settingRow(label: "Advanced:") {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Recognized music apps: \(configStore.config.musicApps.joined(separator: ", "))")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        checkbox(title: "View background apps", isOn: $configStore.config.includeBackground, info: "Show background and windowless processes in list.")
+                        checkbox(title: "Group background instances", isOn: $configStore.config.groupBackground, info: "Keep background processes visually grouped.")
+                        checkbox(title: "Never quit music apps", isOn: $configStore.config.neverQuitMusic, info: "Protect Spotify, Apple Music, and other music players.")
+                        checkbox(title: "Deselect apps by default", isOn: $configStore.config.defaultSelectAll, info: "Start with apps unchecked when opening QuitX.")
+                        checkbox(title: "Disable quit tips", isOn: $state.disableQuitTips, info: "Turn off motivational footer quotes.")
+                    }
+                }
 
-                        HStack {
-                            TextField("Add app (e.g. VLC)", text: $vm.newMusicApp)
-                                .textFieldStyle(.roundedBorder)
-                            Button("Add") {
-                                let t = vm.newMusicApp.trimmingCharacters(in: .whitespaces)
-                                guard !t.isEmpty else { return }
-                                if !configStore.config.musicApps.contains(t) {
-                                    configStore.config.musicApps.append(t)
-                                    configStore.save()
-                                }
-                                vm.newMusicApp = ""
+                // Extras
+                settingRow(label: "Extras:") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        checkbox(title: "Include Finder Windows in list", isOn: $configStore.config.includeFinder, info: "Allow closing Finder windows.")
+                        checkbox(title: "Include Empty Trash in list", isOn: $configStore.config.includeTrash, info: "Allow emptying trash from QuitX.")
+                    }
+                }
+
+                // Auto Quit
+                settingRow(label: "Auto Quit:") {
+                    VStack(alignment: .leading, spacing: 6) {
+                        checkbox(title: "Quit inactive apps after", isOn: Binding(
+                            get: { configStore.config.quitInactiveAfterMinutes > 0 },
+                            set: { enabled in
+                                configStore.config.quitInactiveAfterMinutes = enabled ? (state.autoQuitUnit == "hour" ? state.autoQuitValue * 60 : state.autoQuitValue) : 0
+                                configStore.save()
                             }
-                            .disabled(vm.newMusicApp.trimmingCharacters(in: .whitespaces).isEmpty)
+                        ), info: "Automatically close applications when left untouched.")
+
+                        if configStore.config.quitInactiveAfterMinutes > 0 {
+                            HStack(spacing: 8) {
+                                Picker("", selection: $state.autoQuitValue) {
+                                    Text("1").tag(1)
+                                    Text("2").tag(2)
+                                    Text("4").tag(4)
+                                    Text("8").tag(8)
+                                    Text("15").tag(15)
+                                    Text("30").tag(30)
+                                }
+                                .frame(width: 58)
+                                .labelsHidden()
+
+                                Picker("", selection: $state.autoQuitUnit) {
+                                    Text("minute").tag("min")
+                                    Text("hour").tag("hour")
+                                    Text("day").tag("day")
+                                }
+                                .frame(width: 76)
+                                .labelsHidden()
+                            }
+                            .padding(.leading, 22)
+                            .onChange(of: state.autoQuitValue) { updateAutoQuitMinutes() }
+                            .onChange(of: state.autoQuitUnit) { updateAutoQuitMinutes() }
                         }
                     }
                 }
-            }
 
-            Section("Updates") {
-                Toggle("Check for updates automatically", isOn: $configStore.config.autoUpdate)
+                // Sort
+                settingRow(label: "Sort:") {
+                    HStack(spacing: 8) {
+                        Picker("", selection: Binding(
+                            get: { configStore.config.sortBy == .memory ? "RAM Usage" : "A-Z Alphabetical" },
+                            set: { configStore.config.sortBy = ($0 == "RAM Usage" ? .memory : nil); configStore.save() }
+                        )) {
+                            Text("A-Z Alphabetical").tag("A-Z Alphabetical")
+                            Text("RAM Usage").tag("RAM Usage")
+                            Text("CPU Usage").tag("CPU Usage")
+                        }
+                        .frame(width: 145)
+                        .labelsHidden()
+
+                        infoIcon("Sort apps by name or memory usage.")
+                    }
+                }
+
+                // Default
+                settingRow(label: "Default:") {
+                    HStack(spacing: 8) {
+                        Picker("", selection: $configStore.config.force) {
+                            Text("⏻ Normal quit").tag(QuitXConfig.ForceMode.normal)
+                            Text("⚡ Force quit").tag(QuitXConfig.ForceMode.force)
+                        }
+                        .frame(width: 145)
+                        .labelsHidden()
+                        .onChange(of: configStore.config.force) { configStore.save() }
+
+                        infoIcon("Choose whether standard click performs Graceful or Force quit.")
+                    }
+                }
+
+                // Reset
+                settingRow(label: "Reset:") {
+                    Button("Reset all") {
+                        configStore.config = QuitXConfig.default
+                        configStore.save()
+                    }
+                    .font(.system(size: 11.5, weight: .regular))
+                    .foregroundStyle(Color.white.opacity(0.85))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(Color.white.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 5))
+                    .buttonStyle(.plain)
+                }
             }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 16)
         }
-        .formStyle(.grouped)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .onChange(of: configStore.config.includeFinder) { configStore.save() }
-        .onChange(of: configStore.config.includeTrash) { configStore.save() }
-        .onChange(of: configStore.config.includeBackground) { configStore.save() }
-        .onChange(of: configStore.config.groupBackground) { configStore.save() }
-        .onChange(of: configStore.config.neverQuitMusic) { configStore.save() }
-        .onChange(of: configStore.config.autoUpdate) { configStore.save() }
+    }
+
+    private func updateAutoQuitMinutes() {
+        let multiplier = (state.autoQuitUnit == "hour" ? 60 : (state.autoQuitUnit == "day" ? 1440 : 1))
+        configStore.config.quitInactiveAfterMinutes = state.autoQuitValue * multiplier
+        configStore.save()
+    }
+
+    // Helper: 2-column row
+    @ViewBuilder
+    private func settingRow<Content: View>(label: String, @ViewBuilder content: () -> Content) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text(label)
+                .font(.system(size: 12, weight: .regular))
+                .foregroundStyle(Color.white.opacity(0.65))
+                .frame(width: 70, alignment: .trailing)
+
+            content()
+
+            Spacer(minLength: 0)
+        }
+    }
+
+    // Helper: checkbox with info icon
+    @ViewBuilder
+    private func checkbox(title: String, isOn: Binding<Bool>, info: String) -> some View {
+        HStack(spacing: 8) {
+            Button {
+                isOn.wrappedValue.toggle()
+                configStore.save()
+            } label: {
+                HStack(spacing: 7) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 3.5)
+                            .stroke(isOn.wrappedValue ? Color(red: 247/255, green: 181/255, blue: 0/255) : Color.white.opacity(0.3), lineWidth: 1.2)
+                            .background(
+                                RoundedRectangle(cornerRadius: 3.5)
+                                    .fill(isOn.wrappedValue ? Color(red: 247/255, green: 181/255, blue: 0/255) : Color.clear)
+                            )
+                            .frame(width: 14, height: 14)
+
+                        if isOn.wrappedValue {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 8, weight: .bold))
+                                .foregroundStyle(.black.opacity(0.9))
+                        }
+                    }
+
+                    Text(title)
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundStyle(Color.white.opacity(0.9))
+                }
+            }
+            .buttonStyle(.plain)
+
+            Spacer(minLength: 4)
+
+            infoIcon(info)
+        }
+    }
+
+    @ViewBuilder
+    private func infoIcon(_ text: String) -> some View {
+        Image(systemName: "questionmark.circle")
+            .font(.system(size: 11))
+            .foregroundStyle(Color.white.opacity(0.35))
+            .help(text)
     }
 }
 
-// MARK: - Exclude List Tab
+// MARK: - Tab 2: Shortcuts
 
-private final class ExcludeVM: ObservableObject {
-    @Published var newItem: String = ""
-}
-
-struct ExcludeSettingsTab: View {
-    @EnvironmentObject private var configStore: ConfigStore
-    @StateObject private var vm = ExcludeVM()
+struct ShortcutsTabCloneView: View {
+    @StateObject private var state = ShortcutsState()
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Protected apps will never be quit automatically or via Quit All.")
-                .foregroundStyle(.secondary)
-                .font(.callout)
-
-            List {
-                ForEach(configStore.config.exclude, id: \.self) { item in
-                    HStack {
-                        Image(systemName: "shield.fill")
-                            .foregroundStyle(.yellow)
-                            .font(.system(size: 12))
-                        Text(item)
-                            .font(.system(size: 13))
-                        Spacer()
-                    }
-                }
-                .onDelete { indices in
-                    configStore.config.exclude.remove(atOffsets: indices)
-                    configStore.save()
-                }
+        VStack(spacing: 20) {
+            VStack(spacing: 12) {
+                shortcutRow(title: "Quit all", shortcut: $state.quitAllShortcut)
+                shortcutRow(title: "Force quit all", shortcut: $state.forceQuitShortcut)
             }
-            .frame(maxHeight: .infinity)
+            .padding(.horizontal, 32)
+            .padding(.top, 24)
 
-            HStack {
-                TextField("Bundle ID (e.g. com.apple.Safari) or App Name", text: $vm.newItem)
-                    .textFieldStyle(.roundedBorder)
-
-                Button("Add to Exclude") {
-                    let trimmed = vm.newItem.trimmingCharacters(in: .whitespaces)
-                    guard !trimmed.isEmpty else { return }
-                    if !configStore.config.exclude.contains(trimmed) {
-                        configStore.config.exclude.append(trimmed)
-                        configStore.save()
-                    }
-                    vm.newItem = ""
-                }
-                .disabled(vm.newItem.trimmingCharacters(in: .whitespaces).isEmpty)
+            HStack(spacing: 6) {
+                Image(systemName: "command")
+                    .font(.system(size: 12))
+                Text("Hold down Option to toggle \"Quit\" and \"Force Quit\"")
+                    .font(.system(size: 11.5))
             }
+            .foregroundStyle(Color.white.opacity(0.55))
+            .padding(.top, 16)
+
+            Spacer()
+        }
+    }
+
+    @ViewBuilder
+    private func shortcutRow(title: String, shortcut: Binding<String>) -> some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(Color.white.opacity(0.85))
+
+            Spacer()
+
+            Text(shortcut.wrappedValue)
+                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(Color.white.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+        }
+    }
+}
+
+// MARK: - Tab 3: Support
+
+struct SupportTabCloneView: View {
+    var body: some View {
+        VStack(spacing: 18) {
+            Spacer()
+
+            Image(systemName: "bubble.left.and.bubble.right.fill")
+                .font(.system(size: 40))
+                .foregroundStyle(Color(red: 247/255, green: 181/255, blue: 0/255))
+
+            Text("Need Help or Have Feedback?")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(.white)
+
+            Text("QuitX is built for macOS speed and minimalism.\nFeel free to explore our documentation or report an issue on GitHub.")
+                .font(.system(size: 12))
+                .foregroundStyle(Color.white.opacity(0.6))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 24)
+
+            HStack(spacing: 14) {
+                Link("Documentation", destination: URL(string: "https://quitx.coreify.io")!)
+                Text("•").foregroundStyle(.secondary)
+                Link("GitHub Issues", destination: URL(string: "https://github.com/coreify/quitx-app/issues")!)
+            }
+            .font(.system(size: 12, weight: .medium))
+
+            Spacer()
         }
         .padding()
     }
 }
 
-// MARK: - About Tab
+// MARK: - Tab 4: About
 
-struct AboutSettingsTab: View {
+struct AboutTabCloneView: View {
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 14) {
             Spacer()
 
             if let img = NSImage(contentsOfFile: "Support/Icons/icon_128x128.png") ?? Bundle.main.image(forResource: "AppIcon") {
                 Image(nsImage: img)
                     .resizable()
                     .frame(width: 64, height: 64)
-                    .cornerRadius(14)
-            } else {
-                Image(systemName: "bolt.fill")
-                    .font(.system(size: 48))
-                    .foregroundStyle(.yellow)
+                    .clipShape(RoundedRectangle(cornerRadius: 15))
+                    .shadow(color: .black.opacity(0.3), radius: 6, y: 3)
             }
 
             VStack(spacing: 4) {
                 Text("QuitX for macOS")
-                    .font(.headline)
-                    .fontWeight(.bold)
-                Text("Version 1.0.0")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.white)
+
+                Text("Version 1.0.0 (Build 1)")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color.white.opacity(0.5))
             }
 
-            Text("Fast, minimal menubar companion to quit, force quit, and manage running macOS apps.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+            Text("© 2026 Coreify / Toufiq Hasan Kiron\nInspired by Setapp Quit All.")
+                .font(.system(size: 11))
+                .foregroundStyle(Color.white.opacity(0.45))
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
 
-            Text("Config synced with ~/.config/quitx/config.json")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-
-            Divider().padding(.horizontal, 32)
-
-            HStack(spacing: 16) {
+            HStack(spacing: 14) {
                 Link("GitHub Repo", destination: URL(string: "https://github.com/coreify/quitx-app")!)
-                Link("Documentation", destination: URL(string: "https://quitx.coreify.io")!)
+                Text("•").foregroundStyle(.secondary)
+                Link("Website", destination: URL(string: "https://quitx.coreify.io")!)
             }
-            .font(.footnote)
+            .font(.system(size: 12))
 
             Spacer()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
     }
 }

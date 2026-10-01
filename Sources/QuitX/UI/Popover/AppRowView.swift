@@ -35,21 +35,21 @@ struct AppRowView: View {
     private let forceColor = Color(red: 240/255, green: 70/255, blue: 50/255)
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             // Checkbox (visual only; click handled by row)
             ZStack {
-                RoundedRectangle(cornerRadius: 4)
-                    .stroke(isSelected ? goldColor : Color.white.opacity(0.3), lineWidth: 1.5)
+                RoundedRectangle(cornerRadius: 3.5)
+                    .stroke(isSelected ? goldColor : Color.white.opacity(0.3), lineWidth: 1.3)
                     .background(
-                        RoundedRectangle(cornerRadius: 4)
+                        RoundedRectangle(cornerRadius: 3.5)
                             .fill(isSelected ? goldColor : Color.clear)
                     )
-                    .frame(width: 16, height: 16)
+                    .frame(width: 15, height: 15)
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(.black.opacity(0.85))
+                        .font(.system(size: 8.5, weight: .bold))
+                        .foregroundStyle(.black.opacity(0.9))
                 }
             }
 
@@ -59,28 +59,29 @@ struct AppRowView: View {
                     Image(nsImage: icon)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 22, height: 22)
-                        .cornerRadius(5)
+                        .frame(width: 18, height: 18)
+                        .cornerRadius(4)
                 } else {
-                    RoundedRectangle(cornerRadius: 5)
+                    RoundedRectangle(cornerRadius: 4)
                         .fill(Color.white.opacity(0.1))
-                        .frame(width: 22, height: 22)
+                        .frame(width: 18, height: 18)
                 }
             }
             .onAppear { iconLoader.load(bundleId: app.bundleId) }
 
             // App name
             Text(app.name)
-                .font(.system(size: 13, weight: .regular))
+                .font(.system(size: 12.5, weight: .regular))
                 .foregroundStyle(Color.white.opacity(0.92))
                 .lineLimit(1)
+                .truncationMode(.tail)
 
-            Spacer()
+            Spacer(minLength: 4)
 
             // Memory / usage text
             Text(app.memoryFormatted)
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundStyle(Color.white.opacity(0.48))
+                .font(.system(size: 10.5, design: .monospaced))
+                .foregroundStyle(Color.white.opacity(0.45))
 
             // Quit single button
             Button {
@@ -110,21 +111,22 @@ struct AppRowView: View {
                 }
             } label: {
                 Text("•••")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.system(size: 9.5, weight: .bold))
                     .foregroundStyle(Color.white.opacity(0.45))
-                    .frame(width: 18, height: 18)
+                    .frame(width: 16, height: 16)
             }
             .menuStyle(.borderlessButton)
-            .frame(width: 18)
+            .menuIndicator(.hidden)
+            .frame(width: 16)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 4.5)
         .contentShape(Rectangle())
         .onTapGesture {
             onToggle()
         }
         .background(
-            RoundedRectangle(cornerRadius: 6)
+            RoundedRectangle(cornerRadius: 5)
                 .fill(state.isHovered ? Color.white.opacity(0.07) : Color.clear)
         )
         .onHover { h in state.isHovered = h }

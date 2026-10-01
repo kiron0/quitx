@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 
 /// Owns the NSStatusItem and NSPopover. Single source of truth for menubar presence.
+@MainActor
 final class StatusItemController: NSObject {
     static weak var shared: StatusItemController?
 
@@ -73,25 +74,42 @@ final class StatusItemController: NSObject {
         return image
     }
 
+    @MainActor
     private func configurePopover() {
         let rootView = MainPopoverView()
             .environmentObject(ConfigStore.shared)
         popover.contentViewController = NSHostingController(rootView: rootView)
-        popover.contentSize = NSSize(width: 330, height: 470)
+        updatePopoverSize()
+    }
+
+    @MainActor
+    func updatePopoverSize() {
+        let count = AppListViewModel.shared.filteredApps.count
+        // Header: quit button (32) + margins (22) + search (26) + margins (14) = 94
+        // Footer: footer text + menu (24) + margins (16) = 40
+        // App row: ~32pt each
+        let baseHeight: CGFloat = 134
+        let rowHeight: CGFloat = 32
+        let itemCount = max(1, count)
+        let calculated = baseHeight + (CGFloat(itemCount) * rowHeight)
+        let clampedHeight = min(510, max(210, calculated))
+        popover.contentSize = NSSize(width: 294, height: clampedHeight)
     }
 
     // MARK: - Click Handling
 
     @objc private func handleStatusItemClick(_ sender: Any?) {
-        guard let event = NSApp.currentEvent else {
-            togglePopover()
-            return
-        }
+        Task { @MainActor in
+            guard let event = NSApp.currentEvent else {
+                self.togglePopover()
+                return
+            }
 
-        if event.type == .rightMouseUp {
-            showContextMenu()
-        } else {
-            togglePopover()
+            if event.type == .rightMouseUp {
+                self.showContextMenu()
+            } else {
+                self.togglePopover()
+            }
         }
     }
 
@@ -103,11 +121,13 @@ final class StatusItemController: NSObject {
         }
     }
 
+    @MainActor
     func togglePopover() {
         if popover.isShown {
             popover.performClose(nil)
         } else {
             guard let button = statusItem.button else { return }
+            updatePopoverSize()
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             popover.contentViewController?.view.window?.makeKey()
         }
@@ -136,6 +156,10 @@ final class StatusItemController: NSObject {
 
         menu.addItem(NSMenuItem.separator())
 
+        let welcomeItem = NSMenuItem(title: "Welcome Guide...", action: #selector(openWelcomeGuide), keyEquivalent: "")
+        welcomeItem.target = self
+        menu.addItem(welcomeItem)
+
         let aboutItem = NSMenuItem(title: "About QuitX", action: #selector(openPreferences), keyEquivalent: "")
         aboutItem.target = self
         menu.addItem(aboutItem)
@@ -151,6 +175,10 @@ final class StatusItemController: NSObject {
 
     @objc private func openPreferences() {
         SettingsWindowController.shared.show()
+    }
+
+    @objc private func openWelcomeGuide() {
+        WelcomeWindowController.shared.show()
     }
 
     @objc private func stashSession() {

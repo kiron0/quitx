@@ -9,6 +9,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
         statusItemController = StatusItemController()
         AutoQuitService.shared.startTracking()
+        WelcomeWindowController.shared.showIfFirstLaunch()
     }
 
     func applicationWillTerminate(_ notification: Notification) {

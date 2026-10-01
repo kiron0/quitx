@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 
+@MainActor
 final class SettingsWindowController: NSObject, NSWindowDelegate {
     static let shared = SettingsWindowController()
     private var window: NSWindow?
@@ -9,6 +10,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         StatusItemController.shared?.closePopover()
 
         if let win = window {
+            positionTopCenter(win)
             win.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
@@ -19,19 +21,30 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
         let hosting = NSHostingController(rootView: rootView)
         let win = NSWindow(contentViewController: hosting)
-        win.title = "QuitX Preferences"
-        win.styleMask = [.titled, .closable, .miniaturizable]
-        win.setContentSize(NSSize(width: 440, height: 420))
-        win.center()
+        win.title = "General"
+        win.styleMask = [.titled, .closable, .miniaturizable, .fullSizeContentView]
+        win.titlebarAppearsTransparent = true
+        win.titleVisibility = .visible
+        win.setContentSize(NSSize(width: 400, height: 555))
         win.isReleasedWhenClosed = false
         win.delegate = self
         self.window = win
 
+        positionTopCenter(win)
         win.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
 
     func windowWillClose(_ notification: Notification) {
         window = nil
+    }
+
+    private func positionTopCenter(_ win: NSWindow) {
+        guard let screen = NSScreen.main else { return }
+        let screenFrame = screen.frame
+        let winSize = win.frame.size
+        let x = screenFrame.origin.x + (screenFrame.width - winSize.width) / 2
+        let y = screenFrame.origin.y + screenFrame.height - winSize.height - 105
+        win.setFrameOrigin(NSPoint(x: x, y: y))
     }
 }
