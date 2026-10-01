@@ -1,0 +1,25 @@
+import AppKit
+
+enum SoundService {
+    static func playQuitSingle() {
+        playSound(named: "quit-single")
+    }
+
+    static func playQuitAll() {
+        playSound(named: "quit-all")
+    }
+
+    private static func playSound(named name: String) {
+        if let url = Bundle.main.url(forResource: name, withExtension: "aiff"),
+           let sound = NSSound(contentsOf: url, byReference: true) {
+            sound.play()
+            return
+        }
+        // Fallback to Support/Sounds if running from debug binary
+        let localPath = "Support/Sounds/\(name).aiff"
+        if FileManager.default.fileExists(atPath: localPath),
+           let sound = NSSound(contentsOfFile: localPath, byReference: true) {
+            sound.play()
+        }
+    }
+}
