@@ -24,6 +24,10 @@ enum SettingsTab: String, CaseIterable {
         case .about:     return 130
         }
     }
+
+    var totalHeight: CGFloat {
+        contentHeight + 85
+    }
 }
 
 // MARK: - Help Popover Button
@@ -61,16 +65,102 @@ struct HelpPopoverButton: View {
     }
 }
 
+// MARK: - Settings Tab ViewModel
+
+final class SettingsTabViewModel: ObservableObject {
+    @Published var activeTab: SettingsTab = .general
+}
+
+// MARK: - QuitAll Style Settings Container
+
+struct SettingsContainerView: View {
+    @ObservedObject var tabModel: SettingsTabViewModel
+    @EnvironmentObject private var configStore: ConfigStore
+    let onSelectTab: (SettingsTab) -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header: QuitAll style
+            VStack(spacing: 0) {
+                // Row 1: Title centered (on the exact same line as traffic lights)
+                ZStack {
+                    Text(tabModel.activeTab.rawValue)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.white.opacity(0.85))
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 32)
+
+                // Row 2: Centered 4 tabs
+                HStack(spacing: 8) {
+                    ForEach(SettingsTab.allCases, id: \.self) { tab in
+                        let isSelected = (tabModel.activeTab == tab)
+                        Button {
+                            onSelectTab(tab)
+                        } label: {
+                            VStack(spacing: 3) {
+                                Image(systemName: tab.iconName)
+                                    .font(.system(size: 18, weight: isSelected ? .semibold : .regular))
+                                    .frame(height: 20)
+                                Text(tab.rawValue)
+                                    .font(.system(size: 11, weight: isSelected ? .semibold : .medium))
+                            }
+                            .foregroundStyle(isSelected ? QuitXTheme.accent : Color.white.opacity(0.48))
+                            .frame(width: 64, height: 46)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(isSelected ? Color.white.opacity(0.12) : Color.clear)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(isSelected ? Color.white.opacity(0.16) : Color.clear, lineWidth: 1)
+                            )
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.bottom, 6)
+
+                // Row 3: 1pt subtle divider
+                Rectangle()
+                    .fill(Color.white.opacity(0.10))
+                    .frame(height: 1)
+            }
+            .frame(width: 400, height: 85)
+            .background(QuitXTheme.windowBackground)
+
+            // Content
+            switch tabModel.activeTab {
+            case .general:
+                GeneralTabCloneView()
+                    .environmentObject(configStore)
+            case .shortcuts:
+                ShortcutsTabCloneView()
+            case .support:
+                SupportTabCloneView()
+            case .about:
+                AboutTabCloneView()
+            }
+        }
+        .frame(width: 400)
+        .background(QuitXTheme.windowBackground)
+        .ignoresSafeArea()
+        .preferredColorScheme(.dark)
+    }
+}
+
 // MARK: - Root SettingsView
 
 struct SettingsView: View {
     @EnvironmentObject private var configStore: ConfigStore
+    @StateObject private var tabModel = SettingsTabViewModel()
 
     var body: some View {
-        GeneralTabCloneView()
-            .environmentObject(configStore)
-            .background(QuitXTheme.windowBackground)
-            .preferredColorScheme(.dark)
+        SettingsContainerView(tabModel: tabModel) { tab in
+            tabModel.activeTab = tab
+        }
+        .environmentObject(configStore)
     }
 }
 
