@@ -1,0 +1,14 @@
+{
+  "name": "quitx-macos-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Build, install, and launch the native QuitX macOS app.",
+  "scripts": {
+    "build": "make bundle",
+    "test": "make test",
+    "clean": "make clean",
+    "install": "npm run build && mkdir -p \"$HOME/Applications\" && ditto .build/QuitX.app \"$HOME/Applications/QuitX.app\"",
+    "open": "open \"$HOME/Applications/QuitX.app\"",
+    "start": "npm run install && npm run open"
+  }
+}

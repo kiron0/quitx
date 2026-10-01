@@ -26,6 +26,8 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         win.titlebarAppearsTransparent = true
         win.titleVisibility = .visible
         win.setContentSize(NSSize(width: 400, height: 555))
+        win.isOpaque = false
+        win.backgroundColor = .clear
         win.isReleasedWhenClosed = false
         win.delegate = self
         self.window = win

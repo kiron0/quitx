@@ -5,7 +5,7 @@ struct WelcomeView: View {
     var onDismiss: () -> Void
     var onOpenSettings: () -> Void
 
-    private let gold = Color(red: 247/255, green: 181/255, blue: 0/255)
+    private let gold = QuitAllTheme.accent
 
     var body: some View {
         VStack(spacing: 0) {
@@ -68,19 +68,7 @@ struct WelcomeView: View {
             .padding(.bottom, 26)
         }
         .frame(width: 440, height: 520)
-        .background {
-            ZStack {
-                Color(red: 0.085, green: 0.085, blue: 0.095)
-                VisualEffectBlur(material: .hudWindow, blendingMode: .withinWindow)
-
-                RadialGradient(
-                    colors: [gold.opacity(0.14), .clear],
-                    center: .top,
-                    startRadius: 0,
-                    endRadius: 300
-                )
-            }
-        }
+        .background(QuitAllTheme.windowBackground)
         .preferredColorScheme(.dark)
     }
 

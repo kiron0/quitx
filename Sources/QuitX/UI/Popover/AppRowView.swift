@@ -31,7 +31,7 @@ struct AppRowView: View {
     @StateObject private var state = RowState()
     @StateObject private var iconLoader = IconLoader()
 
-    private let goldColor = Color(red: 247/255, green: 181/255, blue: 0/255)
+    private let goldColor = QuitAllTheme.accent
     private let forceColor = Color(red: 240/255, green: 70/255, blue: 50/255)
 
     var body: some View {
@@ -119,8 +119,8 @@ struct AppRowView: View {
             .menuIndicator(.hidden)
             .frame(width: 16)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 4.5)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 3.5)
         .contentShape(Rectangle())
         .onTapGesture {
             onToggle()

@@ -5,15 +5,15 @@ struct MainPopoverView: View {
     @EnvironmentObject private var configStore: ConfigStore
     @ObservedObject private var vm = AppListViewModel.shared
 
-    private let goldColor = Color(red: 247/255, green: 181/255, blue: 0/255)
+    private let goldColor = QuitAllTheme.accent
 
     var body: some View {
         VStack(spacing: 0) {
             // Search bar & Select All checkbox
             searchBarRow
-                .padding(.horizontal, 12)
-                .padding(.top, 10)
-                .padding(.bottom, 6)
+                .padding(.horizontal, 9)
+                .padding(.top, 8)
+                .padding(.bottom, 5)
 
             // Apps list
             if vm.isLoading && vm.apps.isEmpty {
@@ -35,19 +35,14 @@ struct MainPopoverView: View {
 
             // Footer
             footerRow
-                .padding(.horizontal, 12)
-                .padding(.vertical, 7)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
         }
-        .frame(width: 294)
+        .frame(width: 270)
         .frame(maxHeight: .infinity)
-        .background(
-            ZStack {
-                Color(red: 0.12, green: 0.12, blue: 0.13).opacity(0.96)
-                VisualEffectBlur(material: .popover, blendingMode: .withinWindow)
-            }
-        )
+        .background(QuitAllTheme.popoverBackground)
         .preferredColorScheme(.dark)
-        .onChange(of: vm.filteredApps.count) { _ in
+        .onChange(of: vm.filteredApps.count) {
             StatusItemController.shared?.updatePopoverSize()
         }
         .overlay(alignment: .bottom) {

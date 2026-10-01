@@ -45,7 +45,7 @@ struct SettingsView: View {
     @EnvironmentObject private var configStore: ConfigStore
     @StateObject private var tabState = SettingsTabState()
 
-    private let goldColor = Color(red: 247/255, green: 181/255, blue: 0/255)
+    private let goldColor = QuitAllTheme.accent
 
     var body: some View {
         VStack(spacing: 0) {
@@ -97,12 +97,7 @@ struct SettingsView: View {
         }
         .frame(width: 400)
         .frame(maxHeight: .infinity)
-        .background(
-            ZStack {
-                Color(red: 0.14, green: 0.14, blue: 0.15).opacity(0.98)
-                VisualEffectBlur(material: .hudWindow, blendingMode: .withinWindow)
-            }
-        )
+        .background(QuitAllTheme.windowBackground)
         .preferredColorScheme(.dark)
         .onAppear {
             updateWindowTitle(tabState.activeTab.rawValue)
@@ -279,10 +274,10 @@ struct GeneralTabCloneView: View {
                 HStack(spacing: 7) {
                     ZStack {
                         RoundedRectangle(cornerRadius: 3.5)
-                            .stroke(isOn.wrappedValue ? Color(red: 247/255, green: 181/255, blue: 0/255) : Color.white.opacity(0.3), lineWidth: 1.2)
+                            .stroke(isOn.wrappedValue ? QuitAllTheme.accent : Color.white.opacity(0.3), lineWidth: 1.2)
                             .background(
                                 RoundedRectangle(cornerRadius: 3.5)
-                                    .fill(isOn.wrappedValue ? Color(red: 247/255, green: 181/255, blue: 0/255) : Color.clear)
+                                    .fill(isOn.wrappedValue ? QuitAllTheme.accent : Color.clear)
                             )
                             .frame(width: 14, height: 14)
 
@@ -371,7 +366,7 @@ struct SupportTabCloneView: View {
 
             Image(systemName: "bubble.left.and.bubble.right.fill")
                 .font(.system(size: 40))
-                .foregroundStyle(Color(red: 247/255, green: 181/255, blue: 0/255))
+                .foregroundStyle(QuitAllTheme.accent)
 
             Text("Need Help or Have Feedback?")
                 .font(.system(size: 14, weight: .semibold))

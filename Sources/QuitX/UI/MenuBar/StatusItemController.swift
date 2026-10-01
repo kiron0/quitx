@@ -92,15 +92,13 @@ final class StatusItemController: NSObject {
     @MainActor
     func updatePopoverSize() {
         let count = AppListViewModel.shared.filteredApps.count
-        // Header: search (26) + margins (16) = 42
-        // Footer: footer text + menu (24) + margins (14) = 38
-        // App row: ~30pt each
-        let baseHeight: CGFloat = 80
-        let rowHeight: CGFloat = 30
+        // Match QuitAll's 270 x 400 menu frame and compact row rhythm.
+        let baseHeight: CGFloat = 72
+        let rowHeight: CGFloat = 26
         let itemCount = max(1, count)
         let calculated = baseHeight + (CGFloat(itemCount) * rowHeight)
-        let clampedHeight = min(500, max(150, calculated))
-        popover.contentSize = NSSize(width: 294, height: clampedHeight)
+        let clampedHeight = min(400, max(145, calculated))
+        popover.contentSize = NSSize(width: 270, height: clampedHeight)
     }
 
     // MARK: - Click Handling
