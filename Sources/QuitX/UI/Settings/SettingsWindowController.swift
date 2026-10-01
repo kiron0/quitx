@@ -190,8 +190,6 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         let hosting = NSHostingView(rootView: tabView)
         hosting.frame = NSRect(x: 0, y: 0, width: 58, height: 44)
         item.view = hosting
-        item.minSize = NSSize(width: 52, height: 42)
-        item.maxSize = NSSize(width: 64, height: 46)
         item.autovalidates = false
         return item
     }

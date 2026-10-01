@@ -1,6 +1,10 @@
 name: Release
 
 on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
   push:
     tags:
       - 'v*'
@@ -9,14 +13,52 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release-${{ github.event.workflow_run.head_branch || github.ref_name }}
+  cancel-in-progress: false
+
 jobs:
   release:
     name: Build & Publish Release
     runs-on: macos-14
+    if: >-
+      ${{
+        github.event_name == 'workflow_dispatch' ||
+        github.event_name == 'push' ||
+        github.event.workflow_run.conclusion == 'success'
+      }}
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Resolve Version & Tag
+        id: meta
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION=$(cat package.json | grep '"version"' | head -1 | awk -F: '{ print $2 }' | sed 's/[", ]//g')
+            TAG="v$VERSION"
+            echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+            if git rev-parse "$TAG" >/dev/null 2>&1 || git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+              echo "Tag $TAG already exists on remote."
+            else
+              echo "Creating tag $TAG..."
+              git config user.name "github-actions[bot]"
+              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+              git tag "$TAG"
+              git push origin "refs/tags/$TAG"
+            fi
+          else
+            TAG="${GITHUB_REF_NAME:-v1.0.0}"
+            echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+            echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Select Xcode Version
         run: sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer || sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
@@ -26,19 +68,22 @@ jobs:
 
       - name: Create DMG Installer
         run: |
-          VERSION=${GITHUB_REF_NAME:-v1.0.0}
-          echo "Packaging QuitX-${VERSION}.dmg..."
+          TAG="${{ steps.meta.outputs.tag }}"
+          echo "Packaging QuitX-${TAG}.dmg..."
           DMG_STAGE=".build/dmg-staging"
           rm -rf "$DMG_STAGE"
           mkdir -p "$DMG_STAGE"
           cp -R .build/QuitX.app "$DMG_STAGE/"
           ln -s /Applications "$DMG_STAGE/Applications"
-          hdiutil create -volname "QuitX" -srcfolder "$DMG_STAGE" -ov -format UDZO ".build/QuitX-${VERSION}.dmg"
+          hdiutil create -volname "QuitX" -srcfolder "$DMG_STAGE" -ov -format UDZO ".build/QuitX-${TAG}.dmg"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: QuitX ${{ steps.meta.outputs.tag }}
           files: .build/QuitX-*.dmg
           draft: false
           prerelease: false
           generate_release_notes: true
+
