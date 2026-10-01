@@ -677,7 +677,7 @@ struct AboutTabCloneView: View {
 
                 HStack(spacing: 10) {
                     Button("Say hi") {
-                        if let url = URL(string: "https://quitx.coreify.io") {
+                        if let url = URL(string: "https://quitx.js.org") {
                             NSWorkspace.shared.open(url)
                         }
                     }
