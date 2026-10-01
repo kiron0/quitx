@@ -51,15 +51,14 @@ struct HelpPopoverButton: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .popover(isPresented: $state.isShowing, arrowEdge: .trailing) {
+        .popover(isPresented: $state.isShowing, arrowEdge: .bottom) {
             Text(text)
                 .font(.system(size: 11.5))
                 .foregroundStyle(Color.white.opacity(0.92))
                 .lineSpacing(2.5)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
-                .frame(width: 235)
-                .background(Color(red: 0.16, green: 0.16, blue: 0.16))
+                .padding(.horizontal, 13)
+                .padding(.vertical, 10)
+                .frame(width: 230)
                 .preferredColorScheme(.dark)
         }
     }
