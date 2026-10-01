@@ -256,7 +256,9 @@ struct MainPopoverView: View {
 
                 Divider()
 
-                SettingsLink {
+                Button {
+                    SettingsWindowController.shared.show()
+                } label: {
                     Label("Preferences...", systemImage: "gearshape")
                 }
 

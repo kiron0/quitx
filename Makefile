@@ -28,6 +28,17 @@ bundle: build
 	@/usr/libexec/PlistBuddy -c "Set :CFBundleIconFile AppIcon" $(CONTENTS)/Info.plist 2>/dev/null || true
 	@echo "✅ Bundle ready: $(APP_DIR)"
 
+## Create DMG installer
+dmg: bundle
+	@echo "▶ Creating $(APP_NAME).dmg..."
+	@rm -rf .build/dmg-staging
+	@mkdir -p .build/dmg-staging
+	@cp -R $(APP_DIR) .build/dmg-staging/
+	@ln -s /Applications .build/dmg-staging/Applications
+	@hdiutil create -volname "$(APP_NAME)" -srcfolder .build/dmg-staging -ov -format UDZO .build/$(APP_NAME).dmg
+	@rm -rf .build/dmg-staging
+	@echo "✅ DMG ready: .build/$(APP_NAME).dmg"
+
 ## Launch the app bundle
 run: bundle
 	@echo "▶ Launching $(APP_NAME)..."

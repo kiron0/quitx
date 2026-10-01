@@ -14,6 +14,8 @@ struct QuitXConfig: Codable, Equatable {
     var musicApps: [String]
     var autoUpdate: Bool
     var confirmQuitAll: Bool = true
+    var playSounds: Bool = true
+    var quitInactiveAfterMinutes: Int = 0
     var sortBy: SortBy?
     var onQuitFailure: OnQuitFailureMode?
 
@@ -33,6 +35,8 @@ struct QuitXConfig: Codable, Equatable {
             musicApps: ["Music", "Spotify", "Deezer", "Tidal", "Doppler"],
             autoUpdate: true,
             confirmQuitAll: true,
+            playSounds: true,
+            quitInactiveAfterMinutes: 0,
             sortBy: nil,
             onQuitFailure: nil
         )

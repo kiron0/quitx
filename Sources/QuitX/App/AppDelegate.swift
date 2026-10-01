@@ -8,6 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Ensure app does not appear in Dock or Cmd-Tab switcher
         NSApp.setActivationPolicy(.accessory)
         statusItemController = StatusItemController()
+        AutoQuitService.shared.startTracking()
     }
 
     func applicationWillTerminate(_ notification: Notification) {

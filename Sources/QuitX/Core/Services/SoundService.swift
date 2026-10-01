@@ -2,10 +2,12 @@ import AppKit
 
 enum SoundService {
     static func playQuitSingle() {
+        guard ConfigStore.shared.config.playSounds else { return }
         playSound(named: "quit-single")
     }
 
     static func playQuitAll() {
+        guard ConfigStore.shared.config.playSounds else { return }
         playSound(named: "quit-all")
     }
 
