@@ -13,6 +13,10 @@ final class AppListViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var lastQuitCount: Int = 0
     @Published var showToast: Bool = false
+    @Published private(set) var toastMessage: String = ""
+    @Published private(set) var toastIsError: Bool = false
+    @Published private(set) var pendingAppIds: Set<String> = []
+    @Published private(set) var isBatchQuitting: Bool = false
     @Published var currentQuote: String = "Don't give up quitting ⚡"
     @Published var listNeedsScrolling: Bool = false
 
@@ -85,6 +89,10 @@ final class AppListViewModel: ObservableObject {
         return selected.intersection(visibleIds).count
     }
 
+    var hasPendingOperations: Bool {
+        !pendingAppIds.isEmpty
+    }
+
     func toggleSelectAll() {
         let visibleIds = Set(filteredApps.map(\.id))
         if visibleIds.isSubset(of: selected) {
@@ -141,6 +149,9 @@ final class AppListViewModel: ObservableObject {
     }
 
     func quitSingle(app: AppInfo, force: Bool) async {
+        guard pendingAppIds.insert(app.id).inserted else { return }
+        defer { pendingAppIds.remove(app.id) }
+
         SoundService.playQuitSingle()
         let results = await QuitService.shared.quit(apps: [app], force: force)
         let succeeded = results.first?.success == true
@@ -150,28 +161,53 @@ final class AppListViewModel: ObservableObject {
         lastQuitCount = succeeded ? 1 : 0
         await refresh()
         if succeeded {
-            triggerToast()
+            triggerToast(message: "\(app.name) quit", isError: false)
+        } else {
+            triggerToast(message: "Couldn’t quit \(app.name)", isError: true)
         }
     }
 
     func quitAll(force: Bool) async {
+        guard !hasPendingOperations else { return }
         let targets = filteredApps.filter { selected.contains($0.id) }
         guard !targets.isEmpty else { return }
+
+        isBatchQuitting = true
+        let targetIds = Set(targets.map(\.id))
+        pendingAppIds.formUnion(targetIds)
+        defer {
+            pendingAppIds.subtract(targetIds)
+            isBatchQuitting = false
+        }
+
         SoundService.playQuitAll()
         let results = await QuitService.shared.quit(apps: targets, force: force)
         let successfulIds = Set(results.filter(\.success).map { $0.app.id })
+        let failureCount = targets.count - successfulIds.count
         lastQuitCount = successfulIds.count
         selected.subtract(successfulIds)
         await refresh()
         randomizeQuote()
-        if !successfulIds.isEmpty {
-            triggerToast()
+        if failureCount == 0 {
+            let noun = successfulIds.count == 1 ? "app" : "apps"
+            triggerToast(message: "\(successfulIds.count) \(noun) quit", isError: false)
+        } else {
+            triggerToast(
+                message: "\(successfulIds.count) quit, \(failureCount) failed",
+                isError: true
+            )
         }
     }
 
     func restartApp(_ app: AppInfo) async {
-        _ = await RestartService.shared.restart(app: app)
+        guard pendingAppIds.insert(app.id).inserted else { return }
+        defer { pendingAppIds.remove(app.id) }
+
+        let succeeded = await RestartService.shared.restart(app: app)
         await refresh()
+        if !succeeded {
+            triggerToast(message: "Couldn’t restart \(app.name)", isError: true)
+        }
     }
 
     func stash() async {
@@ -216,8 +252,10 @@ final class AppListViewModel: ObservableObject {
         }
     }
 
-    private func triggerToast() {
+    private func triggerToast(message: String, isError: Bool) {
         toastTask?.cancel()
+        toastMessage = message
+        toastIsError = isError
         showToast = true
         toastTask = Task { @MainActor [weak self] in
             do {

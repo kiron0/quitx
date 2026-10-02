@@ -64,7 +64,7 @@ struct MainPopoverView: View {
         }
         .overlay(alignment: .bottom) {
             if vm.showToast {
-                ToastView(count: vm.lastQuitCount)
+                ToastView(message: vm.toastMessage, isError: vm.toastIsError)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .padding(.bottom, 36)
             }
@@ -94,7 +94,8 @@ struct MainPopoverView: View {
         } else {
             title = isAll ? "Quit All" : "Quit Selected"
         }
-        let isEnabled = count > 0
+        let isActive = count > 0
+        let canStart = isActive && !vm.hasPendingOperations
 
         return Button {
             if count >= 4 && configStore.config.confirmQuitAll {
@@ -104,34 +105,45 @@ struct MainPopoverView: View {
             }
         } label: {
             HStack(spacing: 5) {
-                if isForced {
+                if vm.isBatchQuitting {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(isForced ? Color.white : Color.black.opacity(0.88))
+                        .scaleEffect(0.65)
+                    Text("Quitting…")
+                        .font(.system(size: 12, weight: .bold))
+                } else if isForced {
                     Image(systemName: "bolt.fill")
                         .font(.system(size: 10, weight: .bold))
+                    Text(title)
+                        .font(.system(size: 12, weight: .bold))
+                } else {
+                    Text(title)
+                        .font(.system(size: 12, weight: .bold))
                 }
-                Text(title)
-                    .font(.system(size: 12, weight: .bold))
             }
             .foregroundStyle(
-                isEnabled
+                isActive
                     ? (isForced ? Color.white : Color.black.opacity(0.88))
                     : Color.primary.opacity(0.35)
             )
+            .opacity(canStart || vm.isBatchQuitting ? 1 : 0.55)
             .frame(maxWidth: .infinity)
             .frame(height: 24)
             .background(
-                isEnabled
+                isActive
                     ? goldGradient
                     : LinearGradient(colors: [Color.primary.opacity(0.08), Color.primary.opacity(0.08)], startPoint: .top, endPoint: .bottom)
             )
             .clipShape(RoundedRectangle(cornerRadius: 6))
             .shadow(
-                color: isEnabled ? goldColor.opacity(uiState.isQuitAllHovered ? 0.3 : 0.12) : Color.clear,
+                color: isActive ? goldColor.opacity(uiState.isQuitAllHovered ? 0.3 : 0.12) : Color.clear,
                 radius: 2,
                 y: 1
             )
         }
         .buttonStyle(.plain)
-        .disabled(!isEnabled)
+        .disabled(!canStart)
         .onHover { uiState.isQuitAllHovered = $0 }
     }
 

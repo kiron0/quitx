@@ -22,6 +22,7 @@ struct AppListView: View {
                     app: app,
                     isSelected: vm.selected.contains(app.id),
                     isOptionKeyPressed: vm.isOptionKeyPressed,
+                    isPending: vm.pendingAppIds.contains(app.id),
                     onToggle: {
                         vm.toggleSelection(for: app)
                     },

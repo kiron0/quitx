@@ -1,4 +1,7 @@
 APP_NAME = QuitX
+SHELL := /bin/bash
+.SHELLFLAGS := -o pipefail -c
+
 BUNDLE_ID = io.coreify.quitx
 VERSION = $(shell awk -F'"' '/"version"/ { print $$4; exit }' package.json)
 APP_DIR = .build/$(APP_NAME).app
@@ -14,7 +17,7 @@ all: bundle
 
 ## Compile with SPM (release)
 build:
-	@swift build -c release --build-system native $(SWIFT_FLAGS)
+	@swift build -c release --build-system native $(SWIFT_FLAGS) 2>&1 | sed '/warning:.*build-system native.*deprecated/d'
 
 ## Wrap binary in a minimal .app bundle
 bundle: build
@@ -50,12 +53,12 @@ run: bundle
 
 ## Build debug + run binary directly (fast iteration, no bundle)
 dev:
-	@swift build --build-system native $(SWIFT_FLAGS)
+	@swift build --build-system native $(SWIFT_FLAGS) 2>&1 | sed '/warning:.*build-system native.*deprecated/d'
 	@.build/debug/$(APP_NAME)
 
 ## Run tests
 test:
-	@swift test --build-system native $(SWIFT_FLAGS)
+	@swift test --build-system native $(SWIFT_FLAGS) 2>&1 | sed '/warning:.*build-system native.*deprecated/d'
 
 ## Test, bundle, kill, install, and open in one go
 ship:

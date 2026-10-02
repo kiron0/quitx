@@ -36,6 +36,7 @@ struct AppRowView: View {
     let app: AppInfo
     let isSelected: Bool
     let isOptionKeyPressed: Bool
+    let isPending: Bool
     let onToggle: () -> Void
     let onQuit: (_ force: Bool) -> Void
     let onRestart: () -> Void
@@ -94,6 +95,7 @@ struct AppRowView: View {
 
             AppRowOptionsButton(
                 isForced: isOptionKeyPressed,
+                isEnabled: !isPending,
                 hasBundleUrl: hasUrl,
                 onQuit: { onQuit(isOptionKeyPressed) },
                 onRestart: { onRestart() },
@@ -116,19 +118,26 @@ struct AppRowView: View {
                 quitButtonIcon
             }
             .buttonStyle(.plain)
+            .disabled(isPending)
+            .help(isPending ? "Operation in progress" : (isOptionKeyPressed ? "Force quit \(app.name)" : "Quit \(app.name)"))
+            .accessibilityLabel(isPending ? "Operation in progress" : (isOptionKeyPressed ? "Force quit \(app.name)" : "Quit \(app.name)"))
             .onHover { h in state.isQuitHovered = h }
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 3.5)
         .contentShape(Rectangle())
         .onTapGesture {
-            onToggle()
+            if !isPending {
+                onToggle()
+            }
         }
         .background(
             RoundedRectangle(cornerRadius: 3.5)
                 .fill(state.isHovered ? Color.primary.opacity(0.07) : Color.clear)
         )
         .onHover { h in state.isHovered = h }
+        .opacity(isPending ? 0.72 : 1)
+        .accessibilityValue(isPending ? "Operation in progress" : "")
     }
 
     @ViewBuilder
@@ -140,7 +149,13 @@ struct AppRowView: View {
             Color.clear
                 .frame(width: 18, height: 18)
 
-            if isForced {
+            if isPending {
+                ProgressView()
+                    .controlSize(.small)
+                    .tint(goldColor)
+                    .scaleEffect(0.55)
+                    .frame(width: 18, height: 18)
+            } else if isForced {
                 Image(systemName: "bolt.fill")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(activeColor)
@@ -156,6 +171,7 @@ struct AppRowView: View {
 
 private struct AppRowOptionsButton: NSViewRepresentable {
     let isForced: Bool
+    let isEnabled: Bool
     let hasBundleUrl: Bool
     let onQuit: () -> Void
     let onRestart: () -> Void
@@ -182,11 +198,13 @@ private struct AppRowOptionsButton: NSViewRepresentable {
         button.contentTintColor = NSColor.secondaryLabelColor
         button.target = context.coordinator
         button.action = #selector(Coordinator.showMenu(_:))
+        button.isEnabled = isEnabled
         return button
     }
 
     func updateNSView(_ button: NSButton, context: Context) {
         context.coordinator.parent = self
+        button.isEnabled = isEnabled
     }
 
     @MainActor
