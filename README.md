@@ -9,7 +9,6 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/kiron0/quitx/releases/latest"><img src="https://img.shields.io/github/v/release/kiron0/quitx?color=FFB800&label=Download%20QuitX&logo=apple" alt="Download QuitX" /></a>
   <a href="https://github.com/kiron0/quitx/actions/workflows/ci.yml"><img src="https://github.com/kiron0/quitx/actions/workflows/ci.yml/badge.svg" alt="CI Status" /></a>
   <img src="https://img.shields.io/badge/macOS-14.0%2B-black?logo=apple" alt="macOS 14+" />
   <img src="https://img.shields.io/badge/Swift-6-orange?logo=swift" alt="Swift 6" />
@@ -18,7 +17,7 @@
 
 <p align="center">
   <a href="https://github.com/kiron0/quitx/releases/latest">
-    <img src="https://img.shields.io/badge/Download_QuitX_for_macOS-v1.0.0-FFB800?style=for-the-badge&labelColor=1a1a1a" alt="Download DMG" height="38" />
+    <img src="https://img.shields.io/github/v/release/kiron0/quitx?label=Download%20QuitX%20for%20macOS&style=for-the-badge&color=FFB800&labelColor=1a1a1a&logo=apple" alt="Download QuitX for macOS" height="38" />
   </a>
 </p>
 
@@ -51,38 +50,11 @@
 
 ---
 
-## Download & Install
+## Install
 
-1. Download **[QuitX-v1.0.0.dmg](https://github.com/kiron0/quitx/releases/latest/download/QuitX-v1.0.0.dmg)**.
-2. Open the disk image and drag **QuitX** into `/Applications`.
-3. Open **QuitX** from Applications or Spotlight. It lives in your menu bar.
-
----
-
-## Features
-
-- **Quit All** — Close all selected applications in one click to free memory.
-- **Dynamic Force Quit** — Hold Option key to transform any quit action into Force Quit.
-- **Background Apps** — View and terminate dormant background processes.
-- **App Exclusions** — Protect music players, browsers, or work tools from closing.
-- **Auto-Quit Timer** — Automatically close inactive apps after 15m, 30m, 1h, or 2h.
-- **RAM & CPU Metrics** — View resident memory usage and CPU activity per process.
-- **Session Stash & Restore** — Snapshot running apps before restart and reopen them anytime.
-- **Native & Lightweight** — Pure Swift & SwiftUI. Zero background drain.
-
----
-
-## Controls
-
-| Action | Shortcut / Control |
-|---|---|
-| Open Menu | Click QuitX menubar icon |
-| Quit Selected | Click **Quit All** |
-| Force Quit All | Hold <kbd>⌥ Option</kbd> + click **Force Quit All** |
-| Quit Single App | Click power icon on app row |
-| Force Quit Single | Hold <kbd>⌥ Option</kbd> + click power icon |
-| Select / Deselect All | Click checkbox next to Search |
-| App Context Menu | Click `•••` for Force Quit, Restart, Exclude, or Reveal |
+1. Download the latest `.dmg` above.
+2. Drag **QuitX** into `/Applications`.
+3. Launch from Applications or Spotlight. It lives in your menu bar.
 
 ---
 
@@ -95,7 +67,7 @@ npm install -g @coreify/quitx
 quitx
 ```
 
-Both app and CLI share persistent state in `UserDefaults` and configuration at `~/.config/quitx/config.json`.
+The macOS app stores preferences independently in standard `UserDefaults` (`com.quitx.QuitX`).
 
 ---
 
