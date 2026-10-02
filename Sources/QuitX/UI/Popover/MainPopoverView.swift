@@ -284,7 +284,7 @@ private struct PopoverOptionsButton: NSViewRepresentable {
                 enabled: parent.hasStash
             )
             menu.addItem(.separator())
-            addItem(to: menu, title: "Settings...", symbol: "gearshape", action: #selector(openSettings))
+            addItem(to: menu, title: "Settings", symbol: "gearshape", action: #selector(openSettings))
             addItem(to: menu, title: "Help", symbol: "questionmark.circle", action: #selector(openHelp))
             menu.addItem(.separator())
             addItem(to: menu, title: "Quit QuitX", symbol: "power", action: #selector(quitApp))
