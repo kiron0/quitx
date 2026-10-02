@@ -57,9 +57,9 @@ struct MainPopoverView: View {
         .frame(width: 270)
         .frame(maxHeight: .infinity)
         .background(QuitXTheme.popoverBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .stroke(Color.primary.opacity(0.12), lineWidth: 0.5)
         )
         .onAppear {
@@ -260,11 +260,20 @@ private struct PopoverOptionsButton: NSViewRepresentable {
     func makeNSView(context: Context) -> NSButton {
         let button = NSButton()
         button.isBordered = false
-        button.image = NSImage(
-            systemSymbolName: "line.3.horizontal",
-            accessibilityDescription: "Options"
-        )
-        button.imagePosition = .imageOnly
+        if let img = AssetImages.load("settings") {
+            let copy = img.copy() as? NSImage ?? img
+            copy.size = NSSize(width: 17, height: 17)
+            copy.isTemplate = true
+            button.image = copy
+            button.imagePosition = .imageOnly
+        } else if let sym = NSImage(systemSymbolName: "gearshape", accessibilityDescription: "Options") {
+            let config = NSImage.SymbolConfiguration(pointSize: 13, weight: .regular)
+            let copy = (sym.withSymbolConfiguration(config) ?? sym).copy() as? NSImage ?? sym
+            copy.size = NSSize(width: 17, height: 17)
+            copy.isTemplate = true
+            button.image = copy
+            button.imagePosition = .imageOnly
+        }
         button.contentTintColor = NSColor.secondaryLabelColor
         button.toolTip = "Options"
         button.target = context.coordinator
@@ -286,42 +295,72 @@ private struct PopoverOptionsButton: NSViewRepresentable {
 
         @objc func showMenu(_ button: NSButton) {
             let menu = NSMenu()
-            addItem(
-                to: menu,
-                title: parent.showsBackgroundApps ? "Hide background apps" : "View background apps",
-                symbol: parent.showsBackgroundApps ? "eye.slash" : "eye",
-                action: #selector(toggleBackgroundApps)
-            )
+            menu.appearance = NSApp.effectiveAppearance
+
+            let bgTitle = parent.showsBackgroundApps ? "Hide background apps" : "View background apps"
+            let bgAsset = parent.showsBackgroundApps ? "settings-background-apps-hide" : "settings-background-apps-show"
+            let bgSymbol = parent.showsBackgroundApps ? "eye.slash" : "eye"
+
+            menu.addItem(MenuHelper.makeItem(
+                title: bgTitle,
+                action: #selector(toggleBackgroundApps),
+                target: self,
+                keyEquivalent: "b",
+                assetName: bgAsset,
+                systemSymbolName: bgSymbol
+            ))
+
             menu.addItem(.separator())
-            addItem(to: menu, title: "Stash session", symbol: "tray.and.arrow.down", action: #selector(stash))
-            addItem(
-                to: menu,
+
+            menu.addItem(MenuHelper.makeItem(
+                title: "Stash session",
+                action: #selector(stash),
+                target: self,
+                keyEquivalent: "s",
+                systemSymbolName: "tray.and.arrow.down"
+            ))
+
+            menu.addItem(MenuHelper.makeItem(
                 title: "Restore session",
-                symbol: "tray.and.arrow.up",
                 action: #selector(restore),
-                enabled: parent.hasStash
-            )
+                target: self,
+                keyEquivalent: "r",
+                systemSymbolName: "tray.and.arrow.up",
+                isEnabled: parent.hasStash
+            ))
+
             menu.addItem(.separator())
-            addItem(to: menu, title: "Settings", symbol: "gearshape", action: #selector(openSettings))
-            addItem(to: menu, title: "Help", symbol: "questionmark.circle", action: #selector(openHelp))
+
+            menu.addItem(MenuHelper.makeItem(
+                title: "Settings",
+                action: #selector(openSettings),
+                target: self,
+                keyEquivalent: ",",
+                assetName: "settings-preferences",
+                systemSymbolName: "gearshape"
+            ))
+
+            menu.addItem(MenuHelper.makeItem(
+                title: "Help",
+                action: #selector(openHelp),
+                target: self,
+                keyEquivalent: "h",
+                assetName: "settings-help",
+                systemSymbolName: "questionmark.circle"
+            ))
+
             menu.addItem(.separator())
-            addItem(to: menu, title: "Quit", symbol: "power", action: #selector(quitApp))
+
+            menu.addItem(MenuHelper.makeItem(
+                title: "Quit",
+                action: #selector(quitApp),
+                target: self,
+                keyEquivalent: "q",
+                assetName: "settings-quit",
+                systemSymbolName: "power"
+            ))
 
             menu.popUp(positioning: nil, at: NSPoint(x: button.bounds.maxX, y: button.bounds.minY), in: button)
-        }
-
-        private func addItem(
-            to menu: NSMenu,
-            title: String,
-            symbol: String,
-            action: Selector,
-            enabled: Bool = true
-        ) {
-            let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
-            item.target = self
-            item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
-            item.isEnabled = enabled
-            menu.addItem(item)
         }
 
         @objc private func toggleBackgroundApps() { parent.onToggleBackgroundApps() }

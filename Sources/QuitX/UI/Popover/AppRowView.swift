@@ -85,31 +85,26 @@ struct AppRowView: View {
 
             Spacer(minLength: 4)
 
-            Menu {
-                Button(isOptionKeyPressed ? "Force Quit" : "Quit") {
-                    onQuit(isOptionKeyPressed)
+            let hasUrl: Bool = {
+                if let bid = app.bundleId {
+                    return NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid) != nil
                 }
-                Button("Restart") {
-                    onRestart()
-                }
-                Divider()
-                Button("Add to Exclude List") {
-                    onExclude()
-                }
-                if let bid = app.bundleId, let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid) {
-                    Button("Reveal in Finder") {
+                return false
+            }()
+
+            AppRowOptionsButton(
+                isForced: isOptionKeyPressed,
+                hasBundleUrl: hasUrl,
+                onQuit: { onQuit(isOptionKeyPressed) },
+                onRestart: { onRestart() },
+                onExclude: { onExclude() },
+                onReveal: {
+                    if let bid = app.bundleId, let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid) {
                         NSWorkspace.shared.activateFileViewerSelecting([url])
                     }
                 }
-            } label: {
-                Text("•••")
-                    .font(.system(size: 9.5, weight: .bold))
-                    .foregroundStyle(Color.secondary)
-                    .frame(width: 16, height: 16)
-            }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .frame(width: 16)
+            )
+            .frame(width: 16, height: 16)
 
             Text(app.cpuFormatted)
                 .font(.system(size: 10.5, design: .monospaced))
@@ -156,5 +151,105 @@ struct AppRowView: View {
             }
         }
         .frame(width: 18, height: 18)
+    }
+}
+
+private struct AppRowOptionsButton: NSViewRepresentable {
+    let isForced: Bool
+    let hasBundleUrl: Bool
+    let onQuit: () -> Void
+    let onRestart: () -> Void
+    let onExclude: () -> Void
+    let onReveal: () -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(parent: self)
+    }
+
+    func makeNSView(context: Context) -> NSButton {
+        let button = NSButton()
+        button.isBordered = false
+        if let img = AssetImages.load("menu-options") {
+            let copy = img.copy() as? NSImage ?? img
+            copy.size = NSSize(width: 14, height: 14)
+            copy.isTemplate = true
+            button.image = copy
+            button.imagePosition = .imageOnly
+        } else {
+            button.title = "•••"
+            button.font = .systemFont(ofSize: 9.5, weight: .bold)
+        }
+        button.contentTintColor = NSColor.secondaryLabelColor
+        button.target = context.coordinator
+        button.action = #selector(Coordinator.showMenu(_:))
+        return button
+    }
+
+    func updateNSView(_ button: NSButton, context: Context) {
+        context.coordinator.parent = self
+    }
+
+    @MainActor
+    final class Coordinator: NSObject {
+        var parent: AppRowOptionsButton
+
+        init(parent: AppRowOptionsButton) {
+            self.parent = parent
+        }
+
+        @objc func showMenu(_ button: NSButton) {
+            let menu = NSMenu()
+            menu.appearance = NSApp.effectiveAppearance
+
+            let quitTitle = parent.isForced ? "Force Quit" : "Quit"
+            let quitAsset = parent.isForced ? "settings-force-quit" : "settings-quit"
+            let quitSymbol = parent.isForced ? "bolt.fill" : "power"
+            let quitMask: NSEvent.ModifierFlags = parent.isForced ? [.command, .option] : [.command]
+
+            menu.addItem(MenuHelper.makeItem(
+                title: quitTitle,
+                action: #selector(handleQuit),
+                target: self,
+                keyEquivalent: "q",
+                keyEquivalentModifierMask: quitMask,
+                assetName: quitAsset,
+                systemSymbolName: quitSymbol
+            ))
+
+            menu.addItem(MenuHelper.makeItem(
+                title: "Restart",
+                action: #selector(handleRestart),
+                target: self,
+                keyEquivalent: "r",
+                systemSymbolName: "arrow.clockwise"
+            ))
+
+            menu.addItem(.separator())
+
+            menu.addItem(MenuHelper.makeItem(
+                title: "Add to Exclude List",
+                action: #selector(handleExclude),
+                target: self,
+                keyEquivalent: "e",
+                systemSymbolName: "nosign"
+            ))
+
+            if parent.hasBundleUrl {
+                menu.addItem(MenuHelper.makeItem(
+                    title: "Reveal in Finder",
+                    action: #selector(handleReveal),
+                    target: self,
+                    keyEquivalent: "f",
+                    systemSymbolName: "folder"
+                ))
+            }
+
+            menu.popUp(positioning: nil, at: NSPoint(x: button.bounds.maxX, y: button.bounds.minY), in: button)
+        }
+
+        @objc private func handleQuit() { parent.onQuit() }
+        @objc private func handleRestart() { parent.onRestart() }
+        @objc private func handleExclude() { parent.onExclude() }
+        @objc private func handleReveal() { parent.onReveal() }
     }
 }

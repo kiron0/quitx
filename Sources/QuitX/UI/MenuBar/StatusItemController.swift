@@ -129,12 +129,13 @@ final class StatusItemController: NSObject {
         )
         let hosting = NSHostingController(rootView: rootView)
         hosting.view.wantsLayer = true
-        hosting.view.layer?.cornerRadius = 8
+        hosting.view.layer?.cornerRadius = 10
         hosting.view.layer?.masksToBounds = true
         self.hostingController = hosting
 
         let win = MenuPopupWindow(contentRect: NSRect(x: 0, y: 0, width: 270, height: 200))
         win.contentViewController = hosting
+        win.appearance = NSApp.effectiveAppearance
         self.window = win
 
         updatePopoverSize()
@@ -223,6 +224,7 @@ final class StatusItemController: NSObject {
                 return
             }
             guard let win = window else { return }
+            win.appearance = NSApp.effectiveAppearance
             NSApp.activate(ignoringOtherApps: true)
             updatePopoverSize()
             win.makeKeyAndOrderFront(nil)
@@ -261,35 +263,65 @@ final class StatusItemController: NSObject {
     private func showContextMenu() {
         closePopover()
         let menu = NSMenu()
+        menu.appearance = NSApp.effectiveAppearance
 
-        let settingsItem = NSMenuItem(title: "Settings", action: #selector(openSettings), keyEquivalent: ",")
-        settingsItem.target = self
-        menu.addItem(settingsItem)
-
-        menu.addItem(NSMenuItem.separator())
-
-        let stashItem = NSMenuItem(title: "Stash Session", action: #selector(stashSession), keyEquivalent: "")
-        stashItem.target = self
-        menu.addItem(stashItem)
-
-        let restoreItem = NSMenuItem(title: "Restore Session", action: #selector(restoreSession), keyEquivalent: "")
-        restoreItem.target = self
-        restoreItem.isEnabled = StashService.shared.hasStash
-        menu.addItem(restoreItem)
+        menu.addItem(MenuHelper.makeItem(
+            title: "Settings...",
+            action: #selector(openSettings),
+            target: self,
+            keyEquivalent: ",",
+            assetName: "settings-preferences",
+            systemSymbolName: "gearshape"
+        ))
 
         menu.addItem(NSMenuItem.separator())
 
-        let welcomeItem = NSMenuItem(title: "Welcome Guide...", action: #selector(openWelcomeGuide), keyEquivalent: "")
-        welcomeItem.target = self
-        menu.addItem(welcomeItem)
+        menu.addItem(MenuHelper.makeItem(
+            title: "Stash Session",
+            action: #selector(stashSession),
+            target: self,
+            keyEquivalent: "s",
+            systemSymbolName: "tray.and.arrow.down"
+        ))
 
-        let aboutItem = NSMenuItem(title: "About QuitX", action: #selector(openSettings), keyEquivalent: "")
-        aboutItem.target = self
-        menu.addItem(aboutItem)
+        menu.addItem(MenuHelper.makeItem(
+            title: "Restore Session",
+            action: #selector(restoreSession),
+            target: self,
+            keyEquivalent: "r",
+            systemSymbolName: "tray.and.arrow.up",
+            isEnabled: StashService.shared.hasStash
+        ))
 
-        let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q")
-        quitItem.target = self
-        menu.addItem(quitItem)
+        menu.addItem(NSMenuItem.separator())
+
+        menu.addItem(MenuHelper.makeItem(
+            title: "Welcome Guide...",
+            action: #selector(openWelcomeGuide),
+            target: self,
+            keyEquivalent: "w",
+            systemSymbolName: "book.pages"
+        ))
+
+        menu.addItem(MenuHelper.makeItem(
+            title: "About QuitX",
+            action: #selector(openSettings),
+            target: self,
+            keyEquivalent: "i",
+            assetName: "preferences-about",
+            systemSymbolName: "info.circle"
+        ))
+
+        menu.addItem(NSMenuItem.separator())
+
+        menu.addItem(MenuHelper.makeItem(
+            title: "Quit",
+            action: #selector(quitApp),
+            target: self,
+            keyEquivalent: "q",
+            assetName: "settings-quit",
+            systemSymbolName: "power"
+        ))
 
         if let button = statusItem.button {
             menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.height + 4), in: button)
