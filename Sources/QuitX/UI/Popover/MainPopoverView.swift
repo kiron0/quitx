@@ -54,6 +54,12 @@ struct MainPopoverView: View {
         .onAppear {
             isSearchFocused = false
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSPopover.willShowNotification)) { _ in
+            isSearchFocused = false
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSPopover.didShowNotification)) { _ in
+            isSearchFocused = false
+        }
         .onChange(of: vm.filteredApps.count) {
             StatusItemController.shared?.updatePopoverSize()
         }

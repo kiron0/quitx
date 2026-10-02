@@ -134,6 +134,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
 
         let newSize = NSSize(width: 270, height: targetHeight)
         popover?.contentSize = newSize
+        updatePopoverBackground()
     }
 
     @objc private func handleStatusItemClick(_ sender: Any?) {
@@ -175,14 +176,57 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
             NSApp.activate(ignoringOtherApps: true)
             updatePopoverSize()
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            attachPopoverBackground()
+            clearSearchFocus()
             refreshVisibleApps()
             startLiveMonitoring()
+        }
+    }
+
+    func popoverWillShow(_ notification: Notification) {
+        attachPopoverBackground()
+    }
+
+    func popoverDidShow(_ notification: Notification) {
+        attachPopoverBackground()
+        clearSearchFocus()
+    }
+
+    private func clearSearchFocus() {
+        guard let window = popover?.contentViewController?.view.window else { return }
+        window.initialFirstResponder = nil
+        window.makeFirstResponder(nil)
+        DispatchQueue.main.async { [weak self] in
+            guard let window = self?.popover?.contentViewController?.view.window else { return }
+            window.makeFirstResponder(nil)
         }
     }
 
     func popoverDidClose(_ notification: Notification) {
         lastCloseTimestamp = Date()
         stopLiveMonitoring()
+    }
+
+    private func attachPopoverBackground() {
+        guard let contentView = popover?.contentViewController?.view,
+              let frameView = contentView.superview else { return }
+
+        if let existing = frameView.subviews.first(where: { $0 is PopoverArrowBackgroundView }) {
+            existing.frame = frameView.bounds
+            existing.needsDisplay = true
+            return
+        }
+
+        let bgView = PopoverArrowBackgroundView(frame: frameView.bounds)
+        frameView.addSubview(bgView, positioned: .below, relativeTo: contentView)
+    }
+
+    private func updatePopoverBackground() {
+        guard let contentView = popover?.contentViewController?.view,
+              let frameView = contentView.superview,
+              let bgView = frameView.subviews.first(where: { $0 is PopoverArrowBackgroundView }) else { return }
+        bgView.frame = frameView.bounds
+        bgView.needsDisplay = true
     }
 
     private func startLiveMonitoring() {
