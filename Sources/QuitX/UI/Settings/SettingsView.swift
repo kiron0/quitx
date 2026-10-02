@@ -72,16 +72,11 @@ struct SettingsContainerView: View {
     let onSelectTab: (SettingsTab) -> Void
 
     var body: some View {
-        VStack(spacing: 0) {
-            headerSection
-                .frame(width: 400, height: 91)
-                .fixedSize(horizontal: true, vertical: true)
-                .background(QuitXTheme.toolbarBackground)
-                .layoutPriority(100)
-                .transaction { $0.animation = nil }
-                .animation(nil, value: tabModel.activeTab)
-
+        ZStack(alignment: .top) {
             VStack(spacing: 0) {
+                Color.clear
+                    .frame(height: 91)
+
                 switch tabModel.activeTab {
                 case .general:
                     GeneralTabCloneView()
@@ -96,6 +91,11 @@ struct SettingsContainerView: View {
             }
             .frame(width: 400, alignment: .top)
             .clipped()
+
+            headerSection
+                .frame(width: 400, height: 91)
+                .background(QuitXTheme.toolbarBackground)
+                .zIndex(100)
         }
         .frame(width: 400)
         .frame(maxHeight: .infinity, alignment: .top)

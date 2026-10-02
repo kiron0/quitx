@@ -1,6 +1,12 @@
 import AppKit
 import SwiftUI
 
+private final class SettingsWindow: NSWindow {
+    override func animationResizeTime(_ newFrame: NSRect) -> TimeInterval {
+        0.18
+    }
+}
+
 @MainActor
 final class SettingsWindowController: NSObject, NSWindowDelegate {
     static let shared = SettingsWindowController()
@@ -27,7 +33,8 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         tabModel.activeTab = initialTab
         let totalHeight = initialTab.totalHeight
         let contentRect = NSRect(x: 0, y: 0, width: 400, height: totalHeight)
-        let win = NSWindow(
+
+        let win = SettingsWindow(
             contentRect: contentRect,
             styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
             backing: .buffered,
@@ -109,10 +116,6 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         let newY = currentFrame.maxY - targetHeight
         let newFrame = NSRect(x: currentFrame.origin.x, y: newY, width: 400, height: targetHeight)
 
-        NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.20
-            ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-            win.animator().setFrame(newFrame, display: true)
-        }
+        win.setFrame(newFrame, display: true, animate: true)
     }
 }
