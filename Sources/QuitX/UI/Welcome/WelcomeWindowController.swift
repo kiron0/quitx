@@ -62,23 +62,41 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
             targetFrame = win.frame
         }
 
+        let startW = targetFrame.width * 0.88
+        let startH = targetFrame.height * 0.88
         let startFrame = NSRect(
-            x: targetFrame.origin.x,
-            y: targetFrame.origin.y + 16,
-            width: targetFrame.width,
-            height: targetFrame.height
+            x: targetFrame.midX - startW / 2,
+            y: targetFrame.midY - startH / 2,
+            width: startW,
+            height: startH
         )
+
+        let overW = targetFrame.width * 1.025
+        let overH = targetFrame.height * 1.025
+        let overFrame = NSRect(
+            x: targetFrame.midX - overW / 2,
+            y: targetFrame.midY - overH / 2,
+            width: overW,
+            height: overH
+        )
+
         win.setFrame(startFrame, display: false)
         win.alphaValue = 0.0
         win.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
 
-        NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.22
-            ctx.timingFunction = CAMediaTimingFunction(controlPoints: 0.16, 1, 0.3, 1)
-            win.animator().setFrame(targetFrame, display: true)
+        NSAnimationContext.runAnimationGroup({ ctx in
+            ctx.duration = 0.18
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            win.animator().setFrame(overFrame, display: true)
             win.animator().alphaValue = 1.0
-        }
+        }, completionHandler: {
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0.10
+                ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                win.animator().setFrame(targetFrame, display: true)
+            }
+        })
     }
 
     func close() {

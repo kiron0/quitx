@@ -1,14 +1,9 @@
 import SwiftUI
 import AppKit
 
-final class WelcomeViewState: ObservableObject {
-    @Published var isAppeared: Bool = false
-}
-
 struct WelcomeView: View {
     var onDismiss: () -> Void
     var onOpenSettings: () -> Void
-    @StateObject private var state = WelcomeViewState()
 
     private let gold = QuitXTheme.accent
 
@@ -75,12 +70,6 @@ struct WelcomeView: View {
         .frame(width: 440, height: 600)
         .background(QuitXTheme.windowBackground)
         .preferredColorScheme(.dark)
-        .scaleEffect(state.isAppeared ? 1.0 : 0.88)
-        .opacity(state.isAppeared ? 1.0 : 0.0)
-        .animation(.spring(response: 0.36, dampingFraction: 0.66, blendDuration: 0), value: state.isAppeared)
-        .onAppear {
-            state.isAppeared = true
-        }
     }
 
     private var hero: some View {

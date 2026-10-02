@@ -13,7 +13,7 @@ all: bundle
 
 ## Compile with SPM (release)
 build:
-	swift build -c release --build-system native
+	@swift build -c release --build-system native 2>&1 | grep -v "build-system native" || true
 
 ## Wrap binary in a minimal .app bundle
 bundle: build
@@ -47,12 +47,12 @@ run: bundle
 
 ## Build debug + run binary directly (fast iteration, no bundle)
 dev:
-	@swift build --build-system native 2>&1
+	@swift build --build-system native 2>&1 | grep -v "build-system native" || true
 	@.build/debug/$(APP_NAME)
 
 ## Run tests
 test:
-	@swift test --build-system native
+	@swift test --build-system native 2>&1 | grep -v "build-system native" || true
 
 ## Clean build artifacts
 clean:

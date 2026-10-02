@@ -18,16 +18,11 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             if let tab = tab {
                 switchToTab(tab)
             }
-            tabModel.isAppeared = false
             win.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
-            withAnimation(.spring(response: 0.36, dampingFraction: 0.66, blendDuration: 0)) {
-                self.tabModel.isAppeared = true
-            }
             return
         }
 
-        tabModel.isAppeared = false
         activeTab = initialTab
         tabModel.activeTab = initialTab
         let totalHeight = initialTab.totalHeight
@@ -78,17 +73,42 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     }
 
     private func showAnimated(win: NSWindow, targetFrame: NSRect) {
-        win.setFrame(targetFrame, display: false)
+        let startW = targetFrame.width * 0.88
+        let startH = targetFrame.height * 0.88
+        let startFrame = NSRect(
+            x: targetFrame.midX - startW / 2,
+            y: targetFrame.midY - startH / 2,
+            width: startW,
+            height: startH
+        )
+
+        let overW = targetFrame.width * 1.025
+        let overH = targetFrame.height * 1.025
+        let overFrame = NSRect(
+            x: targetFrame.midX - overW / 2,
+            y: targetFrame.midY - overH / 2,
+            width: overW,
+            height: overH
+        )
+
+        win.setFrame(startFrame, display: false)
         win.alphaValue = 0.0
         win.layoutIfNeeded()
         win.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
 
-        NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.20
+        NSAnimationContext.runAnimationGroup({ ctx in
+            ctx.duration = 0.18
             ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            win.animator().setFrame(overFrame, display: true)
             win.animator().alphaValue = 1.0
-        }
+        }, completionHandler: {
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0.10
+                ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                win.animator().setFrame(targetFrame, display: true)
+            }
+        })
     }
 
     func windowWillClose(_ notification: Notification) {
