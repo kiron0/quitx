@@ -64,6 +64,7 @@ struct HelpPopoverButton: View {
 
 final class SettingsTabViewModel: ObservableObject {
     @Published var activeTab: SettingsTab = .general
+    @Published var isAppeared: Bool = false
 }
 
 struct SettingsContainerView: View {
@@ -138,6 +139,12 @@ struct SettingsContainerView: View {
         .background(QuitXTheme.windowBackground)
         .ignoresSafeArea()
         .preferredColorScheme(.dark)
+        .scaleEffect(tabModel.isAppeared ? 1.0 : 0.88)
+        .opacity(tabModel.isAppeared ? 1.0 : 0.0)
+        .animation(.spring(response: 0.36, dampingFraction: 0.66, blendDuration: 0), value: tabModel.isAppeared)
+        .onAppear {
+            tabModel.isAppeared = true
+        }
     }
 }
 

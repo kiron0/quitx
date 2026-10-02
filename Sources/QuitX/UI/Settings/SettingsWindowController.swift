@@ -18,11 +18,16 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             if let tab = tab {
                 switchToTab(tab)
             }
+            tabModel.isAppeared = false
             win.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
+            withAnimation(.spring(response: 0.36, dampingFraction: 0.66, blendDuration: 0)) {
+                self.tabModel.isAppeared = true
+            }
             return
         }
 
+        tabModel.isAppeared = false
         activeTab = initialTab
         tabModel.activeTab = initialTab
         let totalHeight = initialTab.totalHeight

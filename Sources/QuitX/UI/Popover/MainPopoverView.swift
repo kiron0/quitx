@@ -276,7 +276,6 @@ private struct PopoverOptionsButton: NSViewRepresentable {
                 enabled: parent.hasStash
             )
             menu.addItem(.separator())
-            addItem(to: menu, title: "Welcome Guide...", symbol: "hand.wave", action: #selector(openWelcome))
             addItem(to: menu, title: "Preferences...", symbol: "gearshape", action: #selector(openPreferences))
             addItem(to: menu, title: "Help", symbol: "questionmark.circle", action: #selector(openHelp))
             menu.addItem(.separator())
@@ -302,11 +301,6 @@ private struct PopoverOptionsButton: NSViewRepresentable {
         @objc private func toggleBackgroundApps() { parent.onToggleBackgroundApps() }
         @objc private func stash() { parent.onStash() }
         @objc private func restore() { parent.onRestore() }
-
-        @objc private func openWelcome() {
-            StatusItemController.shared?.closePopover()
-            WelcomeWindowController.shared.show()
-        }
 
         @objc private func openPreferences() {
             StatusItemController.shared?.closePopover()
