@@ -27,6 +27,7 @@ bundle: build
 	@cp Support/Sounds/* $(RESOURCES_DIR)/ 2>/dev/null || true
 	@cp Support/Assets.car $(RESOURCES_DIR)/ 2>/dev/null || true
 	@/usr/libexec/PlistBuddy -c "Set :CFBundleIconFile AppIcon" $(CONTENTS)/Info.plist 2>/dev/null || true
+	@codesign --force --deep --sign - $(APP_DIR) 2>/dev/null || true
 	@echo "✅ Bundle ready: $(APP_DIR)"
 
 ## Create DMG installer
