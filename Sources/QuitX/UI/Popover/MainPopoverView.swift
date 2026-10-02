@@ -58,6 +58,10 @@ struct MainPopoverView: View {
         .frame(maxHeight: .infinity)
         .background(QuitXTheme.popoverBackground)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color.primary.opacity(0.12), lineWidth: 0.5)
+        )
         .onAppear {
             isSearchFocused = false
         }
@@ -113,7 +117,11 @@ struct MainPopoverView: View {
                 Text(title)
                     .font(.system(size: 12, weight: .bold))
             }
-            .foregroundStyle(isEnabled ? Color.white : Color.primary.opacity(0.35))
+            .foregroundStyle(
+                isEnabled
+                    ? (isForced ? Color.white : Color.black.opacity(0.88))
+                    : Color.primary.opacity(0.35)
+            )
             .frame(maxWidth: .infinity)
             .frame(height: 24)
             .background(
@@ -141,7 +149,7 @@ struct MainPopoverView: View {
             } label: {
                 ZStack {
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(vm.isAllSelected || vm.isPartiallySelected ? goldColor : Color.primary.opacity(0.12))
+                        .fill(vm.isAllSelected || vm.isPartiallySelected ? goldColor : Color.primary.opacity(0.08))
                         .frame(width: 14, height: 14)
 
                     if vm.isAllSelected {
@@ -166,7 +174,7 @@ struct MainPopoverView: View {
                     .font(.system(size: 11))
                     .foregroundStyle(Color.secondary)
 
-                TextField("", text: $vm.searchQuery, prompt: Text("Search").foregroundColor(Color.secondary.opacity(0.7)))
+                TextField("", text: $vm.searchQuery, prompt: Text("Search").foregroundColor(Color.secondary))
                     .textFieldStyle(.plain)
                     .font(.system(size: 11.5))
                     .foregroundStyle(Color.primary)
@@ -187,7 +195,11 @@ struct MainPopoverView: View {
             .frame(height: 24)
             .background(
                 RoundedRectangle(cornerRadius: 6)
-                    .fill(Color.primary.opacity(0.06))
+                    .fill(Color(NSColor.textBackgroundColor).opacity(0.8))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
             )
         }
     }

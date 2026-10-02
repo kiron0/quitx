@@ -10,48 +10,29 @@ struct WelcomeView: View {
     var body: some View {
         VStack(spacing: 0) {
             hero
-                .padding(.top, 36)
+                .padding(.top, 24)
 
-            VStack(spacing: 10) {
+            VStack(spacing: 8) {
                 guideRow(
                     icon: "menubar.rectangle",
-                    title: "Open QuitX",
-                    detail: "Click the QuitX icon in your menu bar."
-                )
-                guideRow(
-                    icon: "checklist",
-                    title: "Choose apps",
-                    detail: "Select one app, several apps, or everything."
+                    title: "Menu Bar",
+                    detail: "Click the QuitX menu bar icon to view and manage running apps."
                 )
                 guideRow(
                     icon: "bolt.fill",
-                    title: "Quit your way",
-                    detail: "Click power to quit. Hold Option to force quit."
+                    title: "Quick & Force Quit",
+                    detail: "Click power to quit normally, or hold Option (⌥) to force quit."
+                )
+                guideRow(
+                    icon: "gearshape",
+                    title: "Customizable",
+                    detail: "Set auto-quit timers, global shortcuts, and exclusions in Settings."
                 )
             }
-            .padding(.horizontal, 28)
-            .padding(.top, 26)
-
-            HStack(spacing: 10) {
-                Image(systemName: "lightbulb.fill")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(gold)
-
-                Text("Use the footer menu to stash a session, show background apps, or open Settings.")
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(Color.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(12)
-            .background(Color.primary.opacity(0.055), in: RoundedRectangle(cornerRadius: 10))
-            .overlay {
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-            }
-            .padding(.horizontal, 28)
+            .padding(.horizontal, 22)
             .padding(.top, 18)
 
-            Spacer(minLength: 22)
+            Spacer(minLength: 16)
 
             HStack(spacing: 10) {
                 Button("Settings") {
@@ -59,65 +40,55 @@ struct WelcomeView: View {
                 }
                 .buttonStyle(WelcomeSecondaryButtonStyle())
 
-                Button("Start using QuitX") {
+                Button("Get Started") {
                     onDismiss()
                 }
                 .buttonStyle(WelcomePrimaryButtonStyle(color: gold))
             }
-            .padding(.horizontal, 28)
-            .padding(.bottom, 26)
+            .padding(.horizontal, 22)
+            .padding(.bottom, 20)
         }
-        .frame(width: 440, height: 600)
+        .frame(width: 360, height: 370)
         .background(QuitXTheme.windowBackground)
     }
 
     private var hero: some View {
-        VStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(gold.opacity(0.16))
-                    .frame(width: 100, height: 100)
-                    .blur(radius: 18)
-
-                QuitXAppIconView(size: 82, cornerRadius: 18)
-            }
+        VStack(spacing: 8) {
+            QuitXAppIconView(size: 54, cornerRadius: 12)
 
             Text("Welcome to QuitX")
-                .font(.system(size: 25, weight: .bold, design: .rounded))
+                .font(.system(size: 19, weight: .bold))
                 .foregroundStyle(Color.primary)
 
-            Text("Clear apps. Reclaim memory. Keep your flow.")
-                .font(.system(size: 13))
+            Text("Quickly quit apps and reclaim memory.")
+                .font(.system(size: 12))
                 .foregroundStyle(Color.secondary)
         }
     }
 
     private func guideRow(icon: String, title: String, detail: String) -> some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 16, weight: .semibold))
+                .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(gold)
-                .frame(width: 36, height: 36)
-                .background(gold.opacity(0.12), in: RoundedRectangle(cornerRadius: 9))
+                .frame(width: 28, height: 28)
+                .background(gold.opacity(0.12), in: RoundedRectangle(cornerRadius: 7))
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(Color.primary)
                 Text(detail)
-                    .font(.system(size: 11.5))
+                    .font(.system(size: 11))
                     .foregroundStyle(Color.secondary)
+                    .lineLimit(2)
             }
 
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 14)
-        .frame(height: 58)
-        .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 12))
-        .overlay {
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.primary.opacity(0.07), lineWidth: 1)
-        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
     }
 }
 
@@ -126,27 +97,23 @@ private struct WelcomePrimaryButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 12.5, weight: .semibold))
-            .foregroundStyle(.black.opacity(0.86))
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(Color.black.opacity(0.88))
             .frame(maxWidth: .infinity)
-            .frame(height: 36)
+            .frame(height: 30)
             .background(color.opacity(configuration.isPressed ? 0.75 : 1))
-            .clipShape(RoundedRectangle(cornerRadius: 9))
+            .clipShape(RoundedRectangle(cornerRadius: 7))
     }
 }
 
 private struct WelcomeSecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 12.5, weight: .medium))
+            .font(.system(size: 12, weight: .medium))
             .foregroundStyle(Color.primary.opacity(configuration.isPressed ? 0.55 : 0.82))
             .frame(maxWidth: .infinity)
-            .frame(height: 36)
-            .background(Color.primary.opacity(configuration.isPressed ? 0.04 : 0.08))
-            .clipShape(RoundedRectangle(cornerRadius: 9))
-            .overlay {
-                RoundedRectangle(cornerRadius: 9)
-                    .stroke(Color.primary.opacity(0.1), lineWidth: 1)
-            }
+            .frame(height: 30)
+            .background(Color.primary.opacity(configuration.isPressed ? 0.04 : 0.07))
+            .clipShape(RoundedRectangle(cornerRadius: 7))
     }
 }

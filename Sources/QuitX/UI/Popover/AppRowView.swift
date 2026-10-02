@@ -52,7 +52,7 @@ struct AppRowView: View {
 
             ZStack {
                 RoundedRectangle(cornerRadius: 2.5)
-                    .fill(isSelected ? goldColor : Color.primary.opacity(0.12))
+                    .fill(isSelected ? goldColor : Color.primary.opacity(0.08))
                     .frame(width: 14, height: 14)
 
                 if isSelected {

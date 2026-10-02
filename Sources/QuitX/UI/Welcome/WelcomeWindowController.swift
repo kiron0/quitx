@@ -20,9 +20,9 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         if let win = window {
             if let screen = NSScreen.main ?? NSScreen.screens.first {
                 let screenFrame = screen.visibleFrame
-                let x = screenFrame.origin.x + (screenFrame.width - 440) / 2
-                let y = screenFrame.origin.y + screenFrame.height - 600 - 110
-                win.setFrame(NSRect(x: x, y: y, width: 440, height: 600), display: true)
+                let x = screenFrame.origin.x + (screenFrame.width - 360) / 2
+                let y = screenFrame.origin.y + screenFrame.height - 370 - 110
+                win.setFrame(NSRect(x: x, y: y, width: 360, height: 370), display: true)
             }
             win.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
@@ -45,7 +45,7 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         win.styleMask = [.titled, .closable]
         win.titlebarAppearsTransparent = true
         win.titleVisibility = .visible
-        win.setContentSize(NSSize(width: 440, height: 600))
+        win.setContentSize(NSSize(width: 360, height: 370))
         win.isOpaque = true
         win.backgroundColor = QuitXTheme.windowBackgroundNSColor
         win.isMovableByWindowBackground = true
@@ -59,9 +59,9 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         let targetFrame: NSRect
         if let screen = NSScreen.main ?? NSScreen.screens.first {
             let screenFrame = screen.visibleFrame
-            let x = screenFrame.origin.x + (screenFrame.width - 440) / 2
-            let y = screenFrame.origin.y + screenFrame.height - 600 - 110
-            targetFrame = NSRect(x: x, y: y, width: 440, height: 600)
+            let x = screenFrame.origin.x + (screenFrame.width - 360) / 2
+            let y = screenFrame.origin.y + screenFrame.height - 370 - 110
+            targetFrame = NSRect(x: x, y: y, width: 360, height: 370)
         } else {
             win.center()
             targetFrame = win.frame

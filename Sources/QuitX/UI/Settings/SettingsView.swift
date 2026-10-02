@@ -387,7 +387,7 @@ struct GeneralTabCloneView: View {
             HStack(spacing: 8) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 3.5)
-                        .fill(isOn.wrappedValue ? gold : Color.primary.opacity(0.12))
+                        .fill(isOn.wrappedValue ? gold : Color.primary.opacity(0.08))
                         .frame(width: 14, height: 14)
 
                     if isOn.wrappedValue {
@@ -396,10 +396,6 @@ struct GeneralTabCloneView: View {
                             .foregroundStyle(Color.black.opacity(0.9))
                     }
                 }
-                .overlay(
-                    RoundedRectangle(cornerRadius: 3.5)
-                        .stroke(isOn.wrappedValue ? gold : Color.primary.opacity(0.18), lineWidth: 1)
-                )
 
                 Text(title)
                     .font(.system(size: 12, weight: .regular))
@@ -556,7 +552,7 @@ struct ShortcutsTabCloneView: View {
             } label: {
                 ZStack {
                     RoundedRectangle(cornerRadius: 3.5)
-                        .fill(active ? gold : Color.primary.opacity(0.12))
+                        .fill(active ? gold : Color.primary.opacity(0.08))
                         .frame(width: 15, height: 15)
 
                     if active {
@@ -565,10 +561,6 @@ struct ShortcutsTabCloneView: View {
                             .foregroundStyle(Color.black.opacity(0.9))
                     }
                 }
-                .overlay(
-                    RoundedRectangle(cornerRadius: 3.5)
-                        .stroke(active ? gold : Color.primary.opacity(0.18), lineWidth: 1)
-                )
             }
             .buttonStyle(.plain)
 
