@@ -82,7 +82,7 @@ struct HelpPopoverButton: View {
             }
         }
         .buttonStyle(.plain)
-        .popover(isPresented: $state.isShowing, arrowEdge: .trailing) {
+        .popover(isPresented: $state.isShowing, arrowEdge: .bottom) {
             Text(text)
                 .font(.system(size: 11.5))
                 .foregroundStyle(Color.primary)
@@ -90,6 +90,7 @@ struct HelpPopoverButton: View {
                 .padding(.horizontal, 13)
                 .padding(.vertical, 10)
                 .frame(width: 230)
+                .background(VisualEffectBlur(material: .popover, blendingMode: .behindWindow))
         }
     }
 }
