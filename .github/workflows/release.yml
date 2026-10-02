@@ -83,13 +83,44 @@ jobs:
           ln -s /Applications "$DMG_STAGE/Applications"
           hdiutil create -volname "QuitX" -srcfolder "$DMG_STAGE" -ov -format UDZO ".build/QuitX-${TAG}.dmg"
 
+      - name: Write release notes
+        shell: bash
+        run: |
+          VERSION="${{ steps.meta.outputs.version }}"
+          awk -v version="$VERSION" '
+            $0 == "## " version { found=1; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGELOG.md > release-changes.md || true
+
+          cat > release-notes.md <<EOF
+          ## What's Changed
+
+          EOF
+
+          if [ -s release-changes.md ]; then
+            cat release-changes.md >> release-notes.md
+          else
+            echo "See commit history for changes included in this version." >> release-notes.md
+          fi
+
+          cat >> release-notes.md <<EOF
+
+          ## Install
+
+          1. Download \`QuitX-${{ steps.meta.outputs.tag }}.dmg\` from Assets below.
+          2. Open the disk image and drag **QuitX** to your \`/Applications\` folder.
+
+          **Full changelog:** https://github.com/${{ github.repository }}/commits/${{ steps.meta.outputs.tag }}
+          EOF
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.meta.outputs.tag }}
-          name: QuitX ${{ steps.meta.outputs.tag }}
+          name: ${{ steps.meta.outputs.tag }}
+          body_path: release-notes.md
           files: .build/QuitX-*.dmg
           draft: false
           prerelease: false
-          generate_release_notes: true
 
