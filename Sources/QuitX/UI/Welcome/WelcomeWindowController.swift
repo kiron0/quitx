@@ -18,7 +18,12 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         StatusItemController.shared?.closePopover()
 
         if let win = window {
-            win.center()
+            if let screen = NSScreen.main ?? NSScreen.screens.first {
+                let screenFrame = screen.visibleFrame
+                let x = screenFrame.origin.x + (screenFrame.width - 360) / 2
+                let y = screenFrame.origin.y + screenFrame.height - 370 - 110
+                win.setFrame(NSRect(x: x, y: y, width: 360, height: 370), display: true)
+            }
             win.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
@@ -40,9 +45,10 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         win.styleMask = [.titled, .closable]
         win.titlebarAppearsTransparent = true
         win.titleVisibility = .visible
-        win.setContentSize(NSSize(width: 440, height: 600))
+        win.setContentSize(NSSize(width: 360, height: 370))
         win.isOpaque = true
-        win.backgroundColor = QuitAllTheme.windowBackgroundNSColor
+        win.backgroundColor = QuitXTheme.windowBackgroundNSColor
+        win.appearance = NSApp.effectiveAppearance
         win.isMovableByWindowBackground = true
         win.standardWindowButton(.closeButton)?.isEnabled = true
         win.standardWindowButton(.closeButton)?.isHidden = false
@@ -51,16 +57,27 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         win.delegate = self
         self.window = win
 
+        let targetFrame: NSRect
         if let screen = NSScreen.main ?? NSScreen.screens.first {
             let screenFrame = screen.visibleFrame
-            let x = screenFrame.origin.x + (screenFrame.width - 440) / 2
-            let y = screenFrame.origin.y + (screenFrame.height - 600) / 2
-            win.setFrame(NSRect(x: x, y: y, width: 440, height: 600), display: true)
+            let x = screenFrame.origin.x + (screenFrame.width - 360) / 2
+            let y = screenFrame.origin.y + screenFrame.height - 370 - 110
+            targetFrame = NSRect(x: x, y: y, width: 360, height: 370)
         } else {
             win.center()
+            targetFrame = win.frame
         }
+
+        win.setFrame(targetFrame, display: false)
+        win.alphaValue = 0.0
         win.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.15
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            win.animator().alphaValue = 1.0
+        }
     }
 
     func close() {

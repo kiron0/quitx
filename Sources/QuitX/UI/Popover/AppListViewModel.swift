@@ -94,8 +94,6 @@ final class AppListViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Actions
-
     func refresh() async {
         isLoading = true
         let selectedAllBeforeRefresh = isAllSelected
@@ -107,10 +105,19 @@ final class AppListViewModel: ObservableObject {
         apps = sort(apps: fetched)
 
         if !hasInitializedSelection {
-            selected = Set(filteredApps.map(\.id))
+            if cfg.defaultSelectAll {
+                selected = Set(filteredApps.map(\.id))
+            } else {
+                selected = []
+            }
             hasInitializedSelection = true
         } else if selectedAllBeforeRefresh {
-            selected = Set(filteredApps.map(\.id))
+            if cfg.defaultSelectAll {
+                selected = Set(filteredApps.map(\.id))
+            } else {
+                let validIds = Set(apps.map(\.id))
+                selected = selected.intersection(validIds)
+            }
         } else {
             let validIds = Set(apps.map(\.id))
             selected = selected.intersection(validIds)
@@ -168,8 +175,6 @@ final class AppListViewModel: ObservableObject {
     }
 
     var hasStash: Bool { StashService.shared.hasStash }
-
-    // MARK: - Helpers
 
     private func sort(apps: [AppInfo]) -> [AppInfo] {
         switch configStore.config.sortBy {

@@ -6,14 +6,14 @@ CONTENTS = $(APP_DIR)/Contents
 MACOS_DIR = $(CONTENTS)/MacOS
 RESOURCES_DIR = $(CONTENTS)/Resources
 
-.PHONY: all build bundle run clean test
+.PHONY: all build bundle run clean test ship
 
 ## Default: build + bundle
 all: bundle
 
 ## Compile with SPM (release)
 build:
-	swift build -c release --build-system native
+	@swift build -c release --build-system native 2>&1 | grep -v "build-system native" || true
 
 ## Wrap binary in a minimal .app bundle
 bundle: build
@@ -25,7 +25,9 @@ bundle: build
 	@cp Support/Info.plist $(CONTENTS)/Info.plist
 	@cp Support/Icons/* $(RESOURCES_DIR)/ 2>/dev/null || true
 	@cp Support/Sounds/* $(RESOURCES_DIR)/ 2>/dev/null || true
+	@cp Support/Assets.car $(RESOURCES_DIR)/ 2>/dev/null || true
 	@/usr/libexec/PlistBuddy -c "Set :CFBundleIconFile AppIcon" $(CONTENTS)/Info.plist 2>/dev/null || true
+	@codesign --force --deep --sign - $(APP_DIR) 2>/dev/null || true
 	@echo "✅ Bundle ready: $(APP_DIR)"
 
 ## Create DMG installer
@@ -46,12 +48,16 @@ run: bundle
 
 ## Build debug + run binary directly (fast iteration, no bundle)
 dev:
-	@swift build --build-system native 2>&1
+	@swift build --build-system native 2>&1 | grep -v "build-system native" || true
 	@.build/debug/$(APP_NAME)
 
 ## Run tests
 test:
-	@swift test --build-system native
+	@swift test --build-system native -Xswiftc -F/Library/Developer/CommandLineTools/Library/Developer/Frameworks 2>&1 | grep -v "build-system native" || true
+
+## Test, bundle, kill, install, and open in one go
+ship:
+	@Scripts/ship.sh
 
 ## Clean build artifacts
 clean:

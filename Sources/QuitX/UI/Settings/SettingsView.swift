@@ -7,7 +7,20 @@ enum SettingsTab: String, CaseIterable {
     case support = "Support"
     case about = "About"
 
+    var toolbarItemIdentifier: NSToolbarItem.Identifier {
+        NSToolbarItem.Identifier(rawValue)
+    }
+
     var iconName: String {
+        switch self {
+        case .general:   return "preferences-general"
+        case .shortcuts: return "preferences-shortcuts"
+        case .support:   return "preferences-support"
+        case .about:     return "preferences-about"
+        }
+    }
+
+    var fallbackSymbolName: String {
         switch self {
         case .general:   return "gearshape"
         case .shortcuts: return "command"
@@ -16,17 +29,29 @@ enum SettingsTab: String, CaseIterable {
         }
     }
 
+    var toolbarImage: NSImage? {
+        if let img = AssetImages.load(iconName) {
+            let copy = img.copy() as! NSImage
+            copy.size = NSSize(width: 19, height: 19)
+            copy.isTemplate = true
+            return copy
+        }
+        let sym = NSImage(systemSymbolName: fallbackSymbolName, accessibilityDescription: rawValue)
+        let copy = sym?.copy() as? NSImage
+        copy?.size = NSSize(width: 19, height: 19)
+        copy?.isTemplate = true
+        return copy ?? sym
+    }
+
     var contentHeight: CGFloat {
         switch self {
-        case .general:   return 443
+        case .general:   return 475
         case .shortcuts: return 215
         case .support:   return 139
         case .about:     return 130
         }
     }
 }
-
-// MARK: - Help Popover Button (Working ? popover matching QuitAll)
 
 final class HelpPopoverState: ObservableObject {
     @Published var isShowing = false
@@ -40,67 +65,119 @@ struct HelpPopoverButton: View {
         Button {
             state.isShowing.toggle()
         } label: {
-            Image(systemName: "questionmark.circle")
-                .font(.system(size: 13))
-                .foregroundStyle(state.isShowing ? Color.white.opacity(0.9) : Color.white.opacity(0.35))
-                .frame(width: 20, height: 20)
-                .contentShape(Circle())
+            if let icon = AssetImages.load("settings-default-help") {
+                Image(nsImage: icon)
+                    .renderingMode(.template)
+                    .resizable()
+                    .frame(width: 13, height: 13)
+                    .foregroundStyle(state.isShowing ? Color.primary : Color.secondary)
+                    .frame(width: 20, height: 20)
+                    .contentShape(Circle())
+            } else {
+                Image(systemName: "questionmark.circle")
+                    .font(.system(size: 13))
+                    .foregroundStyle(state.isShowing ? Color.primary : Color.secondary)
+                    .frame(width: 20, height: 20)
+                    .contentShape(Circle())
+            }
         }
         .buttonStyle(.plain)
         .popover(isPresented: $state.isShowing, arrowEdge: .trailing) {
             Text(text)
                 .font(.system(size: 11.5))
-                .foregroundStyle(Color.white.opacity(0.92))
+                .foregroundStyle(Color.primary)
                 .lineSpacing(2.5)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
-                .frame(width: 235)
-                .background(Color(red: 0.16, green: 0.16, blue: 0.16))
-                .preferredColorScheme(.dark)
+                .padding(.horizontal, 13)
+                .padding(.vertical, 10)
+                .frame(width: 230)
         }
     }
 }
 
-// MARK: - Root SettingsView
+final class SettingsTabViewModel: ObservableObject {
+    @Published var activeTab: SettingsTab = .general
+}
 
-struct SettingsView: View {
+struct SettingsContainerView: View {
+    @ObservedObject var tabModel: SettingsTabViewModel
     @EnvironmentObject private var configStore: ConfigStore
 
     var body: some View {
-        GeneralTabCloneView()
-            .environmentObject(configStore)
-            .background(QuitAllTheme.windowBackground)
-            .preferredColorScheme(.dark)
+        ZStack(alignment: .top) {
+            switch tabModel.activeTab {
+            case .general:
+                GeneralTabCloneView()
+                    .environmentObject(configStore)
+            case .shortcuts:
+                ShortcutsTabCloneView()
+            case .support:
+                SupportTabCloneView()
+            case .about:
+                AboutTabCloneView()
+            }
+        }
+        .frame(width: 400, height: tabModel.activeTab.contentHeight, alignment: .top)
+        .background(QuitXTheme.windowBackground)
     }
 }
 
-// MARK: - Tab 1: General (Exact 1:1 Clone of QuitAll General Tab)
+struct SettingsView: View {
+    @EnvironmentObject private var configStore: ConfigStore
+    @StateObject private var tabModel = SettingsTabViewModel()
+
+    var body: some View {
+        SettingsContainerView(tabModel: tabModel)
+            .environmentObject(configStore)
+    }
+}
 
 final class GeneralTabState: ObservableObject {
-    @Published var disableQuitTips: Bool = false
     @Published var autoQuitValue: Int = 1
     @Published var autoQuitUnit: String = "hours"
+
+    func syncFromMinutes(_ minutes: Int) {
+        if minutes > 0 {
+            if minutes % 1440 == 0 {
+                autoQuitValue = max(1, minutes / 1440)
+                autoQuitUnit = "days"
+            } else if minutes % 60 == 0 {
+                autoQuitValue = max(1, minutes / 60)
+                autoQuitUnit = "hours"
+            } else {
+                autoQuitValue = max(1, minutes)
+                autoQuitUnit = "minutes"
+            }
+        } else {
+            autoQuitValue = 1
+            autoQuitUnit = "hours"
+        }
+    }
+
+    func calculateMinutes() -> Int {
+        switch autoQuitUnit {
+        case "days": return max(1, autoQuitValue * 1440)
+        case "hours": return max(1, autoQuitValue * 60)
+        default: return max(1, autoQuitValue)
+        }
+    }
 }
 
 struct GeneralTabCloneView: View {
     @EnvironmentObject private var configStore: ConfigStore
+    @ObservedObject private var launchService = LaunchAtLoginService.shared
     @StateObject private var state = GeneralTabState()
 
-    private let gold = QuitAllTheme.accent
+    private let gold = QuitXTheme.accent
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            // Startup
+
             row(label: "Startup:") {
-                toggle("Open QuitX at login", isOn: Binding(
-                    get: { configStore.config.autoUpdate },
-                    set: { configStore.config.autoUpdate = $0; configStore.save() }
-                ))
+                toggle("Open QuitX at login", isOn: $launchService.isEnabled)
             } help: {
-                HelpPopoverButton(text: "Keep things running in ship-shape by setting an automatic Quit for inactive apps. 🛳")
+                HelpPopoverButton(text: "This one is pretty self explanatory, so here's an easter egg instead of a helpful tooltip. 🐇🍳")
             }
 
-            // Sounds
             row(label: "Sounds:") {
                 toggle("Play cool sounds", isOn: Binding(
                     get: { configStore.config.playSounds },
@@ -110,7 +187,6 @@ struct GeneralTabCloneView: View {
                 HelpPopoverButton(text: "A deeply satisfying laser sound will play when quitting apps. 👾🔫")
             }
 
-            // Advanced
             row(label: "Advanced:") {
                 toggle("View background apps", isOn: Binding(
                     get: { configStore.config.includeBackground },
@@ -140,27 +216,33 @@ struct GeneralTabCloneView: View {
 
             row(label: "") {
                 toggle("Deselect apps by default", isOn: Binding(
-                    get: { configStore.config.defaultSelectAll },
-                    set: { configStore.config.defaultSelectAll = $0; configStore.save() }
+                    get: { !configStore.config.defaultSelectAll },
+                    set: {
+                        configStore.config.defaultSelectAll = !$0
+                        configStore.save()
+                        Task { @MainActor in await AppListViewModel.shared.refresh() }
+                    }
                 ))
             } help: {
                 HelpPopoverButton(text: "Some like the whole app list selected, some like ‘em all deselected. Now you get to choose. 🙌")
             }
 
             row(label: "") {
-                toggle("Disable quit tips", isOn: $state.disableQuitTips)
+                toggle("Disable quit tips", isOn: Binding(
+                    get: { configStore.config.disableQuitTips },
+                    set: { configStore.config.disableQuitTips = $0; configStore.save() }
+                ))
             } help: {
-                HelpPopoverButton(text: "The rotating tips at the bottom of the QuitAll dropdown will cease to show. It’s okay. We can still be friends. 🤗")
+                HelpPopoverButton(text: "The rotating tips at the bottom of the QuitX dropdown will cease to show. It’s okay. We can still be friends. 🤗")
             }
 
-            // Extras
             row(label: "Extras:") {
                 toggle("Include Finder Windows in list", isOn: Binding(
                     get: { configStore.config.includeFinder },
                     set: { configStore.config.includeFinder = $0; configStore.save() }
                 ))
             } help: {
-                HelpPopoverButton(text: "Find yourself finding Finder windows too often? Enable this to easily close them all when you QuitAll.")
+                HelpPopoverButton(text: "Find yourself finding Finder windows too often? Enable this to easily close them all when you quit all apps.")
             }
 
             row(label: "") {
@@ -172,12 +254,16 @@ struct GeneralTabCloneView: View {
                 HelpPopoverButton(text: "A truly fresh start without a restart. Take out the trash at the same time you take out the apps! 🗑️🧹")
             }
 
-            // Auto Quit
+            let isAutoQuitEnabled = configStore.config.quitInactiveAfterMinutes > 0
             row(label: "Auto Quit:") {
                 toggle("Quit inactive apps after", isOn: Binding(
-                    get: { configStore.config.quitInactiveAfterMinutes > 0 },
+                    get: { isAutoQuitEnabled },
                     set: { enabled in
-                        configStore.config.quitInactiveAfterMinutes = enabled ? (state.autoQuitUnit == "hours" ? state.autoQuitValue * 60 : state.autoQuitValue) : 0
+                        if enabled {
+                            configStore.config.quitInactiveAfterMinutes = state.calculateMinutes()
+                        } else {
+                            configStore.config.quitInactiveAfterMinutes = 0
+                        }
                         configStore.save()
                     }
                 ))
@@ -185,7 +271,6 @@ struct GeneralTabCloneView: View {
                 HelpPopoverButton(text: "Keep things running in ship-shape by setting an automatic Quit for inactive apps. 🛳")
             }
 
-            // Auto Quit Stepper Row
             row(label: "") {
                 HStack(spacing: 6) {
                     TextField("", value: $state.autoQuitValue, format: .number)
@@ -194,7 +279,7 @@ struct GeneralTabCloneView: View {
                         .font(.system(size: 11))
                         .multilineTextAlignment(.center)
 
-                    Stepper("", value: $state.autoQuitValue, in: 1...60)
+                    Stepper("", value: $state.autoQuitValue, in: 1...999)
                         .labelsHidden()
 
                     Picker("", selection: $state.autoQuitUnit) {
@@ -205,11 +290,12 @@ struct GeneralTabCloneView: View {
                     .frame(width: 90)
                     .labelsHidden()
                 }
+                .disabled(!isAutoQuitEnabled)
+                .opacity(isAutoQuitEnabled ? 1.0 : 0.42)
             } help: {
-                Color.clear.frame(width: 22, height: 22)
+                Color.clear.frame(width: 20, height: 20)
             }
 
-            // Sort
             row(label: "Sort:") {
                 Picker("", selection: Binding(
                     get: { configStore.config.sortBy },
@@ -219,13 +305,12 @@ struct GeneralTabCloneView: View {
                         Text(sortOpt.rawValue).tag(sortOpt)
                     }
                 }
-                .frame(width: 175)
+                .frame(width: 175, alignment: .leading)
                 .labelsHidden()
             } help: {
                 HelpPopoverButton(text: "Sort the list of apps alphabetically or by CPU usage. Made possible by this magical sorting unicorn. ✨🦄")
             }
 
-            // Default
             row(label: "Default:") {
                 Picker("", selection: Binding(
                     get: { configStore.config.force == .force ? "Force quit" : "Normal quit" },
@@ -234,21 +319,21 @@ struct GeneralTabCloneView: View {
                     Text("Normal quit").tag("Normal quit")
                     Text("Force quit").tag("Force quit")
                 }
-                .frame(width: 175)
+                .frame(width: 175, alignment: .leading)
                 .labelsHidden()
             } help: {
-                HelpPopoverButton(text: "This one is pretty self explanatory, so here’s an easter egg instead of a helpful tooltip. 🐇🍳")
+                HelpPopoverButton(text: "You can also temporarily toggle between quit and force quit by holding ⌥ (Option key). ⌥")
             }
 
-            // Reset
             row(label: "Reset:") {
                 Button("Reset all") {
                     configStore.config = QuitXConfig.default
                     configStore.save()
+                    state.syncFromMinutes(configStore.config.quitInactiveAfterMinutes)
                 }
                 .font(.system(size: 11.5))
             } help: {
-                Color.clear.frame(width: 22, height: 22)
+                Color.clear.frame(width: 20, height: 20)
             }
 
             Spacer(minLength: 0)
@@ -256,8 +341,23 @@ struct GeneralTabCloneView: View {
         .padding(.horizontal, 20)
         .padding(.top, 14)
         .padding(.bottom, 10)
-        .frame(width: 400, height: 443, alignment: .topLeading)
-        .background(QuitAllTheme.windowBackground)
+        .frame(width: 400, height: 475, alignment: .topLeading)
+        .background(QuitXTheme.windowBackground)
+        .onAppear {
+            state.syncFromMinutes(configStore.config.quitInactiveAfterMinutes)
+        }
+        .onChange(of: state.autoQuitValue) {
+            if configStore.config.quitInactiveAfterMinutes > 0 {
+                configStore.config.quitInactiveAfterMinutes = state.calculateMinutes()
+                configStore.save()
+            }
+        }
+        .onChange(of: state.autoQuitUnit) {
+            if configStore.config.quitInactiveAfterMinutes > 0 {
+                configStore.config.quitInactiveAfterMinutes = state.calculateMinutes()
+                configStore.save()
+            }
+        }
     }
 
     private func row<Content: View, Help: View>(
@@ -268,7 +368,7 @@ struct GeneralTabCloneView: View {
         HStack(alignment: .center, spacing: 10) {
             Text(label)
                 .font(.system(size: 12, weight: .regular))
-                .foregroundStyle(Color.white.opacity(0.85))
+                .foregroundStyle(Color.primary)
                 .frame(width: 84, alignment: .trailing)
 
             content()
@@ -286,61 +386,125 @@ struct GeneralTabCloneView: View {
         } label: {
             HStack(spacing: 8) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(isOn.wrappedValue ? gold : Color.white.opacity(0.12))
+                    RoundedRectangle(cornerRadius: 3.5)
+                        .fill(isOn.wrappedValue ? gold : Color.primary.opacity(0.08))
                         .frame(width: 14, height: 14)
 
                     if isOn.wrappedValue {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 8, weight: .bold))
-                            .foregroundStyle(.black.opacity(0.9))
+                            .font(.system(size: 8, weight: .heavy))
+                            .foregroundStyle(Color.black.opacity(0.9))
                     }
                 }
 
                 Text(title)
                     .font(.system(size: 12, weight: .regular))
-                    .foregroundStyle(Color.white.opacity(0.92))
+                    .foregroundStyle(Color.primary)
             }
         }
         .buttonStyle(.plain)
     }
 }
 
-// MARK: - Tab 2: Shortcuts (Exact 1:1 Clone of QuitAll Shortcuts Tab)
+@MainActor
+final class ShortcutsViewState: ObservableObject {
+    @Published var recordingRow: String? = nil
+    var localMonitor: Any? = nil
+    var globalMonitor: Any? = nil
 
-final class ShortcutsTabState: ObservableObject {
-    @Published var activateMenuEnabled = true
-    @Published var quitAllEnabled = false
-    @Published var forceQuitAllEnabled = false
+    func startMonitor(sm: ShortcutManager) {
+        guard localMonitor == nil else { return }
+        localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self, weak sm] event in
+            guard let self = self, let row = self.recordingRow, let sm = sm else { return event }
+            if self.processEvent(event, row: row, sm: sm) {
+                return nil
+            }
+            return event
+        }
+        globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self, weak sm] event in
+            guard let self = self, let row = self.recordingRow, let sm = sm else { return }
+            _ = self.processEvent(event, row: row, sm: sm)
+        }
+    }
+
+    func stopMonitor() {
+        if let monitor = localMonitor {
+            NSEvent.removeMonitor(monitor)
+            localMonitor = nil
+        }
+        if let monitor = globalMonitor {
+            NSEvent.removeMonitor(monitor)
+            globalMonitor = nil
+        }
+    }
+
+    private func processEvent(_ event: NSEvent, row: String, sm: ShortcutManager) -> Bool {
+        if event.keyCode == 53 {
+            DispatchQueue.main.async { self.recordingRow = nil }
+            return true
+        }
+        if event.keyCode == 51 {
+            DispatchQueue.main.async {
+                self.applyKeys([], for: row, sm: sm)
+                self.recordingRow = nil
+            }
+            return true
+        }
+
+        let keys = ShortcutManager.eventToKeys(event)
+        if !keys.isEmpty {
+            DispatchQueue.main.async {
+                self.applyKeys(keys, for: row, sm: sm)
+                self.recordingRow = nil
+            }
+            return true
+        }
+        return false
+    }
+
+    func applyKeys(_ keys: [String], for row: String, sm: ShortcutManager) {
+        switch row {
+        case "activate": sm.activateMenuKeys = keys
+        case "quit": sm.quitAllKeys = keys
+        case "force": sm.forceQuitAllKeys = keys
+        default: break
+        }
+    }
 }
 
 struct ShortcutsTabCloneView: View {
-    @StateObject private var state = ShortcutsTabState()
+    @ObservedObject private var sm = ShortcutManager.shared
+    @StateObject private var viewState = ShortcutsViewState()
+
+    private let gold = QuitXTheme.accent
 
     var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: 12) {
                 shortcutLine(
+                    id: "activate",
                     label: "Activate menu:",
-                    isEnabled: $state.activateMenuEnabled,
-                    keys: ["^", "⌥", "A"]
+                    isEnabled: $sm.activateMenuEnabled,
+                    keys: $sm.activateMenuKeys
                 )
                 shortcutLine(
+                    id: "quit",
                     label: "Quit all:",
-                    isEnabled: $state.quitAllEnabled,
-                    keys: ["^", "⌥", "Q"]
+                    isEnabled: $sm.quitAllEnabled,
+                    keys: $sm.quitAllKeys
                 )
                 shortcutLine(
+                    id: "force",
                     label: "Force quit all:",
-                    isEnabled: $state.forceQuitAllEnabled,
-                    keys: ["^", "⌥", "⌘", "Q"]
+                    isEnabled: $sm.forceQuitAllEnabled,
+                    keys: $sm.forceQuitAllKeys
                 )
             }
             .padding(.horizontal, 24)
             .padding(.top, 20)
 
             Divider()
-                .background(Color.white.opacity(0.08))
+                .background(Color.primary.opacity(0.08))
                 .padding(.horizontal, 16)
                 .padding(.top, 18)
                 .padding(.bottom, 16)
@@ -348,13 +512,13 @@ struct ShortcutsTabCloneView: View {
             HStack(spacing: 10) {
                 Text("⌥")
                     .font(.system(size: 12.5, weight: .medium))
-                    .foregroundStyle(Color.white.opacity(0.85))
+                    .foregroundStyle(Color.primary)
                     .frame(width: 22, height: 22)
-                    .background(Color.white.opacity(0.16), in: RoundedRectangle(cornerRadius: 4))
+                    .background(Color.primary.opacity(0.1), in: RoundedRectangle(cornerRadius: 4))
 
                 Text("Hold down Option to toggle “Quit” and “Force Quit”.")
                     .font(.system(size: 12))
-                    .foregroundStyle(Color.white.opacity(0.55))
+                    .foregroundStyle(Color.secondary)
 
                 Spacer()
             }
@@ -363,74 +527,102 @@ struct ShortcutsTabCloneView: View {
             Spacer(minLength: 0)
         }
         .frame(width: 400, height: 215)
-        .background(QuitAllTheme.windowBackground)
+        .background(QuitXTheme.windowBackground)
+        .onAppear {
+            viewState.startMonitor(sm: sm)
+        }
+        .onDisappear {
+            viewState.stopMonitor()
+        }
     }
 
-    private func shortcutLine(label: String, isEnabled: Binding<Bool>, keys: [String]) -> some View {
+    private func shortcutLine(id: String, label: String, isEnabled: Binding<Bool>, keys: Binding<[String]>) -> some View {
         let active = isEnabled.wrappedValue
+        let isRecording = (viewState.recordingRow == id)
+        let keyList = keys.wrappedValue
 
         return HStack(spacing: 9) {
             Text(label)
                 .font(.system(size: 13, weight: .regular))
-                .foregroundStyle(Color.white.opacity(0.92))
+                .foregroundStyle(Color.primary)
                 .frame(width: 105, alignment: .trailing)
 
-            // Neutral checkbox matching screenshot
             Button {
                 isEnabled.wrappedValue.toggle()
             } label: {
                 ZStack {
                     RoundedRectangle(cornerRadius: 3.5)
-                        .fill(active ? Color(white: 0.35) : Color.white.opacity(0.08))
+                        .fill(active ? gold : Color.primary.opacity(0.08))
                         .frame(width: 15, height: 15)
 
                     if active {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 8.5, weight: .bold))
-                            .foregroundStyle(.white)
+                            .font(.system(size: 8.5, weight: .heavy))
+                            .foregroundStyle(Color.black.opacity(0.9))
                     }
                 }
             }
             .buttonStyle(.plain)
 
-            // Shortcut container box with rounded key pills
-            HStack(spacing: 3) {
-                ForEach(keys, id: \.self) { key in
-                    Text(key)
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
-                        .foregroundStyle(active ? Color.white.opacity(0.95) : Color.white.opacity(0.24))
-                        .frame(width: 20, height: 20)
-                        .background(
-                            RoundedRectangle(cornerRadius: 3.5)
-                                .fill(active ? Color(white: 0.42) : Color.white.opacity(0.06))
-                        )
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 4)
-            .frame(width: 105, height: 26)
-            .background(
-                RoundedRectangle(cornerRadius: 5)
-                    .fill(Color.white.opacity(active ? 0.12 : 0.06))
-            )
-
-            // Trash icon button
             Button {
-                // Clear shortcut
+                if active {
+                    viewState.recordingRow = (viewState.recordingRow == id ? nil : id)
+                }
+            } label: {
+                HStack(spacing: 3) {
+                    if isRecording {
+                        Text("Type keys...")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(QuitXTheme.accent)
+                    } else if keyList.isEmpty {
+                        Text("None")
+                            .font(.system(size: 11, weight: .regular))
+                            .foregroundStyle(Color.secondary.opacity(0.5))
+                    } else {
+                        ForEach(keyList, id: \.self) { key in
+                            Text(key)
+                                .font(.system(size: 12, weight: .medium, design: .rounded))
+                                .foregroundStyle(active ? Color.primary : Color.secondary)
+                                .frame(width: 20, height: 20)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 3.5)
+                                        .fill(active ? Color.primary.opacity(0.15) : Color.primary.opacity(0.06))
+                                 )
+                        }
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 4)
+                .frame(width: 105, height: 26)
+                .background(
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(Color.primary.opacity(active ? 0.08 : 0.04))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 5)
+                        .stroke(isRecording ? QuitXTheme.accent : Color.clear, lineWidth: 1.5)
+                )
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                viewState.applyKeys([], for: id, sm: sm)
+                if viewState.recordingRow == id { viewState.recordingRow = nil }
             } label: {
                 if let img = AssetImages.load("recorder-delete") {
                     Image(nsImage: img)
                         .renderingMode(.template)
                         .resizable()
                         .frame(width: 13, height: 13)
-                        .foregroundStyle(active ? Color.white.opacity(0.55) : Color.white.opacity(0.18))
+                        .foregroundStyle((active && !keyList.isEmpty) ? Color.secondary : Color.secondary.opacity(0.3))
                 } else {
                     Image(systemName: "trash")
                         .font(.system(size: 12))
-                        .foregroundStyle(active ? Color.white.opacity(0.55) : Color.white.opacity(0.18))
+                        .foregroundStyle((active && !keyList.isEmpty) ? Color.secondary : Color.secondary.opacity(0.3))
                 }
             }
             .buttonStyle(.plain)
+            .disabled(!active || keyList.isEmpty)
             .frame(width: 18, height: 18)
 
             Spacer()
@@ -438,19 +630,17 @@ struct ShortcutsTabCloneView: View {
     }
 }
 
-// MARK: - Tab 3: Support (Exact 1:1 Clone of QuitAll Support Tab)
-
 struct SupportTabCloneView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Get in touch for any feedback, questions or feature requests!")
                 .font(.system(size: 13, weight: .regular))
-                .foregroundStyle(Color.white.opacity(0.92))
+                .foregroundStyle(Color.primary)
                 .lineSpacing(3)
                 .padding(.top, 24)
 
             Button("Contact") {
-                if let url = URL(string: "https://github.com/coreify/quitx/issues") {
+                if let url = URL(string: "https://github.com/kiron0/quitx/issues") {
                     NSWorkspace.shared.open(url)
                 }
             }
@@ -460,52 +650,46 @@ struct SupportTabCloneView: View {
         }
         .padding(.horizontal, 28)
         .frame(width: 400, height: 139, alignment: .topLeading)
-        .background(QuitAllTheme.windowBackground)
+        .background(QuitXTheme.windowBackground)
     }
 }
 
-// MARK: - Tab 4: About (Exact 1:1 Clone of QuitAll About Tab)
-
 struct AboutTabCloneView: View {
+    @ObservedObject private var updateChecker = UpdateChecker.shared
+
     var body: some View {
         HStack(alignment: .center, spacing: 20) {
-            // 70x70 app icon matching QuitAll
-            if let img = NSImage(contentsOfFile: "Support/Icons/icon_128x128.png") ?? NSImage(contentsOfFile: "Support/Icons/AppIcon.icns") ?? Bundle.main.image(forResource: "AppIcon") {
-                Image(nsImage: img)
-                    .resizable()
-                    .frame(width: 70, height: 70)
-                    .cornerRadius(14)
-                    .shadow(color: .black.opacity(0.3), radius: 6, y: 3)
-            }
+            QuitXAppIconView(size: 70, cornerRadius: 14)
 
             VStack(alignment: .leading, spacing: 5) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text("QuitX")
                         .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.primary)
 
-                    Text("⚡️ Version 1.0.0")
+                    Text("⚡️ Version \(updateChecker.currentVersion)")
                         .font(.system(size: 11))
-                        .foregroundStyle(Color.white.opacity(0.5))
+                        .foregroundStyle(Color.secondary)
                 }
 
-                Text("Copyright © 2026 Coreify")
+                Text("Copyright © 2026 Toufiq Hasan Kiron")
                     .font(.system(size: 11))
-                    .foregroundStyle(Color.white.opacity(0.42))
+                    .foregroundStyle(Color.secondary)
 
                 HStack(spacing: 10) {
-                    Button("Say hi") {
-                        if let url = URL(string: "https://quitx.coreify.io") {
+                    Button("GitHub") {
+                        if let url = URL(string: "https://github.com/kiron0/quitx") {
                             NSWorkspace.shared.open(url)
                         }
                     }
                     .font(.system(size: 11.5))
 
-                    Button("Check Updates") {
-                        if let url = URL(string: "https://github.com/coreify/quitx/releases") {
-                            NSWorkspace.shared.open(url)
+                    Button(updateChecker.isChecking ? "Checking..." : "Check Updates") {
+                        Task {
+                            await updateChecker.checkForUpdates(isUserInitiated: true)
                         }
                     }
+                    .disabled(updateChecker.isChecking)
                     .font(.system(size: 11.5))
                 }
                 .padding(.top, 4)
@@ -515,6 +699,6 @@ struct AboutTabCloneView: View {
         }
         .padding(.horizontal, 30)
         .frame(width: 400, height: 130)
-        .background(QuitAllTheme.windowBackground)
+        .background(QuitXTheme.windowBackground)
     }
 }

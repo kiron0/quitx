@@ -9,6 +9,7 @@
     "clean": "make clean",
     "install": "npm run build && mkdir -p \"$HOME/Applications\" && ditto .build/QuitX.app \"$HOME/Applications/QuitX.app\"",
     "open": "open \"$HOME/Applications/QuitX.app\"",
-    "start": "npm run install && npm run open"
+    "ship": "./Scripts/ship.sh",
+    "start": "npm run ship"
   }
 }

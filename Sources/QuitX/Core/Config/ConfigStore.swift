@@ -1,20 +1,16 @@
 import Foundation
 
-/// Reads and writes ~/.config/quitx/config.json — same file as the CLI.
 final class ConfigStore: ObservableObject {
     static let shared = ConfigStore()
 
     @Published var config: QuitXConfig = .default
 
-    private var configURL: URL {
-        FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".config/quitx/config.json")
-    }
+    private static let userDefaultsKey = "QuitXConfig"
 
     private init() { load() }
 
     func load() {
-        guard let data = try? Data(contentsOf: configURL),
+        guard let data = UserDefaults.standard.data(forKey: Self.userDefaultsKey),
               let decoded = try? JSONDecoder().decode(QuitXConfig.self, from: data) else {
             return
         }
@@ -23,8 +19,10 @@ final class ConfigStore: ObservableObject {
 
     func save() {
         guard let json = try? JSONEncoder().encode(config) else { return }
-        let dir = configURL.deletingLastPathComponent()
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        try? json.write(to: configURL, options: .atomic)
+        UserDefaults.standard.set(json, forKey: Self.userDefaultsKey)
+        Task { @MainActor in
+            await AppListViewModel.shared.refresh()
+            StatusItemController.shared?.updatePopoverSize()
+        }
     }
 }

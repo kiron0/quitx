@@ -10,10 +10,11 @@ struct MainPopoverView: View {
     @EnvironmentObject private var configStore: ConfigStore
     @ObservedObject private var vm = AppListViewModel.shared
     @StateObject private var uiState = PopoverUIState()
+    @FocusState private var isSearchFocused: Bool
 
-    private let goldColor = QuitAllTheme.accent
+    private let goldColor = QuitXTheme.accent
     private let goldGradient = LinearGradient(
-        colors: [QuitAllTheme.accent, Color(red: 232/255, green: 155/255, blue: 0/255)],
+        colors: [QuitXTheme.accent, Color(red: 232/255, green: 155/255, blue: 0/255)],
         startPoint: .top,
         endPoint: .bottom
     )
@@ -30,12 +31,10 @@ struct MainPopoverView: View {
                 .padding(.top, 5)
                 .padding(.bottom, 4)
 
-            // Search bar & Select All checkbox
             searchBarRow
                 .padding(.horizontal, 8)
                 .padding(.bottom, 4)
 
-            // Apps list
             if vm.isLoading && vm.apps.isEmpty {
                 VStack {
                     Spacer()
@@ -50,17 +49,22 @@ struct MainPopoverView: View {
                 AppListView(vm: vm)
             }
 
-            Spacer(minLength: 0)
-
-            // Footer
             footerRow
                 .padding(.horizontal, 10)
-                .padding(.vertical, 6)
+                .padding(.top, 3)
+                .padding(.bottom, 6)
         }
         .frame(width: 270)
         .frame(maxHeight: .infinity)
-        .background(QuitAllTheme.popoverBackground)
-        .preferredColorScheme(.dark)
+        .background(QuitXTheme.popoverBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(Color.primary.opacity(0.12), lineWidth: 0.5)
+        )
+        .onAppear {
+            isSearchFocused = false
+        }
         .onChange(of: vm.filteredApps.count) {
             StatusItemController.shared?.updatePopoverSize()
         }
@@ -72,8 +76,10 @@ struct MainPopoverView: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: vm.showToast)
-        .alert("Quit all selected apps?", isPresented: $uiState.showConfirmQuitAll) {
-            Button(vm.isOptionKeyPressed ? "Force Quit All" : "Quit All", role: .destructive) {
+        .alert("Quit selected apps?", isPresented: $uiState.showConfirmQuitAll) {
+            let isAll = vm.isAllSelected
+            let confirmTitle = vm.isOptionKeyPressed ? (isAll ? "Force Quit All" : "Force Quit Selected") : (isAll ? "Quit All" : "Quit Selected")
+            Button(confirmTitle, role: .destructive) {
                 Task {
                     await vm.quitAll(force: vm.isOptionKeyPressed || configStore.config.force == .force)
                 }
@@ -84,17 +90,16 @@ struct MainPopoverView: View {
         }
     }
 
-    // MARK: - Quit All
-
     private var quitAllButton: some View {
         let isForced = vm.isOptionKeyPressed || configStore.config.force == .force
         let count = vm.selected.count
-        let title: String = {
-            if count == 0 || count == vm.filteredApps.count {
-                return isForced ? "Force Quit All" : "Quit All"
-            }
-            return isForced ? "Force Quit Selected" : "Quit Selected"
-        }()
+        let isAll = vm.isAllSelected
+        let title: String
+        if isForced {
+            title = isAll ? "Force Quit All" : "Force Quit Selected"
+        } else {
+            title = isAll ? "Quit All" : "Quit Selected"
+        }
         let isEnabled = count > 0
 
         return Button {
@@ -112,17 +117,21 @@ struct MainPopoverView: View {
                 Text(title)
                     .font(.system(size: 12, weight: .bold))
             }
-            .foregroundStyle(isEnabled ? Color.white : Color.white.opacity(0.45))
+            .foregroundStyle(
+                isEnabled
+                    ? (isForced ? Color.white : Color.black.opacity(0.88))
+                    : Color.primary.opacity(0.35)
+            )
             .frame(maxWidth: .infinity)
             .frame(height: 24)
             .background(
                 isEnabled
-                    ? (isForced ? forceGradient : goldGradient)
-                    : LinearGradient(colors: [Color.white.opacity(0.12), Color.white.opacity(0.12)], startPoint: .top, endPoint: .bottom)
+                    ? goldGradient
+                    : LinearGradient(colors: [Color.primary.opacity(0.08), Color.primary.opacity(0.08)], startPoint: .top, endPoint: .bottom)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 5))
+            .clipShape(RoundedRectangle(cornerRadius: 6))
             .shadow(
-                color: isEnabled ? (isForced ? Color.red : goldColor).opacity(uiState.isQuitAllHovered ? 0.3 : 0.12) : Color.clear,
+                color: isEnabled ? goldColor.opacity(uiState.isQuitAllHovered ? 0.3 : 0.12) : Color.clear,
                 radius: 2,
                 y: 1
             )
@@ -132,17 +141,15 @@ struct MainPopoverView: View {
         .onHover { uiState.isQuitAllHovered = $0 }
     }
 
-    // MARK: - Search & Select All Row
-
     private var searchBarRow: some View {
         HStack(spacing: 8) {
-            // Select All Checkbox
+
             Button {
                 vm.toggleSelectAll()
             } label: {
                 ZStack {
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(vm.isAllSelected || vm.isPartiallySelected ? goldColor : Color.white.opacity(0.12))
+                        .fill(vm.isAllSelected || vm.isPartiallySelected ? goldColor : Color.primary.opacity(0.08))
                         .frame(width: 14, height: 14)
 
                     if vm.isAllSelected {
@@ -162,16 +169,16 @@ struct MainPopoverView: View {
             .contentShape(Rectangle())
             .help(vm.isAllSelected ? "Deselect All" : "Select All")
 
-            // Search input field
             HStack(spacing: 5) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 11))
-                    .foregroundStyle(Color.white.opacity(0.4))
+                    .foregroundStyle(Color.secondary)
 
-                TextField("", text: $vm.searchQuery, prompt: Text("Search").foregroundColor(Color.white.opacity(0.35)))
+                TextField("", text: $vm.searchQuery, prompt: Text("Search").foregroundColor(Color.secondary))
                     .textFieldStyle(.plain)
                     .font(.system(size: 11.5))
-                    .foregroundStyle(Color.white.opacity(0.92))
+                    .foregroundStyle(Color.primary)
+                    .focused($isSearchFocused)
 
                 if !vm.searchQuery.isEmpty {
                     Button {
@@ -179,7 +186,7 @@ struct MainPopoverView: View {
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 11))
-                            .foregroundStyle(Color.white.opacity(0.45))
+                            .foregroundStyle(Color.secondary)
                     }
                     .buttonStyle(.plain)
                 }
@@ -187,13 +194,15 @@ struct MainPopoverView: View {
             .padding(.horizontal, 7)
             .frame(height: 24)
             .background(
-                RoundedRectangle(cornerRadius: 5)
-                    .fill(Color.white.opacity(0.08))
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(Color(NSColor.textBackgroundColor).opacity(0.8))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
             )
         }
     }
-
-    // MARK: - Empty State
 
     private var emptyAppsView: some View {
         VStack(spacing: 10) {
@@ -203,7 +212,7 @@ struct MainPopoverView: View {
                 .foregroundStyle(goldColor)
             Text(vm.searchQuery.isEmpty ? "All clean! No apps to quit." : "No running apps match '\(vm.searchQuery)'")
                 .font(.system(size: 12.5))
-                .foregroundStyle(Color.white.opacity(0.5))
+                .foregroundStyle(Color.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
             Spacer()
@@ -211,14 +220,14 @@ struct MainPopoverView: View {
         .frame(maxHeight: .infinity)
     }
 
-    // MARK: - Footer Row
-
     private var footerRow: some View {
         HStack {
-            Text(vm.currentQuote)
-                .font(.system(size: 11, weight: .regular))
-                .foregroundStyle(Color.white.opacity(0.45))
-                .lineLimit(1)
+            if !configStore.config.disableQuitTips {
+                Text(vm.currentQuote)
+                    .font(.system(size: 11, weight: .regular))
+                    .foregroundStyle(Color.secondary)
+                    .lineLimit(1)
+            }
 
             Spacer()
 
@@ -237,8 +246,6 @@ struct MainPopoverView: View {
     }
 }
 
-// NSMenu tracks correctly inside an NSPopover. SwiftUI Menu can close a
-// transient popover before the first click reaches the menu.
 private struct PopoverOptionsButton: NSViewRepresentable {
     var showsBackgroundApps: Bool
     var hasStash: Bool
@@ -253,12 +260,21 @@ private struct PopoverOptionsButton: NSViewRepresentable {
     func makeNSView(context: Context) -> NSButton {
         let button = NSButton()
         button.isBordered = false
-        button.image = NSImage(
-            systemSymbolName: "line.3.horizontal",
-            accessibilityDescription: "Options"
-        )
-        button.imagePosition = .imageOnly
-        button.contentTintColor = NSColor.white.withAlphaComponent(0.55)
+        if let img = AssetImages.load("settings") {
+            let copy = img.copy() as? NSImage ?? img
+            copy.size = NSSize(width: 17, height: 17)
+            copy.isTemplate = true
+            button.image = copy
+            button.imagePosition = .imageOnly
+        } else if let sym = NSImage(systemSymbolName: "gearshape", accessibilityDescription: "Options") {
+            let config = NSImage.SymbolConfiguration(pointSize: 13, weight: .regular)
+            let copy = (sym.withSymbolConfiguration(config) ?? sym).copy() as? NSImage ?? sym
+            copy.size = NSSize(width: 17, height: 17)
+            copy.isTemplate = true
+            button.image = copy
+            button.imagePosition = .imageOnly
+        }
+        button.contentTintColor = NSColor.secondaryLabelColor
         button.toolTip = "Options"
         button.target = context.coordinator
         button.action = #selector(Coordinator.showMenu(_:))
@@ -279,62 +295,86 @@ private struct PopoverOptionsButton: NSViewRepresentable {
 
         @objc func showMenu(_ button: NSButton) {
             let menu = NSMenu()
-            addItem(
-                to: menu,
-                title: parent.showsBackgroundApps ? "Hide background apps" : "View background apps",
-                symbol: parent.showsBackgroundApps ? "eye.slash" : "eye",
-                action: #selector(toggleBackgroundApps)
-            )
+            menu.appearance = NSApp.effectiveAppearance
+
+            let bgTitle = parent.showsBackgroundApps ? "Hide background apps" : "View background apps"
+            let bgAsset = parent.showsBackgroundApps ? "settings-background-apps-hide" : "settings-background-apps-show"
+            let bgSymbol = parent.showsBackgroundApps ? "eye.slash" : "eye"
+
+            menu.addItem(MenuHelper.makeItem(
+                title: bgTitle,
+                action: #selector(toggleBackgroundApps),
+                target: self,
+                keyEquivalent: "b",
+                assetName: bgAsset,
+                systemSymbolName: bgSymbol
+            ))
+
             menu.addItem(.separator())
-            addItem(to: menu, title: "Stash session", symbol: "tray.and.arrow.down", action: #selector(stash))
-            addItem(
-                to: menu,
+
+            menu.addItem(MenuHelper.makeItem(
+                title: "Stash session",
+                action: #selector(stash),
+                target: self,
+                keyEquivalent: "s",
+                systemSymbolName: "tray.and.arrow.down"
+            ))
+
+            menu.addItem(MenuHelper.makeItem(
                 title: "Restore session",
-                symbol: "tray.and.arrow.up",
                 action: #selector(restore),
-                enabled: parent.hasStash
-            )
+                target: self,
+                keyEquivalent: "r",
+                systemSymbolName: "tray.and.arrow.up",
+                isEnabled: parent.hasStash
+            ))
+
             menu.addItem(.separator())
-            addItem(to: menu, title: "Welcome Guide...", symbol: "hand.wave", action: #selector(openWelcome))
-            addItem(to: menu, title: "Preferences...", symbol: "gearshape", action: #selector(openPreferences))
-            addItem(to: menu, title: "Help", symbol: "questionmark.circle", action: #selector(openHelp))
+
+            menu.addItem(MenuHelper.makeItem(
+                title: "Settings",
+                action: #selector(openSettings),
+                target: self,
+                keyEquivalent: ",",
+                assetName: "settings-preferences",
+                systemSymbolName: "gearshape"
+            ))
+
+            menu.addItem(MenuHelper.makeItem(
+                title: "Help",
+                action: #selector(openHelp),
+                target: self,
+                keyEquivalent: "h",
+                assetName: "settings-help",
+                systemSymbolName: "questionmark.circle"
+            ))
+
             menu.addItem(.separator())
-            addItem(to: menu, title: "Quit QuitX", symbol: "power", action: #selector(quitApp))
+
+            menu.addItem(MenuHelper.makeItem(
+                title: "Quit",
+                action: #selector(quitApp),
+                target: self,
+                keyEquivalent: "q",
+                assetName: "settings-quit",
+                systemSymbolName: "power"
+            ))
 
             menu.popUp(positioning: nil, at: NSPoint(x: button.bounds.maxX, y: button.bounds.minY), in: button)
-        }
-
-        private func addItem(
-            to menu: NSMenu,
-            title: String,
-            symbol: String,
-            action: Selector,
-            enabled: Bool = true
-        ) {
-            let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
-            item.target = self
-            item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
-            item.isEnabled = enabled
-            menu.addItem(item)
         }
 
         @objc private func toggleBackgroundApps() { parent.onToggleBackgroundApps() }
         @objc private func stash() { parent.onStash() }
         @objc private func restore() { parent.onRestore() }
 
-        @objc private func openWelcome() {
-            StatusItemController.shared?.closePopover()
-            WelcomeWindowController.shared.show()
-        }
-
-        @objc private func openPreferences() {
+        @objc private func openSettings() {
             StatusItemController.shared?.closePopover()
             SettingsWindowController.shared.show()
         }
 
         @objc private func openHelp() {
             StatusItemController.shared?.closePopover()
-            guard let url = URL(string: "https://github.com/coreify/quitx") else { return }
+            guard let url = URL(string: "https://github.com/kiron0/quitx") else { return }
             NSWorkspace.shared.open(url)
         }
 
@@ -343,8 +383,6 @@ private struct PopoverOptionsButton: NSViewRepresentable {
         }
     }
 }
-
-// MARK: - Blur helper
 
 struct VisualEffectBlur: NSViewRepresentable {
     var material: NSVisualEffectView.Material

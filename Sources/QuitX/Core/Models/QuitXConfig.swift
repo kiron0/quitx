@@ -1,7 +1,5 @@
 import Foundation
 
-/// Mirrors QuitxConfig from the CLI.
-/// Reads from / writes to ~/.config/quitx/config.json for full CLI interop.
 struct QuitXConfig: Codable, Equatable {
     var exclude: [String]
     var force: ForceMode
@@ -16,7 +14,8 @@ struct QuitXConfig: Codable, Equatable {
     var confirmQuitAll: Bool = true
     var playSounds: Bool = true
     var quitInactiveAfterMinutes: Int = 0
-    var sortBy: SortBy = .cpuDesc
+    var disableQuitTips: Bool = false
+    var sortBy: SortBy = .name
     var onQuitFailure: OnQuitFailureMode?
 
     enum ForceMode: String, Codable, Equatable { case normal, force }
@@ -58,7 +57,8 @@ struct QuitXConfig: Codable, Equatable {
             confirmQuitAll: true,
             playSounds: true,
             quitInactiveAfterMinutes: 0,
-            sortBy: .cpuDesc,
+            disableQuitTips: false,
+            sortBy: .name,
             onQuitFailure: nil
         )
     }

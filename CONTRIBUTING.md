@@ -14,8 +14,8 @@ QuitX is built completely using Swift Package Manager (SPM) with no mandatory Xc
 
 1. Fork and clone the repository:
    ```bash
-   git clone https://github.com/coreify/quitx-app.git
-   cd quitx-app
+   git clone https://github.com/kiron0/quitx.git
+   cd quitx/app
    ```
 
 2. Build debug binary:

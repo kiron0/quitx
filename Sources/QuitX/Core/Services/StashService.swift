@@ -1,21 +1,11 @@
 import AppKit
 import Foundation
 
-
-/// Stash / restore sessions — mirrors CLI stash.ts / restore.ts.
-/// Reads and writes ~/.local/share/quitx/stash.json (same path as CLI).
 final class StashService {
     static let shared = StashService()
     private init() {}
 
-    private var stashURL: URL {
-        let base = FileManager.default.homeDirectoryForCurrentUser
-        return base
-            .appendingPathComponent(".local/share/quitx", isDirectory: true)
-            .appendingPathComponent("stash.json")
-    }
-
-    // MARK: - Stash
+    private static let stashKey = "QuitXStashData"
 
     func stash(apps: [AppInfo]) async -> Bool {
         let entries = apps.map { StashEntry(name: $0.name, bundleId: $0.bundleId) }
@@ -24,25 +14,18 @@ final class StashService {
             apps: entries
         )
         guard let json = try? JSONEncoder().encode(data) else { return false }
+        UserDefaults.standard.set(json, forKey: Self.stashKey)
 
-        do {
-            let dir = stashURL.deletingLastPathComponent()
-            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-            try json.write(to: stashURL, options: .atomic)
-        } catch { return false }
-
-        // Quit all stashed apps
         let results = await QuitService.shared.quit(apps: apps, force: false)
-        return results.allSatisfy(\.success)
+        return results.allSatisfy { $0.success }
     }
 
-    // MARK: - Restore
-
     func restore() async -> Bool {
-        guard let json = try? Data(contentsOf: stashURL),
-              let stash = try? JSONDecoder().decode(StashData.self, from: json) else {
+        guard let data = UserDefaults.standard.data(forKey: Self.stashKey),
+              let stash = try? JSONDecoder().decode(StashData.self, from: data) else {
             return false
         }
+        UserDefaults.standard.removeObject(forKey: Self.stashKey)
 
         var allOk = true
         for entry in stash.apps {
@@ -59,6 +42,6 @@ final class StashService {
     }
 
     var hasStash: Bool {
-        FileManager.default.fileExists(atPath: stashURL.path)
+        UserDefaults.standard.data(forKey: Self.stashKey) != nil
     }
 }

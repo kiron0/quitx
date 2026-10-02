@@ -1,6 +1,5 @@
 import AppKit
 
-/// Fetches running user-visible (and optionally background) apps with memory.
 final class AppListService {
     static let shared = AppListService()
     private init() {}
@@ -12,30 +11,34 @@ final class AppListService {
 
         var results: [AppInfo] = []
 
+        let currentPid = ProcessInfo.processInfo.processIdentifier
+
         for app in running {
+            let pid = app.processIdentifier
+            if pid == currentPid { continue }
             guard let name = app.localizedName else { continue }
             let bundleId = app.bundleIdentifier
-            let pid = app.processIdentifier
+            if bundleId == "com.kiron.quitx" || bundleId == "com.coreify.quitx" { continue }
 
-            // Filter system / agent apps
             let isRegularApp = app.activationPolicy == .regular
             let isBackground = app.activationPolicy == .accessory
 
             if !isRegularApp && !isBackground { continue }
             if isBackground && !config.includeBackground { continue }
 
-            // Exclusions
-            if let bid = bundleId, config.exclude.contains(bid) { continue }
-            if config.exclude.contains(name) { continue }
+            let lowerName = name.lowercased()
+            let lowerBid = bundleId?.lowercased()
 
-            // Music exclusion
-            if config.neverQuitMusic && config.musicApps.contains(where: { name.localizedCaseInsensitiveContains($0) || bundleId?.localizedCaseInsensitiveContains($0) == true }) {
+            if let bid = lowerBid, config.exclude.map({ $0.lowercased() }).contains(bid) { continue }
+            if config.exclude.map({ $0.lowercased() }).contains(lowerName) { continue }
+
+            if config.neverQuitMusic && config.musicApps.contains(where: {
+                lowerName.contains($0.lowercased()) || lowerBid?.contains($0.lowercased()) == true
+            }) {
                 continue
             }
 
-            // Finder / Trash
-            if !config.includeFinder && bundleId == "com.apple.finder" { continue }
-            if !config.includeTrash && name == "Trash" { continue }
+            if !config.includeFinder && (bundleId == "com.apple.finder" || lowerName == "finder") { continue }
 
             let memory = memoryUsage(pid: pid)
             let cpu = cpuUsages[pid, default: 0.0]
@@ -45,11 +48,65 @@ final class AppListService {
                 name: name,
                 bundleId: bundleId,
                 pid: pid,
+                pids: [pid],
                 isBackground: isBackground,
                 windowCount: windows,
                 memoryBytes: memory,
                 cpuUsage: cpu
             ))
+        }
+
+        if config.includeBackground && config.groupBackground {
+            var groupedResults: [AppInfo] = []
+            var bgGroups: [String: (app: AppInfo, pids: [pid_t], mem: UInt64, cpu: Double, windows: Int)] = [:]
+
+            for app in results {
+                if app.isBackground {
+                    let key = (app.bundleId ?? app.name).lowercased()
+                    if var existing = bgGroups[key] {
+                        existing.pids.append(contentsOf: app.pids)
+                        existing.mem += app.memoryBytes
+                        existing.cpu += app.cpuUsage
+                        existing.windows += app.windowCount
+                        bgGroups[key] = existing
+                    } else {
+                        bgGroups[key] = (app: app, pids: app.pids, mem: app.memoryBytes, cpu: app.cpuUsage, windows: app.windowCount)
+                    }
+                } else {
+                    groupedResults.append(app)
+                }
+            }
+
+            for (_, group) in bgGroups {
+                let first = group.app
+                groupedResults.append(AppInfo(
+                    name: first.name,
+                    bundleId: first.bundleId,
+                    pid: group.pids.first,
+                    pids: group.pids,
+                    isBackground: true,
+                    windowCount: group.windows,
+                    memoryBytes: group.mem,
+                    cpuUsage: group.cpu
+                ))
+            }
+            results = groupedResults
+        }
+
+        if config.includeTrash {
+            let lowerExclude = config.exclude.map { $0.lowercased() }
+            if !lowerExclude.contains("trash") && !lowerExclude.contains("com.apple.trash") {
+                results.append(AppInfo(
+                    name: "Trash",
+                    bundleId: "com.apple.trash",
+                    pid: nil,
+                    pids: [],
+                    isBackground: false,
+                    windowCount: 0,
+                    memoryBytes: 0,
+                    cpuUsage: 0.0
+                ))
+            }
         }
 
         switch config.sortBy {
@@ -80,8 +137,6 @@ final class AppListService {
         }
     }
 
-    // MARK: - CPU
-
     private func fetchCpuUsages() -> [pid_t: Double] {
         let pipe = Pipe()
         let proc = Process()
@@ -102,8 +157,6 @@ final class AppListService {
         return result
     }
 
-    // MARK: - Memory
-
     private func memoryUsage(pid: pid_t) -> UInt64 {
         var info = proc_taskinfo()
         let size = MemoryLayout<proc_taskinfo>.size
@@ -111,8 +164,6 @@ final class AppListService {
         guard result == size else { return 0 }
         return info.pti_resident_size
     }
-
-    // MARK: - Window count
 
     private func visibleWindowCounts() -> [pid_t: Int] {
         guard let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else {

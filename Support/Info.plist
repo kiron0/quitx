@@ -2,16 +2,15 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <!-- Hide from Dock and Cmd-Tab switcher -->
-    <key>LSUIElement</key>
+        <key>LSUIElement</key>
     <true/>
-    <!-- No storyboard main entry point -->
-    <key>NSPrincipalClass</key>
+        <key>NSPrincipalClass</key>
     <string>NSApplication</string>
+    <key>NSAccentColorName</key>
+    <string>AccentColor</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
-    <!-- App info -->
-    <key>CFBundleName</key>
+        <key>CFBundleName</key>
     <string>QuitX</string>
     <key>CFBundleIdentifier</key>
     <string>io.coreify.quitx</string>
@@ -19,11 +18,9 @@
     <string>1</string>
     <key>CFBundleShortVersionString</key>
     <string>1.0.0</string>
-    <!-- Minimum macOS -->
-    <key>LSMinimumSystemVersion</key>
+        <key>LSMinimumSystemVersion</key>
     <string>13.0</string>
-    <!-- AppleScript / automation permission reason -->
-    <key>NSAppleEventsUsageDescription</key>
+        <key>NSAppleEventsUsageDescription</key>
     <string>QuitX uses Apple Events to quit applications.</string>
 </dict>
 </plist>
