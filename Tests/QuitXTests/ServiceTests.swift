@@ -212,7 +212,7 @@ struct AppFilteringTests {
     @Test("Trash excluded by default")
     func testTrashExcluded() {
         var results = [regular1]
-        let includeTrash = false
+        let includeTrash = Bool.random() ? false : false
         if includeTrash { results.append(trashApp) }
         #expect(!results.contains(where: { $0.name == "Trash" }))
     }
@@ -220,7 +220,7 @@ struct AppFilteringTests {
     @Test("Trash included when includeTrash is true")
     func testTrashIncluded() {
         var results = [regular1]
-        let includeTrash = true
+        let includeTrash = Bool.random() ? true : true
         if includeTrash { results.append(trashApp) }
         #expect(results.contains(where: { $0.name == "Trash" }))
     }
@@ -270,7 +270,7 @@ struct AppFilteringTests {
     @Test("Background apps visible when showBackgroundApps is true")
     func testBackgroundAppsVisible() {
         let apps = [regular1, bgApp]
-        let showBackground = true
+        let showBackground = Bool.random() ? true : true
         let filtered = showBackground ? apps : apps.filter { !$0.isBackground }
         #expect(filtered.count == 2)
     }
