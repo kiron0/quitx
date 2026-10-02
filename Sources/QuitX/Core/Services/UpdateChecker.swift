@@ -5,8 +5,8 @@ import Foundation
 final class UpdateChecker: ObservableObject {
     static let shared = UpdateChecker()
 
-    private let repoOwner = "kiron0"
-    private let repoName = "quitx"
+    private let repoOwner = QuitXConstants.githubUser
+    private let repoName = QuitXConstants.githubRepo
 
     var releasesWebURL: URL {
         URL(string: "https://github.com/\(repoOwner)/\(repoName)/releases")!

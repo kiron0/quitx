@@ -2,6 +2,25 @@
 
 All notable changes to QuitX macOS App will be documented in this file.
 
+## 1.0.2
+
+### Added
+
+- Single-instance enforcement (`SingleInstanceService`) via local IPC socket to prevent duplicate QuitX processes.
+- Custom anchored popover window (`MenuPopupWindow`) featuring a native macOS replica 32×12pt arrow with cubic Bézier shoulder curves.
+- Native `VisualEffectBlur` material styling for system menus and popover views.
+
+### Changed
+
+- Prevented default autofocus on popover search bar on open to avoid trapping keystrokes.
+- Restored "Quit All" button 6pt corner radius and border overlay design matching v1.0.1 aesthetic.
+- Menubar right-click "About QuitX" action now directs straight to the About tab in Settings.
+- Repositioned General Settings help tooltip below button with native system blur styling.
+
+### Removed
+
+- Stash and Restore session feature end-to-end to keep application lean and focused solely on process termination.
+
 ## 1.0.1
 
 ### Added

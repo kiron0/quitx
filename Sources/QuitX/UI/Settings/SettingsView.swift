@@ -645,7 +645,7 @@ struct SupportTabCloneView: View {
                 .padding(.top, 24)
 
             Button("Contact") {
-                if let url = URL(string: "https://github.com/kiron0/quitx/issues") {
+                if let url = QuitXConstants.contactURL() {
                     NSWorkspace.shared.open(url)
                 }
             }
@@ -668,7 +668,7 @@ struct AboutTabCloneView: View {
 
             VStack(alignment: .leading, spacing: 5) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text("QuitX")
+                    Text(QuitXConstants.appName)
                         .font(.system(size: 14, weight: .bold))
                         .foregroundStyle(Color.primary)
 
@@ -677,13 +677,13 @@ struct AboutTabCloneView: View {
                         .foregroundStyle(Color.secondary)
                 }
 
-                Text("Copyright © 2026 Toufiq Hasan Kiron")
+                Text(QuitXConstants.copyright)
                     .font(.system(size: 11))
                     .foregroundStyle(Color.secondary)
 
                 HStack(spacing: 10) {
-                    Button("GitHub") {
-                        if let url = URL(string: "https://github.com/kiron0/quitx") {
+                    Button("Say hi 👋") {
+                        if let url = QuitXConstants.sayHiURL() {
                             NSWorkspace.shared.open(url)
                         }
                     }

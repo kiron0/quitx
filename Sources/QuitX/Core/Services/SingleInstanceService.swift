@@ -2,12 +2,7 @@ import AppKit
 import Foundation
 
 enum QuitXIdentity {
-    static let supportedBundleIdentifiers: Set<String> = [
-        "io.coreify.quitx",
-        "com.coreify.quitx",
-        "com.kiron.quitx",
-        "com.quitx.QuitX"
-    ]
+    static let supportedBundleIdentifiers: Set<String> = QuitXConstants.supportedBundleIdentifiers
 }
 
 @MainActor

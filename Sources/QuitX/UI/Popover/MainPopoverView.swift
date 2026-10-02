@@ -355,8 +355,7 @@ private struct PopoverOptionsButton: NSViewRepresentable {
 
         @objc private func openHelp() {
             StatusItemController.shared?.closePopover()
-            guard let url = URL(string: "https://github.com/kiron0/quitx") else { return }
-            NSWorkspace.shared.open(url)
+            NSWorkspace.shared.open(QuitXConstants.githubURL)
         }
 
         @objc private func quitApp() {
