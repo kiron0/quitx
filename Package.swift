@@ -20,6 +20,8 @@ let package = Package(
             swiftSettings: [
                 .unsafeFlags([
                     "-F", "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+                    "-F", "/Applications/Xcode_16.2.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+                    "-F", "/Applications/Xcode_16.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
                     "-F", "/Applications/Xcode_16.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
                     "-F", "/Applications/Xcode_16.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
                     "-F", "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
@@ -29,6 +31,8 @@ let package = Package(
             linkerSettings: [
                 .unsafeFlags([
                     "-F", "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+                    "-F", "/Applications/Xcode_16.2.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+                    "-F", "/Applications/Xcode_16.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
                     "-F", "/Applications/Xcode_16.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
                     "-F", "/Applications/Xcode_16.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
                     "-F", "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",

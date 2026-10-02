@@ -61,7 +61,13 @@ jobs:
           fi
 
       - name: Select Xcode Version
-        run: sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer || sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+        run: |
+          XCODE_APP=$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -n 1)
+          if [ -z "$XCODE_APP" ]; then
+            XCODE_APP="/Applications/Xcode.app"
+          fi
+          echo "Selected: $XCODE_APP"
+          sudo xcode-select -s "$XCODE_APP/Contents/Developer"
 
       - name: Build and Bundle App
         run: make bundle
