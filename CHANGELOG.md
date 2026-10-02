@@ -2,6 +2,28 @@
 
 All notable changes to QuitX macOS App will be documented in this file.
 
+## 1.0.1
+
+### Added
+
+- In-progress loading spinner for individual app quit and restart actions.
+- Batch quitting progress indicator on "Quit All" / "Quit Selected" button.
+- Dynamic status toasts with status icons for successful quits, failed terminations, and restart errors.
+- Legacy configuration migration with automatic fallback defaults for new settings.
+
+### Changed
+
+- Selection counter now accurately reflects visible items when background apps are hidden.
+- Search queries now trim leading and trailing whitespace automatically.
+- Stash service only purges saved session when all restorable applications launch successfully.
+- Process termination verifies application identity matches target before signaling.
+- Minimum supported macOS version updated to 14.0+.
+
+### Fixed
+
+- Prevented concurrent quit and restart requests while an operation is already pending.
+- Excluded music applications properly from background auto-quit routines.
+
 ## 1.0.0
 
 ### Added
