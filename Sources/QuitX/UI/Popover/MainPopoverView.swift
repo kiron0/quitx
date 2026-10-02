@@ -20,6 +20,9 @@ struct MainPopoverView: View {
     )
     var body: some View {
         VStack(spacing: 0) {
+            Color.clear
+                .frame(height: 12)
+
             quitAllButton
                 .padding(.horizontal, 8)
                 .padding(.top, 5)
@@ -50,14 +53,16 @@ struct MainPopoverView: View {
         }
         .frame(width: 270)
         .frame(maxHeight: .infinity)
-        .background(QuitXTheme.popoverBackground)
+        .background(
+            QuitXTheme.popoverBackground
+                .clipShape(PopoverContainerShape(arrowX: vm.arrowX, cornerRadius: 10))
+        )
+        .overlay(
+            PopoverContainerShape(arrowX: vm.arrowX, cornerRadius: 10)
+                .stroke(Color.primary.opacity(0.12), lineWidth: 0.5)
+        )
+        .clipShape(PopoverContainerShape(arrowX: vm.arrowX, cornerRadius: 10))
         .onAppear {
-            isSearchFocused = false
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NSPopover.willShowNotification)) { _ in
-            isSearchFocused = false
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NSPopover.didShowNotification)) { _ in
             isSearchFocused = false
         }
         .onChange(of: vm.filteredApps.count) {

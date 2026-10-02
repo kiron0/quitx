@@ -10,7 +10,11 @@ enum QuitXTheme {
     static let toolbarBackgroundNSColor = NSColor.windowBackgroundColor
 
     static var popoverBackground: some View {
-        Color.clear
+        ZStack {
+            VisualEffectBlur(material: .popover, blendingMode: .behindWindow)
+            Color(NSColor.windowBackgroundColor)
+                .opacity(0.88)
+        }
     }
 
     static var windowBackground: some View {
