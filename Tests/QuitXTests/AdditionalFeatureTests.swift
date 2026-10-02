@@ -3,6 +3,38 @@ import AppKit
 import SwiftUI
 @testable import QuitX
 
+@Suite("Single Instance Version Tests")
+@MainActor
+struct SingleInstanceVersionTests {
+    @Test("Newer semantic version wins")
+    func testNewerVersionWins() {
+        #expect(SingleInstanceService.compareVersions("1.0.2", "1.0.1") == 1)
+        #expect(SingleInstanceService.compareVersions("2.0.0", "1.99.99") == 1)
+    }
+
+    @Test("Older semantic version loses")
+    func testOlderVersionLoses() {
+        #expect(SingleInstanceService.compareVersions("1.0.1", "1.0.2") == -1)
+    }
+
+    @Test("Missing version components equal zero")
+    func testMissingComponents() {
+        #expect(SingleInstanceService.compareVersions("1.0", "1.0.0") == 0)
+    }
+
+    @Test("Version prefix and suffix are accepted")
+    func testVersionDecoration() {
+        #expect(SingleInstanceService.compareVersions("v1.2.3", "1.2.2") == 1)
+        #expect(SingleInstanceService.compareVersions("1.2.3-beta", "1.2.3") == 0)
+    }
+
+    @Test("Lower PID wins equal-version race")
+    func testEqualVersionTieBreaker() {
+        #expect(SingleInstanceService.isPreferred(version: "1.0.2", pid: 100, over: "1.0.2", pid: 200))
+        #expect(!SingleInstanceService.isPreferred(version: "1.0.2", pid: 200, over: "1.0.2", pid: 100))
+    }
+}
+
 @Suite("AutoQuit and Timing Tests")
 struct AutoQuitAndTimingTests {
     @Test("Auto-quit disabled when minutes is 0")

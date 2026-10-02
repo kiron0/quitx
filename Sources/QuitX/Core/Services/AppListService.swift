@@ -20,7 +20,7 @@ final class AppListService {
             if pid == currentPid { continue }
             guard let name = app.localizedName else { continue }
             let bundleId = app.bundleIdentifier
-            if bundleId == "com.kiron.quitx" || bundleId == "com.coreify.quitx" { continue }
+            if let bundleId, QuitXIdentity.supportedBundleIdentifiers.contains(bundleId) { continue }
 
             let isRegularApp = app.activationPolicy == .regular
             let isBackground = app.activationPolicy == .accessory

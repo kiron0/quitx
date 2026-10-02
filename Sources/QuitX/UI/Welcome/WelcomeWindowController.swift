@@ -4,6 +4,7 @@ import SwiftUI
 @MainActor
 final class WelcomeWindowController: NSObject, NSWindowDelegate {
     static let shared = WelcomeWindowController()
+    private let windowWidth: CGFloat = 390
     private var window: NSWindow?
 
     func showIfFirstLaunch() {
@@ -19,10 +20,7 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
 
         if let win = window {
             if let screen = NSScreen.main ?? NSScreen.screens.first {
-                let screenFrame = screen.visibleFrame
-                let x = screenFrame.origin.x + (screenFrame.width - 360) / 2
-                let y = screenFrame.origin.y + screenFrame.height - 370 - 110
-                win.setFrame(NSRect(x: x, y: y, width: 360, height: 370), display: true)
+                win.setFrameOrigin(windowOrigin(for: win.frame.size, on: screen))
             }
             win.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
@@ -42,10 +40,14 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         let hosting = NSHostingController(rootView: rootView)
         let win = NSWindow(contentViewController: hosting)
         win.title = "Welcome to QuitX"
-        win.styleMask = [.titled, .closable]
+        win.styleMask = [.titled, .closable, .fullSizeContentView]
         win.titlebarAppearsTransparent = true
+        win.titlebarSeparatorStyle = .none
         win.titleVisibility = .visible
-        win.setContentSize(NSSize(width: 360, height: 370))
+        let fittingSize = hosting.sizeThatFits(
+            in: NSSize(width: windowWidth, height: .greatestFiniteMagnitude)
+        )
+        win.setContentSize(NSSize(width: windowWidth, height: ceil(fittingSize.height)))
         win.isOpaque = true
         win.backgroundColor = QuitXTheme.windowBackgroundNSColor
         win.appearance = NSApp.effectiveAppearance
@@ -59,10 +61,10 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
 
         let targetFrame: NSRect
         if let screen = NSScreen.main ?? NSScreen.screens.first {
-            let screenFrame = screen.visibleFrame
-            let x = screenFrame.origin.x + (screenFrame.width - 360) / 2
-            let y = screenFrame.origin.y + screenFrame.height - 370 - 110
-            targetFrame = NSRect(x: x, y: y, width: 360, height: 370)
+            targetFrame = NSRect(
+                origin: windowOrigin(for: win.frame.size, on: screen),
+                size: win.frame.size
+            )
         } else {
             win.center()
             targetFrame = win.frame
@@ -87,5 +89,13 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) {
         window = nil
+    }
+
+    private func windowOrigin(for size: NSSize, on screen: NSScreen) -> NSPoint {
+        let visibleFrame = screen.visibleFrame
+        return NSPoint(
+            x: visibleFrame.midX - (size.width / 2),
+            y: visibleFrame.maxY - size.height - 110
+        )
     }
 }

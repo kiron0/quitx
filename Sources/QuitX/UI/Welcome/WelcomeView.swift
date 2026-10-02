@@ -5,14 +5,17 @@ struct WelcomeView: View {
     var onDismiss: () -> Void
     var onOpenSettings: () -> Void
 
+    @EnvironmentObject private var configStore: ConfigStore
+    @ObservedObject private var launchService = LaunchAtLoginService.shared
+
     private let gold = QuitXTheme.accent
 
     var body: some View {
         VStack(spacing: 0) {
             hero
-                .padding(.top, 24)
+                .padding(.top, 46)
 
-            VStack(spacing: 8) {
+            VStack(spacing: 6) {
                 guideRow(
                     icon: "menubar.rectangle",
                     title: "Menu Bar",
@@ -29,10 +32,15 @@ struct WelcomeView: View {
                     detail: "Set auto-quit timers, global shortcuts, and exclusions in Settings."
                 )
             }
-            .padding(.horizontal, 22)
-            .padding(.top, 18)
+            .padding(.horizontal, 20)
+            .padding(.top, 10)
 
-            Spacer(minLength: 16)
+            Divider()
+                .padding(.horizontal, 20)
+                .padding(.vertical, 8)
+
+            quickSetup
+                .padding(.horizontal, 20)
 
             HStack(spacing: 10) {
                 Button("Settings") {
@@ -45,11 +53,69 @@ struct WelcomeView: View {
                 }
                 .buttonStyle(WelcomePrimaryButtonStyle(color: gold))
             }
-            .padding(.horizontal, 22)
-            .padding(.bottom, 20)
+            .padding(.horizontal, 20)
+            .padding(.top, 12)
+            .padding(.bottom, 16)
         }
-        .frame(width: 360, height: 370)
+        .frame(width: 390)
+        .fixedSize(horizontal: false, vertical: true)
         .background(QuitXTheme.windowBackground)
+    }
+
+    private var quickSetup: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Quick Setup")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color.primary)
+
+            setupToggle("Open QuitX at login", isOn: $launchService.isEnabled)
+            setupToggle("Play sounds", isOn: Binding(
+                get: { configStore.config.playSounds },
+                set: {
+                    configStore.config.playSounds = $0
+                    configStore.save()
+                }
+            ))
+            setupToggle("Deselect apps by default", isOn: Binding(
+                get: { !configStore.config.defaultSelectAll },
+                set: {
+                    configStore.config.defaultSelectAll = !$0
+                    configStore.save()
+                }
+            ))
+
+            HStack(spacing: 12) {
+                Text("Default quit mode")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.primary)
+                    .layoutPriority(1)
+
+                Spacer()
+
+                Picker("", selection: Binding(
+                    get: { configStore.config.force },
+                    set: {
+                        configStore.config.force = $0
+                        configStore.save()
+                    }
+                )) {
+                    Text("Normal").tag(QuitXConfig.ForceMode.normal)
+                    Text("Force Quit").tag(QuitXConfig.ForceMode.force)
+                }
+                .labelsHidden()
+                .pickerStyle(.segmented)
+                .frame(width: 168)
+            }
+        }
+        .padding(10)
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 9))
+    }
+
+    private func setupToggle(_ title: String, isOn: Binding<Bool>) -> some View {
+        Toggle(title, isOn: isOn)
+            .toggleStyle(.checkbox)
+            .font(.system(size: 12))
+            .foregroundStyle(Color.primary)
     }
 
     private var hero: some View {
@@ -82,12 +148,13 @@ struct WelcomeView: View {
                     .font(.system(size: 11))
                     .foregroundStyle(Color.secondary)
                     .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 7)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 6)
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
     }
 }
