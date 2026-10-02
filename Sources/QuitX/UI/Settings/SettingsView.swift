@@ -475,6 +475,8 @@ struct ShortcutsTabCloneView: View {
     @ObservedObject private var sm = ShortcutManager.shared
     @StateObject private var viewState = ShortcutsViewState()
 
+    private let gold = QuitXTheme.accent
+
     var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: 12) {
@@ -549,15 +551,19 @@ struct ShortcutsTabCloneView: View {
             } label: {
                 ZStack {
                     RoundedRectangle(cornerRadius: 3.5)
-                        .fill(active ? Color(white: 0.35) : Color.white.opacity(0.08))
+                        .fill(active ? gold : Color.white.opacity(0.12))
                         .frame(width: 15, height: 15)
 
                     if active {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 8.5, weight: .bold))
-                            .foregroundStyle(.white)
+                            .font(.system(size: 8.5, weight: .heavy))
+                            .foregroundStyle(Color.black.opacity(0.9))
                     }
                 }
+                .overlay(
+                    RoundedRectangle(cornerRadius: 3.5)
+                        .stroke(active ? gold : Color.white.opacity(0.18), lineWidth: 1)
+                )
             }
             .buttonStyle(.plain)
 

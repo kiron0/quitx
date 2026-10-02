@@ -25,6 +25,10 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
             if let tab = tab {
                 switchToTab(tab)
             }
+            if let screen = NSScreen.main ?? NSScreen.screens.first {
+                let targetFrame = targetFrameFor(win, tab: activeTab, screen: screen)
+                win.setFrame(targetFrame, display: true)
+            }
             win.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
@@ -69,9 +73,37 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
 
         NSApp.setActivationPolicy(.regular)
 
-        win.center()
+        if let screen = NSScreen.main ?? NSScreen.screens.first {
+            let targetFrame = targetFrameFor(win, tab: targetTab, screen: screen)
+            showAnimated(win: win, targetFrame: targetFrame)
+        } else {
+            win.center()
+            win.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+        }
+    }
+
+    private func targetFrameFor(_ win: NSWindow, tab: SettingsTab, screen: NSScreen) -> NSRect {
+        let contentRect = NSRect(x: 0, y: 0, width: 400, height: tab.contentHeight)
+        let frameRect = win.frameRect(forContentRect: contentRect)
+        let screenFrame = screen.visibleFrame
+        let x = screenFrame.origin.x + (screenFrame.width - 400) / 2
+        let y = screenFrame.origin.y + screenFrame.height - frameRect.height - 110
+        return NSRect(x: x, y: y, width: 400, height: frameRect.height)
+    }
+
+    private func showAnimated(win: NSWindow, targetFrame: NSRect) {
+        win.setFrame(targetFrame, display: false)
+        win.alphaValue = 0.0
+        win.layoutIfNeeded()
         win.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.15
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            win.animator().alphaValue = 1.0
+        }
     }
 
     func windowWillClose(_ notification: Notification) {

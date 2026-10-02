@@ -18,7 +18,12 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         StatusItemController.shared?.closePopover()
 
         if let win = window {
-            win.center()
+            if let screen = NSScreen.main ?? NSScreen.screens.first {
+                let screenFrame = screen.visibleFrame
+                let x = screenFrame.origin.x + (screenFrame.width - 440) / 2
+                let y = screenFrame.origin.y + screenFrame.height - 600 - 110
+                win.setFrame(NSRect(x: x, y: y, width: 440, height: 600), display: true)
+            }
             win.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
@@ -55,7 +60,7 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         if let screen = NSScreen.main ?? NSScreen.screens.first {
             let screenFrame = screen.visibleFrame
             let x = screenFrame.origin.x + (screenFrame.width - 440) / 2
-            let y = screenFrame.origin.y + (screenFrame.height - 600) / 2
+            let y = screenFrame.origin.y + screenFrame.height - 600 - 110
             targetFrame = NSRect(x: x, y: y, width: 440, height: 600)
         } else {
             win.center()
