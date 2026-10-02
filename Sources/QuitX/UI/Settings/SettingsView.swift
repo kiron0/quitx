@@ -32,12 +32,15 @@ enum SettingsTab: String, CaseIterable {
     var toolbarImage: NSImage? {
         if let img = AssetImages.load(iconName) {
             let copy = img.copy() as! NSImage
+            copy.size = NSSize(width: 19, height: 19)
             copy.isTemplate = true
             return copy
         }
         let sym = NSImage(systemSymbolName: fallbackSymbolName, accessibilityDescription: rawValue)
-        sym?.isTemplate = true
-        return sym
+        let copy = sym?.copy() as? NSImage
+        copy?.size = NSSize(width: 19, height: 19)
+        copy?.isTemplate = true
+        return copy ?? sym
     }
 
     var contentHeight: CGFloat {

@@ -1,31 +1,56 @@
 import AppKit
 import SwiftUI
 
+final class MenuPopupWindow: NSPanel {
+    init(contentRect: NSRect) {
+        super.init(
+            contentRect: contentRect,
+            styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false
+        )
+        self.isOpaque = false
+        self.backgroundColor = .clear
+        self.hasShadow = true
+        self.level = .popUpMenu
+        self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        self.isMovable = false
+        self.isMovableByWindowBackground = false
+    }
+
+    override var canBecomeKey: Bool {
+        return true
+    }
+
+    override var canBecomeMain: Bool {
+        return false
+    }
+}
+
 @MainActor
-final class StatusItemController: NSObject, NSPopoverDelegate {
+final class StatusItemController: NSObject {
     static weak var shared: StatusItemController?
 
     private var statusItem: NSStatusItem
-    private var popover: NSPopover
+    private var window: MenuPopupWindow?
+    private var hostingController: NSHostingController<AnyView>?
     private var globalEventMonitor: Any?
     private var localEventMonitor: Any?
     private var refreshTask: Task<Void, Never>?
     private var liveMonitoringTask: Task<Void, Never>?
     private var lastCloseTimestamp: Date = .distantPast
 
+    var isShown: Bool {
+        window?.isVisible ?? false
+    }
+
     override init() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        popover = NSPopover()
-
-        popover.behavior = .applicationDefined
-        popover.animates = false
-
         super.init()
         Self.shared = self
-        popover.delegate = self
 
         configureButton()
-        configurePopover()
+        configureWindow()
         startEventMonitor()
     }
 
@@ -97,14 +122,21 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     }
 
     @MainActor
-    private func configurePopover() {
-        let rootView = MainPopoverView()
-            .environmentObject(ConfigStore.shared)
+    private func configureWindow() {
+        let rootView = AnyView(
+            MainPopoverView()
+                .environmentObject(ConfigStore.shared)
+        )
         let hosting = NSHostingController(rootView: rootView)
         hosting.view.wantsLayer = true
-        hosting.view.layer?.cornerRadius = 2
+        hosting.view.layer?.cornerRadius = 0
         hosting.view.layer?.masksToBounds = true
-        popover.contentViewController = hosting
+        self.hostingController = hosting
+
+        let win = MenuPopupWindow(contentRect: NSRect(x: 0, y: 0, width: 270, height: 200))
+        win.contentViewController = hosting
+        self.window = win
+
         updatePopoverSize()
 
         Task { @MainActor [weak self] in
@@ -126,13 +158,34 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
             calculated = baseHeight + (CGFloat(count) * rowHeight)
         }
 
-        let screenHeight = statusItem.button?.window?.screen?.visibleFrame.height
-            ?? NSScreen.main?.visibleFrame.height
-            ?? 800
+        let screen = statusItem.button?.window?.screen ?? NSScreen.main
+        let screenHeight = screen?.visibleFrame.height ?? 800
         let maximumHeight = max(100, screenHeight - 48)
         let targetHeight = min(maximumHeight, calculated)
         AppListViewModel.shared.listNeedsScrolling = calculated > maximumHeight
-        popover.contentSize = NSSize(width: 270, height: targetHeight)
+
+        let newSize = NSSize(width: 270, height: targetHeight)
+        guard let win = window else { return }
+
+        var frame = win.frame
+        let oldHeight = frame.height
+        frame.size = newSize
+        frame.origin.y += (oldHeight - targetHeight)
+
+        if let button = statusItem.button, let btnWindow = button.window {
+            let buttonScreenRect = btnWindow.convertToScreen(button.bounds)
+            var originX = buttonScreenRect.midX - (newSize.width / 2)
+
+            if let scr = screen {
+                let screenMinX = scr.visibleFrame.minX
+                let screenMaxX = scr.visibleFrame.maxX
+                originX = max(screenMinX + 4, min(originX, screenMaxX - newSize.width - 4))
+            }
+            let originY = buttonScreenRect.minY - targetHeight - 4
+            frame.origin = NSPoint(x: originX, y: originY)
+        }
+
+        win.setFrame(frame, display: true, animate: false)
     }
 
     @objc private func handleStatusItemClick(_ sender: Any?) {
@@ -151,30 +204,28 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     func closePopover() {
         lastCloseTimestamp = Date()
         stopLiveMonitoring()
-        popover.close()
+        window?.orderOut(nil)
     }
 
     @MainActor
     func showPopover() {
-        if !popover.isShown {
+        if !isShown {
             togglePopover()
         }
     }
 
     @MainActor
     func togglePopover() {
-        if popover.isShown {
+        if isShown {
             closePopover()
         } else {
-
             if Date().timeIntervalSince(lastCloseTimestamp) < 0.25 {
                 return
             }
-            guard let button = statusItem.button else { return }
+            guard let win = window else { return }
             NSApp.activate(ignoringOtherApps: true)
             updatePopoverSize()
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            popover.contentViewController?.view.window?.makeKeyAndOrderFront(nil)
+            win.makeKeyAndOrderFront(nil)
             refreshVisibleApps()
             startLiveMonitoring()
         }
@@ -183,9 +234,9 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     private func startLiveMonitoring() {
         liveMonitoringTask?.cancel()
         liveMonitoringTask = Task { @MainActor [weak self] in
-            while let self = self, self.popover.isShown {
+            while let self = self, self.isShown {
                 try? await Task.sleep(nanoseconds: 2_000_000_000)
-                guard !Task.isCancelled, self.popover.isShown else { break }
+                guard !Task.isCancelled, self.isShown else { break }
                 await AppListViewModel.shared.updateLiveStats()
                 self.updatePopoverSize()
             }
@@ -195,12 +246,6 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     private func stopLiveMonitoring() {
         liveMonitoringTask?.cancel()
         liveMonitoringTask = nil
-    }
-
-    nonisolated func popoverDidClose(_ notification: Notification) {
-        Task { @MainActor in
-            StatusItemController.shared?.stopLiveMonitoring()
-        }
     }
 
     private func refreshVisibleApps() {
@@ -278,11 +323,11 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
 
     private func startEventMonitor() {
         globalEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
-            guard let self = self, self.popover.isShown else { return }
+            guard let self = self, self.isShown else { return }
 
-            if let button = self.statusItem.button, let window = button.window {
+            if let button = self.statusItem.button, let buttonWindow = button.window {
                 let mouseLoc = NSEvent.mouseLocation
-                let buttonScreenFrame = window.convertToScreen(button.bounds)
+                let buttonScreenFrame = buttonWindow.convertToScreen(button.bounds)
                 if buttonScreenFrame.contains(mouseLoc) {
                     return
                 }
@@ -296,16 +341,16 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         localEventMonitor = NSEvent.addLocalMonitorForEvents(
             matching: [.leftMouseDown, .rightMouseDown, .keyDown]
         ) { [weak self] event in
-            guard let self, self.popover.isShown else { return event }
+            guard let self, self.isShown else { return event }
 
             if event.type == .keyDown, event.keyCode == 53 {
                 self.closePopover()
                 return nil
             }
 
-            let popoverWindow = self.popover.contentViewController?.view.window
+            let popupWindow = self.window
             let statusWindow = self.statusItem.button?.window
-            if event.window !== popoverWindow, event.window !== statusWindow {
+            if event.window !== popupWindow, event.window !== statusWindow {
                 self.closePopover()
             }
             return event

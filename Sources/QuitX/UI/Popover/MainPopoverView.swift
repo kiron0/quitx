@@ -56,7 +56,7 @@ struct MainPopoverView: View {
         .frame(width: 270)
         .frame(maxHeight: .infinity)
         .background(QuitXTheme.popoverBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 2))
+        .clipShape(Rectangle())
         .preferredColorScheme(.dark)
         .onChange(of: vm.filteredApps.count) {
             StatusItemController.shared?.updatePopoverSize()
