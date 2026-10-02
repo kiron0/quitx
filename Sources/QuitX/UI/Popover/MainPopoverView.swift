@@ -56,7 +56,7 @@ struct MainPopoverView: View {
         .frame(width: 270)
         .frame(maxHeight: .infinity)
         .background(QuitXTheme.popoverBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 2))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
         .preferredColorScheme(.dark)
         .onChange(of: vm.filteredApps.count) {
             StatusItemController.shared?.updatePopoverSize()
@@ -118,7 +118,7 @@ struct MainPopoverView: View {
                     ? goldGradient
                     : LinearGradient(colors: [Color.white.opacity(0.12), Color.white.opacity(0.12)], startPoint: .top, endPoint: .bottom)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 2))
+            .clipShape(RoundedRectangle(cornerRadius: 6))
             .shadow(
                 color: isEnabled ? goldColor.opacity(uiState.isQuitAllHovered ? 0.3 : 0.12) : Color.clear,
                 radius: 2,
@@ -167,7 +167,6 @@ struct MainPopoverView: View {
                     .textFieldStyle(.plain)
                     .font(.system(size: 11.5))
                     .foregroundStyle(Color.white.opacity(0.92))
-                    .focusable(false)
 
                 if !vm.searchQuery.isEmpty {
                     Button {
@@ -285,7 +284,7 @@ private struct PopoverOptionsButton: NSViewRepresentable {
                 enabled: parent.hasStash
             )
             menu.addItem(.separator())
-            addItem(to: menu, title: "Settings", symbol: "gearshape", action: #selector(openSettings))
+            addItem(to: menu, title: "Settings...", symbol: "gearshape", action: #selector(openSettings))
             addItem(to: menu, title: "Help", symbol: "questionmark.circle", action: #selector(openHelp))
             menu.addItem(.separator())
             addItem(to: menu, title: "Quit QuitX", symbol: "power", action: #selector(quitApp))
