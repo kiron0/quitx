@@ -56,7 +56,7 @@ struct MainPopoverView: View {
         .frame(width: 270)
         .frame(maxHeight: .infinity)
         .background(QuitXTheme.popoverBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .clipShape(RoundedRectangle(cornerRadius: 2))
         .preferredColorScheme(.dark)
         .onChange(of: vm.filteredApps.count) {
             StatusItemController.shared?.updatePopoverSize()
@@ -118,7 +118,7 @@ struct MainPopoverView: View {
                     ? goldGradient
                     : LinearGradient(colors: [Color.white.opacity(0.12), Color.white.opacity(0.12)], startPoint: .top, endPoint: .bottom)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .clipShape(RoundedRectangle(cornerRadius: 2))
             .shadow(
                 color: isEnabled ? goldColor.opacity(uiState.isQuitAllHovered ? 0.3 : 0.12) : Color.clear,
                 radius: 2,
@@ -167,6 +167,7 @@ struct MainPopoverView: View {
                     .textFieldStyle(.plain)
                     .font(.system(size: 11.5))
                     .foregroundStyle(Color.white.opacity(0.92))
+                    .focusable(false)
 
                 if !vm.searchQuery.isEmpty {
                     Button {

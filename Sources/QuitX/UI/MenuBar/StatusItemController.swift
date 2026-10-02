@@ -102,7 +102,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
             .environmentObject(ConfigStore.shared)
         let hosting = NSHostingController(rootView: rootView)
         hosting.view.wantsLayer = true
-        hosting.view.layer?.cornerRadius = 10
+        hosting.view.layer?.cornerRadius = 2
         hosting.view.layer?.masksToBounds = true
         popover.contentViewController = hosting
         updatePopoverSize()
