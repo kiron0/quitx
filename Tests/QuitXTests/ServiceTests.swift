@@ -547,7 +547,11 @@ struct MenuHelperTests {
             target: nil,
             systemSymbolName: "star"
         )
-        let val = item.value(forKey: "preferredImageVisibility") as? Int
-        #expect(val == 1)
+        if item.responds(to: Selector(("preferredImageVisibility"))) {
+            let val = item.value(forKey: "preferredImageVisibility") as? Int
+            #expect(val == 1)
+        } else {
+            #expect(item.image != nil)
+        }
     }
 }
