@@ -97,7 +97,11 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         if activeTab == tab { return }
         activeTab = tab
 
-        tabModel.activeTab = tab
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            tabModel.activeTab = tab
+        }
         win.title = tab.rawValue
 
         let targetHeight = tab.totalHeight

@@ -73,71 +73,83 @@ struct SettingsContainerView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            headerSection
+                .frame(width: 400, height: 91)
+                .fixedSize(horizontal: true, vertical: true)
+                .background(QuitXTheme.toolbarBackground)
+                .layoutPriority(100)
+                .transaction { $0.animation = nil }
+                .animation(nil, value: tabModel.activeTab)
 
             VStack(spacing: 0) {
-
-                ZStack {
-                    Text(tabModel.activeTab.rawValue)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Color.white.opacity(0.85))
+                switch tabModel.activeTab {
+                case .general:
+                    GeneralTabCloneView()
+                        .environmentObject(configStore)
+                case .shortcuts:
+                    ShortcutsTabCloneView()
+                case .support:
+                    SupportTabCloneView()
+                case .about:
+                    AboutTabCloneView()
                 }
-                .frame(maxWidth: .infinity)
-                .frame(height: 32)
-
-                HStack(spacing: 8) {
-                    ForEach(SettingsTab.allCases, id: \.self) { tab in
-                        let isSelected = (tabModel.activeTab == tab)
-                        Button {
-                            onSelectTab(tab)
-                        } label: {
-                            VStack(spacing: 3) {
-                                Image(systemName: tab.iconName)
-                                    .font(.system(size: 18, weight: isSelected ? .semibold : .regular))
-                                    .frame(height: 20)
-                                Text(tab.rawValue)
-                                    .font(.system(size: 11, weight: isSelected ? .semibold : .medium))
-                            }
-                            .foregroundStyle(isSelected ? QuitXTheme.accent : Color.white.opacity(0.55))
-                            .frame(width: 64, height: 46)
-                            .background(
-                                RoundedRectangle(cornerRadius: 7)
-                                    .fill(isSelected ? Color.white.opacity(0.12) : Color.clear)
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 7)
-                                    .stroke(isSelected ? Color.white.opacity(0.14) : Color.clear, lineWidth: 1)
-                            )
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.top, 6)
-                .padding(.bottom, 6)
-
-                Rectangle()
-                    .fill(Color.black.opacity(0.35))
-                    .frame(height: 1)
             }
-            .frame(width: 400, height: 91)
-            .background(QuitXTheme.toolbarBackground)
-
-            switch tabModel.activeTab {
-            case .general:
-                GeneralTabCloneView()
-                    .environmentObject(configStore)
-            case .shortcuts:
-                ShortcutsTabCloneView()
-            case .support:
-                SupportTabCloneView()
-            case .about:
-                AboutTabCloneView()
-            }
+            .frame(width: 400, alignment: .top)
+            .clipped()
         }
         .frame(width: 400)
+        .frame(maxHeight: .infinity, alignment: .top)
         .background(QuitXTheme.windowBackground)
         .ignoresSafeArea()
         .preferredColorScheme(.dark)
+    }
+
+    private var headerSection: some View {
+        VStack(spacing: 0) {
+            ZStack {
+                Text(tabModel.activeTab.rawValue)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.white.opacity(0.85))
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 32)
+
+            HStack(spacing: 8) {
+                ForEach(SettingsTab.allCases, id: \.self) { tab in
+                    let isSelected = (tabModel.activeTab == tab)
+                    Button {
+                        onSelectTab(tab)
+                    } label: {
+                        VStack(spacing: 3) {
+                            Image(systemName: tab.iconName)
+                                .font(.system(size: 18, weight: isSelected ? .semibold : .regular))
+                                .frame(height: 20)
+                            Text(tab.rawValue)
+                                .font(.system(size: 11, weight: isSelected ? .semibold : .medium))
+                        }
+                        .foregroundStyle(isSelected ? QuitXTheme.accent : Color.white.opacity(0.55))
+                        .frame(width: 64, height: 46)
+                        .background(
+                            RoundedRectangle(cornerRadius: 7)
+                                .fill(isSelected ? Color.white.opacity(0.12) : Color.clear)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 7)
+                                .stroke(isSelected ? Color.white.opacity(0.14) : Color.clear, lineWidth: 1)
+                        )
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .transaction { $0.animation = nil }
+                }
+            }
+            .padding(.top, 6)
+            .padding(.bottom, 6)
+
+            Rectangle()
+                .fill(Color.black.opacity(0.35))
+                .frame(height: 1)
+        }
     }
 }
 

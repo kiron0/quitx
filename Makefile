@@ -6,7 +6,7 @@ CONTENTS = $(APP_DIR)/Contents
 MACOS_DIR = $(CONTENTS)/MacOS
 RESOURCES_DIR = $(CONTENTS)/Resources
 
-.PHONY: all build bundle run clean test
+.PHONY: all build bundle run clean test ship
 
 ## Default: build + bundle
 all: bundle
@@ -52,7 +52,11 @@ dev:
 
 ## Run tests
 test:
-	@swift test --build-system native 2>&1 | grep -v "build-system native" || true
+	@swift test --build-system native -Xswiftc -F/Library/Developer/CommandLineTools/Library/Developer/Frameworks 2>&1 | grep -v "build-system native" || true
+
+## Test, bundle, kill, install, and open in one go
+ship:
+	@Scripts/ship.sh
 
 ## Clean build artifacts
 clean:

@@ -56,6 +56,7 @@ struct MainPopoverView: View {
         .frame(width: 270)
         .frame(maxHeight: .infinity)
         .background(QuitXTheme.popoverBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
         .preferredColorScheme(.dark)
         .onChange(of: vm.filteredApps.count) {
             StatusItemController.shared?.updatePopoverSize()
@@ -68,8 +69,10 @@ struct MainPopoverView: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: vm.showToast)
-        .alert("Quit all selected apps?", isPresented: $uiState.showConfirmQuitAll) {
-            Button(vm.isOptionKeyPressed ? "Force Quit All" : "Quit All", role: .destructive) {
+        .alert("Quit selected apps?", isPresented: $uiState.showConfirmQuitAll) {
+            let isAll = vm.isAllSelected
+            let confirmTitle = vm.isOptionKeyPressed ? (isAll ? "Force Quit All" : "Force Quit Selected") : (isAll ? "Quit All" : "Quit Selected")
+            Button(confirmTitle, role: .destructive) {
                 Task {
                     await vm.quitAll(force: vm.isOptionKeyPressed || configStore.config.force == .force)
                 }
@@ -83,7 +86,13 @@ struct MainPopoverView: View {
     private var quitAllButton: some View {
         let isForced = vm.isOptionKeyPressed || configStore.config.force == .force
         let count = vm.selected.count
-        let title = isForced ? "Force Quit All" : "Quit All"
+        let isAll = vm.isAllSelected
+        let title: String
+        if isForced {
+            title = isAll ? "Force Quit All" : "Force Quit Selected"
+        } else {
+            title = isAll ? "Quit All" : "Quit Selected"
+        }
         let isEnabled = count > 0
 
         return Button {
@@ -109,7 +118,7 @@ struct MainPopoverView: View {
                     ? goldGradient
                     : LinearGradient(colors: [Color.white.opacity(0.12), Color.white.opacity(0.12)], startPoint: .top, endPoint: .bottom)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 3.5))
+            .clipShape(RoundedRectangle(cornerRadius: 6))
             .shadow(
                 color: isEnabled ? goldColor.opacity(uiState.isQuitAllHovered ? 0.3 : 0.12) : Color.clear,
                 radius: 2,
@@ -173,7 +182,7 @@ struct MainPopoverView: View {
             .padding(.horizontal, 7)
             .frame(height: 24)
             .background(
-                RoundedRectangle(cornerRadius: 3.5)
+                RoundedRectangle(cornerRadius: 6)
                     .fill(Color.white.opacity(0.08))
             )
         }
@@ -275,7 +284,7 @@ private struct PopoverOptionsButton: NSViewRepresentable {
                 enabled: parent.hasStash
             )
             menu.addItem(.separator())
-            addItem(to: menu, title: "Preferences...", symbol: "gearshape", action: #selector(openPreferences))
+            addItem(to: menu, title: "Settings...", symbol: "gearshape", action: #selector(openSettings))
             addItem(to: menu, title: "Help", symbol: "questionmark.circle", action: #selector(openHelp))
             menu.addItem(.separator())
             addItem(to: menu, title: "Quit QuitX", symbol: "power", action: #selector(quitApp))
@@ -301,7 +310,7 @@ private struct PopoverOptionsButton: NSViewRepresentable {
         @objc private func stash() { parent.onStash() }
         @objc private func restore() { parent.onRestore() }
 
-        @objc private func openPreferences() {
+        @objc private func openSettings() {
             StatusItemController.shared?.closePopover()
             SettingsWindowController.shared.show()
         }

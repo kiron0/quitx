@@ -37,7 +37,7 @@ struct WelcomeView: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(gold)
 
-                Text("Use the footer menu to stash a session, show background apps, or open Preferences.")
+                Text("Use the footer menu to stash a session, show background apps, or open Settings.")
                     .font(.system(size: 11.5))
                     .foregroundStyle(Color.white.opacity(0.62))
                     .fixedSize(horizontal: false, vertical: true)
@@ -54,7 +54,7 @@ struct WelcomeView: View {
             Spacer(minLength: 22)
 
             HStack(spacing: 10) {
-                Button("Preferences") {
+                Button("Settings") {
                     onOpenSettings()
                 }
                 .buttonStyle(WelcomeSecondaryButtonStyle())

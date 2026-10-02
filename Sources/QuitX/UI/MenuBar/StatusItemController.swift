@@ -100,7 +100,11 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     private func configurePopover() {
         let rootView = MainPopoverView()
             .environmentObject(ConfigStore.shared)
-        popover.contentViewController = NSHostingController(rootView: rootView)
+        let hosting = NSHostingController(rootView: rootView)
+        hosting.view.wantsLayer = true
+        hosting.view.layer?.cornerRadius = 10
+        hosting.view.layer?.masksToBounds = true
+        popover.contentViewController = hosting
         updatePopoverSize()
 
         Task { @MainActor [weak self] in
@@ -212,9 +216,9 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         closePopover()
         let menu = NSMenu()
 
-        let prefsItem = NSMenuItem(title: "Preferences...", action: #selector(openPreferences), keyEquivalent: ",")
-        prefsItem.target = self
-        menu.addItem(prefsItem)
+        let settingsItem = NSMenuItem(title: "Settings...", action: #selector(openSettings), keyEquivalent: ",")
+        settingsItem.target = self
+        menu.addItem(settingsItem)
 
         menu.addItem(NSMenuItem.separator())
 
@@ -233,7 +237,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         welcomeItem.target = self
         menu.addItem(welcomeItem)
 
-        let aboutItem = NSMenuItem(title: "About QuitX", action: #selector(openPreferences), keyEquivalent: "")
+        let aboutItem = NSMenuItem(title: "About QuitX", action: #selector(openSettings), keyEquivalent: "")
         aboutItem.target = self
         menu.addItem(aboutItem)
 
@@ -246,7 +250,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         }
     }
 
-    @objc private func openPreferences() {
+    @objc private func openSettings() {
         SettingsWindowController.shared.show()
     }
 

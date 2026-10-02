@@ -12,16 +12,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         _ = ShortcutManager.shared
         WelcomeWindowController.shared.showIfFirstLaunch()
 
-        DistributedNotificationCenter.default().addObserver(
-            forName: NSNotification.Name("io.coreify.quitx.showPreferences"),
-            object: nil,
-            queue: .main
-        ) { notif in
+        let handleShowSettings: (Notification) -> Void = { notif in
             Task { @MainActor in
                 let tab = (notif.userInfo?["tab"] as? String).flatMap { SettingsTab(rawValue: $0) }
                 SettingsWindowController.shared.show(tab: tab)
             }
         }
+        DistributedNotificationCenter.default().addObserver(
+            forName: NSNotification.Name("io.coreify.quitx.showSettings"),
+            object: nil,
+            queue: .main,
+            using: handleShowSettings
+        )
+        DistributedNotificationCenter.default().addObserver(
+            forName: NSNotification.Name("io.coreify.quitx.showPreferences"),
+            object: nil,
+            queue: .main,
+            using: handleShowSettings
+        )
 
         DistributedNotificationCenter.default().addObserver(
             forName: NSNotification.Name("io.coreify.quitx.showPopover"),
