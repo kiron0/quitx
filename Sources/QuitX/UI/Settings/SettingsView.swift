@@ -70,13 +70,13 @@ struct HelpPopoverButton: View {
                     .renderingMode(.template)
                     .resizable()
                     .frame(width: 13, height: 13)
-                    .foregroundStyle(state.isShowing ? Color.white.opacity(0.95) : Color.white.opacity(0.35))
+                    .foregroundStyle(state.isShowing ? Color.primary : Color.secondary)
                     .frame(width: 20, height: 20)
                     .contentShape(Circle())
             } else {
                 Image(systemName: "questionmark.circle")
                     .font(.system(size: 13))
-                    .foregroundStyle(state.isShowing ? Color.white.opacity(0.95) : Color.white.opacity(0.35))
+                    .foregroundStyle(state.isShowing ? Color.primary : Color.secondary)
                     .frame(width: 20, height: 20)
                     .contentShape(Circle())
             }
@@ -85,12 +85,11 @@ struct HelpPopoverButton: View {
         .popover(isPresented: $state.isShowing, arrowEdge: .trailing) {
             Text(text)
                 .font(.system(size: 11.5))
-                .foregroundStyle(Color.white.opacity(0.92))
+                .foregroundStyle(Color.primary)
                 .lineSpacing(2.5)
                 .padding(.horizontal, 13)
                 .padding(.vertical, 10)
                 .frame(width: 230)
-                .preferredColorScheme(.dark)
         }
     }
 }
@@ -119,7 +118,6 @@ struct SettingsContainerView: View {
         }
         .frame(width: 400, height: tabModel.activeTab.contentHeight, alignment: .top)
         .background(QuitXTheme.windowBackground)
-        .preferredColorScheme(.dark)
     }
 }
 
@@ -370,7 +368,7 @@ struct GeneralTabCloneView: View {
         HStack(alignment: .center, spacing: 10) {
             Text(label)
                 .font(.system(size: 12, weight: .regular))
-                .foregroundStyle(Color.white.opacity(0.85))
+                .foregroundStyle(Color.primary)
                 .frame(width: 84, alignment: .trailing)
 
             content()
@@ -389,23 +387,23 @@ struct GeneralTabCloneView: View {
             HStack(spacing: 8) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 3.5)
-                        .fill(isOn.wrappedValue ? gold : Color.white.opacity(0.12))
+                        .fill(isOn.wrappedValue ? gold : Color.primary.opacity(0.12))
                         .frame(width: 14, height: 14)
 
                     if isOn.wrappedValue {
                         Image(systemName: "checkmark")
                             .font(.system(size: 8, weight: .heavy))
-                            .foregroundStyle(.black.opacity(0.9))
+                            .foregroundStyle(Color.black.opacity(0.9))
                     }
                 }
                 .overlay(
                     RoundedRectangle(cornerRadius: 3.5)
-                        .stroke(isOn.wrappedValue ? gold : Color.white.opacity(0.18), lineWidth: 1)
+                        .stroke(isOn.wrappedValue ? gold : Color.primary.opacity(0.18), lineWidth: 1)
                 )
 
                 Text(title)
                     .font(.system(size: 12, weight: .regular))
-                    .foregroundStyle(Color.white.opacity(0.92))
+                    .foregroundStyle(Color.primary)
             }
         }
         .buttonStyle(.plain)
@@ -510,7 +508,7 @@ struct ShortcutsTabCloneView: View {
             .padding(.top, 20)
 
             Divider()
-                .background(Color.white.opacity(0.08))
+                .background(Color.primary.opacity(0.08))
                 .padding(.horizontal, 16)
                 .padding(.top, 18)
                 .padding(.bottom, 16)
@@ -518,13 +516,13 @@ struct ShortcutsTabCloneView: View {
             HStack(spacing: 10) {
                 Text("⌥")
                     .font(.system(size: 12.5, weight: .medium))
-                    .foregroundStyle(Color.white.opacity(0.85))
+                    .foregroundStyle(Color.primary)
                     .frame(width: 22, height: 22)
-                    .background(Color.white.opacity(0.16), in: RoundedRectangle(cornerRadius: 4))
+                    .background(Color.primary.opacity(0.1), in: RoundedRectangle(cornerRadius: 4))
 
                 Text("Hold down Option to toggle “Quit” and “Force Quit”.")
                     .font(.system(size: 12))
-                    .foregroundStyle(Color.white.opacity(0.55))
+                    .foregroundStyle(Color.secondary)
 
                 Spacer()
             }
@@ -550,7 +548,7 @@ struct ShortcutsTabCloneView: View {
         return HStack(spacing: 9) {
             Text(label)
                 .font(.system(size: 13, weight: .regular))
-                .foregroundStyle(Color.white.opacity(0.92))
+                .foregroundStyle(Color.primary)
                 .frame(width: 105, alignment: .trailing)
 
             Button {
@@ -558,7 +556,7 @@ struct ShortcutsTabCloneView: View {
             } label: {
                 ZStack {
                     RoundedRectangle(cornerRadius: 3.5)
-                        .fill(active ? gold : Color.white.opacity(0.12))
+                        .fill(active ? gold : Color.primary.opacity(0.12))
                         .frame(width: 15, height: 15)
 
                     if active {
@@ -569,7 +567,7 @@ struct ShortcutsTabCloneView: View {
                 }
                 .overlay(
                     RoundedRectangle(cornerRadius: 3.5)
-                        .stroke(active ? gold : Color.white.opacity(0.18), lineWidth: 1)
+                        .stroke(active ? gold : Color.primary.opacity(0.18), lineWidth: 1)
                 )
             }
             .buttonStyle(.plain)
@@ -587,16 +585,16 @@ struct ShortcutsTabCloneView: View {
                     } else if keyList.isEmpty {
                         Text("None")
                             .font(.system(size: 11, weight: .regular))
-                            .foregroundStyle(Color.white.opacity(0.3))
+                            .foregroundStyle(Color.secondary.opacity(0.5))
                     } else {
                         ForEach(keyList, id: \.self) { key in
                             Text(key)
                                 .font(.system(size: 12, weight: .medium, design: .rounded))
-                                .foregroundStyle(active ? Color.white.opacity(0.95) : Color.white.opacity(0.24))
+                                .foregroundStyle(active ? Color.primary : Color.secondary)
                                 .frame(width: 20, height: 20)
                                 .background(
                                     RoundedRectangle(cornerRadius: 3.5)
-                                        .fill(active ? Color(white: 0.42) : Color.white.opacity(0.06))
+                                        .fill(active ? Color.primary.opacity(0.15) : Color.primary.opacity(0.06))
                                  )
                         }
                     }
@@ -606,7 +604,7 @@ struct ShortcutsTabCloneView: View {
                 .frame(width: 105, height: 26)
                 .background(
                     RoundedRectangle(cornerRadius: 5)
-                        .fill(Color.white.opacity(active ? 0.12 : 0.06))
+                        .fill(Color.primary.opacity(active ? 0.08 : 0.04))
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 5)
@@ -624,11 +622,11 @@ struct ShortcutsTabCloneView: View {
                         .renderingMode(.template)
                         .resizable()
                         .frame(width: 13, height: 13)
-                        .foregroundStyle((active && !keyList.isEmpty) ? Color.white.opacity(0.55) : Color.white.opacity(0.18))
+                        .foregroundStyle((active && !keyList.isEmpty) ? Color.secondary : Color.secondary.opacity(0.3))
                 } else {
                     Image(systemName: "trash")
                         .font(.system(size: 12))
-                        .foregroundStyle((active && !keyList.isEmpty) ? Color.white.opacity(0.55) : Color.white.opacity(0.18))
+                        .foregroundStyle((active && !keyList.isEmpty) ? Color.secondary : Color.secondary.opacity(0.3))
                 }
             }
             .buttonStyle(.plain)
@@ -645,7 +643,7 @@ struct SupportTabCloneView: View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Get in touch for any feedback, questions or feature requests!")
                 .font(.system(size: 13, weight: .regular))
-                .foregroundStyle(Color.white.opacity(0.92))
+                .foregroundStyle(Color.primary)
                 .lineSpacing(3)
                 .padding(.top, 24)
 
@@ -675,16 +673,16 @@ struct AboutTabCloneView: View {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text("QuitX")
                         .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.primary)
 
                     Text("⚡️ Version \(updateChecker.currentVersion)")
                         .font(.system(size: 11))
-                        .foregroundStyle(Color.white.opacity(0.5))
+                        .foregroundStyle(Color.secondary)
                 }
 
                 Text("Copyright © 2026 Toufiq Hasan Kiron")
                     .font(.system(size: 11))
-                    .foregroundStyle(Color.white.opacity(0.42))
+                    .foregroundStyle(Color.secondary)
 
                 HStack(spacing: 10) {
                     Button("GitHub") {

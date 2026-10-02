@@ -78,7 +78,7 @@ final class StatusItemController: NSObject {
     }
 
     private func makeMenuBarIcon() -> NSImage {
-        let targetSize = NSSize(width: 19, height: 19)
+        let targetSize = NSSize(width: 18, height: 18)
         let icon = NSImage(size: targetSize)
         let iconNames = ["status-icon", "menubar"]
         var loaded = false
@@ -226,6 +226,7 @@ final class StatusItemController: NSObject {
             NSApp.activate(ignoringOtherApps: true)
             updatePopoverSize()
             win.makeKeyAndOrderFront(nil)
+            win.makeFirstResponder(nil)
             refreshVisibleApps()
             startLiveMonitoring()
         }

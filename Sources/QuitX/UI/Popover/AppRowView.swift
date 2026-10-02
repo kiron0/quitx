@@ -52,7 +52,7 @@ struct AppRowView: View {
 
             ZStack {
                 RoundedRectangle(cornerRadius: 2.5)
-                    .fill(isSelected ? goldColor : Color.white.opacity(0.12))
+                    .fill(isSelected ? goldColor : Color.primary.opacity(0.12))
                     .frame(width: 14, height: 14)
 
                 if isSelected {
@@ -71,7 +71,7 @@ struct AppRowView: View {
                         .cornerRadius(3)
                 } else {
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.white.opacity(0.1))
+                        .fill(Color.primary.opacity(0.08))
                         .frame(width: 18, height: 18)
                 }
             }
@@ -79,7 +79,7 @@ struct AppRowView: View {
 
             Text(app.name)
                 .font(.system(size: 12.5, weight: .regular))
-                .foregroundStyle(Color.white.opacity(0.92))
+                .foregroundStyle(Color.primary)
                 .lineLimit(1)
                 .truncationMode(.tail)
 
@@ -104,7 +104,7 @@ struct AppRowView: View {
             } label: {
                 Text("•••")
                     .font(.system(size: 9.5, weight: .bold))
-                    .foregroundStyle(Color.white.opacity(0.45))
+                    .foregroundStyle(Color.secondary)
                     .frame(width: 16, height: 16)
             }
             .menuStyle(.borderlessButton)
@@ -113,7 +113,7 @@ struct AppRowView: View {
 
             Text(app.cpuFormatted)
                 .font(.system(size: 10.5, design: .monospaced))
-                .foregroundStyle(Color.white.opacity(0.45))
+                .foregroundStyle(Color.secondary)
 
             Button {
                 onQuit(isOptionKeyPressed)
@@ -131,7 +131,7 @@ struct AppRowView: View {
         }
         .background(
             RoundedRectangle(cornerRadius: 3.5)
-                .fill(state.isHovered ? Color.white.opacity(0.07) : Color.clear)
+                .fill(state.isHovered ? Color.primary.opacity(0.07) : Color.clear)
         )
         .onHover { h in state.isHovered = h }
     }
@@ -152,7 +152,7 @@ struct AppRowView: View {
             } else {
                 Image(systemName: "power")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(state.isQuitHovered ? activeColor : Color.white.opacity(0.45))
+                    .foregroundStyle(state.isQuitHovered ? activeColor : Color.secondary)
             }
         }
         .frame(width: 18, height: 18)

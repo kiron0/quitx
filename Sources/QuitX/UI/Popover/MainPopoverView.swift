@@ -10,6 +10,7 @@ struct MainPopoverView: View {
     @EnvironmentObject private var configStore: ConfigStore
     @ObservedObject private var vm = AppListViewModel.shared
     @StateObject private var uiState = PopoverUIState()
+    @FocusState private var isSearchFocused: Bool
 
     private let goldColor = QuitXTheme.accent
     private let goldGradient = LinearGradient(
@@ -57,7 +58,9 @@ struct MainPopoverView: View {
         .frame(maxHeight: .infinity)
         .background(QuitXTheme.popoverBackground)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .preferredColorScheme(.dark)
+        .onAppear {
+            isSearchFocused = false
+        }
         .onChange(of: vm.filteredApps.count) {
             StatusItemController.shared?.updatePopoverSize()
         }
@@ -110,13 +113,13 @@ struct MainPopoverView: View {
                 Text(title)
                     .font(.system(size: 12, weight: .bold))
             }
-            .foregroundStyle(isEnabled ? Color.white : Color.white.opacity(0.45))
+            .foregroundStyle(isEnabled ? Color.white : Color.primary.opacity(0.35))
             .frame(maxWidth: .infinity)
             .frame(height: 24)
             .background(
                 isEnabled
                     ? goldGradient
-                    : LinearGradient(colors: [Color.white.opacity(0.12), Color.white.opacity(0.12)], startPoint: .top, endPoint: .bottom)
+                    : LinearGradient(colors: [Color.primary.opacity(0.08), Color.primary.opacity(0.08)], startPoint: .top, endPoint: .bottom)
             )
             .clipShape(RoundedRectangle(cornerRadius: 6))
             .shadow(
@@ -138,7 +141,7 @@ struct MainPopoverView: View {
             } label: {
                 ZStack {
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(vm.isAllSelected || vm.isPartiallySelected ? goldColor : Color.white.opacity(0.12))
+                        .fill(vm.isAllSelected || vm.isPartiallySelected ? goldColor : Color.primary.opacity(0.12))
                         .frame(width: 14, height: 14)
 
                     if vm.isAllSelected {
@@ -161,12 +164,13 @@ struct MainPopoverView: View {
             HStack(spacing: 5) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 11))
-                    .foregroundStyle(Color.white.opacity(0.4))
+                    .foregroundStyle(Color.secondary)
 
-                TextField("", text: $vm.searchQuery, prompt: Text("Search").foregroundColor(Color.white.opacity(0.35)))
+                TextField("", text: $vm.searchQuery, prompt: Text("Search").foregroundColor(Color.secondary.opacity(0.7)))
                     .textFieldStyle(.plain)
                     .font(.system(size: 11.5))
-                    .foregroundStyle(Color.white.opacity(0.92))
+                    .foregroundStyle(Color.primary)
+                    .focused($isSearchFocused)
 
                 if !vm.searchQuery.isEmpty {
                     Button {
@@ -174,7 +178,7 @@ struct MainPopoverView: View {
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 11))
-                            .foregroundStyle(Color.white.opacity(0.45))
+                            .foregroundStyle(Color.secondary)
                     }
                     .buttonStyle(.plain)
                 }
@@ -183,7 +187,7 @@ struct MainPopoverView: View {
             .frame(height: 24)
             .background(
                 RoundedRectangle(cornerRadius: 6)
-                    .fill(Color.white.opacity(0.08))
+                    .fill(Color.primary.opacity(0.06))
             )
         }
     }
@@ -196,7 +200,7 @@ struct MainPopoverView: View {
                 .foregroundStyle(goldColor)
             Text(vm.searchQuery.isEmpty ? "All clean! No apps to quit." : "No running apps match '\(vm.searchQuery)'")
                 .font(.system(size: 12.5))
-                .foregroundStyle(Color.white.opacity(0.5))
+                .foregroundStyle(Color.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
             Spacer()
@@ -209,7 +213,7 @@ struct MainPopoverView: View {
             if !configStore.config.disableQuitTips {
                 Text(vm.currentQuote)
                     .font(.system(size: 11, weight: .regular))
-                    .foregroundStyle(Color.white.opacity(0.45))
+                    .foregroundStyle(Color.secondary)
                     .lineLimit(1)
             }
 
@@ -249,7 +253,7 @@ private struct PopoverOptionsButton: NSViewRepresentable {
             accessibilityDescription: "Options"
         )
         button.imagePosition = .imageOnly
-        button.contentTintColor = NSColor.white.withAlphaComponent(0.55)
+        button.contentTintColor = NSColor.secondaryLabelColor
         button.toolTip = "Options"
         button.target = context.coordinator
         button.action = #selector(Coordinator.showMenu(_:))

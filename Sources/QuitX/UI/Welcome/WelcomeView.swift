@@ -39,14 +39,14 @@ struct WelcomeView: View {
 
                 Text("Use the footer menu to stash a session, show background apps, or open Settings.")
                     .font(.system(size: 11.5))
-                    .foregroundStyle(Color.white.opacity(0.62))
+                    .foregroundStyle(Color.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(12)
-            .background(Color.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 10))
+            .background(Color.primary.opacity(0.055), in: RoundedRectangle(cornerRadius: 10))
             .overlay {
                 RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
             }
             .padding(.horizontal, 28)
             .padding(.top, 18)
@@ -69,7 +69,6 @@ struct WelcomeView: View {
         }
         .frame(width: 440, height: 600)
         .background(QuitXTheme.windowBackground)
-        .preferredColorScheme(.dark)
     }
 
     private var hero: some View {
@@ -85,11 +84,11 @@ struct WelcomeView: View {
 
             Text("Welcome to QuitX")
                 .font(.system(size: 25, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.primary)
 
             Text("Clear apps. Reclaim memory. Keep your flow.")
                 .font(.system(size: 13))
-                .foregroundStyle(Color.white.opacity(0.58))
+                .foregroundStyle(Color.secondary)
         }
     }
 
@@ -104,20 +103,20 @@ struct WelcomeView: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.primary)
                 Text(detail)
                     .font(.system(size: 11.5))
-                    .foregroundStyle(Color.white.opacity(0.56))
+                    .foregroundStyle(Color.secondary)
             }
 
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 14)
         .frame(height: 58)
-        .background(Color.white.opacity(0.045), in: RoundedRectangle(cornerRadius: 12))
+        .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 12))
         .overlay {
             RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.white.opacity(0.07), lineWidth: 1)
+                .stroke(Color.primary.opacity(0.07), lineWidth: 1)
         }
     }
 }
@@ -140,14 +139,14 @@ private struct WelcomeSecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 12.5, weight: .medium))
-            .foregroundStyle(Color.white.opacity(configuration.isPressed ? 0.55 : 0.82))
+            .foregroundStyle(Color.primary.opacity(configuration.isPressed ? 0.55 : 0.82))
             .frame(maxWidth: .infinity)
             .frame(height: 36)
-            .background(Color.white.opacity(configuration.isPressed ? 0.06 : 0.1))
+            .background(Color.primary.opacity(configuration.isPressed ? 0.04 : 0.08))
             .clipShape(RoundedRectangle(cornerRadius: 9))
             .overlay {
                 RoundedRectangle(cornerRadius: 9)
-                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    .stroke(Color.primary.opacity(0.1), lineWidth: 1)
             }
     }
 }
