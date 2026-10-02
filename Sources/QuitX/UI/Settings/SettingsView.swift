@@ -97,15 +97,15 @@ struct SettingsContainerView: View {
                                 Text(tab.rawValue)
                                     .font(.system(size: 11, weight: isSelected ? .semibold : .medium))
                             }
-                            .foregroundStyle(isSelected ? QuitXTheme.accent : Color.white.opacity(0.48))
+                            .foregroundStyle(isSelected ? QuitXTheme.accent : Color.white.opacity(0.55))
                             .frame(width: 64, height: 46)
                             .background(
-                                RoundedRectangle(cornerRadius: 8)
+                                RoundedRectangle(cornerRadius: 7)
                                     .fill(isSelected ? Color.white.opacity(0.12) : Color.clear)
                             )
                             .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(isSelected ? Color.white.opacity(0.16) : Color.clear, lineWidth: 1)
+                                RoundedRectangle(cornerRadius: 7)
+                                    .stroke(isSelected ? Color.white.opacity(0.14) : Color.clear, lineWidth: 1)
                             )
                             .contentShape(Rectangle())
                         }
@@ -116,11 +116,11 @@ struct SettingsContainerView: View {
                 .padding(.bottom, 6)
 
                 Rectangle()
-                    .fill(Color.white.opacity(0.10))
+                    .fill(Color.black.opacity(0.35))
                     .frame(height: 1)
             }
             .frame(width: 400, height: 91)
-            .background(QuitXTheme.windowBackground)
+            .background(QuitXTheme.toolbarBackground)
 
             switch tabModel.activeTab {
             case .general:

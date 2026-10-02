@@ -48,11 +48,10 @@ struct MainPopoverView: View {
                 AppListView(vm: vm)
             }
 
-            Spacer(minLength: 0)
-
             footerRow
                 .padding(.horizontal, 10)
-                .padding(.vertical, 6)
+                .padding(.top, 3)
+                .padding(.bottom, 6)
         }
         .frame(width: 270)
         .frame(maxHeight: .infinity)
