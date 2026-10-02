@@ -206,38 +206,6 @@ struct AppInfoTests {
         #expect(res.error == "Access denied")
     }
 
-    @Test("StashEntry Codable encoding and decoding")
-    func testStashEntryCodable() throws {
-        let entry = StashEntry(name: "Xcode", bundleId: "com.apple.dt.Xcode")
-        let data = try JSONEncoder().encode(entry)
-        let decoded = try JSONDecoder().decode(StashEntry.self, from: data)
-        #expect(decoded.name == entry.name)
-        #expect(decoded.bundleId == entry.bundleId)
-    }
-
-    @Test("StashEntry Codable with nil bundleId")
-    func testStashEntryWithNilBundleId() throws {
-        let entry = StashEntry(name: "CLI App", bundleId: nil)
-        let data = try JSONEncoder().encode(entry)
-        let decoded = try JSONDecoder().decode(StashEntry.self, from: data)
-        #expect(decoded.name == "CLI App")
-        #expect(decoded.bundleId == nil)
-    }
-
-    @Test("StashData Codable encoding and decoding")
-    func testStashDataCodable() throws {
-        let entries = [
-            StashEntry(name: "App 1", bundleId: "com.app1"),
-            StashEntry(name: "App 2", bundleId: nil)
-        ]
-        let stash = StashData(timestamp: "2026-10-02T15:00:00Z", apps: entries)
-        let data = try JSONEncoder().encode(stash)
-        let decoded = try JSONDecoder().decode(StashData.self, from: data)
-        #expect(decoded.timestamp == stash.timestamp)
-        #expect(decoded.apps.count == 2)
-        #expect(decoded.apps[0].name == "App 1")
-        #expect(decoded.apps[1].bundleId == nil)
-    }
 
     @Test("OnQuitFailureMode enum cases")
     func testOnQuitFailureModeCases() {

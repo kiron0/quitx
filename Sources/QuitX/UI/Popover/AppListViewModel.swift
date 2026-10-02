@@ -211,18 +211,6 @@ final class AppListViewModel: ObservableObject {
         }
     }
 
-    func stash() async {
-        let targets = filteredApps
-        _ = await StashService.shared.stash(apps: targets)
-        await refresh()
-    }
-
-    func restore() async {
-        _ = await StashService.shared.restore()
-        await refresh()
-    }
-
-    var hasStash: Bool { StashService.shared.hasStash }
 
     private func sort(apps: [AppInfo]) -> [AppInfo] {
         switch configStore.config.sortBy {

@@ -245,13 +245,10 @@ struct MainPopoverView: View {
 
             PopoverOptionsButton(
                 showsBackgroundApps: vm.showBackgroundApps,
-                hasStash: vm.hasStash,
                 onToggleBackgroundApps: {
                     vm.showBackgroundApps.toggle()
                     Task { await vm.refresh() }
-                },
-                onStash: { Task { await vm.stash() } },
-                onRestore: { Task { await vm.restore() } }
+                }
             )
             .frame(width: 22, height: 22)
         }
@@ -260,10 +257,7 @@ struct MainPopoverView: View {
 
 private struct PopoverOptionsButton: NSViewRepresentable {
     var showsBackgroundApps: Bool
-    var hasStash: Bool
     var onToggleBackgroundApps: () -> Void
-    var onStash: () -> Void
-    var onRestore: () -> Void
 
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
@@ -322,27 +316,6 @@ private struct PopoverOptionsButton: NSViewRepresentable {
                 systemSymbolName: bgSymbol
             ))
 
-            menu.addItem(.separator())
-
-            menu.addItem(MenuHelper.makeItem(
-                title: "Stash session",
-                action: #selector(stash),
-                target: self,
-                keyEquivalent: "s",
-                systemSymbolName: "tray.and.arrow.down"
-            ))
-
-            menu.addItem(MenuHelper.makeItem(
-                title: "Restore session",
-                action: #selector(restore),
-                target: self,
-                keyEquivalent: "r",
-                systemSymbolName: "tray.and.arrow.up",
-                isEnabled: parent.hasStash
-            ))
-
-            menu.addItem(.separator())
-
             menu.addItem(MenuHelper.makeItem(
                 title: "Settings",
                 action: #selector(openSettings),
@@ -361,8 +334,6 @@ private struct PopoverOptionsButton: NSViewRepresentable {
                 systemSymbolName: "questionmark.circle"
             ))
 
-            menu.addItem(.separator())
-
             menu.addItem(MenuHelper.makeItem(
                 title: "Quit",
                 action: #selector(quitApp),
@@ -376,8 +347,6 @@ private struct PopoverOptionsButton: NSViewRepresentable {
         }
 
         @objc private func toggleBackgroundApps() { parent.onToggleBackgroundApps() }
-        @objc private func stash() { parent.onStash() }
-        @objc private func restore() { parent.onRestore() }
 
         @objc private func openSettings() {
             StatusItemController.shared?.closePopover()

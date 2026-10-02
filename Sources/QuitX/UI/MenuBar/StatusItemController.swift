@@ -266,7 +266,7 @@ final class StatusItemController: NSObject {
         menu.appearance = NSApp.effectiveAppearance
 
         menu.addItem(MenuHelper.makeItem(
-            title: "Settings...",
+            title: "Settings",
             action: #selector(openSettings),
             target: self,
             keyEquivalent: ",",
@@ -274,29 +274,8 @@ final class StatusItemController: NSObject {
             systemSymbolName: "gearshape"
         ))
 
-        menu.addItem(NSMenuItem.separator())
-
         menu.addItem(MenuHelper.makeItem(
-            title: "Stash Session",
-            action: #selector(stashSession),
-            target: self,
-            keyEquivalent: "s",
-            systemSymbolName: "tray.and.arrow.down"
-        ))
-
-        menu.addItem(MenuHelper.makeItem(
-            title: "Restore Session",
-            action: #selector(restoreSession),
-            target: self,
-            keyEquivalent: "r",
-            systemSymbolName: "tray.and.arrow.up",
-            isEnabled: StashService.shared.hasStash
-        ))
-
-        menu.addItem(NSMenuItem.separator())
-
-        menu.addItem(MenuHelper.makeItem(
-            title: "Welcome Guide...",
+            title: "Welcome Guide",
             action: #selector(openWelcomeGuide),
             target: self,
             keyEquivalent: "w",
@@ -304,15 +283,13 @@ final class StatusItemController: NSObject {
         ))
 
         menu.addItem(MenuHelper.makeItem(
-            title: "About QuitX",
-            action: #selector(openSettings),
+            title: "About",
+            action: #selector(openAbout),
             target: self,
             keyEquivalent: "i",
             assetName: "preferences-about",
             systemSymbolName: "info.circle"
         ))
-
-        menu.addItem(NSMenuItem.separator())
 
         menu.addItem(MenuHelper.makeItem(
             title: "Quit",
@@ -332,22 +309,12 @@ final class StatusItemController: NSObject {
         SettingsWindowController.shared.show()
     }
 
+    @objc private func openAbout() {
+        SettingsWindowController.shared.show(tab: .about)
+    }
+
     @objc private func openWelcomeGuide() {
         WelcomeWindowController.shared.show()
-    }
-
-    @objc private func stashSession() {
-        let cfg = ConfigStore.shared.config
-        let apps = AppListService.shared.fetchApps(config: cfg)
-        Task {
-            _ = await StashService.shared.stash(apps: apps)
-        }
-    }
-
-    @objc private func restoreSession() {
-        Task {
-            _ = await StashService.shared.restore()
-        }
     }
 
     @objc private func quitApp() {

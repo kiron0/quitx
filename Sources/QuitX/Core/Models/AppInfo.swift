@@ -54,15 +54,7 @@ struct QuitResult {
     let error: String?
 }
 
-struct StashData: Codable {
-    let timestamp: String
-    let apps: [StashEntry]
-}
 
-struct StashEntry: Codable {
-    let name: String
-    let bundleId: String?
-}
 
 enum OnQuitFailureMode: String, Codable, CaseIterable {
     case prompt, force, error
