@@ -118,7 +118,7 @@ struct MainPopoverView: View {
                     ? goldGradient
                     : LinearGradient(colors: [Color.white.opacity(0.12), Color.white.opacity(0.12)], startPoint: .top, endPoint: .bottom)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 2))
+            .clipShape(RoundedRectangle(cornerRadius: 6))
             .shadow(
                 color: isEnabled ? goldColor.opacity(uiState.isQuitAllHovered ? 0.3 : 0.12) : Color.clear,
                 radius: 2,

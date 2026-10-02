@@ -78,7 +78,8 @@ final class StatusItemController: NSObject {
     }
 
     private func makeMenuBarIcon() -> NSImage {
-        let icon = NSImage(size: NSSize(width: 18, height: 18))
+        let targetSize = NSSize(width: 19, height: 19)
+        let icon = NSImage(size: targetSize)
         let iconNames = ["status-icon", "menubar"]
         var loaded = false
 
@@ -89,12 +90,12 @@ final class StatusItemController: NSObject {
             var reps: [NSImageRep] = []
             if FileManager.default.fileExists(atPath: path1x),
                let rep1 = NSImageRep(contentsOfFile: path1x) {
-                rep1.size = NSSize(width: 18, height: 18)
+                rep1.size = targetSize
                 reps.append(rep1)
             }
             if FileManager.default.fileExists(atPath: path2x),
                let rep2 = NSImageRep(contentsOfFile: path2x) {
-                rep2.size = NSSize(width: 18, height: 18)
+                rep2.size = targetSize
                 reps.append(rep2)
             }
 
@@ -110,11 +111,10 @@ final class StatusItemController: NSObject {
             return icon
         }
 
-        let size = NSSize(width: 18, height: 18)
-        let image = NSImage(size: size)
+        let image = NSImage(size: targetSize)
         image.lockFocus()
         NSColor.black.setFill()
-        let rounded = NSBezierPath(roundedRect: NSRect(x: 1, y: 1, width: 16, height: 16), xRadius: 4, yRadius: 4)
+        let rounded = NSBezierPath(roundedRect: NSRect(x: 1, y: 1, width: 17, height: 17), xRadius: 4, yRadius: 4)
         rounded.fill()
         image.unlockFocus()
         image.isTemplate = true
