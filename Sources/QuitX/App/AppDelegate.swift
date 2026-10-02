@@ -45,4 +45,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         statusItemController = nil
     }
+
+    @objc func showSettingsWindow(_ sender: Any?) {
+        Task { @MainActor in
+            SettingsWindowController.shared.show()
+        }
+    }
+
+    @objc func showPreferencesWindow(_ sender: Any?) {
+        Task { @MainActor in
+            SettingsWindowController.shared.show()
+        }
+    }
 }

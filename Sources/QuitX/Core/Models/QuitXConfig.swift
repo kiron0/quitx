@@ -14,6 +14,7 @@ struct QuitXConfig: Codable, Equatable {
     var confirmQuitAll: Bool = true
     var playSounds: Bool = true
     var quitInactiveAfterMinutes: Int = 0
+    var disableQuitTips: Bool = false
     var sortBy: SortBy = .cpuDesc
     var onQuitFailure: OnQuitFailureMode?
 
@@ -56,6 +57,7 @@ struct QuitXConfig: Codable, Equatable {
             confirmQuitAll: true,
             playSounds: true,
             quitInactiveAfterMinutes: 0,
+            disableQuitTips: false,
             sortBy: .cpuDesc,
             onQuitFailure: nil
         )

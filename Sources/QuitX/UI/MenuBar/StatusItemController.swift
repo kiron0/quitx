@@ -216,7 +216,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         closePopover()
         let menu = NSMenu()
 
-        let settingsItem = NSMenuItem(title: "Settings...", action: #selector(openSettings), keyEquivalent: ",")
+        let settingsItem = NSMenuItem(title: "Settings", action: #selector(openSettings), keyEquivalent: ",")
         settingsItem.target = self
         menu.addItem(settingsItem)
 

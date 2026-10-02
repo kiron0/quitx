@@ -7,8 +7,15 @@ struct QuitXApp: App {
 
     var body: some Scene {
         Settings {
-            SettingsView()
-                .environmentObject(ConfigStore.shared)
+            EmptyView()
+        }
+        .commands {
+            CommandGroup(replacing: .appSettings) {
+                Button("Settings") {
+                    SettingsWindowController.shared.show()
+                }
+                .keyboardShortcut(",", modifiers: .command)
+            }
         }
     }
 }
