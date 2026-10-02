@@ -33,7 +33,7 @@ QuitX lives silently in your macOS menu bar. Open it with a click to see all run
 
 ---
 
-## ⌨Shortcuts & Controls
+## Shortcuts & Controls
 
 | Action | Control |
 |---|---|
