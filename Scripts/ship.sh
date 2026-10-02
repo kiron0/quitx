@@ -11,13 +11,13 @@ ALT_DEST_APP="$HOME/Applications/$APP_NAME.app"
 cd "$ROOT_DIR"
 
 echo "🧪 [1/5] Testing..."
-swift test --build-system native -Xswiftc -F/Library/Developer/CommandLineTools/Library/Developer/Frameworks 2>&1 | grep -v "build-system native" || true
+make test
 
 echo "📦 [2/5] Bundling..."
 make bundle
 
 echo "🛑 [3/5] Killing running instances..."
-pkill -x "$APP_NAME" 2>/dev/null || pkill -f "$APP_NAME.app" 2>/dev/null || true
+pkill -x "$APP_NAME" 2>/dev/null || true
 sleep 0.5
 
 echo "🚚 [4/5] Installing..."

@@ -12,6 +12,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         _ = ShortcutManager.shared
         WelcomeWindowController.shared.showIfFirstLaunch()
 
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            guard ConfigStore.shared.config.autoUpdate else { return }
+            await UpdateChecker.shared.checkForUpdates(isUserInitiated: false)
+        }
+
         let handleShowSettings: (Notification) -> Void = { notif in
             Task { @MainActor in
                 let tab = (notif.userInfo?["tab"] as? String).flatMap { SettingsTab(rawValue: $0) }

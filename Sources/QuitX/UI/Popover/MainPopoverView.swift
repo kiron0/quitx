@@ -18,12 +18,6 @@ struct MainPopoverView: View {
         startPoint: .top,
         endPoint: .bottom
     )
-    private let forceGradient = LinearGradient(
-        colors: [Color(red: 240/255, green: 70/255, blue: 50/255), Color(red: 210/255, green: 40/255, blue: 30/255)],
-        startPoint: .top,
-        endPoint: .bottom
-    )
-
     var body: some View {
         VStack(spacing: 0) {
             quitAllButton
@@ -86,13 +80,13 @@ struct MainPopoverView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This will close \(vm.selected.count) applications.")
+            Text("This will close \(vm.selectedVisibleCount) applications.")
         }
     }
 
     private var quitAllButton: some View {
         let isForced = vm.isOptionKeyPressed || configStore.config.force == .force
-        let count = vm.selected.count
+        let count = vm.selectedVisibleCount
         let isAll = vm.isAllSelected
         let title: String
         if isForced {

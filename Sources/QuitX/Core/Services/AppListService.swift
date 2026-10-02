@@ -8,6 +8,8 @@ final class AppListService {
         let running = NSWorkspace.shared.runningApplications
         let windowCounts = visibleWindowCounts()
         let cpuUsages = fetchCpuUsages()
+        let excluded = Set(config.exclude.map { $0.lowercased() })
+        let protectedMusicApps = config.musicApps.map { $0.lowercased() }
 
         var results: [AppInfo] = []
 
@@ -29,11 +31,11 @@ final class AppListService {
             let lowerName = name.lowercased()
             let lowerBid = bundleId?.lowercased()
 
-            if let bid = lowerBid, config.exclude.map({ $0.lowercased() }).contains(bid) { continue }
-            if config.exclude.map({ $0.lowercased() }).contains(lowerName) { continue }
+            if let bid = lowerBid, excluded.contains(bid) { continue }
+            if excluded.contains(lowerName) { continue }
 
-            if config.neverQuitMusic && config.musicApps.contains(where: {
-                lowerName.contains($0.lowercased()) || lowerBid?.contains($0.lowercased()) == true
+            if config.neverQuitMusic && protectedMusicApps.contains(where: {
+                lowerName.contains($0) || lowerBid?.contains($0) == true
             }) {
                 continue
             }
@@ -94,8 +96,7 @@ final class AppListService {
         }
 
         if config.includeTrash {
-            let lowerExclude = config.exclude.map { $0.lowercased() }
-            if !lowerExclude.contains("trash") && !lowerExclude.contains("com.apple.trash") {
+            if !excluded.contains("trash") && !excluded.contains("com.apple.trash") {
                 results.append(AppInfo(
                     name: "Trash",
                     bundleId: "com.apple.trash",
@@ -143,7 +144,11 @@ final class AppListService {
         proc.executableURL = URL(fileURLWithPath: "/bin/ps")
         proc.arguments = ["-c", "-A", "-o", "pid,%cpu"]
         proc.standardOutput = pipe
-        try? proc.run()
+        do {
+            try proc.run()
+        } catch {
+            return [:]
+        }
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         proc.waitUntilExit()
         guard let output = String(data: data, encoding: .utf8) else { return [:] }

@@ -190,7 +190,11 @@ struct GeneralTabCloneView: View {
             row(label: "Advanced:") {
                 toggle("View background apps", isOn: Binding(
                     get: { configStore.config.includeBackground },
-                    set: { configStore.config.includeBackground = $0; configStore.save() }
+                    set: {
+                        configStore.config.includeBackground = $0
+                        AppListViewModel.shared.showBackgroundApps = $0
+                        configStore.save()
+                    }
                 ))
             } help: {
                 HelpPopoverButton(text: "Heads up, some background apps will immediately restart after quitting them. It’s sorcery beyond our control. 🧙‍♂️")

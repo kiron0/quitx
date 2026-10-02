@@ -18,6 +18,69 @@ struct QuitXConfig: Codable, Equatable {
     var sortBy: SortBy = .name
     var onQuitFailure: OnQuitFailureMode?
 
+    private enum CodingKeys: String, CodingKey {
+        case exclude, force, includeFinder, includeTrash, includeBackground, groupBackground
+        case defaultSelectAll, neverQuitMusic, musicApps, autoUpdate, confirmQuitAll, playSounds
+        case quitInactiveAfterMinutes, disableQuitTips, sortBy, onQuitFailure
+    }
+
+    init(
+        exclude: [String],
+        force: ForceMode,
+        includeFinder: Bool,
+        includeTrash: Bool,
+        includeBackground: Bool,
+        groupBackground: Bool,
+        defaultSelectAll: Bool,
+        neverQuitMusic: Bool,
+        musicApps: [String],
+        autoUpdate: Bool,
+        confirmQuitAll: Bool = true,
+        playSounds: Bool = true,
+        quitInactiveAfterMinutes: Int = 0,
+        disableQuitTips: Bool = false,
+        sortBy: SortBy = .name,
+        onQuitFailure: OnQuitFailureMode? = nil
+    ) {
+        self.exclude = exclude
+        self.force = force
+        self.includeFinder = includeFinder
+        self.includeTrash = includeTrash
+        self.includeBackground = includeBackground
+        self.groupBackground = groupBackground
+        self.defaultSelectAll = defaultSelectAll
+        self.neverQuitMusic = neverQuitMusic
+        self.musicApps = musicApps
+        self.autoUpdate = autoUpdate
+        self.confirmQuitAll = confirmQuitAll
+        self.playSounds = playSounds
+        self.quitInactiveAfterMinutes = quitInactiveAfterMinutes
+        self.disableQuitTips = disableQuitTips
+        self.sortBy = sortBy
+        self.onQuitFailure = onQuitFailure
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let defaults = Self.default
+        exclude = try container.decodeIfPresent([String].self, forKey: .exclude) ?? defaults.exclude
+        force = try container.decodeIfPresent(ForceMode.self, forKey: .force) ?? defaults.force
+        includeFinder = try container.decodeIfPresent(Bool.self, forKey: .includeFinder) ?? defaults.includeFinder
+        includeTrash = try container.decodeIfPresent(Bool.self, forKey: .includeTrash) ?? defaults.includeTrash
+        includeBackground = try container.decodeIfPresent(Bool.self, forKey: .includeBackground) ?? defaults.includeBackground
+        groupBackground = try container.decodeIfPresent(Bool.self, forKey: .groupBackground) ?? defaults.groupBackground
+        defaultSelectAll = try container.decodeIfPresent(Bool.self, forKey: .defaultSelectAll) ?? defaults.defaultSelectAll
+        neverQuitMusic = try container.decodeIfPresent(Bool.self, forKey: .neverQuitMusic) ?? defaults.neverQuitMusic
+        musicApps = try container.decodeIfPresent([String].self, forKey: .musicApps) ?? defaults.musicApps
+        autoUpdate = try container.decodeIfPresent(Bool.self, forKey: .autoUpdate) ?? defaults.autoUpdate
+        confirmQuitAll = try container.decodeIfPresent(Bool.self, forKey: .confirmQuitAll) ?? defaults.confirmQuitAll
+        playSounds = try container.decodeIfPresent(Bool.self, forKey: .playSounds) ?? defaults.playSounds
+        quitInactiveAfterMinutes = try container.decodeIfPresent(Int.self, forKey: .quitInactiveAfterMinutes) ?? defaults.quitInactiveAfterMinutes
+        disableQuitTips = try container.decodeIfPresent(Bool.self, forKey: .disableQuitTips) ?? defaults.disableQuitTips
+        sortBy = try container.decodeIfPresent(SortBy.self, forKey: .sortBy) ?? defaults.sortBy
+        onQuitFailure = try container.decodeIfPresent(OnQuitFailureMode.self, forKey: .onQuitFailure)
+    }
+
     enum ForceMode: String, Codable, Equatable { case normal, force }
     enum SortBy: String, Codable, Equatable, CaseIterable {
         case cpuDesc = "High to Low CPU %"

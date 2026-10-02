@@ -59,6 +59,14 @@ struct AppListViewModelTests {
         #expect(vm.filteredApps.first?.name == "App 2")
     }
 
+    @Test("Filtered apps trim surrounding search whitespace")
+    func testFilteredAppsTrimWhitespace() {
+        vm.apps = [app1, app2]
+        vm.showBackgroundApps = false
+        vm.searchQuery = "  app 2\n"
+        #expect(vm.filteredApps.map(\.name) == ["App 2"])
+    }
+
     @Test("Toggle selection adds unselected app")
     func testToggleSelectionAdd() {
         vm.selected.removeAll()
@@ -183,6 +191,15 @@ struct AppListViewModelTests {
 
         #expect(vm.selected.contains(app1.id))
         #expect(!vm.selected.contains(app2.id))
+    }
+
+    @Test("Visible selection count excludes hidden background apps")
+    func testVisibleSelectionCount() {
+        vm.apps = [app1, bgApp]
+        vm.showBackgroundApps = false
+        vm.searchQuery = ""
+        vm.selected = [app1.id, bgApp.id]
+        #expect(vm.selectedVisibleCount == 1)
     }
 
     @Test("Show toast flag can be updated")

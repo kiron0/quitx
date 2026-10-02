@@ -67,7 +67,7 @@ npm install -g @coreify/quitx
 quitx
 ```
 
-The macOS app stores preferences independently in standard `UserDefaults` (`com.quitx.QuitX`).
+The macOS app stores preferences independently in standard `UserDefaults` (`io.coreify.quitx`).
 
 ---
 

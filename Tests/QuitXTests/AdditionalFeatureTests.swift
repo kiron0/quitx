@@ -222,6 +222,34 @@ struct ConfigStoreTests {
         let decoded = try? JSONDecoder().decode(QuitXConfig.self, from: corrupted)
         #expect(decoded == nil)
     }
+
+    @Test("Legacy config keeps saved values and defaults new fields")
+    func testLegacyConfigMigration() throws {
+        let legacyJSON = """
+        {
+          "exclude": ["Safari"],
+          "force": "force",
+          "includeFinder": true,
+          "includeTrash": false,
+          "includeBackground": false,
+          "groupBackground": true,
+          "defaultSelectAll": true,
+          "neverQuitMusic": false,
+          "musicApps": ["Music"],
+          "autoUpdate": false
+        }
+        """.data(using: .utf8)!
+
+        let decoded = try JSONDecoder().decode(QuitXConfig.self, from: legacyJSON)
+        #expect(decoded.exclude == ["Safari"])
+        #expect(decoded.force == .force)
+        #expect(decoded.includeFinder)
+        #expect(decoded.defaultSelectAll)
+        #expect(!decoded.autoUpdate)
+        #expect(decoded.confirmQuitAll)
+        #expect(decoded.playSounds)
+        #expect(decoded.sortBy == .name)
+    }
 }
 
 @Suite("Edge Case and Model Integrity Tests")

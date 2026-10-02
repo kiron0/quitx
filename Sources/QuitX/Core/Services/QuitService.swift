@@ -34,9 +34,10 @@ final class QuitService {
             end ignoring
             """
             var error: NSDictionary?
-            if let appleScript = NSAppleScript(source: script) {
-                appleScript.executeAndReturnError(&error)
+            guard let appleScript = NSAppleScript(source: script) else {
+                return QuitResult(app: app, success: false, forced: false, error: "Could not create Trash AppleScript")
             }
+            appleScript.executeAndReturnError(&error)
             return QuitResult(app: app, success: error == nil, forced: false, error: error?.description)
         }
 
@@ -47,9 +48,10 @@ final class QuitService {
             end tell
             """
             var error: NSDictionary?
-            if let appleScript = NSAppleScript(source: script) {
-                appleScript.executeAndReturnError(&error)
+            guard let appleScript = NSAppleScript(source: script) else {
+                return QuitResult(app: app, success: false, forced: false, error: "Could not create Finder AppleScript")
             }
+            appleScript.executeAndReturnError(&error)
             return QuitResult(app: app, success: error == nil, forced: false, error: error?.description)
         }
 
@@ -58,29 +60,47 @@ final class QuitService {
             return QuitResult(app: app, success: false, forced: false, error: "App not found")
         }
 
-        var anySuccess = false
+        var allSucceeded = true
+        var firstError: String?
         for pid in pidsToKill {
             guard let running = NSRunningApplication(processIdentifier: pid) else { continue }
-            if force {
-                let ok = running.forceTerminate()
-                if ok { anySuccess = true }
-            } else {
-                let ok = running.terminate()
-                if ok {
-                    for _ in 0..<50 {
-                        try? await Task.sleep(nanoseconds: 100_000_000)
-                        if running.isTerminated { break }
-                    }
-                    if running.isTerminated || ok { anySuccess = true }
-                }
+
+            guard Self.matches(running: running, app: app) else {
+                allSucceeded = false
+                firstError = firstError ?? "Process identity changed"
+                continue
+            }
+
+            let accepted = force ? running.forceTerminate() : running.terminate()
+            guard accepted else {
+                allSucceeded = false
+                firstError = firstError ?? (force ? "forceTerminate failed" : "terminate failed")
+                continue
+            }
+
+            let attempts = force ? 20 : 50
+            for _ in 0..<attempts where !running.isTerminated {
+                try? await Task.sleep(nanoseconds: 100_000_000)
+            }
+            if !running.isTerminated {
+                allSucceeded = false
+                firstError = firstError ?? (force ? "App did not terminate after force quit" : "App did not terminate")
             }
         }
 
         return QuitResult(
             app: app,
-            success: anySuccess,
+            success: allSucceeded,
             forced: force,
-            error: anySuccess ? nil : (force ? "forceTerminate failed" : "terminate failed")
+            error: firstError
         )
+    }
+
+    static func matches(running: NSRunningApplication, app: AppInfo) -> Bool {
+        if let expectedBundleId = app.bundleId {
+            return running.bundleIdentifier == expectedBundleId
+        }
+        guard let expectedName = running.localizedName else { return false }
+        return expectedName.caseInsensitiveCompare(app.name) == .orderedSame
     }
 }

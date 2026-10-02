@@ -1,10 +1,11 @@
 APP_NAME = QuitX
 BUNDLE_ID = io.coreify.quitx
-VERSION = 1.0.0
+VERSION = $(shell awk -F'"' '/"version"/ { print $$4; exit }' package.json)
 APP_DIR = .build/$(APP_NAME).app
 CONTENTS = $(APP_DIR)/Contents
 MACOS_DIR = $(CONTENTS)/MacOS
 RESOURCES_DIR = $(CONTENTS)/Resources
+SWIFT_FLAGS ?=
 
 .PHONY: all build bundle run clean test ship
 
@@ -13,7 +14,7 @@ all: bundle
 
 ## Compile with SPM (release)
 build:
-	@swift build -c release --build-system native 2>&1 | grep -v "build-system native" || true
+	@swift build -c release --build-system native $(SWIFT_FLAGS)
 
 ## Wrap binary in a minimal .app bundle
 bundle: build
@@ -23,11 +24,12 @@ bundle: build
 	@cp .build/release/$(APP_NAME) $(MACOS_DIR)/$(APP_NAME)
 	@chmod +x $(MACOS_DIR)/$(APP_NAME)
 	@cp Support/Info.plist $(CONTENTS)/Info.plist
-	@cp Support/Icons/* $(RESOURCES_DIR)/ 2>/dev/null || true
-	@cp Support/Sounds/* $(RESOURCES_DIR)/ 2>/dev/null || true
-	@cp Support/Assets.car $(RESOURCES_DIR)/ 2>/dev/null || true
-	@/usr/libexec/PlistBuddy -c "Set :CFBundleIconFile AppIcon" $(CONTENTS)/Info.plist 2>/dev/null || true
-	@codesign --force --deep --sign - $(APP_DIR) 2>/dev/null || true
+	@cp Support/Icons/*.png Support/Icons/*.icns $(RESOURCES_DIR)/
+	@cp Support/Sounds/*.aiff $(RESOURCES_DIR)/
+	@cp Support/Assets.car $(RESOURCES_DIR)/
+	@/usr/libexec/PlistBuddy -c "Set :CFBundleIconFile AppIcon" $(CONTENTS)/Info.plist
+	@/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $(VERSION)" $(CONTENTS)/Info.plist
+	@codesign --force --deep --sign - $(APP_DIR)
 	@echo "✅ Bundle ready: $(APP_DIR)"
 
 ## Create DMG installer
@@ -48,12 +50,12 @@ run: bundle
 
 ## Build debug + run binary directly (fast iteration, no bundle)
 dev:
-	@swift build --build-system native 2>&1 | grep -v "build-system native" || true
+	@swift build --build-system native $(SWIFT_FLAGS)
 	@.build/debug/$(APP_NAME)
 
 ## Run tests
 test:
-	@swift test --build-system native -Xswiftc -F/Library/Developer/CommandLineTools/Library/Developer/Frameworks 2>&1 | grep -v "build-system native" || true
+	@swift test --build-system native $(SWIFT_FLAGS)
 
 ## Test, bundle, kill, install, and open in one go
 ship:

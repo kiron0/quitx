@@ -1,10 +1,6 @@
 name: Release
 
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
-    branches: [main]
   push:
     tags:
       - 'v*'
@@ -14,50 +10,44 @@ permissions:
   contents: write
 
 concurrency:
-  group: release-${{ github.event.workflow_run.head_branch || github.ref_name }}
+  group: release-${{ github.ref_name }}
   cancel-in-progress: false
 
 jobs:
   release:
     name: Build & Publish Release
     runs-on: macos-14
-    if: >-
-      ${{
-        github.event_name == 'workflow_dispatch' ||
-        github.event_name == 'push' ||
-        github.event.workflow_run.conclusion == 'success'
-      }}
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.sha }}
 
       - name: Resolve Version & Tag
         id: meta
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "workflow_run" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             VERSION=$(cat package.json | grep '"version"' | head -1 | awk -F: '{ print $2 }' | sed 's/[", ]//g')
             TAG="v$VERSION"
             echo "tag=$TAG" >> "$GITHUB_OUTPUT"
             echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
             if git rev-parse "$TAG" >/dev/null 2>&1 || git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
-              echo "Tag $TAG already exists on remote."
-            else
-              echo "Creating tag $TAG..."
-              git config user.name "github-actions[bot]"
-              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-              git tag "$TAG"
-              git push origin "refs/tags/$TAG"
+              echo "Tag $TAG already exists. Bump package.json before a manual release." >&2
+              exit 1
             fi
           else
             TAG="${GITHUB_REF_NAME:-v1.0.0}"
             echo "tag=$TAG" >> "$GITHUB_OUTPUT"
             echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+          fi
+
+          PACKAGE_VERSION=$(awk -F'"' '/"version"/ { print $4; exit }' package.json)
+          if [ "${TAG#v}" != "$PACKAGE_VERSION" ]; then
+            echo "Tag version ${TAG#v} does not match package.json version $PACKAGE_VERSION." >&2
+            exit 1
           fi
 
       - name: Select Xcode Version
@@ -68,6 +58,9 @@ jobs:
           fi
           echo "Selected: $XCODE_APP"
           sudo xcode-select -s "$XCODE_APP/Contents/Developer"
+
+      - name: Run Tests
+        run: swift test
 
       - name: Build and Bundle App
         run: make bundle
@@ -82,6 +75,16 @@ jobs:
           cp -R .build/QuitX.app "$DMG_STAGE/"
           ln -s /Applications "$DMG_STAGE/Applications"
           hdiutil create -volname "QuitX" -srcfolder "$DMG_STAGE" -ov -format UDZO ".build/QuitX-${TAG}.dmg"
+
+      - name: Create Tag for Manual Release
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          TAG="${{ steps.meta.outputs.tag }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "$TAG"
+          git push origin "refs/tags/$TAG"
 
       - name: Write release notes
         shell: bash
@@ -123,4 +126,3 @@ jobs:
           files: .build/QuitX-*.dmg
           draft: false
           prerelease: false
-

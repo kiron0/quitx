@@ -8,7 +8,7 @@ final class AppListViewModel: ObservableObject {
     @Published var apps: [AppInfo] = []
     @Published var selected: Set<String> = []
     @Published var searchQuery: String = ""
-    @Published var showBackgroundApps: Bool = false
+    @Published var showBackgroundApps: Bool
     @Published var isOptionKeyPressed: Bool = false
     @Published var isLoading: Bool = false
     @Published var lastQuitCount: Int = 0
@@ -29,8 +29,10 @@ final class AppListViewModel: ObservableObject {
 
     private let configStore = ConfigStore.shared
     private var flagsMonitor: Any?
+    private var toastTask: Task<Void, Never>?
 
     init() {
+        showBackgroundApps = ConfigStore.shared.config.includeBackground
         startModifierMonitor()
         randomizeQuote()
     }
@@ -59,8 +61,9 @@ final class AppListViewModel: ObservableObject {
         if !showBackgroundApps {
             list = list.filter { !$0.isBackground }
         }
-        if !searchQuery.trimmingCharacters(in: .whitespaces).isEmpty {
-            let q = searchQuery.lowercased()
+        let normalizedQuery = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if !normalizedQuery.isEmpty {
+            let q = normalizedQuery
             list = list.filter { $0.name.lowercased().contains(q) }
         }
         return list
@@ -75,6 +78,11 @@ final class AppListViewModel: ObservableObject {
         let visibleIds = Set(filteredApps.map(\.id))
         let visibleSelection = selected.intersection(visibleIds)
         return !visibleSelection.isEmpty && visibleSelection.count < visibleIds.count
+    }
+
+    var selectedVisibleCount: Int {
+        let visibleIds = Set(filteredApps.map(\.id))
+        return selected.intersection(visibleIds).count
     }
 
     func toggleSelectAll() {
@@ -112,12 +120,7 @@ final class AppListViewModel: ObservableObject {
             }
             hasInitializedSelection = true
         } else if selectedAllBeforeRefresh {
-            if cfg.defaultSelectAll {
-                selected = Set(filteredApps.map(\.id))
-            } else {
-                let validIds = Set(apps.map(\.id))
-                selected = selected.intersection(validIds)
-            }
+            selected = Set(filteredApps.map(\.id))
         } else {
             let validIds = Set(apps.map(\.id))
             selected = selected.intersection(validIds)
@@ -139,23 +142,31 @@ final class AppListViewModel: ObservableObject {
 
     func quitSingle(app: AppInfo, force: Bool) async {
         SoundService.playQuitSingle()
-        _ = await QuitService.shared.quit(apps: [app], force: force)
-        selected.remove(app.id)
-        lastQuitCount = 1
+        let results = await QuitService.shared.quit(apps: [app], force: force)
+        let succeeded = results.first?.success == true
+        if succeeded {
+            selected.remove(app.id)
+        }
+        lastQuitCount = succeeded ? 1 : 0
         await refresh()
-        triggerToast()
+        if succeeded {
+            triggerToast()
+        }
     }
 
     func quitAll(force: Bool) async {
-        let targets = apps.filter { selected.contains($0.id) }
+        let targets = filteredApps.filter { selected.contains($0.id) }
         guard !targets.isEmpty else { return }
         SoundService.playQuitAll()
         let results = await QuitService.shared.quit(apps: targets, force: force)
-        lastQuitCount = results.filter(\.success).count
-        selected.removeAll()
+        let successfulIds = Set(results.filter(\.success).map { $0.app.id })
+        lastQuitCount = successfulIds.count
+        selected.subtract(successfulIds)
         await refresh()
         randomizeQuote()
-        triggerToast()
+        if !successfulIds.isEmpty {
+            triggerToast()
+        }
     }
 
     func restartApp(_ app: AppInfo) async {
@@ -206,10 +217,16 @@ final class AppListViewModel: ObservableObject {
     }
 
     private func triggerToast() {
+        toastTask?.cancel()
         showToast = true
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 2_000_000_000)
-            showToast = false
+        toastTask = Task { @MainActor [weak self] in
+            do {
+                try await Task.sleep(nanoseconds: 2_000_000_000)
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
+            self?.showToast = false
         }
     }
 }
