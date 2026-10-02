@@ -24,7 +24,7 @@ jobs:
           uname -a
 
       - name: Run Tests
-        run: swift test --build-system native
+        run: swift test --build-system native -Xswiftc -F/Library/Developer/CommandLineTools/Library/Developer/Frameworks
 
       - name: Build Release Binary
         run: swift build -c release --build-system native
