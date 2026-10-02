@@ -646,7 +646,7 @@ struct SupportTabCloneView: View {
                 .padding(.top, 24)
 
             Button("Contact") {
-                if let url = URL(string: "https://github.com/coreify/quitx/issues") {
+                if let url = URL(string: "https://github.com/kiron0/quitx/issues") {
                     NSWorkspace.shared.open(url)
                 }
             }
@@ -678,13 +678,13 @@ struct AboutTabCloneView: View {
                         .foregroundStyle(Color.white.opacity(0.5))
                 }
 
-                Text("Copyright © 2026 Coreify")
+                Text("Copyright © 2026 Toufiq Hasan Kiron")
                     .font(.system(size: 11))
                     .foregroundStyle(Color.white.opacity(0.42))
 
                 HStack(spacing: 10) {
-                    Button("Say hi") {
-                        if let url = URL(string: "https://quitx.js.org") {
+                    Button("GitHub") {
+                        if let url = URL(string: "https://github.com/kiron0/quitx") {
                             NSWorkspace.shared.open(url)
                         }
                     }

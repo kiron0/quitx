@@ -56,7 +56,7 @@ struct MainPopoverView: View {
         .frame(width: 270)
         .frame(maxHeight: .infinity)
         .background(QuitXTheme.popoverBackground)
-        .clipShape(Rectangle())
+        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         .preferredColorScheme(.dark)
         .onChange(of: vm.filteredApps.count) {
             StatusItemController.shared?.updatePopoverSize()
@@ -317,7 +317,7 @@ private struct PopoverOptionsButton: NSViewRepresentable {
 
         @objc private func openHelp() {
             StatusItemController.shared?.closePopover()
-            guard let url = URL(string: "https://github.com/coreify/quitx") else { return }
+            guard let url = URL(string: "https://github.com/kiron0/quitx") else { return }
             NSWorkspace.shared.open(url)
         }
 

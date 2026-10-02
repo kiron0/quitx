@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/coreify/quitx-app/actions/workflows/ci.yml"><img src="https://github.com/coreify/quitx-app/actions/workflows/ci.yml/badge.svg" alt="CI Status" /></a>
-  <a href="https://github.com/coreify/quitx-app/releases"><img src="https://img.shields.io/github/v/release/coreify/quitx-app?color=FFB800" alt="Latest Release" /></a>
+  <a href="https://github.com/kiron0/quitx/actions/workflows/ci.yml"><img src="https://github.com/kiron0/quitx/actions/workflows/ci.yml/badge.svg" alt="CI Status" /></a>
+  <a href="https://github.com/kiron0/quitx/releases"><img src="https://img.shields.io/github/v/release/kiron0/quitx?color=FFB800" alt="Latest Release" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" /></a>
   <img src="https://img.shields.io/badge/macOS-14.0%2B-black?logo=apple" alt="macOS 14+" />
   <img src="https://img.shields.io/badge/Swift-5.9%2B-orange?logo=swift" alt="Swift 5.9+" />
@@ -52,14 +52,14 @@ QuitX lives silently in your macOS menu bar. Open it with a click to see all run
 ## 🚀 Installation
 
 ### Option 1: Download Pre-built Release
-Download `QuitX-v*.dmg` from [Releases](https://github.com/coreify/quitx-app/releases), open the disk image, and drag `QuitX.app` into `/Applications`.
+Download `QuitX-v*.dmg` from [Releases](https://github.com/kiron0/quitx/releases), open the disk image, and drag `QuitX.app` into `/Applications`.
 
 ### Option 2: Build From Source
 
 ```bash
 # Clone the repository
-git clone https://github.com/coreify/quitx-app.git
-cd quitx-app
+git clone https://github.com/kiron0/quitx.git
+cd quitx/app
 
 # Build and package the application bundle
 make bundle
