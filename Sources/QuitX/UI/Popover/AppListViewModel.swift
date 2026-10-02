@@ -94,8 +94,6 @@ final class AppListViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Actions
-
     func refresh() async {
         isLoading = true
         let selectedAllBeforeRefresh = isAllSelected
@@ -168,8 +166,6 @@ final class AppListViewModel: ObservableObject {
     }
 
     var hasStash: Bool { StashService.shared.hasStash }
-
-    // MARK: - Helpers
 
     private func sort(apps: [AppInfo]) -> [AppInfo] {
         switch configStore.config.sortBy {

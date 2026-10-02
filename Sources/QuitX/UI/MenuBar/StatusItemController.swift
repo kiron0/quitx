@@ -1,7 +1,6 @@
 import AppKit
 import SwiftUI
 
-/// Owns the NSStatusItem and NSPopover. Single source of truth for menubar presence.
 @MainActor
 final class StatusItemController: NSObject, NSPopoverDelegate {
     static weak var shared: StatusItemController?
@@ -17,8 +16,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     override init() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         popover = NSPopover()
-        // Menus inside transient popovers can dismiss their parent before they
-        // receive the click. Explicit monitors provide predictable dismissal.
+
         popover.behavior = .applicationDefined
         popover.animates = false
 
@@ -41,8 +39,6 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         refreshTask?.cancel()
     }
 
-    // MARK: - Setup
-
     private func configureButton() {
         guard let button = statusItem.button else { return }
 
@@ -51,13 +47,11 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         button.toolTip = "QuitX"
         button.setAccessibilityLabel("QuitX")
 
-        // Respond on mouse down for immediate toggle responsiveness
         button.sendAction(on: [.leftMouseDown, .rightMouseDown])
         button.action = #selector(handleStatusItemClick(_:))
         button.target = self
     }
 
-    /// Monochrome menu-bar icon for QuitX with Retina @2x support.
     private func makeMenuBarIcon() -> NSImage {
         let icon = NSImage(size: NSSize(width: 18, height: 18))
         let iconNames = ["status-icon", "menubar"]
@@ -109,8 +103,6 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         popover.contentViewController = NSHostingController(rootView: rootView)
         updatePopoverSize()
 
-        // Prime the first popover size before it becomes visible. Otherwise the
-        // footer jumps when the initial app scan finishes.
         Task { @MainActor [weak self] in
             await AppListViewModel.shared.refresh()
             self?.updatePopoverSize()
@@ -120,7 +112,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     @MainActor
     func updatePopoverSize() {
         let count = AppListViewModel.shared.filteredApps.count
-        // Grow naturally. Scroll only when rows exceed available screen height.
+
         let baseHeight: CGFloat = 104
         let rowHeight: CGFloat = 29
         let itemCount = max(1, count)
@@ -134,8 +126,6 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         popover.contentSize = NSSize(width: 270, height: targetHeight)
     }
 
-    // MARK: - Click Handling
-
     @objc private func handleStatusItemClick(_ sender: Any?) {
         guard let event = NSApp.currentEvent else {
             togglePopover()
@@ -148,8 +138,6 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
             togglePopover()
         }
     }
-
-    // MARK: - Popover Actions
 
     func closePopover() {
         lastCloseTimestamp = Date()
@@ -169,7 +157,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         if popover.isShown {
             closePopover()
         } else {
-            // Avoid immediate re-opening if close was triggered just moments ago
+
             if Date().timeIntervalSince(lastCloseTimestamp) < 0.25 {
                 return
             }
@@ -214,8 +202,6 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
             self?.updatePopoverSize()
         }
     }
-
-    // MARK: - Context Menu on Right Click
 
     private func showContextMenu() {
         closePopover()
@@ -281,13 +267,10 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         NSApplication.shared.terminate(nil)
     }
 
-    // MARK: - Outside-click dismissal
-
     private func startEventMonitor() {
         globalEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
             guard let self = self, self.popover.isShown else { return }
 
-            // If click is on the status bar button, let the button action handle the toggle
             if let button = self.statusItem.button, let window = button.window {
                 let mouseLoc = NSEvent.mouseLocation
                 let buttonScreenFrame = window.convertToScreen(button.bounds)

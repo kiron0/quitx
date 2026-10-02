@@ -1,6 +1,5 @@
 import Foundation
 
-/// Reads and writes ~/.config/quitx/config.json — same file as the CLI.
 final class ConfigStore: ObservableObject {
     static let shared = ConfigStore()
 

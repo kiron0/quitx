@@ -30,12 +30,10 @@ struct MainPopoverView: View {
                 .padding(.top, 5)
                 .padding(.bottom, 4)
 
-            // Search bar & Select All checkbox
             searchBarRow
                 .padding(.horizontal, 8)
                 .padding(.bottom, 4)
 
-            // Apps list
             if vm.isLoading && vm.apps.isEmpty {
                 VStack {
                     Spacer()
@@ -52,7 +50,6 @@ struct MainPopoverView: View {
 
             Spacer(minLength: 0)
 
-            // Footer
             footerRow
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
@@ -83,8 +80,6 @@ struct MainPopoverView: View {
             Text("This will close \(vm.selected.count) applications.")
         }
     }
-
-    // MARK: - Quit All
 
     private var quitAllButton: some View {
         let isForced = vm.isOptionKeyPressed || configStore.config.force == .force
@@ -127,11 +122,9 @@ struct MainPopoverView: View {
         .onHover { uiState.isQuitAllHovered = $0 }
     }
 
-    // MARK: - Search & Select All Row
-
     private var searchBarRow: some View {
         HStack(spacing: 8) {
-            // Select All Checkbox
+
             Button {
                 vm.toggleSelectAll()
             } label: {
@@ -157,7 +150,6 @@ struct MainPopoverView: View {
             .contentShape(Rectangle())
             .help(vm.isAllSelected ? "Deselect All" : "Select All")
 
-            // Search input field
             HStack(spacing: 5) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 11))
@@ -188,8 +180,6 @@ struct MainPopoverView: View {
         }
     }
 
-    // MARK: - Empty State
-
     private var emptyAppsView: some View {
         VStack(spacing: 10) {
             Spacer()
@@ -205,8 +195,6 @@ struct MainPopoverView: View {
         }
         .frame(maxHeight: .infinity)
     }
-
-    // MARK: - Footer Row
 
     private var footerRow: some View {
         HStack {
@@ -232,8 +220,6 @@ struct MainPopoverView: View {
     }
 }
 
-// NSMenu tracks correctly inside an NSPopover. SwiftUI Menu can close a
-// transient popover before the first click reaches the menu.
 private struct PopoverOptionsButton: NSViewRepresentable {
     var showsBackgroundApps: Bool
     var hasStash: Bool
@@ -338,8 +324,6 @@ private struct PopoverOptionsButton: NSViewRepresentable {
         }
     }
 }
-
-// MARK: - Blur helper
 
 struct VisualEffectBlur: NSViewRepresentable {
     var material: NSVisualEffectView.Material

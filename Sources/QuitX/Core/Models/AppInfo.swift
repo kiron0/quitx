@@ -1,6 +1,5 @@
 import Foundation
 
-/// Mirrors the CLI's AppInfo type.
 struct AppInfo: Identifiable, Hashable {
     let id: String
     let name: String

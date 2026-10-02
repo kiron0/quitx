@@ -1,12 +1,10 @@
 import AppKit
 import Foundation
 
-/// Graceful and force-quit runner.
 final class QuitService {
     static let shared = QuitService()
     private init() {}
 
-    /// Quit a list of apps. Returns results for each.
     @discardableResult
     func quit(apps: [AppInfo], force: Bool, dryRun: Bool = false) async -> [QuitResult] {
         await withTaskGroup(of: QuitResult.self) { group in
@@ -35,7 +33,7 @@ final class QuitService {
 
         let ok = running.terminate()
         if ok {
-            // Wait up to 5 s for graceful exit
+
             for _ in 0..<50 {
                 try? await Task.sleep(nanoseconds: 100_000_000)
                 if running.isTerminated { break }

@@ -36,7 +36,7 @@ struct AppRowView: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            // Checkbox (visual only; click handled by row)
+
             ZStack {
                 RoundedRectangle(cornerRadius: 2.5)
                     .fill(isSelected ? goldColor : Color.white.opacity(0.12))
@@ -49,7 +49,6 @@ struct AppRowView: View {
                 }
             }
 
-            // App icon
             Group {
                 if let icon = iconLoader.icon {
                     Image(nsImage: icon)
@@ -65,7 +64,6 @@ struct AppRowView: View {
             }
             .onAppear { iconLoader.load(bundleId: app.bundleId) }
 
-            // App name
             Text(app.name)
                 .font(.system(size: 12.5, weight: .regular))
                 .foregroundStyle(Color.white.opacity(0.92))
@@ -74,7 +72,6 @@ struct AppRowView: View {
 
             Spacer(minLength: 4)
 
-            // More options menu (3 dots) - first
             Menu {
                 Button(isOptionKeyPressed ? "Force Quit" : "Quit") {
                     onQuit(isOptionKeyPressed)
@@ -101,12 +98,10 @@ struct AppRowView: View {
             .menuIndicator(.hidden)
             .frame(width: 16)
 
-            // CPU usage percentage - second
             Text(app.cpuFormatted)
                 .font(.system(size: 10.5, design: .monospaced))
                 .foregroundStyle(Color.white.opacity(0.45))
 
-            // Quit single button - third at right (transparent bg, no ring)
             Button {
                 onQuit(isOptionKeyPressed)
             } label: {

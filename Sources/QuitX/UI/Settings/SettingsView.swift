@@ -30,8 +30,6 @@ enum SettingsTab: String, CaseIterable {
     }
 }
 
-// MARK: - Help Popover Button
-
 final class HelpPopoverState: ObservableObject {
     @Published var isShowing = false
 }
@@ -64,13 +62,9 @@ struct HelpPopoverButton: View {
     }
 }
 
-// MARK: - Settings Tab ViewModel
-
 final class SettingsTabViewModel: ObservableObject {
     @Published var activeTab: SettingsTab = .general
 }
-
-// MARK: - QuitAll Style Settings Container
 
 struct SettingsContainerView: View {
     @ObservedObject var tabModel: SettingsTabViewModel
@@ -79,9 +73,9 @@ struct SettingsContainerView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header: QuitAll style
+
             VStack(spacing: 0) {
-                // Row 1: Title centered (on the exact same line as traffic lights)
+
                 ZStack {
                     Text(tabModel.activeTab.rawValue)
                         .font(.system(size: 13, weight: .semibold))
@@ -90,7 +84,6 @@ struct SettingsContainerView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 32)
 
-                // Row 2: Centered 4 tabs
                 HStack(spacing: 8) {
                     ForEach(SettingsTab.allCases, id: \.self) { tab in
                         let isSelected = (tabModel.activeTab == tab)
@@ -122,7 +115,6 @@ struct SettingsContainerView: View {
                 .padding(.top, 6)
                 .padding(.bottom, 6)
 
-                // Row 3: 1pt subtle divider
                 Rectangle()
                     .fill(Color.white.opacity(0.10))
                     .frame(height: 1)
@@ -130,7 +122,6 @@ struct SettingsContainerView: View {
             .frame(width: 400, height: 91)
             .background(QuitXTheme.windowBackground)
 
-            // Content
             switch tabModel.activeTab {
             case .general:
                 GeneralTabCloneView()
@@ -150,8 +141,6 @@ struct SettingsContainerView: View {
     }
 }
 
-// MARK: - Root SettingsView
-
 struct SettingsView: View {
     @EnvironmentObject private var configStore: ConfigStore
     @StateObject private var tabModel = SettingsTabViewModel()
@@ -163,8 +152,6 @@ struct SettingsView: View {
         .environmentObject(configStore)
     }
 }
-
-// MARK: - Tab 1: General
 
 final class GeneralTabState: ObservableObject {
     @Published var disableQuitTips: Bool = false
@@ -181,14 +168,13 @@ struct GeneralTabCloneView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            // Startup
+
             row(label: "Startup:") {
                 toggle("Open QuitX at login", isOn: $launchService.isEnabled)
             } help: {
                 HelpPopoverButton(text: "Keep things running in ship-shape by setting an automatic Quit for inactive apps. 🛳")
             }
 
-            // Sounds
             row(label: "Sounds:") {
                 toggle("Play cool sounds", isOn: Binding(
                     get: { configStore.config.playSounds },
@@ -198,7 +184,6 @@ struct GeneralTabCloneView: View {
                 HelpPopoverButton(text: "A deeply satisfying laser sound will play when quitting apps. 👾🔫")
             }
 
-            // Advanced
             row(label: "Advanced:") {
                 toggle("View background apps", isOn: Binding(
                     get: { configStore.config.includeBackground },
@@ -241,7 +226,6 @@ struct GeneralTabCloneView: View {
                 HelpPopoverButton(text: "The rotating tips at the bottom of the QuitX dropdown will cease to show. It’s okay. We can still be friends. 🤗")
             }
 
-            // Extras
             row(label: "Extras:") {
                 toggle("Include Finder Windows in list", isOn: Binding(
                     get: { configStore.config.includeFinder },
@@ -260,7 +244,6 @@ struct GeneralTabCloneView: View {
                 HelpPopoverButton(text: "A truly fresh start without a restart. Take out the trash at the same time you take out the apps! 🗑️🧹")
             }
 
-            // Auto Quit
             let isAutoQuitEnabled = configStore.config.quitInactiveAfterMinutes > 0
             row(label: "Auto Quit:") {
                 toggle("Quit inactive apps after", isOn: Binding(
@@ -274,7 +257,6 @@ struct GeneralTabCloneView: View {
                 HelpPopoverButton(text: "Keep things running in ship-shape by setting an automatic Quit for inactive apps. 🛳")
             }
 
-            // Auto Quit Stepper Row (disabled when unchecked)
             row(label: "") {
                 HStack(spacing: 6) {
                     TextField("", value: $state.autoQuitValue, format: .number)
@@ -300,7 +282,6 @@ struct GeneralTabCloneView: View {
                 Color.clear.frame(width: 22, height: 22)
             }
 
-            // Sort
             row(label: "Sort:") {
                 Picker("", selection: Binding(
                     get: { configStore.config.sortBy },
@@ -310,13 +291,12 @@ struct GeneralTabCloneView: View {
                         Text(sortOpt.rawValue).tag(sortOpt)
                     }
                 }
-                .frame(width: 175)
+                .frame(width: 175, alignment: .leading)
                 .labelsHidden()
             } help: {
                 HelpPopoverButton(text: "Sort the list of apps alphabetically or by CPU usage. Made possible by this magical sorting unicorn. ✨🦄")
             }
 
-            // Default
             row(label: "Default:") {
                 Picker("", selection: Binding(
                     get: { configStore.config.force == .force ? "Force quit" : "Normal quit" },
@@ -325,13 +305,12 @@ struct GeneralTabCloneView: View {
                     Text("Normal quit").tag("Normal quit")
                     Text("Force quit").tag("Force quit")
                 }
-                .frame(width: 175)
+                .frame(width: 175, alignment: .leading)
                 .labelsHidden()
             } help: {
                 HelpPopoverButton(text: "This one is pretty self explanatory, so here’s an easter egg instead of a helpful tooltip. 🐇🍳")
             }
 
-            // Reset
             row(label: "Reset:") {
                 Button("Reset all") {
                     configStore.config = QuitXConfig.default
@@ -397,8 +376,6 @@ struct GeneralTabCloneView: View {
     }
 }
 
-// MARK: - Tab 2: Shortcuts
-
 @MainActor
 final class ShortcutsViewState: ObservableObject {
     @Published var recordingRow: String? = nil
@@ -432,11 +409,11 @@ final class ShortcutsViewState: ObservableObject {
     }
 
     private func processEvent(_ event: NSEvent, row: String, sm: ShortcutManager) -> Bool {
-        if event.keyCode == 53 { // Esc
+        if event.keyCode == 53 {
             DispatchQueue.main.async { self.recordingRow = nil }
             return true
         }
-        if event.keyCode == 51 { // Delete
+        if event.keyCode == 51 {
             DispatchQueue.main.async {
                 self.applyKeys([], for: row, sm: sm)
                 self.recordingRow = nil
@@ -538,7 +515,6 @@ struct ShortcutsTabCloneView: View {
                 .foregroundStyle(Color.white.opacity(0.92))
                 .frame(width: 105, alignment: .trailing)
 
-            // Neutral checkbox
             Button {
                 isEnabled.wrappedValue.toggle()
             } label: {
@@ -556,7 +532,6 @@ struct ShortcutsTabCloneView: View {
             }
             .buttonStyle(.plain)
 
-            // Shortcut container box (Click to record)
             Button {
                 if active {
                     viewState.recordingRow = (viewState.recordingRow == id ? nil : id)
@@ -598,7 +573,6 @@ struct ShortcutsTabCloneView: View {
             }
             .buttonStyle(.plain)
 
-            // Trash icon button (Click to clear shortcut)
             Button {
                 viewState.applyKeys([], for: id, sm: sm)
                 if viewState.recordingRow == id { viewState.recordingRow = nil }
@@ -624,8 +598,6 @@ struct ShortcutsTabCloneView: View {
     }
 }
 
-// MARK: - Tab 3: Support
-
 struct SupportTabCloneView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -649,8 +621,6 @@ struct SupportTabCloneView: View {
         .background(QuitXTheme.windowBackground)
     }
 }
-
-// MARK: - Tab 4: About
 
 struct AboutTabCloneView: View {
     @ObservedObject private var updateChecker = UpdateChecker.shared

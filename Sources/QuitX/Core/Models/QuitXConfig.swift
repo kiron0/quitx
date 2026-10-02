@@ -1,7 +1,5 @@
 import Foundation
 
-/// Mirrors QuitxConfig from the CLI.
-/// Reads from / writes to ~/.config/quitx/config.json for full CLI interop.
 struct QuitXConfig: Codable, Equatable {
     var exclude: [String]
     var force: ForceMode

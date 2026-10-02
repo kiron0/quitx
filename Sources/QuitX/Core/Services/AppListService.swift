@@ -1,6 +1,5 @@
 import AppKit
 
-/// Fetches running user-visible (and optionally background) apps with memory.
 final class AppListService {
     static let shared = AppListService()
     private init() {}
@@ -17,23 +16,19 @@ final class AppListService {
             let bundleId = app.bundleIdentifier
             let pid = app.processIdentifier
 
-            // Filter system / agent apps
             let isRegularApp = app.activationPolicy == .regular
             let isBackground = app.activationPolicy == .accessory
 
             if !isRegularApp && !isBackground { continue }
             if isBackground && !config.includeBackground { continue }
 
-            // Exclusions
             if let bid = bundleId, config.exclude.contains(bid) { continue }
             if config.exclude.contains(name) { continue }
 
-            // Music exclusion
             if config.neverQuitMusic && config.musicApps.contains(where: { name.localizedCaseInsensitiveContains($0) || bundleId?.localizedCaseInsensitiveContains($0) == true }) {
                 continue
             }
 
-            // Finder / Trash
             if !config.includeFinder && bundleId == "com.apple.finder" { continue }
             if !config.includeTrash && name == "Trash" { continue }
 
@@ -80,8 +75,6 @@ final class AppListService {
         }
     }
 
-    // MARK: - CPU
-
     private func fetchCpuUsages() -> [pid_t: Double] {
         let pipe = Pipe()
         let proc = Process()
@@ -102,8 +95,6 @@ final class AppListService {
         return result
     }
 
-    // MARK: - Memory
-
     private func memoryUsage(pid: pid_t) -> UInt64 {
         var info = proc_taskinfo()
         let size = MemoryLayout<proc_taskinfo>.size
@@ -111,8 +102,6 @@ final class AppListService {
         guard result == size else { return 0 }
         return info.pti_resident_size
     }
-
-    // MARK: - Window count
 
     private func visibleWindowCounts() -> [pid_t: Int] {
         guard let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else {

@@ -55,7 +55,6 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         win.contentViewController = hosting
         self.window = win
 
-        // Elevate to regular app while preferences is open so clicking elsewhere doesn't hide it
         NSApp.setActivationPolicy(.regular)
 
         let targetFrame = targetFrameFor(win, totalHeight: totalHeight)
@@ -68,7 +67,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         }
         let screenFrame = screen.visibleFrame
         let x = screenFrame.origin.x + (screenFrame.width - 400) / 2
-        // Top-center: positioned neatly below the menu bar
+
         let y = screenFrame.origin.y + screenFrame.height - totalHeight - 110
         return NSRect(x: x, y: y, width: 400, height: totalHeight)
     }

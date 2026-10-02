@@ -40,12 +40,10 @@ final class AutoQuitService {
                   let lastActive = lastActiveTimestamps[pid],
                   lastActive < threshold else { continue }
 
-            // Check exclusions
             if let bid = app.bundleIdentifier, config.exclude.contains(bid) { continue }
             if let name = app.localizedName, config.exclude.contains(name) { continue }
             if app.bundleIdentifier == "com.apple.finder" { continue }
 
-            // Quit inactive app
             app.terminate()
         }
     }

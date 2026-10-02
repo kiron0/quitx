@@ -39,7 +39,7 @@ final class UpdateChecker: ObservableObject {
             }
 
             if httpResponse.statusCode == 404 {
-                // Repository has no public releases yet -> user is on latest build
+
                 showUpToDateAlert(isUserInitiated: isUserInitiated)
                 return
             }
@@ -69,7 +69,6 @@ final class UpdateChecker: ObservableObject {
         }
     }
 
-    // Compare semantic versions (e.g. "1.1.0" > "1.0.0")
     func isVersion(_ v1: String, greaterThan v2: String) -> Bool {
         let parts1 = v1.split(separator: ".").compactMap { Int($0.prefix(while: { $0.isNumber })) }
         let parts2 = v2.split(separator: ".").compactMap { Int($0.prefix(while: { $0.isNumber })) }

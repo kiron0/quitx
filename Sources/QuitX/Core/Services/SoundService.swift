@@ -17,7 +17,7 @@ enum SoundService {
             sound.play()
             return
         }
-        // Fallback to Support/Sounds if running from debug binary
+
         let localPath = "Support/Sounds/\(name).aiff"
         if FileManager.default.fileExists(atPath: localPath),
            let sound = NSSound(contentsOfFile: localPath, byReference: true) {

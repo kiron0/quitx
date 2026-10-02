@@ -1,9 +1,6 @@
 import AppKit
 import Foundation
 
-
-/// Stash / restore sessions — mirrors CLI stash.ts / restore.ts.
-/// Reads and writes ~/.local/share/quitx/stash.json (same path as CLI).
 final class StashService {
     static let shared = StashService()
     private init() {}
@@ -14,8 +11,6 @@ final class StashService {
             .appendingPathComponent(".local/share/quitx", isDirectory: true)
             .appendingPathComponent("stash.json")
     }
-
-    // MARK: - Stash
 
     func stash(apps: [AppInfo]) async -> Bool {
         let entries = apps.map { StashEntry(name: $0.name, bundleId: $0.bundleId) }
@@ -31,12 +26,9 @@ final class StashService {
             try json.write(to: stashURL, options: .atomic)
         } catch { return false }
 
-        // Quit all stashed apps
         let results = await QuitService.shared.quit(apps: apps, force: false)
         return results.allSatisfy(\.success)
     }
-
-    // MARK: - Restore
 
     func restore() async -> Bool {
         guard let json = try? Data(contentsOf: stashURL),

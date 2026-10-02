@@ -1,4 +1,3 @@
-// Basic model tests — no UI dependencies
 import XCTest
 @testable import QuitX
 
