@@ -13,31 +13,9 @@ struct WelcomeView: View {
     var body: some View {
         VStack(spacing: 0) {
             hero
-                .padding(.top, 46)
+                .padding(.top, 16)
+                .padding(.bottom, 16)
 
-            VStack(spacing: 6) {
-                guideRow(
-                    icon: "menubar.rectangle",
-                    title: "Menu Bar",
-                    detail: "Click the QuitX menu bar icon to view and manage running apps."
-                )
-                guideRow(
-                    icon: "bolt.fill",
-                    title: "Quick & Force Quit",
-                    detail: "Click power to quit normally, or hold Option (⌥) to force quit."
-                )
-                guideRow(
-                    icon: "gearshape",
-                    title: "Customizable",
-                    detail: "Set auto-quit timers, global shortcuts, and exclusions in Settings."
-                )
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 10)
-
-            Divider()
-                .padding(.horizontal, 20)
-                .padding(.vertical, 8)
 
             quickSetup
                 .padding(.horizontal, 20)
@@ -59,7 +37,10 @@ struct WelcomeView: View {
         }
         .frame(width: 390)
         .fixedSize(horizontal: false, vertical: true)
-        .background(QuitXTheme.windowBackground)
+        .background {
+            QuitXTheme.windowBackground
+                .ignoresSafeArea()
+        }
     }
 
     private var quickSetup: some View {

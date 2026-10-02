@@ -39,11 +39,11 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
 
         let hosting = NSHostingController(rootView: rootView)
         let win = NSWindow(contentViewController: hosting)
-        win.title = "Welcome to QuitX"
+        win.title = ""
         win.styleMask = [.titled, .closable, .fullSizeContentView]
         win.titlebarAppearsTransparent = true
         win.titlebarSeparatorStyle = .none
-        win.titleVisibility = .visible
+        win.titleVisibility = .hidden
         let fittingSize = hosting.sizeThatFits(
             in: NSSize(width: windowWidth, height: .greatestFiniteMagnitude)
         )
