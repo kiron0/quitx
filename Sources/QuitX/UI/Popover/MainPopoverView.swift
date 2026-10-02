@@ -56,7 +56,7 @@ struct MainPopoverView: View {
         .frame(width: 270)
         .frame(maxHeight: .infinity)
         .background(QuitXTheme.popoverBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .preferredColorScheme(.dark)
         .onChange(of: vm.filteredApps.count) {
             StatusItemController.shared?.updatePopoverSize()
@@ -206,10 +206,12 @@ struct MainPopoverView: View {
 
     private var footerRow: some View {
         HStack {
-            Text(vm.currentQuote)
-                .font(.system(size: 11, weight: .regular))
-                .foregroundStyle(Color.white.opacity(0.45))
-                .lineLimit(1)
+            if !configStore.config.disableQuitTips {
+                Text(vm.currentQuote)
+                    .font(.system(size: 11, weight: .regular))
+                    .foregroundStyle(Color.white.opacity(0.45))
+                    .lineLimit(1)
+            }
 
             Spacer()
 

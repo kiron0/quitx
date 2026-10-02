@@ -5,6 +5,7 @@ struct AppInfo: Identifiable, Hashable {
     let name: String
     let bundleId: String?
     let pid: pid_t?
+    let pids: [pid_t]
     let isBackground: Bool
     let windowCount: Int
     let memoryBytes: UInt64
@@ -24,6 +25,7 @@ struct AppInfo: Identifiable, Hashable {
         name: String,
         bundleId: String? = nil,
         pid: pid_t? = nil,
+        pids: [pid_t] = [],
         isBackground: Bool = false,
         windowCount: Int = 0,
         memoryBytes: UInt64 = 0,
@@ -37,6 +39,7 @@ struct AppInfo: Identifiable, Hashable {
         self.name = name
         self.bundleId = bundleId
         self.pid = pid
+        self.pids = pids.isEmpty ? (pid.map { [$0] } ?? []) : pids
         self.isBackground = isBackground
         self.windowCount = windowCount
         self.memoryBytes = memoryBytes

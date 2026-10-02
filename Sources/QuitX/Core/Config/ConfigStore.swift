@@ -25,5 +25,9 @@ final class ConfigStore: ObservableObject {
         let dir = configURL.deletingLastPathComponent()
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         try? json.write(to: configURL, options: .atomic)
+        Task { @MainActor in
+            await AppListViewModel.shared.refresh()
+            StatusItemController.shared?.updatePopoverSize()
+        }
     }
 }

@@ -21,24 +21,66 @@ final class QuitService {
         guard !dryRun else {
             return QuitResult(app: app, success: true, forced: false, error: nil)
         }
-        guard let pid = app.pid,
-              let running = NSRunningApplication(processIdentifier: pid) else {
+
+        if app.name.lowercased() == "trash" || app.bundleId == "com.apple.trash" {
+            let script = """
+            ignoring application responses
+                tell application "Finder"
+                    try
+                        set warns before emptying to false
+                        empty the trash
+                    end try
+                end tell
+            end ignoring
+            """
+            var error: NSDictionary?
+            if let appleScript = NSAppleScript(source: script) {
+                appleScript.executeAndReturnError(&error)
+            }
+            return QuitResult(app: app, success: error == nil, forced: false, error: error?.description)
+        }
+
+        if app.bundleId == "com.apple.finder" || app.name.lowercased() == "finder" {
+            let script = """
+            tell application "Finder"
+                close every window
+            end tell
+            """
+            var error: NSDictionary?
+            if let appleScript = NSAppleScript(source: script) {
+                appleScript.executeAndReturnError(&error)
+            }
+            return QuitResult(app: app, success: error == nil, forced: false, error: error?.description)
+        }
+
+        let pidsToKill = app.pids.isEmpty ? (app.pid.map { [$0] } ?? []) : app.pids
+        guard !pidsToKill.isEmpty else {
             return QuitResult(app: app, success: false, forced: false, error: "App not found")
         }
 
-        if force {
-            let ok = running.forceTerminate()
-            return QuitResult(app: app, success: ok, forced: true, error: ok ? nil : "forceTerminate failed")
-        }
-
-        let ok = running.terminate()
-        if ok {
-
-            for _ in 0..<50 {
-                try? await Task.sleep(nanoseconds: 100_000_000)
-                if running.isTerminated { break }
+        var anySuccess = false
+        for pid in pidsToKill {
+            guard let running = NSRunningApplication(processIdentifier: pid) else { continue }
+            if force {
+                let ok = running.forceTerminate()
+                if ok { anySuccess = true }
+            } else {
+                let ok = running.terminate()
+                if ok {
+                    for _ in 0..<50 {
+                        try? await Task.sleep(nanoseconds: 100_000_000)
+                        if running.isTerminated { break }
+                    }
+                    if running.isTerminated || ok { anySuccess = true }
+                }
             }
         }
-        return QuitResult(app: app, success: ok || running.isTerminated, forced: false, error: ok ? nil : "terminate failed")
+
+        return QuitResult(
+            app: app,
+            success: anySuccess,
+            forced: force,
+            error: anySuccess ? nil : (force ? "forceTerminate failed" : "terminate failed")
+        )
     }
 }

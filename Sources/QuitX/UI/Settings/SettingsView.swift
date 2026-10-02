@@ -218,8 +218,12 @@ struct GeneralTabCloneView: View {
 
             row(label: "") {
                 toggle("Deselect apps by default", isOn: Binding(
-                    get: { configStore.config.defaultSelectAll },
-                    set: { configStore.config.defaultSelectAll = $0; configStore.save() }
+                    get: { !configStore.config.defaultSelectAll },
+                    set: {
+                        configStore.config.defaultSelectAll = !$0
+                        configStore.save()
+                        Task { @MainActor in await AppListViewModel.shared.refresh() }
+                    }
                 ))
             } help: {
                 HelpPopoverButton(text: "Some like the whole app list selected, some like ‘em all deselected. Now you get to choose. 🙌")

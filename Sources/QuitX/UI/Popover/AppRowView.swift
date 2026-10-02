@@ -10,8 +10,21 @@ private final class IconLoader: ObservableObject {
     @Published var icon: NSImage?
 
     func load(bundleId: String?) {
-        guard let bid = bundleId,
-              let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid)?.path else { return }
+        guard let bid = bundleId else { return }
+        if bid == "com.apple.trash" {
+            let img = NSImage(systemSymbolName: "trash", accessibilityDescription: "Trash")
+            img?.isTemplate = true
+            self.icon = img
+            return
+        }
+        if bid == "com.apple.finder" {
+            if let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid)?.path {
+                let img = NSWorkspace.shared.icon(forFile: path)
+                self.icon = img
+                return
+            }
+        }
+        guard let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid)?.path else { return }
         DispatchQueue.global(qos: .userInitiated).async {
             let img = NSWorkspace.shared.icon(forFile: path)
             DispatchQueue.main.async { self.icon = img }

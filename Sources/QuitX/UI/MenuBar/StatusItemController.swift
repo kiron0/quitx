@@ -129,7 +129,7 @@ final class StatusItemController: NSObject {
         )
         let hosting = NSHostingController(rootView: rootView)
         hosting.view.wantsLayer = true
-        hosting.view.layer?.cornerRadius = 6
+        hosting.view.layer?.cornerRadius = 8
         hosting.view.layer?.masksToBounds = true
         self.hostingController = hosting
 
