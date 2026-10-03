@@ -212,7 +212,8 @@ struct ExcludeAppPickerView: View {
 
             controls
                 .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .padding(.top, 12)
+                .padding(.bottom, 10)
 
             Group {
                 if viewModel.isLoading {
@@ -224,6 +225,12 @@ struct ExcludeAppPickerView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 7))
+            .overlay(
+                RoundedRectangle(cornerRadius: 7)
+                    .stroke(Color.primary.opacity(0.09), lineWidth: 0.5)
+            )
+            .padding(.horizontal, 16)
 
             footer
                 .padding(.horizontal, 16)
