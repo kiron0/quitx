@@ -88,20 +88,6 @@ struct MainPopoverView: View {
         } message: {
             Text("This will close \(vm.selectedVisibleCount) applications.")
         }
-        .alert("Force quit failed apps?", isPresented: Binding(
-            get: { !vm.failedAppsAwaitingForceQuit.isEmpty },
-            set: { _ in }
-        )) {
-            Button("Force Quit", role: .destructive) {
-                Task { await vm.forceQuitFailedApps() }
-            }
-            Button("Cancel", role: .cancel) {
-                vm.dismissForceQuitPrompt()
-            }
-        } message: {
-            let count = vm.failedAppsAwaitingForceQuit.count
-            Text("\(count) \(count == 1 ? "app did" : "apps did") not quit normally.")
-        }
     }
 
     private var quitAllButton: some View {
@@ -173,23 +159,10 @@ struct MainPopoverView: View {
             Button {
                 vm.toggleSelectAll()
             } label: {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(vm.isAllSelected || vm.isPartiallySelected ? goldColor : Color.primary.opacity(0.08))
-                        .frame(width: 14, height: 14)
-
-                    if vm.isAllSelected {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 8, weight: .bold))
-                            .foregroundStyle(.black.opacity(0.9))
-                    } else if vm.isPartiallySelected {
-                        RoundedRectangle(cornerRadius: 1)
-                            .fill(Color.black.opacity(0.9))
-                            .frame(width: 6, height: 2)
-                    }
-                }
-                .frame(width: 14, height: 14)
-                .contentShape(Rectangle())
+                QuitXSelectionCheckbox(
+                    isSelected: vm.isAllSelected,
+                    isPartial: vm.isPartiallySelected
+                )
             }
             .buttonStyle(.plain)
             .contentShape(Rectangle())

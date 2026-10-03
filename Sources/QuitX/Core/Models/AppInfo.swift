@@ -53,9 +53,3 @@ struct QuitResult: Sendable {
     let forced: Bool
     let error: String?
 }
-
-
-
-enum OnQuitFailureMode: String, Codable, CaseIterable, Sendable {
-    case prompt, force, error
-}

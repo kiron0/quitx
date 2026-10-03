@@ -241,8 +241,7 @@ struct ExcludeAppPickerView: View {
                 viewModel.showBackgroundApps.toggle()
             } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: viewModel.showBackgroundApps ? "checkmark.square.fill" : "square")
-                        .foregroundStyle(viewModel.showBackgroundApps ? QuitXTheme.accent : Color.secondary)
+                    QuitXSelectionCheckbox(isSelected: viewModel.showBackgroundApps)
                     Text("Show background apps")
                         .font(.system(size: 11.5))
                         .foregroundStyle(Color.primary)
@@ -255,7 +254,7 @@ struct ExcludeAppPickerView: View {
 
     private var appList: some View {
         ScrollView(.vertical, showsIndicators: true) {
-            LazyVStack(spacing: 0) {
+            LazyVStack(spacing: 2) {
                 ForEach(visibleApplications) { application in
                     Button {
                         viewModel.toggle(application)
@@ -266,9 +265,9 @@ struct ExcludeAppPickerView: View {
                         )
                     }
                     .buttonStyle(.plain)
-                    Divider().padding(.leading, 52)
                 }
             }
+            .padding(.vertical, 2)
         }
     }
 
@@ -313,27 +312,20 @@ struct ExcludeAppPickerView: View {
 private struct InstalledAppPickerRow: View {
     let application: InstalledApplication
     let isSelected: Bool
+    @StateObject private var state = InstalledAppPickerRowState()
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: isSelected ? "checkmark.square.fill" : "square")
-                .font(.system(size: 14))
-                .foregroundStyle(isSelected ? QuitXTheme.accent : Color.secondary)
-                .frame(width: 18)
+        HStack(spacing: 8) {
+            QuitXSelectionCheckbox(isSelected: isSelected)
 
             AppIconView(bundleId: application.bundleIdentifier)
-                .frame(width: 28, height: 28)
+                .frame(width: 18, height: 18)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(application.name)
-                    .font(.system(size: 12.5))
-                    .foregroundStyle(Color.primary)
-                    .lineLimit(1)
-                Text(application.bundleIdentifier)
-                    .font(.system(size: 10.5))
-                    .foregroundStyle(Color.secondary)
-                    .lineLimit(1)
-            }
+            Text(application.name)
+                .font(.system(size: 12.5, weight: .regular))
+                .foregroundStyle(Color.primary)
+                .lineLimit(1)
+                .truncationMode(.tail)
 
             Spacer(minLength: 8)
 
@@ -346,10 +338,19 @@ private struct InstalledAppPickerRow: View {
                     .background(Color.primary.opacity(0.07), in: Capsule())
             }
         }
-        .padding(.horizontal, 16)
-        .frame(height: 46)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3.5)
         .contentShape(Rectangle())
+        .background(
+            RoundedRectangle(cornerRadius: 3.5)
+                .fill(state.isHovered ? Color.primary.opacity(0.07) : Color.clear)
+        )
+        .onHover { state.isHovered = $0 }
     }
+}
+
+private final class InstalledAppPickerRowState: ObservableObject {
+    @Published var isHovered = false
 }
 
 private struct InstalledAppsSkeletonView: View {
@@ -357,20 +358,17 @@ private struct InstalledAppsSkeletonView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ForEach(0..<8, id: \.self) { index in
-                HStack(spacing: 10) {
-                    RoundedRectangle(cornerRadius: 3).frame(width: 16, height: 16)
-                    RoundedRectangle(cornerRadius: 6).frame(width: 28, height: 28)
-                    VStack(alignment: .leading, spacing: 5) {
-                        RoundedRectangle(cornerRadius: 3)
-                            .frame(width: CGFloat(105 + ((index % 3) * 24)), height: 10)
-                        RoundedRectangle(cornerRadius: 3).frame(width: 180, height: 8)
-                    }
+            ForEach(0..<14, id: \.self) { index in
+                HStack(spacing: 8) {
+                    RoundedRectangle(cornerRadius: 3).frame(width: 14, height: 14)
+                    RoundedRectangle(cornerRadius: 4).frame(width: 18, height: 18)
+                    RoundedRectangle(cornerRadius: 3)
+                        .frame(width: CGFloat(105 + ((index % 3) * 24)), height: 10)
                     Spacer()
                 }
                 .foregroundStyle(Color.primary.opacity(state.isBright ? 0.12 : 0.055))
-                .padding(.horizontal, 16)
-                .frame(height: 46)
+                .padding(.horizontal, 8)
+                .frame(height: 29)
             }
             Spacer(minLength: 0)
         }

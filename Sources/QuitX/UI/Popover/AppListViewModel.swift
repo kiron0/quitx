@@ -17,7 +17,6 @@ final class AppListViewModel: ObservableObject {
     @Published private(set) var toastIsError: Bool = false
     @Published private(set) var pendingAppIds: Set<String> = []
     @Published private(set) var isBatchQuitting: Bool = false
-    @Published private(set) var failedAppsAwaitingForceQuit: [AppInfo] = []
     @Published var currentQuote: String = "Don't give up quitting ⚡"
     @Published var listNeedsScrolling: Bool = false
     @Published var arrowX: CGFloat = 135
@@ -177,7 +176,7 @@ final class AppListViewModel: ObservableObject {
         await refresh()
         if succeeded {
             triggerToast(message: "\(app.name) quit", isError: false)
-        } else if failedAppsAwaitingForceQuit.isEmpty {
+        } else {
             triggerToast(message: "Couldn’t quit \(app.name)", isError: true)
         }
     }
@@ -207,7 +206,7 @@ final class AppListViewModel: ObservableObject {
         if failureCount == 0 {
             let noun = successfulIds.count == 1 ? "app" : "apps"
             triggerToast(message: "\(successfulIds.count) \(noun) quit", isError: false)
-        } else if failedAppsAwaitingForceQuit.isEmpty {
+        } else {
             triggerToast(
                 message: "\(successfulIds.count) quit, \(failureCount) failed",
                 isError: true
@@ -227,51 +226,15 @@ final class AppListViewModel: ObservableObject {
     }
 
 
-    func dismissForceQuitPrompt() {
-        failedAppsAwaitingForceQuit.removeAll()
-    }
-
-    func forceQuitFailedApps() async {
-        let targets = failedAppsAwaitingForceQuit
-        guard !targets.isEmpty else { return }
-        failedAppsAwaitingForceQuit.removeAll()
-
-        let targetIds = Set(targets.map(\.id))
-        pendingAppIds.formUnion(targetIds)
-        defer { pendingAppIds.subtract(targetIds) }
-
-        let results = await QuitService.shared.quit(apps: targets, force: true)
-        let successfulIds = Set(results.filter(\.success).map { $0.app.id })
-        let failureCount = targets.count - successfulIds.count
-        selected.subtract(successfulIds)
-        await refresh()
-
-        if failureCount == 0 {
-            triggerToast(message: "\(successfulIds.count) force quit", isError: false)
-        } else {
-            triggerToast(message: "\(successfulIds.count) force quit, \(failureCount) failed", isError: true)
-        }
-    }
-
     private func resolveFailures(in results: [QuitResult], initiallyForced: Bool) async -> [QuitResult] {
         guard !initiallyForced else { return results }
         let failedApps = results.filter { !$0.success }.map(\.app)
         guard !failedApps.isEmpty else { return results }
 
-        switch configStore.config.onQuitFailure ?? .error {
-        case .error:
-            return results
-        case .prompt:
-            let existingIds = Set(failedAppsAwaitingForceQuit.map(\.id))
-            failedAppsAwaitingForceQuit.append(contentsOf: failedApps.filter { !existingIds.contains($0.id) })
-            StatusItemController.shared?.showPopover()
-            return results
-        case .force:
-            let retryResults = await QuitService.shared.quit(apps: failedApps, force: true)
-            let retryById = Dictionary(uniqueKeysWithValues: retryResults.map { ($0.app.id, $0) })
-            return results.map { result in
-                result.success ? result : (retryById[result.app.id] ?? result)
-            }
+        let retryResults = await QuitService.shared.quit(apps: failedApps, force: true)
+        let retryById = Dictionary(uniqueKeysWithValues: retryResults.map { ($0.app.id, $0) })
+        return results.map { result in
+            result.success ? result : (retryById[result.app.id] ?? result)
         }
     }
 

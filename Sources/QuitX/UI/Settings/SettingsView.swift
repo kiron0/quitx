@@ -48,7 +48,7 @@ enum SettingsTab: String, CaseIterable {
 
     var contentHeight: CGFloat {
         switch self {
-        case .general:   return 505
+        case .general:   return 475
         case .exclude:   return 300
         case .shortcuts: return 215
         case .support:   return 139
@@ -169,11 +169,14 @@ struct ExcludeTabView: View {
                             state.toggleAll(configStore.config.exclude)
                         } label: {
                             HStack(spacing: 8) {
-                                excludeCheckbox(isSelected: state.allSelected(configStore.config.exclude))
+                                QuitXSelectionCheckbox(isSelected: state.allSelected(configStore.config.exclude))
                                 Text(state.allSelected(configStore.config.exclude) ? "Deselect All" : "Select All")
                                     .font(.system(size: 11.5, weight: .medium))
                                     .foregroundStyle(Color.primary)
                                 Spacer()
+                                Text("\(configStore.config.exclude.count) excluded")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(Color.secondary)
                             }
                             .padding(.horizontal, 10)
                             .frame(height: 30)
@@ -232,9 +235,6 @@ struct ExcludeTabView: View {
                 .disabled(state.selectedIdentifiers.isEmpty)
 
                 Spacer()
-
-                Text("\(configStore.config.exclude.count) excluded")
-                    .foregroundStyle(Color.secondary)
             }
             .font(.system(size: 11.5))
         }
@@ -255,18 +255,6 @@ struct ExcludeTabView: View {
         }
     }
 
-    private func excludeCheckbox(isSelected: Bool) -> some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 3)
-                .fill(isSelected ? QuitXTheme.accent : Color.primary.opacity(0.08))
-                .frame(width: 14, height: 14)
-            if isSelected {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 8, weight: .bold))
-                    .foregroundStyle(Color.black.opacity(0.9))
-            }
-        }
-    }
 }
 
 private final class ExcludeTabState: ObservableObject {
@@ -322,6 +310,7 @@ private struct ExcludeRemovalRequest: Identifiable {
 private struct ExcludedAppRow: View {
     let identifier: String
     let isSelected: Bool
+    @StateObject private var state = ExcludedAppRowState()
 
     private var appURL: URL? {
         NSWorkspace.shared.urlForApplication(withBundleIdentifier: identifier)
@@ -339,16 +328,7 @@ private struct ExcludedAppRow: View {
 
     var body: some View {
         HStack(spacing: 9) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 3)
-                    .fill(isSelected ? QuitXTheme.accent : Color.primary.opacity(0.08))
-                    .frame(width: 14, height: 14)
-                if isSelected {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 8, weight: .bold))
-                        .foregroundStyle(Color.black.opacity(0.9))
-                }
-            }
+            QuitXSelectionCheckbox(isSelected: isSelected)
 
             Group {
                 if let appURL {
@@ -363,27 +343,28 @@ private struct ExcludedAppRow: View {
                         .padding(3)
                 }
             }
-            .frame(width: 22, height: 22)
+            .frame(width: 18, height: 18)
 
-            VStack(alignment: .leading, spacing: 1) {
-                Text(displayName)
-                    .font(.system(size: 12.5))
-                    .foregroundStyle(Color.primary)
-                    .lineLimit(1)
-
-                if displayName != identifier {
-                    Text(identifier)
-                        .font(.system(size: 10.5))
-                        .foregroundStyle(Color.secondary)
-                        .lineLimit(1)
-                }
-            }
+            Text(displayName)
+                .font(.system(size: 12.5))
+                .foregroundStyle(Color.primary)
+                .lineLimit(1)
 
             Spacer(minLength: 6)
         }
-        .padding(.horizontal, 10)
-        .frame(height: 40)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3.5)
+        .contentShape(Rectangle())
+        .background(
+            RoundedRectangle(cornerRadius: 3.5)
+                .fill(state.isHovered ? Color.primary.opacity(0.07) : Color.clear)
+        )
+        .onHover { state.isHovered = $0 }
     }
+}
+
+private final class ExcludedAppRowState: ObservableObject {
+    @Published var isHovered = false
 }
 
 final class GeneralTabState: ObservableObject {
@@ -583,21 +564,6 @@ struct GeneralTabCloneView: View {
                 HelpPopoverButton(text: "You can also temporarily toggle between quit and force quit by holding ⌥ (Option key). ⌥")
             }
 
-            row(label: "On Failure:") {
-                Picker("", selection: Binding(
-                    get: { configStore.config.onQuitFailure ?? .error },
-                    set: { configStore.config.onQuitFailure = $0; configStore.save() }
-                )) {
-                    Text("Show error").tag(OnQuitFailureMode.error)
-                    Text("Ask to force quit").tag(OnQuitFailureMode.prompt)
-                    Text("Force quit automatically").tag(OnQuitFailureMode.force)
-                }
-                .frame(width: 175, alignment: .leading)
-                .labelsHidden()
-            } help: {
-                HelpPopoverButton(text: "Choose what QuitX does when an app does not quit normally.")
-            }
-
             row(label: "Reset:") {
                 Button("Reset all") {
                     configStore.config = QuitXConfig.default
@@ -615,7 +581,7 @@ struct GeneralTabCloneView: View {
         .padding(.horizontal, 20)
         .padding(.top, 14)
         .padding(.bottom, 10)
-        .frame(width: 400, height: 505, alignment: .topLeading)
+        .frame(width: 400, height: 475, alignment: .topLeading)
         .background(QuitXTheme.windowBackground)
         .onAppear {
             state.syncFromMinutes(configStore.config.quitInactiveAfterMinutes)

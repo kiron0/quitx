@@ -52,17 +52,7 @@ struct AppRowView: View {
     var body: some View {
         HStack(spacing: 8) {
 
-            ZStack {
-                RoundedRectangle(cornerRadius: 2.5)
-                    .fill(isSelected ? goldColor : Color.primary.opacity(0.08))
-                    .frame(width: 14, height: 14)
-
-                if isSelected {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 8, weight: .bold))
-                        .foregroundStyle(.black.opacity(0.9))
-                }
-            }
+            QuitXSelectionCheckbox(isSelected: isSelected)
 
             Group {
                 if let icon = iconLoader.icon {

@@ -16,12 +16,11 @@ struct QuitXConfig: Codable, Equatable, Sendable {
     var quitInactiveAfterMinutes: Int = 0
     var disableQuitTips: Bool = false
     var sortBy: SortBy = .name
-    var onQuitFailure: OnQuitFailureMode?
 
     private enum CodingKeys: String, CodingKey {
         case exclude, force, includeFinder, includeTrash, includeBackground, groupBackground
         case defaultSelectAll, neverQuitMusic, musicApps, autoUpdate, confirmQuitAll, playSounds
-        case quitInactiveAfterMinutes, disableQuitTips, sortBy, onQuitFailure
+        case quitInactiveAfterMinutes, disableQuitTips, sortBy
     }
 
     init(
@@ -39,8 +38,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         playSounds: Bool = true,
         quitInactiveAfterMinutes: Int = 0,
         disableQuitTips: Bool = false,
-        sortBy: SortBy = .name,
-        onQuitFailure: OnQuitFailureMode? = nil
+        sortBy: SortBy = .name
     ) {
         self.exclude = exclude
         self.force = force
@@ -57,7 +55,6 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         self.quitInactiveAfterMinutes = quitInactiveAfterMinutes
         self.disableQuitTips = disableQuitTips
         self.sortBy = sortBy
-        self.onQuitFailure = onQuitFailure
     }
 
     init(from decoder: Decoder) throws {
@@ -78,7 +75,6 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         quitInactiveAfterMinutes = try container.decodeIfPresent(Int.self, forKey: .quitInactiveAfterMinutes) ?? defaults.quitInactiveAfterMinutes
         disableQuitTips = try container.decodeIfPresent(Bool.self, forKey: .disableQuitTips) ?? defaults.disableQuitTips
         sortBy = try container.decodeIfPresent(SortBy.self, forKey: .sortBy) ?? defaults.sortBy
-        onQuitFailure = try container.decodeIfPresent(OnQuitFailureMode.self, forKey: .onQuitFailure)
     }
 
     enum ForceMode: String, Codable, Equatable, Sendable { case normal, force }
@@ -121,8 +117,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
             playSounds: true,
             quitInactiveAfterMinutes: 0,
             disableQuitTips: false,
-            sortBy: .name,
-            onQuitFailure: nil
+            sortBy: .name
         )
     }
 }

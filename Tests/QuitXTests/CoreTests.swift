@@ -205,15 +205,6 @@ struct AppInfoTests {
         #expect(res.forced)
         #expect(res.error == "Access denied")
     }
-
-
-    @Test("OnQuitFailureMode enum cases")
-    func testOnQuitFailureModeCases() {
-        #expect(OnQuitFailureMode.allCases.count == 3)
-        #expect(OnQuitFailureMode.prompt.rawValue == "prompt")
-        #expect(OnQuitFailureMode.force.rawValue == "force")
-        #expect(OnQuitFailureMode.error.rawValue == "error")
-    }
 }
 
 @Suite("QuitXConfig Tests")
@@ -237,7 +228,6 @@ struct QuitXConfigTests {
         #expect(cfg.quitInactiveAfterMinutes == 0)
         #expect(!cfg.disableQuitTips)
         #expect(cfg.sortBy == .name)
-        #expect(cfg.onQuitFailure == nil)
     }
 
     @Test("Config Codable roundtrip")
@@ -256,7 +246,6 @@ struct QuitXConfigTests {
         cfg.quitInactiveAfterMinutes = 120
         cfg.disableQuitTips = true
         cfg.sortBy = .memoryDesc
-        cfg.onQuitFailure = .force
 
         let data = try JSONEncoder().encode(cfg)
         let decoded = try JSONDecoder().decode(QuitXConfig.self, from: data)
@@ -427,13 +416,6 @@ struct QuitXConfigTests {
     func testConfigMutationSortBy() {
         var a = QuitXConfig.default
         a.sortBy = .cpuAsc
-        #expect(a != QuitXConfig.default)
-    }
-
-    @Test("Config equality when modifying onQuitFailure")
-    func testConfigMutationOnQuitFailure() {
-        var a = QuitXConfig.default
-        a.onQuitFailure = .force
         #expect(a != QuitXConfig.default)
     }
 }
