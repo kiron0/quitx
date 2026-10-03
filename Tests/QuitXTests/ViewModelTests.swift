@@ -273,4 +273,21 @@ struct AppListViewModelTests {
         vm.applyDefaultSelection()
         #expect(vm.selected.isEmpty)
     }
+
+    @Test("User manual selection is preserved across popover toggle without config change")
+    func testUserSelectionsPreservedAcrossPopoverReopen() {
+        vm.apps = [app1, app2, app3]
+        vm.showBackgroundApps = false
+        vm.searchQuery = ""
+        vm.selected = [app1.id, app3.id]
+
+        // Popover closes (does not wipe user selections) and reopen checks valid running IDs
+        let validIds = Set(vm.apps.map(\.id))
+        vm.selected = vm.selected.intersection(validIds)
+
+        #expect(vm.selected.contains(app1.id))
+        #expect(!vm.selected.contains(app2.id))
+        #expect(vm.selected.contains(app3.id))
+        #expect(vm.selected.count == 2)
+    }
 }

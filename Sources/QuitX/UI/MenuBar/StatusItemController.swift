@@ -206,7 +206,6 @@ final class StatusItemController: NSObject {
     func closePopover() {
         lastCloseTimestamp = Date()
         stopLiveMonitoring()
-        AppListViewModel.shared.resetSelectionState()
         window?.orderOut(nil)
     }
 
