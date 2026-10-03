@@ -50,7 +50,6 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         win.title = targetTab.rawValue
         win.isOpaque = true
         win.backgroundColor = QuitXTheme.windowBackgroundNSColor
-        win.appearance = NSApp.effectiveAppearance
         win.isMovableByWindowBackground = false
         win.hidesOnDeactivate = false
         win.isReleasedWhenClosed = false

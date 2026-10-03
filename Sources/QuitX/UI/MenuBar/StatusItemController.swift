@@ -263,7 +263,6 @@ final class StatusItemController: NSObject {
     private func showContextMenu() {
         closePopover()
         let menu = NSMenu()
-        menu.appearance = NSApp.effectiveAppearance
 
         menu.addItem(MenuHelper.makeItem(
             title: "Settings",

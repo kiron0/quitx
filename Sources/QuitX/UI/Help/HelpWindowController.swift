@@ -33,7 +33,6 @@ final class HelpWindowController: NSObject, NSWindowDelegate {
         window.isOpaque = true
         window.isReleasedWhenClosed = false
         window.backgroundColor = QuitXTheme.windowBackgroundNSColor
-        window.appearance = NSApp.effectiveAppearance
         window.isMovableByWindowBackground = true
         window.tabbingMode = .disallowed
         window.delegate = self

@@ -10,7 +10,6 @@ struct MainPopoverView: View {
     @EnvironmentObject private var configStore: ConfigStore
     @ObservedObject private var vm = AppListViewModel.shared
     @StateObject private var uiState = PopoverUIState()
-    @FocusState private var isSearchFocused: Bool
 
     private let goldColor = QuitXTheme.accent
     private let goldGradient = LinearGradient(
@@ -62,9 +61,6 @@ struct MainPopoverView: View {
                 .stroke(Color.primary.opacity(0.12), lineWidth: 0.5)
         )
         .clipShape(PopoverContainerShape(arrowX: vm.arrowX, cornerRadius: 10))
-        .onAppear {
-            isSearchFocused = false
-        }
         .onChange(of: vm.filteredApps.count) {
             StatusItemController.shared?.updatePopoverSize()
         }
@@ -177,7 +173,7 @@ struct MainPopoverView: View {
                     .textFieldStyle(.plain)
                     .font(.system(size: 11.5))
                     .foregroundStyle(Color.primary)
-                    .focused($isSearchFocused)
+                    .disableInitialFocus()
 
                 if !vm.searchQuery.isEmpty {
                     Button {
@@ -288,7 +284,6 @@ private struct PopoverOptionsButton: NSViewRepresentable {
 
         @objc func showMenu(_ button: NSButton) {
             let menu = NSMenu()
-            menu.appearance = NSApp.effectiveAppearance
 
             let bgTitle = parent.showsBackgroundApps ? "Hide background apps" : "View background apps"
             let bgAsset = parent.showsBackgroundApps ? "settings-background-apps-hide" : "settings-background-apps-show"

@@ -218,7 +218,6 @@ private struct AppRowOptionsButton: NSViewRepresentable {
 
         @objc func showMenu(_ button: NSButton) {
             let menu = NSMenu()
-            menu.appearance = NSApp.effectiveAppearance
 
             let quitTitle = parent.isForced ? "Force Quit" : "Quit"
             let quitAsset = parent.isForced ? "settings-force-quit" : "settings-quit"

@@ -337,6 +337,7 @@ struct HelpView: View {
             TextField("Search Help...", text: $state.searchText)
                 .textFieldStyle(.plain)
                 .font(.system(size: 12))
+                .disableInitialFocus()
 
             if !state.searchText.isEmpty {
                 Button {

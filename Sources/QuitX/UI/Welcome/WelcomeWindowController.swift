@@ -52,7 +52,6 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         win.setContentSize(NSSize(width: windowWidth, height: ceil(fittingSize.height)))
         win.isOpaque = true
         win.backgroundColor = QuitXTheme.windowBackgroundNSColor
-        win.appearance = NSApp.effectiveAppearance
         win.isMovableByWindowBackground = true
         win.standardWindowButton(.closeButton)?.isEnabled = true
         win.standardWindowButton(.closeButton)?.isHidden = false
