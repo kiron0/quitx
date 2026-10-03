@@ -17,6 +17,8 @@ enum QuitXConstants {
     static let githubRepo = "quitx"
     static let githubURL = URL(string: "https://github.com/kiron0/quitx")!
     static let githubIssuesURL = URL(string: "https://github.com/kiron0/quitx/issues")!
+    static let updateWorkerURL = URL(string: "https://quitx-update-gatekeeper.kiron.workers.dev/latest")
+    static let updateSecretKey = "qx_live_9a7d83f2e104cb5a"
 
     static var currentYear: Int {
         Calendar.current.component(.year, from: Date())

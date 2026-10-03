@@ -14,6 +14,17 @@ struct GitHubRelease: Decodable, Equatable {
     let assets: [GitHubReleaseAsset]?
 }
 
+struct GatekeeperRelease: Decodable, Equatable {
+    let version: String
+    let releaseName: String?
+    let releaseNotes: String?
+    let publishedAt: String?
+    let downloadUrl: String
+    let sizeBytes: Int64?
+    let fileName: String?
+    let digest: String?
+}
+
 @MainActor
 final class UpdateChecker: ObservableObject {
     static let shared = UpdateChecker()
@@ -39,6 +50,35 @@ final class UpdateChecker: ObservableObject {
         guard !isChecking else { return }
         isChecking = true
         defer { isChecking = false }
+
+        if let workerURL = QuitXConstants.updateWorkerURL {
+            var workerRequest = URLRequest(url: workerURL)
+            workerRequest.setValue(QuitXConstants.updateSecretKey, forHTTPHeaderField: "X-QuitX-Key")
+            workerRequest.setValue("QuitX-App", forHTTPHeaderField: "User-Agent")
+            workerRequest.cachePolicy = .reloadIgnoringLocalCacheData
+            workerRequest.timeoutInterval = 8.0
+
+            if let (data, response) = try? await URLSession.shared.data(for: workerRequest),
+               let httpResponse = response as? HTTPURLResponse {
+                if httpResponse.statusCode == 200 {
+                    if let release = try? JSONDecoder().decode(GatekeeperRelease.self, from: data) {
+                        let latestVersionRaw = release.version.trimmingCharacters(in: CharacterSet(charactersIn: "vV "))
+                        let downloadURL = URL(string: release.downloadUrl)
+
+                        if isVersion(latestVersionRaw, greaterThan: currentVersion) {
+                            showUpdateAvailableAlert(latestVersion: latestVersionRaw, downloadURL: downloadURL, releaseURL: releasesWebURL)
+                        } else {
+                            showUpToDateAlert(isUserInitiated: isUserInitiated)
+                        }
+                        return
+                    }
+                } else if httpResponse.statusCode == 404 {
+                    showUpToDateAlert(isUserInitiated: isUserInitiated)
+                    return
+                }
+            }
+        }
+
         var request = URLRequest(url: latestReleaseAPIURL)
         request.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
         request.setValue("QuitX-App", forHTTPHeaderField: "User-Agent")
@@ -52,7 +92,6 @@ final class UpdateChecker: ObservableObject {
             }
 
             if httpResponse.statusCode == 404 {
-
                 showUpToDateAlert(isUserInitiated: isUserInitiated)
                 return
             }

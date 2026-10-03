@@ -42,6 +42,31 @@ struct AppUpdateTests {
         #expect(found.size == 25000000)
     }
 
+    @Test("Gatekeeper Release JSON Decoding")
+    func testGatekeeperReleaseDecoding() throws {
+        let json = """
+        {
+            "version": "1.0.4",
+            "releaseName": "v1.0.4",
+            "releaseNotes": "Fixes and improvements",
+            "publishedAt": "2026-10-03T17:37:26Z",
+            "downloadUrl": "https://updates.example.com/download/12345?key=secret",
+            "sizeBytes": 4384565,
+            "fileName": "QuitX-v1.0.4.dmg",
+            "digest": "sha256:0e358a884c81bd1eb7f0ba654ea0193e4289e4253fa2e22918ad1b389b0f40ca"
+        }
+        """
+
+        let data = try #require(json.data(using: .utf8))
+        let release = try JSONDecoder().decode(GatekeeperRelease.self, from: data)
+
+        #expect(release.version == "1.0.4")
+        #expect(release.releaseName == "v1.0.4")
+        #expect(release.sizeBytes == 4384565)
+        #expect(release.downloadUrl.contains("/download/12345"))
+        #expect(release.digest?.contains("sha256") == true)
+    }
+
     @Test("DMG Asset Missing Returns Nil")
     func testMissingDMGAsset() throws {
         let assets = [
