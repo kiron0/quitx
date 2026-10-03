@@ -4,8 +4,37 @@ final class AppListService {
     static let shared = AppListService()
     private init() {}
 
-    func fetchApps(config: QuitXConfig) -> [AppInfo] {
-        let running = NSWorkspace.shared.runningApplications
+    private struct RunningAppSnapshot: Sendable {
+        let pid: pid_t
+        let name: String
+        let bundleId: String?
+        let isRegular: Bool
+        let isBackground: Bool
+    }
+
+    @MainActor
+    func fetchApps(config: QuitXConfig) async -> [AppInfo] {
+        let running = NSWorkspace.shared.runningApplications.compactMap { app -> RunningAppSnapshot? in
+            guard let name = app.localizedName else { return nil }
+            return RunningAppSnapshot(
+                pid: app.processIdentifier,
+                name: name,
+                bundleId: app.bundleIdentifier,
+                isRegular: app.activationPolicy == .regular,
+                isBackground: app.activationPolicy == .accessory
+            )
+        }
+        let scanTask = Task.detached(priority: .userInitiated) {
+            Self.buildApps(from: running, config: config)
+        }
+        return await withTaskCancellationHandler {
+            await scanTask.value
+        } onCancel: {
+            scanTask.cancel()
+        }
+    }
+
+    private static func buildApps(from running: [RunningAppSnapshot], config: QuitXConfig) -> [AppInfo] {
         let windowCounts = visibleWindowCounts()
         let cpuUsages = fetchCpuUsages()
         let excluded = Set(config.exclude.map { $0.lowercased() })
@@ -16,14 +45,15 @@ final class AppListService {
         let currentPid = ProcessInfo.processInfo.processIdentifier
 
         for app in running {
-            let pid = app.processIdentifier
+            if Task.isCancelled { return [] }
+            let pid = app.pid
             if pid == currentPid { continue }
-            guard let name = app.localizedName else { continue }
-            let bundleId = app.bundleIdentifier
+            let name = app.name
+            let bundleId = app.bundleId
             if let bundleId, QuitXIdentity.supportedBundleIdentifiers.contains(bundleId) { continue }
 
-            let isRegularApp = app.activationPolicy == .regular
-            let isBackground = app.activationPolicy == .accessory
+            let isRegularApp = app.isRegular
+            let isBackground = app.isBackground
 
             if !isRegularApp && !isBackground { continue }
             if isBackground && !config.includeBackground { continue }
@@ -138,7 +168,7 @@ final class AppListService {
         }
     }
 
-    private func fetchCpuUsages() -> [pid_t: Double] {
+    private static func fetchCpuUsages() -> [pid_t: Double] {
         let pipe = Pipe()
         let proc = Process()
         proc.executableURL = URL(fileURLWithPath: "/bin/ps")
@@ -162,7 +192,7 @@ final class AppListService {
         return result
     }
 
-    private func memoryUsage(pid: pid_t) -> UInt64 {
+    private static func memoryUsage(pid: pid_t) -> UInt64 {
         var info = proc_taskinfo()
         let size = MemoryLayout<proc_taskinfo>.size
         let result = proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &info, Int32(size))
@@ -170,7 +200,7 @@ final class AppListService {
         return info.pti_resident_size
     }
 
-    private func visibleWindowCounts() -> [pid_t: Int] {
+    private static func visibleWindowCounts() -> [pid_t: Int] {
         guard let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else {
             return [:]
         }

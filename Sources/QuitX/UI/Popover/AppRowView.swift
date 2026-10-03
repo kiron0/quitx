@@ -44,6 +44,7 @@ struct AppRowView: View {
 
     @StateObject private var state = RowState()
     @StateObject private var iconLoader = IconLoader()
+    @ObservedObject private var configStore = ConfigStore.shared
 
     private let goldColor = QuitXTheme.accent
     private let forceColor = Color(red: 240/255, green: 70/255, blue: 50/255)
@@ -93,9 +94,10 @@ struct AppRowView: View {
                 return false
             }()
 
-            Text(app.cpuFormatted)
+            Text(usageText)
                 .font(.system(size: 10.5, design: .monospaced))
                 .foregroundStyle(Color.secondary)
+                .frame(width: 56, alignment: .trailing)
 
             AppRowOptionsButton(
                 isForced: isOptionKeyPressed,
@@ -138,6 +140,15 @@ struct AppRowView: View {
         .onHover { h in state.isHovered = h }
         .opacity(isPending ? 0.72 : 1)
         .accessibilityValue(isPending ? "Operation in progress" : "")
+    }
+
+    private var usageText: String {
+        switch configStore.config.sortBy {
+        case .memoryDesc, .memoryAsc:
+            return app.memoryFormatted
+        case .cpuDesc, .cpuAsc, .name, .nameDesc:
+            return app.cpuFormatted
+        }
     }
 
     @ViewBuilder

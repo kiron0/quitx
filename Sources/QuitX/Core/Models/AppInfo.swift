@@ -1,6 +1,6 @@
 import Foundation
 
-struct AppInfo: Identifiable, Hashable {
+struct AppInfo: Identifiable, Hashable, Sendable {
     let id: String
     let name: String
     let bundleId: String?
@@ -47,7 +47,7 @@ struct AppInfo: Identifiable, Hashable {
     }
 }
 
-struct QuitResult {
+struct QuitResult: Sendable {
     let app: AppInfo
     let success: Bool
     let forced: Bool
@@ -56,6 +56,6 @@ struct QuitResult {
 
 
 
-enum OnQuitFailureMode: String, Codable, CaseIterable {
+enum OnQuitFailureMode: String, Codable, CaseIterable, Sendable {
     case prompt, force, error
 }

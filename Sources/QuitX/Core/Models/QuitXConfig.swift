@@ -1,6 +1,6 @@
 import Foundation
 
-struct QuitXConfig: Codable, Equatable {
+struct QuitXConfig: Codable, Equatable, Sendable {
     var exclude: [String]
     var force: ForceMode
     var includeFinder: Bool
@@ -81,8 +81,8 @@ struct QuitXConfig: Codable, Equatable {
         onQuitFailure = try container.decodeIfPresent(OnQuitFailureMode.self, forKey: .onQuitFailure)
     }
 
-    enum ForceMode: String, Codable, Equatable { case normal, force }
-    enum SortBy: String, Codable, Equatable, CaseIterable {
+    enum ForceMode: String, Codable, Equatable, Sendable { case normal, force }
+    enum SortBy: String, Codable, Equatable, CaseIterable, Sendable {
         case cpuDesc = "High to Low CPU %"
         case cpuAsc = "Low to High CPU %"
         case memoryDesc = "High to Low Memory"

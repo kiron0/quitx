@@ -121,6 +121,8 @@ final class ExcludeAppPickerWindowController: NSObject, NSWindowDelegate {
     static let shared = ExcludeAppPickerWindowController()
     private var window: NSWindow?
 
+    var isOpen: Bool { window != nil }
+
     func show() {
         if let window {
             window.makeKeyAndOrderFront(nil)
@@ -135,15 +137,21 @@ final class ExcludeAppPickerWindowController: NSObject, NSWindowDelegate {
         let hosting = NSHostingController(rootView: view)
         let window = NSWindow(contentViewController: hosting)
         window.title = "Add Apps to Exclude List"
-        window.styleMask = [.titled, .closable, .resizable]
+        window.styleMask = [.titled, .closable]
+        window.titlebarAppearsTransparent = true
+        window.titlebarSeparatorStyle = .none
+        window.titleVisibility = .visible
         window.setContentSize(NSSize(width: 500, height: 520))
-        window.minSize = NSSize(width: 430, height: 400)
+        window.minSize = window.frame.size
+        window.maxSize = window.frame.size
+        window.isOpaque = true
         window.isReleasedWhenClosed = false
         window.backgroundColor = QuitXTheme.windowBackgroundNSColor
         window.appearance = NSApp.effectiveAppearance
         window.delegate = self
         window.center()
         self.window = window
+        WindowActivationCoordinator.update()
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
@@ -154,6 +162,7 @@ final class ExcludeAppPickerWindowController: NSObject, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) {
         window = nil
+        WindowActivationCoordinator.update()
     }
 }
 
@@ -199,7 +208,7 @@ struct ExcludeAppPickerView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
         }
-        .frame(minWidth: 430, minHeight: 400)
+        .frame(width: 500, height: 520)
         .background(QuitXTheme.windowBackground)
         .task {
             await viewModel.load()

@@ -88,6 +88,20 @@ struct MainPopoverView: View {
         } message: {
             Text("This will close \(vm.selectedVisibleCount) applications.")
         }
+        .alert("Force quit failed apps?", isPresented: Binding(
+            get: { !vm.failedAppsAwaitingForceQuit.isEmpty },
+            set: { _ in }
+        )) {
+            Button("Force Quit", role: .destructive) {
+                Task { await vm.forceQuitFailedApps() }
+            }
+            Button("Cancel", role: .cancel) {
+                vm.dismissForceQuitPrompt()
+            }
+        } message: {
+            let count = vm.failedAppsAwaitingForceQuit.count
+            Text("\(count) \(count == 1 ? "app did" : "apps did") not quit normally.")
+        }
     }
 
     private var quitAllButton: some View {

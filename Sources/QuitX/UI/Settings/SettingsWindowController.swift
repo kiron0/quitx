@@ -16,6 +16,8 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
     private var hostingController: NSHostingController<AnyView>?
     private var toolbar: NSToolbar?
 
+    var isOpen: Bool { window != nil }
+
     func show(tab: SettingsTab? = nil) {
         StatusItemController.shared?.closePopover()
 
@@ -72,7 +74,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         win.contentViewController = hosting
         self.window = win
 
-        NSApp.setActivationPolicy(.regular)
+        WindowActivationCoordinator.update()
 
         if let screen = NSScreen.main ?? NSScreen.screens.first {
             let targetFrame = targetFrameFor(win, tab: targetTab, screen: screen)
@@ -111,7 +113,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         window = nil
         hostingController = nil
         toolbar = nil
-        NSApp.setActivationPolicy(.accessory)
+        WindowActivationCoordinator.update()
     }
 
     func switchToTab(_ tab: SettingsTab) {

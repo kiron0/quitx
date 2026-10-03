@@ -7,6 +7,8 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
     private let windowWidth: CGFloat = 390
     private var window: NSWindow?
 
+    var isOpen: Bool { window != nil }
+
     func showIfFirstLaunch() {
         let key = "quitx_first_launch_seen_v1"
         if !UserDefaults.standard.bool(forKey: key) {
@@ -58,6 +60,7 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         win.isReleasedWhenClosed = false
         win.delegate = self
         self.window = win
+        WindowActivationCoordinator.update()
 
         let targetFrame: NSRect
         if let screen = NSScreen.main ?? NSScreen.screens.first {
@@ -89,6 +92,7 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) {
         window = nil
+        WindowActivationCoordinator.update()
     }
 
     private func windowOrigin(for size: NSSize, on screen: NSScreen) -> NSPoint {

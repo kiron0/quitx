@@ -167,7 +167,7 @@ struct SettingsTabTests {
 
     @Test("SettingsTab content heights")
     func testSettingsTabContentHeights() {
-        #expect(SettingsTab.general.contentHeight == 475)
+        #expect(SettingsTab.general.contentHeight == 505)
         #expect(SettingsTab.exclude.contentHeight == 300)
         #expect(SettingsTab.shortcuts.contentHeight == 215)
         #expect(SettingsTab.support.contentHeight == 139)

@@ -17,9 +17,10 @@ final class ConfigStore: ObservableObject {
         config = decoded
     }
 
-    func save() {
+    func save(refreshAppList: Bool = false) {
         guard let json = try? JSONEncoder().encode(config) else { return }
         UserDefaults.standard.set(json, forKey: Self.userDefaultsKey)
+        guard refreshAppList else { return }
         Task { @MainActor in
             await AppListViewModel.shared.refresh()
             StatusItemController.shared?.updatePopoverSize()
@@ -39,7 +40,7 @@ final class ConfigStore: ObservableObject {
             added += 1
         }
 
-        if added > 0 { save() }
+        if added > 0 { save(refreshAppList: true) }
         return added
     }
 
@@ -47,12 +48,20 @@ final class ConfigStore: ObservableObject {
         let normalized = identifier.lowercased()
         let oldCount = config.exclude.count
         config.exclude.removeAll { $0.lowercased() == normalized }
-        if config.exclude.count != oldCount { save() }
+        if config.exclude.count != oldCount { save(refreshAppList: true) }
+    }
+
+    func removeExcludedApps(_ identifiers: Set<String>) {
+        let normalized = Set(identifiers.map { $0.lowercased() })
+        guard !normalized.isEmpty else { return }
+        let oldCount = config.exclude.count
+        config.exclude.removeAll { normalized.contains($0.lowercased()) }
+        if config.exclude.count != oldCount { save(refreshAppList: true) }
     }
 
     func removeAllExcludedApps() {
         guard !config.exclude.isEmpty else { return }
         config.exclude.removeAll()
-        save()
+        save(refreshAppList: true)
     }
 }

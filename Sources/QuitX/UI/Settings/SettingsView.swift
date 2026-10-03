@@ -34,7 +34,7 @@ enum SettingsTab: String, CaseIterable {
 
     var toolbarImage: NSImage? {
         if let img = AssetImages.load(iconName) {
-            let copy = img.copy() as! NSImage
+            let copy = img.copy() as? NSImage ?? img
             copy.size = NSSize(width: 19, height: 19)
             copy.isTemplate = true
             return copy
@@ -48,7 +48,7 @@ enum SettingsTab: String, CaseIterable {
 
     var contentHeight: CGFloat {
         switch self {
-        case .general:   return 475
+        case .general:   return 505
         case .exclude:   return 300
         case .shortcuts: return 215
         case .support:   return 139
@@ -144,21 +144,10 @@ struct ExcludeTabView: View {
     @StateObject private var state = ExcludeTabState()
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             Text("Apps on this list stay out of manual and automatic Quit actions.")
                 .font(.system(size: 12))
                 .foregroundStyle(Color.secondary)
-
-            HStack {
-                Button {
-                    ExcludeAppPickerWindowController.shared.show()
-                } label: {
-                    Label("Add Apps…", systemImage: "plus")
-                }
-                .font(.system(size: 11.5))
-
-                Spacer()
-            }
 
             Group {
                 if configStore.config.exclude.isEmpty {
@@ -175,15 +164,42 @@ struct ExcludeTabView: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    ScrollView(.vertical, showsIndicators: true) {
-                        LazyVStack(spacing: 0) {
-                            ForEach(Array(configStore.config.exclude.enumerated()), id: \.offset) { index, identifier in
-                                ExcludedAppRow(identifier: identifier) {
-                                    state.pendingRemoval = ExcludeRemovalRequest(identifier: identifier)
-                                }
+                    VStack(spacing: 0) {
+                        Button {
+                            state.toggleAll(configStore.config.exclude)
+                        } label: {
+                            HStack(spacing: 8) {
+                                excludeCheckbox(isSelected: state.allSelected(configStore.config.exclude))
+                                Text(state.allSelected(configStore.config.exclude) ? "Deselect All" : "Select All")
+                                    .font(.system(size: 11.5, weight: .medium))
+                                    .foregroundStyle(Color.primary)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 10)
+                            .frame(height: 30)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
 
-                                if index < configStore.config.exclude.count - 1 {
-                                    Divider().padding(.leading, 38)
+                        Divider().padding(.leading, 32)
+
+                        ScrollView(.vertical, showsIndicators: true) {
+                            LazyVStack(spacing: 0) {
+                                ForEach(Array(configStore.config.exclude.enumerated()), id: \.offset) { index, identifier in
+                                    let normalized = identifier.lowercased()
+                                    Button {
+                                        state.toggle(normalized)
+                                    } label: {
+                                        ExcludedAppRow(
+                                            identifier: identifier,
+                                            isSelected: state.selectedIdentifiers.contains(normalized)
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
+
+                                    if index < configStore.config.exclude.count - 1 {
+                                        Divider().padding(.leading, 42)
+                                    }
                                 }
                             }
                         }
@@ -198,18 +214,29 @@ struct ExcludeTabView: View {
             )
 
             HStack {
-                Text("\(configStore.config.exclude.count) excluded")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color.secondary)
+                Button {
+                    ExcludeAppPickerWindowController.shared.show()
+                } label: {
+                    Label("Add Apps…", systemImage: "plus")
+                }
+
+                Button(state.selectedIdentifiers.count == 1 ? "Remove Selected" : "Remove Selected (\(state.selectedIdentifiers.count))") {
+                    let identifiers = configStore.config.exclude.filter {
+                        state.selectedIdentifiers.contains($0.lowercased())
+                    }
+                    state.pendingRemoval = ExcludeRemovalRequest(
+                        identifiers: identifiers,
+                        totalCount: configStore.config.exclude.count
+                    )
+                }
+                .disabled(state.selectedIdentifiers.isEmpty)
 
                 Spacer()
 
-                Button("Remove All") {
-                    state.showRemoveAllPrompt = true
-                }
-                .font(.system(size: 11.5))
-                .disabled(configStore.config.exclude.isEmpty)
+                Text("\(configStore.config.exclude.count) excluded")
+                    .foregroundStyle(Color.secondary)
             }
+            .font(.system(size: 11.5))
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
@@ -217,52 +244,84 @@ struct ExcludeTabView: View {
         .background(QuitXTheme.windowBackground)
         .alert(item: $state.pendingRemoval) { request in
             Alert(
-                title: Text("Remove from Exclude list?"),
-                message: Text("QuitX may quit \(request.displayName) after removal."),
-                primaryButton: .destructive(Text("Remove")) {
-                    configStore.removeExcludedApp(request.identifier)
+                title: Text(request.removesAll ? "Remove all excluded apps?" : "Remove selected apps?"),
+                message: Text(request.message),
+                primaryButton: .destructive(Text(request.removesAll ? "Remove All" : "Remove")) {
+                    configStore.removeExcludedApps(Set(request.identifiers))
+                    state.selectedIdentifiers.removeAll()
                 },
                 secondaryButton: .cancel()
             )
         }
-        .alert("Remove all excluded apps?", isPresented: $state.showRemoveAllPrompt) {
-            Button("Remove All", role: .destructive) {
-                configStore.removeAllExcludedApps()
+    }
+
+    private func excludeCheckbox(isSelected: Bool) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 3)
+                .fill(isSelected ? QuitXTheme.accent : Color.primary.opacity(0.08))
+                .frame(width: 14, height: 14)
+            if isSelected {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundStyle(Color.black.opacity(0.9))
             }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("QuitX may quit these apps after removal. This action clears the entire Exclude list.")
         }
     }
 }
 
 private final class ExcludeTabState: ObservableObject {
     @Published var pendingRemoval: ExcludeRemovalRequest?
-    @Published var showRemoveAllPrompt = false
+    @Published var selectedIdentifiers: Set<String> = []
+
+    func toggle(_ identifier: String) {
+        if selectedIdentifiers.contains(identifier) {
+            selectedIdentifiers.remove(identifier)
+        } else {
+            selectedIdentifiers.insert(identifier)
+        }
+    }
+
+    func allSelected(_ identifiers: [String]) -> Bool {
+        let all = Set(identifiers.map { $0.lowercased() })
+        return !all.isEmpty && all.isSubset(of: selectedIdentifiers)
+    }
+
+    func toggleAll(_ identifiers: [String]) {
+        let all = Set(identifiers.map { $0.lowercased() })
+        if all.isSubset(of: selectedIdentifiers) {
+            selectedIdentifiers.subtract(all)
+        } else {
+            selectedIdentifiers.formUnion(all)
+        }
+    }
 }
 
 private struct ExcludeRemovalRequest: Identifiable {
-    let identifier: String
-    let displayName: String
+    let identifiers: [String]
+    let removesAll: Bool
 
-    var id: String { identifier.lowercased() }
+    var id: String { identifiers.map { $0.lowercased() }.sorted().joined(separator: "|") }
 
-    init(identifier: String) {
-        self.identifier = identifier
-        if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: identifier),
-           let bundle = Bundle(url: appURL),
-           let name = bundle.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
-            ?? bundle.object(forInfoDictionaryKey: "CFBundleName") as? String {
-            displayName = name
-        } else {
-            displayName = identifier
+    var message: String {
+        if removesAll {
+            return "QuitX may quit these apps after removal. This clears the entire Exclude list."
         }
+        if identifiers.count == 1 {
+            return "QuitX may quit this app after removal."
+        } else {
+            return "QuitX may quit these \(identifiers.count) apps after removal."
+        }
+    }
+
+    init(identifiers: [String], totalCount: Int) {
+        self.identifiers = identifiers
+        self.removesAll = identifiers.count == totalCount
     }
 }
 
 private struct ExcludedAppRow: View {
     let identifier: String
-    let onRemove: () -> Void
+    let isSelected: Bool
 
     private var appURL: URL? {
         NSWorkspace.shared.urlForApplication(withBundleIdentifier: identifier)
@@ -280,6 +339,17 @@ private struct ExcludedAppRow: View {
 
     var body: some View {
         HStack(spacing: 9) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(isSelected ? QuitXTheme.accent : Color.primary.opacity(0.08))
+                    .frame(width: 14, height: 14)
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(Color.black.opacity(0.9))
+                }
+            }
+
             Group {
                 if let appURL {
                     Image(nsImage: NSWorkspace.shared.icon(forFile: appURL.path))
@@ -310,14 +380,6 @@ private struct ExcludedAppRow: View {
             }
 
             Spacer(minLength: 6)
-
-            Button(action: onRemove) {
-                Image(systemName: "minus.circle.fill")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Color.secondary)
-            }
-            .buttonStyle(.plain)
-            .help("Remove \(displayName) from Exclude list")
         }
         .padding(.horizontal, 10)
         .frame(height: 40)
@@ -386,7 +448,7 @@ struct GeneralTabCloneView: View {
                     set: {
                         configStore.config.includeBackground = $0
                         AppListViewModel.shared.showBackgroundApps = $0
-                        configStore.save()
+                        configStore.save(refreshAppList: true)
                     }
                 ))
             } help: {
@@ -396,7 +458,7 @@ struct GeneralTabCloneView: View {
             row(label: "") {
                 toggle("Group background instances", isOn: Binding(
                     get: { configStore.config.groupBackground },
-                    set: { configStore.config.groupBackground = $0; configStore.save() }
+                    set: { configStore.config.groupBackground = $0; configStore.save(refreshAppList: true) }
                 ))
             } help: {
                 HelpPopoverButton(text: "Check this box to group multiple instances of the same background app into a single line item. Leave it unchecked to give each app instance its own line. 👨‍👨‍👦‍👦 -> 👨👨👨👨")
@@ -405,7 +467,7 @@ struct GeneralTabCloneView: View {
             row(label: "") {
                 toggle("Never quit music apps", isOn: Binding(
                     get: { configStore.config.neverQuitMusic },
-                    set: { configStore.config.neverQuitMusic = $0; configStore.save() }
+                    set: { configStore.config.neverQuitMusic = $0; configStore.save(refreshAppList: true) }
                 ))
             } help: {
                 HelpPopoverButton(text: "Don't stop believin', hold on to that feelin' — and your music! Exclude Spotify and Apple Music from auto or manual Quit actions. 🎵")
@@ -417,7 +479,6 @@ struct GeneralTabCloneView: View {
                     set: {
                         configStore.config.defaultSelectAll = !$0
                         configStore.save()
-                        Task { @MainActor in await AppListViewModel.shared.refresh() }
                     }
                 ))
             } help: {
@@ -436,7 +497,7 @@ struct GeneralTabCloneView: View {
             row(label: "Extras:") {
                 toggle("Include Finder Windows in list", isOn: Binding(
                     get: { configStore.config.includeFinder },
-                    set: { configStore.config.includeFinder = $0; configStore.save() }
+                    set: { configStore.config.includeFinder = $0; configStore.save(refreshAppList: true) }
                 ))
             } help: {
                 HelpPopoverButton(text: "Find yourself finding Finder windows too often? Enable this to easily close them all when you quit all apps.")
@@ -445,7 +506,7 @@ struct GeneralTabCloneView: View {
             row(label: "") {
                 toggle("Include Empty Trash in list", isOn: Binding(
                     get: { configStore.config.includeTrash },
-                    set: { configStore.config.includeTrash = $0; configStore.save() }
+                    set: { configStore.config.includeTrash = $0; configStore.save(refreshAppList: true) }
                 ))
             } help: {
                 HelpPopoverButton(text: "A truly fresh start without a restart. Take out the trash at the same time you take out the apps! 🗑️🧹")
@@ -496,7 +557,7 @@ struct GeneralTabCloneView: View {
             row(label: "Sort:") {
                 Picker("", selection: Binding(
                     get: { configStore.config.sortBy },
-                    set: { configStore.config.sortBy = $0; configStore.save() }
+                    set: { configStore.config.sortBy = $0; configStore.save(refreshAppList: true) }
                 )) {
                     ForEach(QuitXConfig.SortBy.allCases, id: \.self) { sortOpt in
                         Text(sortOpt.rawValue).tag(sortOpt)
@@ -505,7 +566,7 @@ struct GeneralTabCloneView: View {
                 .frame(width: 175, alignment: .leading)
                 .labelsHidden()
             } help: {
-                HelpPopoverButton(text: "Sort the list of apps alphabetically or by CPU usage. Made possible by this magical sorting unicorn. ✨🦄")
+                HelpPopoverButton(text: "Sort the app list alphabetically, by CPU usage, or by memory usage. The row metric follows the selected resource sort.")
             }
 
             row(label: "Default:") {
@@ -522,10 +583,26 @@ struct GeneralTabCloneView: View {
                 HelpPopoverButton(text: "You can also temporarily toggle between quit and force quit by holding ⌥ (Option key). ⌥")
             }
 
+            row(label: "On Failure:") {
+                Picker("", selection: Binding(
+                    get: { configStore.config.onQuitFailure ?? .error },
+                    set: { configStore.config.onQuitFailure = $0; configStore.save() }
+                )) {
+                    Text("Show error").tag(OnQuitFailureMode.error)
+                    Text("Ask to force quit").tag(OnQuitFailureMode.prompt)
+                    Text("Force quit automatically").tag(OnQuitFailureMode.force)
+                }
+                .frame(width: 175, alignment: .leading)
+                .labelsHidden()
+            } help: {
+                HelpPopoverButton(text: "Choose what QuitX does when an app does not quit normally.")
+            }
+
             row(label: "Reset:") {
                 Button("Reset all") {
                     configStore.config = QuitXConfig.default
-                    configStore.save()
+                    AppListViewModel.shared.showBackgroundApps = configStore.config.includeBackground
+                    configStore.save(refreshAppList: true)
                     state.syncFromMinutes(configStore.config.quitInactiveAfterMinutes)
                 }
                 .font(.system(size: 11.5))
@@ -538,7 +615,7 @@ struct GeneralTabCloneView: View {
         .padding(.horizontal, 20)
         .padding(.top, 14)
         .padding(.bottom, 10)
-        .frame(width: 400, height: 475, alignment: .topLeading)
+        .frame(width: 400, height: 505, alignment: .topLeading)
         .background(QuitXTheme.windowBackground)
         .onAppear {
             state.syncFromMinutes(configStore.config.quitInactiveAfterMinutes)
