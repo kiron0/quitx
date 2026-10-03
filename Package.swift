@@ -25,7 +25,9 @@ let package = Package(
             linkerSettings: [
                 .unsafeFlags([
                     "-F", "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
-                    "-framework", "Testing"
+                    "-framework", "Testing",
+                    "-Xlinker", "-rpath", "-Xlinker", "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+                    "-Xlinker", "-rpath", "-Xlinker", "/Library/Developer/CommandLineTools/Library/Developer/usr/lib"
                 ])
             ]
         ),
