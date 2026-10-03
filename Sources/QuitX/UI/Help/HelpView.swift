@@ -273,19 +273,10 @@ struct HelpView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
+        HStack(spacing: 0) {
+            sidebar
 
-            Divider()
-
-            HStack(spacing: 0) {
-                sidebar
-
-                Divider()
-
-                detail
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            detail
         }
         .frame(minWidth: 740, maxWidth: .infinity, minHeight: 520, maxHeight: .infinity)
         .background {
@@ -299,78 +290,13 @@ struct HelpView: View {
         }
     }
 
-    private var header: some View {
-        Text(selectedTopic?.title ?? "Help")
-            .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(Color.primary)
-            .frame(maxWidth: .infinity)
-            .frame(height: 38)
-            .background(QuitXTheme.windowBackground)
-    }
-
     private var sidebar: some View {
-        VStack(spacing: 0) {
-            searchBar
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-
-            Divider()
-
-            if filteredTopics.isEmpty {
-                emptySearch
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                topicList
-            }
-        }
-        .frame(width: 235)
-        .frame(maxHeight: .infinity)
-        .background(QuitXTheme.windowBackground)
-    }
-
-    private var searchBar: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 12))
-                .foregroundStyle(Color.secondary)
-
-            TextField("Search Help...", text: $state.searchText)
-                .textFieldStyle(.plain)
-                .font(.system(size: 12))
-                .disableInitialFocus()
-
-            if !state.searchText.isEmpty {
-                Button {
-                    state.searchText = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color.secondary)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 5)
-        .background(Color(NSColor.controlBackgroundColor))
-        .clipShape(RoundedRectangle(cornerRadius: 6))
-        .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .stroke(Color.primary.opacity(0.12), lineWidth: 1)
-        )
-    }
-
-    private var emptySearch: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 24))
-                .foregroundStyle(Color.secondary)
-            Text("No Results")
-                .font(.system(size: 13, weight: .semibold))
-            Text("Try another search.")
-                .font(.system(size: 11.5))
-                .foregroundStyle(Color.secondary)
-        }
+        topicList
+            .padding(.top, 48)
+            .padding(.bottom, 12)
+            .frame(width: 220)
+            .frame(maxHeight: .infinity)
+            .background(Color.primary.opacity(0.02))
     }
 
     private var topicList: some View {
@@ -411,17 +337,17 @@ struct HelpView: View {
                     .frame(width: 18)
 
                 Text(topic.title)
-                    .font(.system(size: 12.5, weight: isSelected ? .semibold : .regular))
+                    .font(.system(size: 13, weight: isSelected ? .medium : .regular))
                     .foregroundStyle(Color.primary)
                     .lineLimit(1)
 
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
             .background(
-                RoundedRectangle(cornerRadius: 5)
-                    .fill(isSelected ? QuitXTheme.accent.opacity(0.18) : (state.hoveredTopicId == topic.id ? Color.primary.opacity(0.06) : Color.clear))
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(isSelected ? QuitXTheme.accent.opacity(0.18) : (state.hoveredTopicId == topic.id ? Color.primary.opacity(0.05) : Color.clear))
             )
             .contentShape(Rectangle())
         }
@@ -440,24 +366,23 @@ struct HelpView: View {
         if let topic = selectedTopic {
             VStack(spacing: 0) {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 18) {
+                    VStack(alignment: .leading, spacing: 20) {
                         contentHeader(for: topic)
 
                         ForEach(Array(topic.sections.enumerated()), id: \.offset) { _, section in
-                            sectionView(section)
+                            sectionCard(section)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 20)
+                    .padding(.horizontal, 28)
+                    .padding(.top, 40)
+                    .padding(.bottom, 20)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                Divider()
-
                 footerLinks(for: topic)
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 10)
+                    .padding(.horizontal, 28)
+                    .padding(.vertical, 14)
                     .background(QuitXTheme.windowBackground)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -477,45 +402,54 @@ struct HelpView: View {
     }
 
     private func contentHeader(for topic: QuitXHelpTopic) -> some View {
-        HStack(alignment: .center, spacing: 10) {
-            Image(systemName: topic.symbol)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(QuitXTheme.accent)
-                .frame(width: 28, height: 28)
-                .background(QuitXTheme.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 7))
+        VStack(alignment: .leading, spacing: 6) {
+            Text(topic.title)
+                .font(.system(size: 20, weight: .bold))
+                .foregroundStyle(Color.primary)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(topic.title)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Color.primary)
-                Text(topic.summary)
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(Color.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            Text(topic.summary)
+                .font(.system(size: 12.5))
+                .foregroundStyle(Color.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .padding(.bottom, 4)
     }
 
-    private func sectionView(_ section: QuitXHelpSection) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
+    private func sectionCard(_ section: QuitXHelpSection) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
             Text(section.title)
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(Color.primary)
 
-            Text(section.body)
-                .font(.system(size: 12))
-                .foregroundStyle(Color.primary.opacity(0.88))
-                .lineSpacing(2.5)
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(section.body)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.primary.opacity(0.88))
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            ForEach(section.bullets, id: \.self) { bullet in
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text("•")
-                    Text(bullet)
+                if !section.bullets.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(section.bullets, id: \.self) { bullet in
+                            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                                Text("•")
+                                    .foregroundStyle(Color.secondary)
+                                Text(bullet)
+                            }
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.primary.opacity(0.88))
+                        }
+                    }
+                    .padding(.top, 2)
                 }
-                .font(.system(size: 12))
-                .foregroundStyle(Color.primary.opacity(0.88))
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(14)
+            .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 8))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.primary.opacity(0.09), lineWidth: 0.5)
+            )
         }
     }
 
