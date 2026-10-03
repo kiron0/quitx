@@ -62,15 +62,17 @@ struct AppRowView: View {
             )
             .frame(width: 16, height: 16)
 
+            let isForced = isOptionKeyPressed ? (configStore.config.force != .force) : (configStore.config.force == .force)
+
             Button {
-                onQuit(isOptionKeyPressed)
+                onQuit(isForced)
             } label: {
-                quitButtonIcon
+                quitButtonIcon(isForced: isForced)
             }
             .buttonStyle(.plain)
             .disabled(isPending)
-            .help(isPending ? "Operation in progress" : (isOptionKeyPressed ? "Force quit \(app.name)" : "Quit \(app.name)"))
-            .accessibilityLabel(isPending ? "Operation in progress" : (isOptionKeyPressed ? "Force quit \(app.name)" : "Quit \(app.name)"))
+            .help(isPending ? "Operation in progress" : (isForced ? "Force quit \(app.name)" : "Quit \(app.name)"))
+            .accessibilityLabel(isPending ? "Operation in progress" : (isForced ? "Force quit \(app.name)" : "Quit \(app.name)"))
             .onHover { h in state.isQuitHovered = h }
         }
         .padding(.horizontal, 8)
@@ -100,8 +102,7 @@ struct AppRowView: View {
     }
 
     @ViewBuilder
-    private var quitButtonIcon: some View {
-        let isForced = isOptionKeyPressed
+    private func quitButtonIcon(isForced: Bool) -> some View {
         let activeColor = isForced ? forceColor : goldColor
 
         ZStack {

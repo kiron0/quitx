@@ -453,7 +453,8 @@ struct GeneralTabCloneView: View {
                     get: { !configStore.config.defaultSelectAll },
                     set: {
                         configStore.config.defaultSelectAll = !$0
-                        configStore.save()
+                        configStore.save(refreshAppList: true)
+                        AppListViewModel.shared.applyDefaultSelection()
                     }
                 ))
             } help: {
@@ -463,7 +464,7 @@ struct GeneralTabCloneView: View {
             row(label: "") {
                 toggle("Disable quit tips", isOn: Binding(
                     get: { configStore.config.disableQuitTips },
-                    set: { configStore.config.disableQuitTips = $0; configStore.save() }
+                    set: { configStore.config.disableQuitTips = $0; configStore.save(refreshAppList: true) }
                 ))
             } help: {
                 HelpPopoverButton(text: "The rotating tips at the bottom of the QuitX dropdown will cease to show. It’s okay. We can still be friends. 🤗")
@@ -547,7 +548,7 @@ struct GeneralTabCloneView: View {
             row(label: "Default:") {
                 Picker("", selection: Binding(
                     get: { configStore.config.force == .force ? "Force quit" : "Normal quit" },
-                    set: { configStore.config.force = ($0 == "Force quit" ? .force : .normal); configStore.save() }
+                    set: { configStore.config.force = ($0 == "Force quit" ? .force : .normal); configStore.save(refreshAppList: true) }
                 )) {
                     Text("Normal quit").tag("Normal quit")
                     Text("Force quit").tag("Force quit")
@@ -564,6 +565,7 @@ struct GeneralTabCloneView: View {
                     AppListViewModel.shared.showBackgroundApps = configStore.config.includeBackground
                     configStore.save(refreshAppList: true)
                     state.syncFromMinutes(configStore.config.quitInactiveAfterMinutes)
+                    AppListViewModel.shared.applyDefaultSelection()
                 }
                 .font(.system(size: 11.5))
             } help: {

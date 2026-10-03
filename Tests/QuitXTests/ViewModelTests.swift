@@ -227,4 +227,50 @@ struct AppListViewModelTests {
         vm.isLoading = true
         #expect(vm.isLoading)
     }
+
+    @Test("applyDefaultSelection selects all when defaultSelectAll is true")
+    func testApplyDefaultSelectionTrue() {
+        vm.apps = [app1, app2]
+        vm.showBackgroundApps = false
+        vm.searchQuery = ""
+        ConfigStore.shared.config.defaultSelectAll = true
+
+        vm.applyDefaultSelection()
+
+        #expect(vm.selected.contains(app1.id))
+        #expect(vm.selected.contains(app2.id))
+        #expect(vm.isAllSelected)
+    }
+
+    @Test("applyDefaultSelection deselects all when defaultSelectAll is false")
+    func testApplyDefaultSelectionFalse() {
+        vm.apps = [app1, app2]
+        vm.showBackgroundApps = false
+        vm.searchQuery = ""
+        vm.selected = [app1.id, app2.id]
+        ConfigStore.shared.config.defaultSelectAll = false
+
+        vm.applyDefaultSelection()
+
+        #expect(vm.selected.isEmpty)
+        #expect(!vm.isAllSelected)
+    }
+
+    @Test("resetSelectionState allows refresh to re-evaluate defaultSelectAll")
+    func testResetSelectionState() {
+        vm.resetSelectionState()
+        ConfigStore.shared.config.defaultSelectAll = true
+        vm.apps = [app1, app2]
+        vm.showBackgroundApps = false
+        vm.searchQuery = ""
+        vm.selected = []
+
+        vm.applyDefaultSelection()
+        #expect(vm.selected.count == 2)
+
+        vm.resetSelectionState()
+        ConfigStore.shared.config.defaultSelectAll = false
+        vm.applyDefaultSelection()
+        #expect(vm.selected.isEmpty)
+    }
 }

@@ -30,6 +30,7 @@ final class AppListViewModel: ObservableObject {
     @Published var arrowX: CGFloat = 135
 
     private var hasInitializedSelection = false
+    private var lastConfigDefaultSelectAll: Bool?
 
     private let quotes = [
         "Don't give up quitting ⚡",
@@ -109,6 +110,20 @@ final class AppListViewModel: ObservableObject {
         }
     }
 
+    func applyDefaultSelection() {
+        hasInitializedSelection = true
+        lastConfigDefaultSelectAll = configStore.config.defaultSelectAll
+        if configStore.config.defaultSelectAll {
+            selected = visibleIds
+        } else {
+            selected = []
+        }
+    }
+
+    func resetSelectionState() {
+        hasInitializedSelection = false
+    }
+
     func toggleSelection(for app: AppInfo) {
         if selected.contains(app.id) {
             selected.remove(app.id)
@@ -133,7 +148,10 @@ final class AppListViewModel: ObservableObject {
         guard !Task.isCancelled, generation == scanGeneration else { return }
         apps = fetched
 
-        if !hasInitializedSelection {
+        let configSettingChanged = (lastConfigDefaultSelectAll != nil && lastConfigDefaultSelectAll != cfg.defaultSelectAll)
+        lastConfigDefaultSelectAll = cfg.defaultSelectAll
+
+        if !hasInitializedSelection || configSettingChanged {
             if cfg.defaultSelectAll {
                 selected = visibleIds
             } else {

@@ -61,7 +61,8 @@ struct WelcomeView: View {
                 get: { !configStore.config.defaultSelectAll },
                 set: {
                     configStore.config.defaultSelectAll = !$0
-                    configStore.save()
+                    configStore.save(refreshAppList: true)
+                    AppListViewModel.shared.applyDefaultSelection()
                 }
             ))
 
@@ -77,7 +78,7 @@ struct WelcomeView: View {
                     get: { configStore.config.force },
                     set: {
                         configStore.config.force = $0
-                        configStore.save()
+                        configStore.save(refreshAppList: true)
                     }
                 )) {
                     Text("Normal").tag(QuitXConfig.ForceMode.normal)

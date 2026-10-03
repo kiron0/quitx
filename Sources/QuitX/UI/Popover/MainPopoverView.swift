@@ -74,10 +74,11 @@ struct MainPopoverView: View {
         .animation(.easeInOut(duration: 0.2), value: vm.showToast)
         .alert("Quit selected apps?", isPresented: $uiState.showConfirmQuitAll) {
             let isAll = vm.isAllSelected
-            let confirmTitle = vm.isOptionKeyPressed ? (isAll ? "Force Quit All" : "Force Quit Selected") : (isAll ? "Quit All" : "Quit Selected")
+            let isForced = vm.isOptionKeyPressed ? (configStore.config.force != .force) : (configStore.config.force == .force)
+            let confirmTitle = isForced ? (isAll ? "Force Quit All" : "Force Quit Selected") : (isAll ? "Quit All" : "Quit Selected")
             Button(confirmTitle, role: .destructive) {
                 Task {
-                    await vm.quitAll(force: vm.isOptionKeyPressed || configStore.config.force == .force)
+                    await vm.quitAll(force: isForced)
                 }
             }
             Button("Cancel", role: .cancel) {}
@@ -87,7 +88,7 @@ struct MainPopoverView: View {
     }
 
     private var quitAllButton: some View {
-        let isForced = vm.isOptionKeyPressed || configStore.config.force == .force
+        let isForced = vm.isOptionKeyPressed ? (configStore.config.force != .force) : (configStore.config.force == .force)
         let count = vm.selectedVisibleCount
         let isAll = vm.isAllSelected
         let title: String
