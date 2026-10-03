@@ -16,6 +16,13 @@ struct QuitXApp: App {
                 }
                 .keyboardShortcut(",", modifiers: .command)
             }
+
+            CommandGroup(replacing: .help) {
+                Button("QuitX Help") {
+                    HelpWindowController.shared.show()
+                }
+                .keyboardShortcut("?", modifiers: .command)
+            }
         }
     }
 }

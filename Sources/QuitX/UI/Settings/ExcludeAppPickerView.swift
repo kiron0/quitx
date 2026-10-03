@@ -127,6 +127,7 @@ final class ExcludeAppPickerWindowController: NSObject, NSWindowDelegate {
         if let window {
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
+            clearInitialFocus(in: window)
             return
         }
 
@@ -155,6 +156,14 @@ final class ExcludeAppPickerWindowController: NSObject, NSWindowDelegate {
         WindowActivationCoordinator.update()
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        clearInitialFocus(in: window)
+    }
+
+    private func clearInitialFocus(in window: NSWindow) {
+        DispatchQueue.main.async { [weak window] in
+            guard window?.isVisible == true else { return }
+            window?.makeFirstResponder(nil)
+        }
     }
 
     func close() {
@@ -170,6 +179,7 @@ final class ExcludeAppPickerWindowController: NSObject, NSWindowDelegate {
 struct ExcludeAppPickerView: View {
     @EnvironmentObject private var configStore: ConfigStore
     @StateObject private var viewModel = ExcludeAppPickerViewModel()
+    @FocusState private var isSearchFocused: Bool
     let onClose: () -> Void
 
     private var visibleApplications: [InstalledApplication] {
@@ -212,10 +222,16 @@ struct ExcludeAppPickerView: View {
                 .padding(.vertical, 12)
         }
         .frame(width: 500, height: 520)
-        .background(QuitXTheme.windowBackground)
+        .background {
+            QuitXTheme.windowBackground
+                .ignoresSafeArea()
+        }
         .ignoresSafeArea(edges: .top)
         .task {
             await viewModel.load()
+        }
+        .onAppear {
+            isSearchFocused = false
         }
     }
 
@@ -235,6 +251,7 @@ struct ExcludeAppPickerView: View {
                     .foregroundStyle(Color.secondary)
                 TextField("Search installed apps", text: $viewModel.searchQuery)
                     .textFieldStyle(.plain)
+                    .focused($isSearchFocused)
                 if !viewModel.searchQuery.isEmpty {
                     Button {
                         viewModel.searchQuery = ""

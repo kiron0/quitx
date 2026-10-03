@@ -283,6 +283,14 @@ final class StatusItemController: NSObject {
         ))
 
         menu.addItem(MenuHelper.makeItem(
+            title: "QuitX Help",
+            action: #selector(openHelp),
+            target: self,
+            keyEquivalent: "?",
+            systemSymbolName: "questionmark.circle"
+        ))
+
+        menu.addItem(MenuHelper.makeItem(
             title: "About",
             action: #selector(openAbout),
             target: self,
@@ -315,6 +323,10 @@ final class StatusItemController: NSObject {
 
     @objc private func openWelcomeGuide() {
         WelcomeWindowController.shared.show()
+    }
+
+    @objc private func openHelp() {
+        HelpWindowController.shared.show()
     }
 
     @objc private func quitApp() {

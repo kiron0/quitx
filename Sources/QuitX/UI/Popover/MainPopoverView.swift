@@ -342,7 +342,7 @@ private struct PopoverOptionsButton: NSViewRepresentable {
 
         @objc private func openHelp() {
             StatusItemController.shared?.closePopover()
-            NSWorkspace.shared.open(QuitXConstants.githubURL)
+            HelpWindowController.shared.show()
         }
 
         @objc private func quitApp() {

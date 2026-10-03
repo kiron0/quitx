@@ -202,6 +202,25 @@ struct ThemeTests {
     }
 }
 
+@Suite("Help Content Tests")
+struct HelpContentTests {
+    @Test("Help topics have unique identifiers and complete content")
+    func testHelpTopicsAreComplete() {
+        let topics = QuitXHelpTopic.all
+        #expect(topics.count == 10)
+        #expect(Set(topics.map(\.id)).count == topics.count)
+        #expect(Set(topics.map(\.category)) == Set(QuitXHelpCategory.allCases))
+        #expect(topics.allSatisfy { !$0.title.isEmpty && !$0.summary.isEmpty && !$0.sections.isEmpty })
+    }
+
+    @Test("Help search covers titles and article content")
+    func testHelpSearch() {
+        #expect(QuitXHelpTopic.all.first { $0.id == "exclude" }?.matches("background apps") == true)
+        #expect(QuitXHelpTopic.all.first { $0.id == "finder-trash" }?.matches("permanently empties") == true)
+        #expect(QuitXHelpTopic.all.allSatisfy { $0.matches("   ") })
+    }
+}
+
 @Suite("Asset Images Tests")
 struct AssetImagesTests {
     @Test("App icon returns valid image")
