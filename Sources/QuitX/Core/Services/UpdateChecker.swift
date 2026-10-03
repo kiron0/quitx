@@ -32,7 +32,7 @@ final class UpdateChecker: ObservableObject {
     @Published var isChecking = false
 
     var currentVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+        QuitXConstants.appVersion
     }
 
     func checkForUpdates(isUserInitiated: Bool = true) async {

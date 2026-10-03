@@ -2,6 +2,29 @@
 
 All notable changes to QuitX macOS App will be documented in this file.
 
+## 1.0.3
+
+### Added
+
+- Native in-app update downloader and installer pipeline (`UpdateDownloadService`) supporting direct background downloading, DMG mounting, bundle verification, and atomic swap.
+- Dedicated update window (`AppUpdateWindowController` and `AppUpdateView`) displaying download progress, transfer speed, staged verification, and one-click restart.
+- Reusable `QuitXMenuButton` supporting unified accent glow on hover and click matching the quit action style.
+- Version bump automation script (`Scripts/bump-version.sh`) and `make bump` / `npm run bump` commands for interactive semver and build updates across all project manifests.
+- Comprehensive test suite for update download flows, checksum checks, DMG verification, and selection state retention (`AppUpdateTests`, `ViewModelTests`).
+
+### Changed
+
+- App row context menu trigger (3-dot icon) and popover footer menu trigger now share unified hover and active accent highlight effects.
+- General tab help icon (`?`) updated with hover active state and native system blur background for its tooltip toast.
+- Update checker now references `QuitXConstants.appVersion` as the central source of truth for current client version.
+- Replaced custom DMG extraction script paths with atomic relaunch script handling process exit polling, bundle replacement, quarantine removal, and application relaunch.
+
+### Fixed
+
+- Preserved user manual checkbox selections across popover dismiss and reopen events, resolving unexpected deselection behavior.
+- Resolved conflict between the "Deselect apps after quit" setting and active UI selection lock states during background application scans.
+- Prevented keyboard focus trapping when cycling popover window visibility.
+
 ## 1.0.2
 
 ### Added

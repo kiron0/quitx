@@ -2,25 +2,25 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-        <key>LSUIElement</key>
-    <true/>
-        <key>NSPrincipalClass</key>
-    <string>NSApplication</string>
-    <key>NSAccentColorName</key>
-    <string>AccentColor</string>
-    <key>CFBundleIconFile</key>
-    <string>AppIcon</string>
-        <key>CFBundleName</key>
-    <string>QuitX</string>
-    <key>CFBundleIdentifier</key>
-    <string>io.coreify.quitx</string>
-    <key>CFBundleVersion</key>
-    <string>3</string>
-    <key>CFBundleShortVersionString</key>
-    <string>1.0.2</string>
-        <key>LSMinimumSystemVersion</key>
-    <string>14.0</string>
-        <key>NSAppleEventsUsageDescription</key>
-    <string>QuitX uses Apple Events to quit applications.</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>CFBundleIdentifier</key>
+	<string>io.coreify.quitx</string>
+	<key>CFBundleName</key>
+	<string>QuitX</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0.3</string>
+	<key>CFBundleVersion</key>
+	<string>4</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>14.0</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSAccentColorName</key>
+	<string>AccentColor</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>QuitX uses Apple Events to quit applications.</string>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
 </dict>
 </plist>

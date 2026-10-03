@@ -64,6 +64,10 @@ test:
 ship:
 	@Scripts/ship.sh
 
+## Bump app version across all files
+bump:
+	@Scripts/bump-version.sh
+
 ## Clean build artifacts
 clean:
 	@swift package clean
