@@ -200,7 +200,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Updates",
-                    body: "QuitX automatically checks for updates via GitHub releases. You can also click Check Updates in Settings > About. When an update is found, QuitX downloads and verifies the package in-app, then restarts to install."
+                    body: "QuitX automatically checks for updates securely. You can also click Check Updates in Settings > About. When an update is found, QuitX downloads and verifies the package in-app, then restarts to install."
                 ),
                 QuitXHelpSection(
                     title: "Reset",
@@ -242,7 +242,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Network access",
-                    body: "QuitX contacts GitHub only for release checks, downloading verified update packages, or when you open a GitHub link. Contact Support opens your default mail app with version and macOS details for review before sending."
+                    body: "QuitX connects to network only for secure update checks and downloading verified update packages. Contact Support opens your default mail app with version and macOS details for review before sending."
                 ),
                 QuitXHelpSection(
                     title: "Get support",
@@ -550,7 +550,8 @@ struct HelpView: View {
             }
 
             Button("Report an Issue") {
-                NSWorkspace.shared.open(QuitXConstants.githubIssuesURL)
+                guard let url = QuitXConstants.contactURL() else { return }
+                NSWorkspace.shared.open(url)
             }
         }
         .controlSize(.small)

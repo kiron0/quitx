@@ -7,41 +7,6 @@ import Foundation
 @MainActor
 struct AppUpdateTests {
 
-    @Test("GitHub Release JSON Decoding and DMG Asset Extraction")
-    func testReleaseDecodingAndAssetExtraction() throws {
-        let json = """
-        {
-            "tag_name": "v1.1.0",
-            "name": "QuitX v1.1.0",
-            "html_url": "https://github.com/coreify-dev/quitx/releases/tag/v1.1.0",
-            "assets": [
-                {
-                    "name": "source.zip",
-                    "browser_download_url": "https://github.com/coreify-dev/quitx/releases/download/v1.1.0/source.zip",
-                    "size": 1024
-                },
-                {
-                    "name": "QuitX-v1.1.0.dmg",
-                    "browser_download_url": "https://github.com/coreify-dev/quitx/releases/download/v1.1.0/QuitX-v1.1.0.dmg",
-                    "size": 25000000
-                }
-            ]
-        }
-        """
-
-        let data = try #require(json.data(using: .utf8))
-        let release = try JSONDecoder().decode(GitHubRelease.self, from: data)
-
-        #expect(release.tag_name == "v1.1.0")
-        #expect(release.assets?.count == 2)
-
-        let dmgAsset = UpdateChecker.extractDMGAsset(from: release.assets)
-        let found = try #require(dmgAsset)
-        #expect(found.name == "QuitX-v1.1.0.dmg")
-        #expect(found.browser_download_url == "https://github.com/coreify-dev/quitx/releases/download/v1.1.0/QuitX-v1.1.0.dmg")
-        #expect(found.size == 25000000)
-    }
-
     @Test("Gatekeeper Release JSON Decoding")
     func testGatekeeperReleaseDecoding() throws {
         let json = """
@@ -65,20 +30,6 @@ struct AppUpdateTests {
         #expect(release.sizeBytes == 4384565)
         #expect(release.downloadUrl.contains("/download/12345"))
         #expect(release.digest?.contains("sha256") == true)
-    }
-
-    @Test("DMG Asset Missing Returns Nil")
-    func testMissingDMGAsset() throws {
-        let assets = [
-            GitHubReleaseAsset(name: "archive.zip", browser_download_url: "https://example.com/archive.zip", size: 100),
-            GitHubReleaseAsset(name: "notes.txt", browser_download_url: "https://example.com/notes.txt", size: 50)
-        ]
-
-        let extracted = UpdateChecker.extractDMGAsset(from: assets)
-        #expect(extracted == nil)
-
-        let emptyExtract = UpdateChecker.extractDMGAsset(from: nil)
-        #expect(emptyExtract == nil)
     }
 
     @Test("Relaunch Script Generation Syntax and Safety")

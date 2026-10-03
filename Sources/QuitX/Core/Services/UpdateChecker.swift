@@ -1,19 +1,6 @@
 import AppKit
 import Foundation
 
-struct GitHubReleaseAsset: Decodable, Equatable {
-    let name: String
-    let browser_download_url: String
-    let size: Int64?
-}
-
-struct GitHubRelease: Decodable, Equatable {
-    let tag_name: String
-    let html_url: String?
-    let name: String?
-    let assets: [GitHubReleaseAsset]?
-}
-
 struct GatekeeperRelease: Decodable, Equatable {
     let version: String
     let releaseName: String?
@@ -29,15 +16,8 @@ struct GatekeeperRelease: Decodable, Equatable {
 final class UpdateChecker: ObservableObject {
     static let shared = UpdateChecker()
 
-    private let repoOwner = QuitXConstants.githubUser
-    private let repoName = QuitXConstants.githubRepo
-
-    var releasesWebURL: URL {
-        URL(string: "https://github.com/\(repoOwner)/\(repoName)/releases/latest")!
-    }
-
-    private var latestReleaseAPIURL: URL {
-        URL(string: "https://api.github.com/repos/\(repoOwner)/\(repoName)/releases/latest")!
+    private var updateWorkerURL: URL {
+        QuitXConstants.updateWorkerURL
     }
 
     @Published var isChecking = false
@@ -51,37 +31,10 @@ final class UpdateChecker: ObservableObject {
         isChecking = true
         defer { isChecking = false }
 
-        if let workerURL = QuitXConstants.updateWorkerURL {
-            var workerRequest = URLRequest(url: workerURL)
-            workerRequest.setValue(QuitXConstants.updateSecretKey, forHTTPHeaderField: "X-QuitX-Key")
-            workerRequest.setValue("QuitX-App", forHTTPHeaderField: "User-Agent")
-            workerRequest.cachePolicy = .reloadIgnoringLocalCacheData
-            workerRequest.timeoutInterval = 8.0
-
-            if let (data, response) = try? await URLSession.shared.data(for: workerRequest),
-               let httpResponse = response as? HTTPURLResponse {
-                if httpResponse.statusCode == 200 {
-                    if let release = try? JSONDecoder().decode(GatekeeperRelease.self, from: data) {
-                        let latestVersionRaw = release.version.trimmingCharacters(in: CharacterSet(charactersIn: "vV "))
-                        let downloadURL = URL(string: release.downloadUrl)
-
-                        if isVersion(latestVersionRaw, greaterThan: currentVersion) {
-                            showUpdateAvailableAlert(latestVersion: latestVersionRaw, downloadURL: downloadURL, releaseURL: releasesWebURL)
-                        } else {
-                            showUpToDateAlert(isUserInitiated: isUserInitiated)
-                        }
-                        return
-                    }
-                } else if httpResponse.statusCode == 404 {
-                    showUpToDateAlert(isUserInitiated: isUserInitiated)
-                    return
-                }
-            }
-        }
-
-        var request = URLRequest(url: latestReleaseAPIURL)
-        request.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
+        var request = URLRequest(url: updateWorkerURL)
+        request.setValue(QuitXConstants.updateSecretKey, forHTTPHeaderField: "X-QuitX-Key")
         request.setValue("QuitX-App", forHTTPHeaderField: "User-Agent")
+        request.cachePolicy = .reloadIgnoringLocalCacheData
         request.timeoutInterval = 8.0
 
         do {
@@ -101,24 +54,18 @@ final class UpdateChecker: ObservableObject {
                 return
             }
 
-            let release = try JSONDecoder().decode(GitHubRelease.self, from: data)
-            let latestVersionRaw = release.tag_name.trimmingCharacters(in: CharacterSet(charactersIn: "vV "))
-            let releaseURL = release.html_url.flatMap { URL(string: $0) } ?? releasesWebURL
-            let dmgAsset = Self.extractDMGAsset(from: release.assets)
-            let downloadURL = dmgAsset.flatMap { URL(string: $0.browser_download_url) }
+            let release = try JSONDecoder().decode(GatekeeperRelease.self, from: data)
+            let latestVersionRaw = release.version.trimmingCharacters(in: CharacterSet(charactersIn: "vV "))
+            let downloadURL = URL(string: release.downloadUrl)
 
             if isVersion(latestVersionRaw, greaterThan: currentVersion) {
-                showUpdateAvailableAlert(latestVersion: latestVersionRaw, downloadURL: downloadURL, releaseURL: releaseURL)
+                showUpdateAvailableAlert(latestVersion: latestVersionRaw, downloadURL: downloadURL)
             } else {
                 showUpToDateAlert(isUserInitiated: isUserInitiated)
             }
         } catch {
             showErrorAlert(isUserInitiated: isUserInitiated)
         }
-    }
-
-    nonisolated static func extractDMGAsset(from assets: [GitHubReleaseAsset]?) -> GitHubReleaseAsset? {
-        return assets?.first(where: { $0.name.hasSuffix(".dmg") })
     }
 
     func isVersion(_ v1: String, greaterThan v2: String) -> Bool {
@@ -131,7 +78,7 @@ final class UpdateChecker: ObservableObject {
         }
     }
 
-    private func showUpdateAvailableAlert(latestVersion: String, downloadURL: URL?, releaseURL: URL) {
+    private func showUpdateAvailableAlert(latestVersion: String, downloadURL: URL?) {
         let alert = NSAlert()
         configureAlertIcon(alert)
         alert.messageText = "Update Available"
@@ -146,8 +93,7 @@ final class UpdateChecker: ObservableObject {
             if response == .alertFirstButtonReturn {
                 AppUpdateWindowController.shared.showUpdateWindow(
                     targetVersion: latestVersion,
-                    downloadURL: downloadURL,
-                    releaseWebURL: releaseURL
+                    downloadURL: downloadURL
                 )
             }
         } else {

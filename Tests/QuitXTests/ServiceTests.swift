@@ -333,9 +333,9 @@ struct UpdateCheckerVersionTests {
         #expect(!checker.isVersion("99.99.99", greaterThan: "100.0.0"))
     }
 
-    @Test("Release web URL contains repo name")
-    func testReleaseWebURL() {
-        #expect(checker.releasesWebURL.absoluteString.contains("kiron0/quitx"))
+    @Test("Update worker URL is configured")
+    func testUpdateWorkerURL() {
+        #expect(QuitXConstants.updateWorkerURL.absoluteString.contains("quitx-update-gatekeeper"))
     }
 
     @Test("Current version is non-empty")
