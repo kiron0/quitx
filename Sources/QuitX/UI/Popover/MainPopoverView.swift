@@ -226,123 +226,72 @@ struct MainPopoverView: View {
 
             Spacer()
 
-            PopoverOptionsButton(
-                showsBackgroundApps: vm.showBackgroundApps,
-                onToggleBackgroundApps: {
-                    vm.showBackgroundApps.toggle()
-                    Task { await vm.refresh() }
+            QuitXMenuButton(
+                assetName: "settings",
+                selectedAssetName: "settings-selected",
+                systemSymbolName: "gearshape",
+                symbolPointSize: 13,
+                size: NSSize(width: 17, height: 17),
+                toolTip: "Options",
+                menu: {
+                    buildOptionsMenu()
                 }
             )
             .frame(width: 22, height: 22)
         }
     }
-}
 
-private struct PopoverOptionsButton: NSViewRepresentable {
-    var showsBackgroundApps: Bool
-    var onToggleBackgroundApps: () -> Void
+    private func buildOptionsMenu() -> NSMenu {
+        let menu = NSMenu()
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(parent: self)
-    }
+        let bgTitle = vm.showBackgroundApps ? "Hide background apps" : "View background apps"
+        let bgAsset = vm.showBackgroundApps ? "settings-background-apps-hide" : "settings-background-apps-show"
+        let bgSymbol = vm.showBackgroundApps ? "eye.slash" : "eye"
 
-    func makeNSView(context: Context) -> NSButton {
-        let button = NSButton()
-        button.isBordered = false
-        if let img = AssetImages.load("settings") {
-            let copy = img.copy() as? NSImage ?? img
-            copy.size = NSSize(width: 17, height: 17)
-            copy.isTemplate = true
-            button.image = copy
-            button.imagePosition = .imageOnly
-        } else if let sym = NSImage(systemSymbolName: "gearshape", accessibilityDescription: "Options") {
-            let config = NSImage.SymbolConfiguration(pointSize: 13, weight: .regular)
-            let copy = (sym.withSymbolConfiguration(config) ?? sym).copy() as? NSImage ?? sym
-            copy.size = NSSize(width: 17, height: 17)
-            copy.isTemplate = true
-            button.image = copy
-            button.imagePosition = .imageOnly
-        }
-        button.contentTintColor = NSColor.secondaryLabelColor
-        button.toolTip = "Options"
-        button.target = context.coordinator
-        button.action = #selector(Coordinator.showMenu(_:))
-        return button
-    }
+        menu.addItem(MenuHelper.makeItem(
+            title: bgTitle,
+            keyEquivalent: "b",
+            assetName: bgAsset,
+            systemSymbolName: bgSymbol,
+            action: {
+                vm.showBackgroundApps.toggle()
+                Task { await vm.refresh() }
+            }
+        ))
 
-    func updateNSView(_ button: NSButton, context: Context) {
-        context.coordinator.parent = self
-    }
+        menu.addItem(MenuHelper.makeItem(
+            title: "Settings",
+            keyEquivalent: ",",
+            assetName: "settings-preferences",
+            systemSymbolName: "gearshape",
+            action: {
+                StatusItemController.shared?.closePopover()
+                SettingsWindowController.shared.show()
+            }
+        ))
 
-    @MainActor
-    final class Coordinator: NSObject {
-        var parent: PopoverOptionsButton
+        menu.addItem(MenuHelper.makeItem(
+            title: "Help",
+            keyEquivalent: "h",
+            assetName: "settings-help",
+            systemSymbolName: "questionmark.circle",
+            action: {
+                StatusItemController.shared?.closePopover()
+                HelpWindowController.shared.show()
+            }
+        ))
 
-        init(parent: PopoverOptionsButton) {
-            self.parent = parent
-        }
+        menu.addItem(MenuHelper.makeItem(
+            title: "Quit",
+            keyEquivalent: "q",
+            assetName: "settings-quit",
+            systemSymbolName: "power",
+            action: {
+                NSApplication.shared.terminate(nil)
+            }
+        ))
 
-        @objc func showMenu(_ button: NSButton) {
-            let menu = NSMenu()
-
-            let bgTitle = parent.showsBackgroundApps ? "Hide background apps" : "View background apps"
-            let bgAsset = parent.showsBackgroundApps ? "settings-background-apps-hide" : "settings-background-apps-show"
-            let bgSymbol = parent.showsBackgroundApps ? "eye.slash" : "eye"
-
-            menu.addItem(MenuHelper.makeItem(
-                title: bgTitle,
-                action: #selector(toggleBackgroundApps),
-                target: self,
-                keyEquivalent: "b",
-                assetName: bgAsset,
-                systemSymbolName: bgSymbol
-            ))
-
-            menu.addItem(MenuHelper.makeItem(
-                title: "Settings",
-                action: #selector(openSettings),
-                target: self,
-                keyEquivalent: ",",
-                assetName: "settings-preferences",
-                systemSymbolName: "gearshape"
-            ))
-
-            menu.addItem(MenuHelper.makeItem(
-                title: "Help",
-                action: #selector(openHelp),
-                target: self,
-                keyEquivalent: "h",
-                assetName: "settings-help",
-                systemSymbolName: "questionmark.circle"
-            ))
-
-            menu.addItem(MenuHelper.makeItem(
-                title: "Quit",
-                action: #selector(quitApp),
-                target: self,
-                keyEquivalent: "q",
-                assetName: "settings-quit",
-                systemSymbolName: "power"
-            ))
-
-            menu.popUp(positioning: nil, at: NSPoint(x: button.bounds.maxX, y: button.bounds.minY), in: button)
-        }
-
-        @objc private func toggleBackgroundApps() { parent.onToggleBackgroundApps() }
-
-        @objc private func openSettings() {
-            StatusItemController.shared?.closePopover()
-            SettingsWindowController.shared.show()
-        }
-
-        @objc private func openHelp() {
-            StatusItemController.shared?.closePopover()
-            HelpWindowController.shared.show()
-        }
-
-        @objc private func quitApp() {
-            NSApplication.shared.terminate(nil)
-        }
+        return menu
     }
 }
 

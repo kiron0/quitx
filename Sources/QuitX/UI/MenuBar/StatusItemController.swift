@@ -16,6 +16,7 @@ final class MenuPopupWindow: NSPanel {
         self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         self.isMovable = false
         self.isMovableByWindowBackground = false
+        self.acceptsMouseMovedEvents = true
     }
 
     override var canBecomeKey: Bool {

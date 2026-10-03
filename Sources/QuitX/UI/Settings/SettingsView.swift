@@ -59,6 +59,7 @@ enum SettingsTab: String, CaseIterable {
 
 final class HelpPopoverState: ObservableObject {
     @Published var isShowing = false
+    @Published var isHovered = false
 }
 
 struct HelpPopoverButton: View {
@@ -69,23 +70,15 @@ struct HelpPopoverButton: View {
         Button {
             state.isShowing.toggle()
         } label: {
-            if let icon = AssetImages.load("settings-default-help") {
-                Image(nsImage: icon)
-                    .renderingMode(.template)
-                    .resizable()
-                    .frame(width: 13, height: 13)
-                    .foregroundStyle(state.isShowing ? Color.primary : Color.secondary)
-                    .frame(width: 20, height: 20)
-                    .contentShape(Circle())
-            } else {
-                Image(systemName: "questionmark.circle")
-                    .font(.system(size: 13))
-                    .foregroundStyle(state.isShowing ? Color.primary : Color.secondary)
-                    .frame(width: 20, height: 20)
-                    .contentShape(Circle())
-            }
+            let isActive = state.isShowing || state.isHovered
+            Image(systemName: "questionmark.circle")
+                .font(.system(size: 13, weight: isActive ? .medium : .regular))
+                .foregroundStyle(isActive ? QuitXTheme.accent : Color.secondary)
+                .frame(width: 20, height: 20)
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
+        .onHover { h in state.isHovered = h }
         .popover(isPresented: $state.isShowing, arrowEdge: .bottom) {
             Text(text)
                 .font(.system(size: 11.5))
