@@ -136,11 +136,11 @@ final class ExcludeAppPickerWindowController: NSObject, NSWindowDelegate {
         .environmentObject(ConfigStore.shared)
         let hosting = NSHostingController(rootView: view)
         let window = NSWindow(contentViewController: hosting)
-        window.title = "Add Apps to Exclude List"
-        window.styleMask = [.titled, .closable]
+        window.title = ""
+        window.styleMask = [.titled, .closable, .fullSizeContentView]
         window.titlebarAppearsTransparent = true
         window.titlebarSeparatorStyle = .none
-        window.titleVisibility = .visible
+        window.titleVisibility = .hidden
         window.setContentSize(NSSize(width: 500, height: 520))
         window.minSize = window.frame.size
         window.maxSize = window.frame.size
@@ -148,6 +148,7 @@ final class ExcludeAppPickerWindowController: NSObject, NSWindowDelegate {
         window.isReleasedWhenClosed = false
         window.backgroundColor = QuitXTheme.windowBackgroundNSColor
         window.appearance = NSApp.effectiveAppearance
+        window.isMovableByWindowBackground = true
         window.delegate = self
         window.center()
         self.window = window
@@ -185,6 +186,8 @@ struct ExcludeAppPickerView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            header
+
             controls
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
@@ -210,9 +213,19 @@ struct ExcludeAppPickerView: View {
         }
         .frame(width: 500, height: 520)
         .background(QuitXTheme.windowBackground)
+        .ignoresSafeArea(edges: .top)
         .task {
             await viewModel.load()
         }
+    }
+
+    private var header: some View {
+        Text("Add Apps to Exclude List")
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(Color.primary)
+            .frame(maxWidth: .infinity)
+            .frame(height: 38)
+            .background(QuitXTheme.windowBackground)
     }
 
     private var controls: some View {

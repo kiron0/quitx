@@ -178,17 +178,15 @@ struct ExcludeTabView: View {
                                     .font(.system(size: 11))
                                     .foregroundStyle(Color.secondary)
                             }
-                            .padding(.horizontal, 10)
-                            .frame(height: 30)
+                            .padding(.horizontal, 8)
+                            .frame(height: 27)
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
 
-                        Divider().padding(.leading, 32)
-
                         ScrollView(.vertical, showsIndicators: true) {
-                            LazyVStack(spacing: 0) {
-                                ForEach(Array(configStore.config.exclude.enumerated()), id: \.offset) { index, identifier in
+                            LazyVStack(spacing: 2) {
+                                ForEach(Array(configStore.config.exclude.enumerated()), id: \.offset) { _, identifier in
                                     let normalized = identifier.lowercased()
                                     Button {
                                         state.toggle(normalized)
@@ -199,12 +197,9 @@ struct ExcludeTabView: View {
                                         )
                                     }
                                     .buttonStyle(.plain)
-
-                                    if index < configStore.config.exclude.count - 1 {
-                                        Divider().padding(.leading, 42)
-                                    }
                                 }
                             }
+                            .padding(.vertical, 2)
                         }
                     }
                 }
@@ -223,6 +218,8 @@ struct ExcludeTabView: View {
                     Label("Add Apps…", systemImage: "plus")
                 }
 
+                Spacer()
+
                 Button(state.selectedIdentifiers.count == 1 ? "Remove Selected" : "Remove Selected (\(state.selectedIdentifiers.count))") {
                     let identifiers = configStore.config.exclude.filter {
                         state.selectedIdentifiers.contains($0.lowercased())
@@ -233,8 +230,6 @@ struct ExcludeTabView: View {
                     )
                 }
                 .disabled(state.selectedIdentifiers.isEmpty)
-
-                Spacer()
             }
             .font(.system(size: 11.5))
         }
@@ -402,8 +397,6 @@ struct GeneralTabCloneView: View {
     @EnvironmentObject private var configStore: ConfigStore
     @ObservedObject private var launchService = LaunchAtLoginService.shared
     @StateObject private var state = GeneralTabState()
-
-    private let gold = QuitXTheme.accent
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
@@ -625,17 +618,7 @@ struct GeneralTabCloneView: View {
             isOn.wrappedValue.toggle()
         } label: {
             HStack(spacing: 8) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 3.5)
-                        .fill(isOn.wrappedValue ? gold : Color.primary.opacity(0.08))
-                        .frame(width: 14, height: 14)
-
-                    if isOn.wrappedValue {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 8, weight: .heavy))
-                            .foregroundStyle(Color.black.opacity(0.9))
-                    }
-                }
+                QuitXSelectionCheckbox(isSelected: isOn.wrappedValue)
 
                 Text(title)
                     .font(.system(size: 12, weight: .regular))
@@ -716,8 +699,6 @@ struct ShortcutsTabCloneView: View {
     @ObservedObject private var sm = ShortcutManager.shared
     @StateObject private var viewState = ShortcutsViewState()
 
-    private let gold = QuitXTheme.accent
-
     var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: 12) {
@@ -790,17 +771,7 @@ struct ShortcutsTabCloneView: View {
             Button {
                 isEnabled.wrappedValue.toggle()
             } label: {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 3.5)
-                        .fill(active ? gold : Color.primary.opacity(0.08))
-                        .frame(width: 15, height: 15)
-
-                    if active {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 8.5, weight: .heavy))
-                            .foregroundStyle(Color.black.opacity(0.9))
-                    }
-                }
+                QuitXSelectionCheckbox(isSelected: active)
             }
             .buttonStyle(.plain)
 

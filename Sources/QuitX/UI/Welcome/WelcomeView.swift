@@ -93,10 +93,19 @@ struct WelcomeView: View {
     }
 
     private func setupToggle(_ title: String, isOn: Binding<Bool>) -> some View {
-        Toggle(title, isOn: isOn)
-            .toggleStyle(.checkbox)
-            .font(.system(size: 12))
-            .foregroundStyle(Color.primary)
+        Button {
+            isOn.wrappedValue.toggle()
+        } label: {
+            HStack(spacing: 8) {
+                QuitXSelectionCheckbox(isSelected: isOn.wrappedValue)
+                Text(title)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.primary)
+                Spacer()
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     private var hero: some View {
