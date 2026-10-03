@@ -4,9 +4,19 @@ All notable changes to QuitX macOS App will be documented in this file.
 
 ## 1.0.4
 
+
+### Fixed
+
+- `WelcomeWindowController.close()` and `HelpWindowController.close()` did not call `WindowActivationCoordinator.update()`, leaving the app stuck in `.regular` activation policy after programmatic window dismissal.
+- `AppListViewModel.updateLiveStats()` incremented `scanGeneration`, silently discarding results from any concurrent `refresh()` call due to a false-positive generation mismatch.
+- `SoundService` created `NSSound` instances with no strong reference, allowing ARC to deallocate them before playback completed, causing intermittent silent audio.
+- `AppUpdateWindowController` had a dead `closeWindow()` method that was an unreachable duplicate of `close()`.
+
 ### Changed
 
-- 
+- `ShortcutManager.restartMonitoring()` now skips installing global and local key-event monitors when all three shortcuts are disabled, avoiding unnecessary system-wide keystroke interception.
+- `AppDelegate.showSettingsWindow(_:)` and `showPreferencesWindow(_:)` no longer wrap synchronous `@MainActor` calls in redundant `Task { @MainActor in }` closures.
+
 
 ## 1.0.3
 
