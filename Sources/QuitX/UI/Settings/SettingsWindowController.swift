@@ -31,8 +31,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
                 let targetFrame = targetFrameFor(win, tab: activeTab, screen: screen)
                 win.setFrame(targetFrame, display: true)
             }
-            win.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
+            WindowAnimator.activateExisting(win)
             return
         }
 
@@ -53,6 +52,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         win.isMovableByWindowBackground = false
         win.hidesOnDeactivate = false
         win.isReleasedWhenClosed = false
+        win.animationBehavior = .documentWindow
         win.delegate = self
 
         let tb = NSToolbar(identifier: "QuitXSettingsToolbar")
@@ -75,14 +75,14 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
 
         WindowActivationCoordinator.update()
 
+        let targetFrame: NSRect
         if let screen = NSScreen.main ?? NSScreen.screens.first {
-            let targetFrame = targetFrameFor(win, tab: targetTab, screen: screen)
-            showAnimated(win: win, targetFrame: targetFrame)
+            targetFrame = targetFrameFor(win, tab: targetTab, screen: screen)
         } else {
             win.center()
-            win.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
+            targetFrame = win.frame
         }
+        WindowAnimator.present(win, targetFrame: targetFrame)
     }
 
     private func targetFrameFor(_ win: NSWindow, tab: SettingsTab, screen: NSScreen) -> NSRect {
@@ -92,20 +92,6 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         let x = screenFrame.origin.x + (screenFrame.width - 400) / 2
         let y = screenFrame.origin.y + screenFrame.height - frameRect.height - 110
         return NSRect(x: x, y: y, width: 400, height: frameRect.height)
-    }
-
-    private func showAnimated(win: NSWindow, targetFrame: NSRect) {
-        win.setFrame(targetFrame, display: false)
-        win.alphaValue = 0.0
-        win.layoutIfNeeded()
-        win.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-
-        NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.15
-            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
-            win.animator().alphaValue = 1.0
-        }
     }
 
     func windowWillClose(_ notification: Notification) {

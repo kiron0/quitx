@@ -164,8 +164,7 @@ final class ExcludeAppPickerWindowController: NSObject, NSWindowDelegate {
 
     func show() {
         if let window {
-            window.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
+            WindowAnimator.activateExisting(window)
             return
         }
 
@@ -187,12 +186,12 @@ final class ExcludeAppPickerWindowController: NSObject, NSWindowDelegate {
         window.isReleasedWhenClosed = false
         window.backgroundColor = QuitXTheme.windowBackgroundNSColor
         window.isMovableByWindowBackground = true
+        window.animationBehavior = .documentWindow
         window.delegate = self
         window.center()
         self.window = window
         WindowActivationCoordinator.update()
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        WindowAnimator.present(window, targetFrame: window.frame)
     }
 
     func close() {

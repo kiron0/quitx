@@ -7,6 +7,7 @@ enum WindowActivationCoordinator {
             || WelcomeWindowController.shared.isOpen
             || ExcludeAppPickerWindowController.shared.isOpen
             || HelpWindowController.shared.isOpen
+            || AppUpdateWindowController.shared.isOpen
         NSApp.setActivationPolicy(hasOpenWindow ? .regular : .accessory)
     }
 }

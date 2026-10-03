@@ -14,8 +14,7 @@ final class HelpWindowController: NSObject, NSWindowDelegate {
         StatusItemController.shared?.closePopover()
 
         if let window {
-            window.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
+            WindowAnimator.activateExisting(window)
             return
         }
 
@@ -35,6 +34,7 @@ final class HelpWindowController: NSObject, NSWindowDelegate {
         window.backgroundColor = QuitXTheme.windowBackgroundNSColor
         window.isMovableByWindowBackground = true
         window.tabbingMode = .disallowed
+        window.animationBehavior = .documentWindow
         window.delegate = self
 
         if !window.setFrameUsingName(frameAutosaveName) {
@@ -44,8 +44,7 @@ final class HelpWindowController: NSObject, NSWindowDelegate {
 
         self.window = window
         WindowActivationCoordinator.update()
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        WindowAnimator.present(window, targetFrame: window.frame)
     }
 
     func close() {

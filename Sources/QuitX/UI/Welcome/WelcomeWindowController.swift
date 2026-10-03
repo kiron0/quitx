@@ -24,8 +24,7 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
             if let screen = NSScreen.main ?? NSScreen.screens.first {
                 win.setFrameOrigin(windowOrigin(for: win.frame.size, on: screen))
             }
-            win.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
+            WindowAnimator.activateExisting(win)
             return
         }
 
@@ -57,6 +56,7 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         win.standardWindowButton(.closeButton)?.isHidden = false
         win.hasShadow = true
         win.isReleasedWhenClosed = false
+        win.animationBehavior = .documentWindow
         win.delegate = self
         self.window = win
         WindowActivationCoordinator.update()
@@ -72,16 +72,7 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
             targetFrame = win.frame
         }
 
-        win.setFrame(targetFrame, display: false)
-        win.alphaValue = 0.0
-        win.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-
-        NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.15
-            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
-            win.animator().alphaValue = 1.0
-        }
+        WindowAnimator.present(win, targetFrame: targetFrame)
     }
 
     func close() {

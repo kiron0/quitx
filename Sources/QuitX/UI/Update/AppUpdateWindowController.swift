@@ -13,9 +13,12 @@ final class AppUpdateWindowController: NSWindowController, NSWindowDelegate {
         fatalError("init(coder:) has not been implemented")
     }
 
+    var isOpen: Bool { window?.isVisible ?? false }
+
     func showUpdateWindow(targetVersion: String, downloadURL: URL, releaseWebURL: URL? = nil) {
         let updateWindow: NSWindow
 
+        let isExisting = window != nil
         if let existing = window {
             updateWindow = existing
         } else {
@@ -30,6 +33,7 @@ final class AppUpdateWindowController: NSWindowController, NSWindowDelegate {
             win.title = "QuitX Update"
             win.isMovableByWindowBackground = true
             win.isReleasedWhenClosed = false
+            win.animationBehavior = .documentWindow
             win.delegate = self
             win.center()
 
@@ -52,8 +56,12 @@ final class AppUpdateWindowController: NSWindowController, NSWindowDelegate {
         )
 
         updateWindow.center()
-        updateWindow.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        let targetFrame = updateWindow.frame
+        if isExisting {
+            WindowAnimator.activateExisting(updateWindow)
+        } else {
+            WindowAnimator.present(updateWindow, targetFrame: targetFrame)
+        }
     }
 
     func closeWindow() {
