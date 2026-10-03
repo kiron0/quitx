@@ -80,7 +80,7 @@ struct AppUpdateView: View {
                     .foregroundStyle(Color.primary)
 
             case .extracting:
-                Text("Verifying QuitX Update...")
+                Text("Verifying Update...")
                     .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(Color.primary)
 
