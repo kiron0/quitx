@@ -215,7 +215,7 @@ struct ExcludeTabView: View {
 
                 Spacer()
 
-                Button(state.selectedIdentifiers.count == 1 ? "Remove Selected" : "Remove Selected (\(state.selectedIdentifiers.count))") {
+                Button(removeButtonTitle) {
                     let identifiers = configStore.config.exclude.filter {
                         state.selectedIdentifiers.contains($0.lowercased())
                     }
@@ -245,6 +245,15 @@ struct ExcludeTabView: View {
         }
     }
 
+    private var removeButtonTitle: String {
+        if state.allSelected(configStore.config.exclude) {
+            return "Remove All"
+        }
+        if state.selectedIdentifiers.count > 1 {
+            return "Remove Selected (\(state.selectedIdentifiers.count))"
+        }
+        return "Remove Selected"
+    }
 }
 
 final class ExcludeTabState: ObservableObject {
