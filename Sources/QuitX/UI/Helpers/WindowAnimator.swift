@@ -8,14 +8,9 @@ enum WindowAnimator {
         targetFrame: NSRect,
         duration: TimeInterval = 0.25
     ) {
-        let originalColor = window.backgroundColor
-        let wasOpaque = window.isOpaque
-
         window.animationBehavior = .none
-        window.isOpaque = false
-        window.backgroundColor = .clear
-        window.setFrame(targetFrame, display: true)
         window.alphaValue = 0.0
+        window.setFrame(targetFrame, display: true)
 
         window.contentView?.layoutSubtreeIfNeeded()
         window.displayIfNeeded()
@@ -25,23 +20,17 @@ enum WindowAnimator {
 
         guard let view = window.contentView?.superview ?? window.contentView else {
             window.alphaValue = 1.0
-            window.isOpaque = wasOpaque
-            window.backgroundColor = originalColor
             return
         }
         view.wantsLayer = true
         guard let layer = view.layer else {
             window.alphaValue = 1.0
-            window.isOpaque = wasOpaque
-            window.backgroundColor = originalColor
             return
         }
 
         let bounds = view.bounds
         guard bounds.width > 0, bounds.height > 0 else {
             window.alphaValue = 1.0
-            window.isOpaque = wasOpaque
-            window.backgroundColor = originalColor
             return
         }
 
@@ -65,11 +54,6 @@ enum WindowAnimator {
             ctx.duration = duration
             ctx.timingFunction = CAMediaTimingFunction(controlPoints: 0.16, 1.0, 0.3, 1.0)
             window.animator().alphaValue = 1.0
-        } completionHandler: { [weak window] in
-            guard let window = window else { return }
-            window.isOpaque = wasOpaque
-            window.backgroundColor = originalColor
-            window.invalidateShadow()
         }
     }
 
