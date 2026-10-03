@@ -22,7 +22,7 @@ final class UpdateChecker: ObservableObject {
     private let repoName = QuitXConstants.githubRepo
 
     var releasesWebURL: URL {
-        URL(string: "https://github.com/\(repoOwner)/\(repoName)/releases")!
+        URL(string: "https://github.com/\(repoOwner)/\(repoName)/releases/latest")!
     }
 
     private var latestReleaseAPIURL: URL {

@@ -234,7 +234,7 @@ struct ExcludeTabView: View {
         .background(QuitXTheme.windowBackground)
         .alert(item: $state.pendingRemoval) { request in
             Alert(
-                title: Text(request.removesAll ? "Remove all excluded apps?" : "Remove selected apps?"),
+                title: Text(request.title),
                 message: Text(request.message),
                 primaryButton: .destructive(Text(request.removesAll ? "Remove All" : "Remove")) {
                     configStore.removeExcludedApps(Set(request.identifiers))
@@ -286,20 +286,27 @@ struct ExcludeRemovalRequest: Identifiable {
 
     var id: String { identifiers.map { $0.lowercased() }.sorted().joined(separator: "|") }
 
+    var title: String {
+        if removesAll {
+            return "Remove all excluded apps?"
+        }
+        return identifiers.count == 1 ? "Remove excluded app?" : "Remove selected apps?"
+    }
+
     var message: String {
         if removesAll {
-            return "QuitX may quit these apps after removal. This clears the entire Exclude list."
+            return "All apps will no longer be protected from quit actions and Auto Quit."
         }
         if identifiers.count == 1 {
-            return "QuitX may quit this app after removal."
+            return "This app will no longer be protected from quit actions and Auto Quit."
         } else {
-            return "QuitX may quit these \(identifiers.count) apps after removal."
+            return "These \(identifiers.count) apps will no longer be protected from quit actions and Auto Quit."
         }
     }
 
     init(identifiers: [String], totalCount: Int) {
         self.identifiers = identifiers
-        self.removesAll = identifiers.count == totalCount
+        self.removesAll = !identifiers.isEmpty && identifiers.count == totalCount
     }
 }
 
