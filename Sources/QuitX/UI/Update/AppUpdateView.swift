@@ -75,7 +75,7 @@ struct AppUpdateView: View {
                     .foregroundStyle(Color.primary)
 
             case .downloading:
-                Text("Downloading QuitX v\(service.targetVersion)...")
+                Text("Downloading v\(service.targetVersion)...")
                     .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(Color.primary)
 
@@ -85,7 +85,7 @@ struct AppUpdateView: View {
                     .foregroundStyle(Color.primary)
 
             case .ready:
-                Text("QuitX v\(service.targetVersion) Ready to Install")
+                Text("Ready to Install v\(service.targetVersion)")
                     .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(Color.primary)
 

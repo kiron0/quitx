@@ -200,7 +200,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Updates",
-                    body: "Automatic update checks request the latest release metadata from GitHub. Use Check for Updates in Settings > About for a manual check."
+                    body: "QuitX automatically checks for updates via GitHub releases. You can also click Check Updates in Settings > About. When an update is found, QuitX downloads and verifies the package in-app, then restarts to install."
                 ),
                 QuitXHelpSection(
                     title: "Reset",
@@ -242,7 +242,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Network access",
-                    body: "QuitX contacts GitHub only for release checks or when you open a GitHub link. Contact Support opens your default mail app with version and macOS details for review before sending."
+                    body: "QuitX contacts GitHub only for release checks, downloading verified update packages, or when you open a GitHub link. Contact Support opens your default mail app with version and macOS details for review before sending."
                 ),
                 QuitXHelpSection(
                     title: "Get support",
