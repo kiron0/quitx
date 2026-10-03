@@ -7,31 +7,40 @@ struct AppUpdateView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(alignment: .top, spacing: 18) {
+            header
+
+            HStack(alignment: .top, spacing: 16) {
                 appIconSection
 
                 VStack(alignment: .leading, spacing: 8) {
                     titleSection
                     contentSection
-                    Spacer(minLength: 0)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.top, 22)
-            .padding(.horizontal, 24)
-
-            Spacer(minLength: 0)
-
-            Divider()
-                .opacity(0.35)
+            .padding(.top, 10)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 16)
 
             footerActions
                 .padding(.horizontal, 20)
-                .padding(.vertical, 13)
-                .background(Color.primary.opacity(0.02))
+                .padding(.bottom, 16)
         }
-        .frame(width: 440, height: 240)
-        .background(QuitXTheme.windowBackground)
+        .frame(width: 390)
+        .fixedSize(horizontal: false, vertical: true)
+        .background {
+            QuitXTheme.windowBackground
+                .ignoresSafeArea()
+        }
+        .ignoresSafeArea()
+    }
+
+    private var header: some View {
+        Text("Update")
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(Color.primary)
+            .frame(maxWidth: .infinity)
+            .frame(height: 28)
     }
 
 
@@ -188,18 +197,10 @@ struct AppUpdateView: View {
                 }
                 .buttonStyle(UpdateSecondaryButtonStyle())
 
-                if let webURL = service.currentReleaseWebURL {
-                    Button("Open GitHub") {
-                        NSWorkspace.shared.open(webURL)
-                        onDismiss()
-                    }
-                    .buttonStyle(UpdatePrimaryButtonStyle(color: QuitXTheme.accent))
-                } else {
-                    Button("Retry") {
-                        service.retryLastDownload()
-                    }
-                    .buttonStyle(UpdatePrimaryButtonStyle(color: QuitXTheme.accent))
+                Button("Retry") {
+                    service.retryLastDownload()
                 }
+                .buttonStyle(UpdatePrimaryButtonStyle(color: QuitXTheme.accent))
             }
         }
     }

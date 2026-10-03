@@ -2,52 +2,54 @@ import AppKit
 import SwiftUI
 
 @MainActor
-final class AppUpdateWindowController: NSWindowController, NSWindowDelegate {
+final class AppUpdateWindowController: NSObject, NSWindowDelegate {
     static let shared = AppUpdateWindowController()
+    private let windowWidth: CGFloat = 390
+    private var window: NSWindow?
 
-    private init() {
-        super.init(window: nil)
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    var isOpen: Bool { window?.isVisible ?? false }
+    var isOpen: Bool { window != nil }
 
     func showUpdateWindow(targetVersion: String, downloadURL: URL, releaseWebURL: URL? = nil) {
-        let updateWindow: NSWindow
+        StatusItemController.shared?.closePopover()
 
-        let isExisting = window != nil
-        if let existing = window {
-            updateWindow = existing
-        } else {
-            let win = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 440, height: 240),
-                styleMask: [.titled, .closable, .fullSizeContentView],
-                backing: .buffered,
-                defer: false
-            )
-            win.titlebarAppearsTransparent = true
-            win.titleVisibility = .hidden
-            win.title = "QuitX Update"
-            win.isMovableByWindowBackground = true
-            win.isReleasedWhenClosed = false
-            win.animationBehavior = .documentWindow
-            win.delegate = self
-            win.center()
-
-            self.window = win
-            updateWindow = win
+        if let win = window {
+            if let screen = NSScreen.main ?? NSScreen.screens.first {
+                win.setFrameOrigin(windowOrigin(for: win.frame.size, on: screen))
+            }
+            WindowAnimator.activateExisting(win)
+            return
         }
 
         let contentView = AppUpdateView(
             service: UpdateDownloadService.shared,
             onDismiss: { [weak self] in
-                self?.closeWindow()
+                self?.close()
             }
         )
-        updateWindow.contentView = NSHostingView(rootView: contentView)
+        let hosting = NSHostingController(rootView: contentView)
+        hosting.safeAreaRegions = []
+        hosting.sizingOptions = [.preferredContentSize]
+        let win = NSWindow(contentViewController: hosting)
+        win.title = ""
+        win.styleMask = [.titled, .closable, .fullSizeContentView]
+        win.titlebarAppearsTransparent = true
+        win.titlebarSeparatorStyle = .none
+        win.titleVisibility = .hidden
+        let fittingSize = hosting.sizeThatFits(
+            in: NSSize(width: windowWidth, height: CGFloat.greatestFiniteMagnitude)
+        )
+        win.setContentSize(NSSize(width: windowWidth, height: ceil(fittingSize.height)))
+        win.isOpaque = true
+        win.backgroundColor = QuitXTheme.windowBackgroundNSColor
+        win.isMovableByWindowBackground = true
+        win.standardWindowButton(.closeButton)?.isEnabled = true
+        win.standardWindowButton(.closeButton)?.isHidden = false
+        win.hasShadow = true
+        win.isReleasedWhenClosed = false
+        win.animationBehavior = .documentWindow
+        win.delegate = self
+        self.window = win
+        WindowActivationCoordinator.update()
 
         UpdateDownloadService.shared.startDownload(
             from: downloadURL,
@@ -55,25 +57,42 @@ final class AppUpdateWindowController: NSWindowController, NSWindowDelegate {
             releaseWebURL: releaseWebURL
         )
 
-        updateWindow.center()
-        let targetFrame = updateWindow.frame
-        if isExisting {
-            WindowAnimator.activateExisting(updateWindow)
+        let targetFrame: NSRect
+        if let screen = NSScreen.main ?? NSScreen.screens.first {
+            targetFrame = NSRect(
+                origin: windowOrigin(for: win.frame.size, on: screen),
+                size: win.frame.size
+            )
         } else {
-            WindowAnimator.present(updateWindow, targetFrame: targetFrame)
+            win.center()
+            targetFrame = win.frame
         }
+
+        WindowAnimator.present(win, targetFrame: targetFrame)
+    }
+
+    func close() {
+        window?.close()
+        window = nil
+        UpdateDownloadService.shared.cancelDownload()
+        WindowActivationCoordinator.update()
     }
 
     func closeWindow() {
-        if let win = window, win.isVisible {
-            win.orderOut(nil)
-        }
-        UpdateDownloadService.shared.cancelDownload()
+        close()
     }
 
-    nonisolated func windowWillClose(_ notification: Notification) {
-        Task { @MainActor in
-            UpdateDownloadService.shared.cancelDownload()
-        }
+    func windowWillClose(_ notification: Notification) {
+        window = nil
+        UpdateDownloadService.shared.cancelDownload()
+        WindowActivationCoordinator.update()
+    }
+
+    private func windowOrigin(for size: NSSize, on screen: NSScreen) -> NSPoint {
+        let visibleFrame = screen.visibleFrame
+        return NSPoint(
+            x: visibleFrame.midX - (size.width / 2),
+            y: visibleFrame.maxY - size.height - 110
+        )
     }
 }

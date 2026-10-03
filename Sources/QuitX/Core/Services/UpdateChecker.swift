@@ -100,7 +100,6 @@ final class UpdateChecker: ObservableObject {
 
         if let downloadURL = downloadURL {
             alert.addButton(withTitle: "Update Now")
-            alert.addButton(withTitle: "View on GitHub")
             alert.addButton(withTitle: "Cancel")
             alert.alertStyle = .informational
 
@@ -111,18 +110,11 @@ final class UpdateChecker: ObservableObject {
                     downloadURL: downloadURL,
                     releaseWebURL: releaseURL
                 )
-            } else if response == .alertSecondButtonReturn {
-                NSWorkspace.shared.open(releaseURL)
             }
         } else {
-            alert.addButton(withTitle: "Download on GitHub")
-            alert.addButton(withTitle: "Cancel")
+            alert.addButton(withTitle: "OK")
             alert.alertStyle = .informational
-
-            let response = alert.runModal()
-            if response == .alertFirstButtonReturn {
-                NSWorkspace.shared.open(releaseURL)
-            }
+            alert.runModal()
         }
     }
 
@@ -133,13 +125,8 @@ final class UpdateChecker: ObservableObject {
         alert.messageText = "You're Up to Date!"
         alert.informativeText = "QuitX v\(currentVersion) is currently the newest version available."
         alert.addButton(withTitle: "OK")
-        alert.addButton(withTitle: "View Releases on GitHub")
         alert.alertStyle = .informational
-
-        let response = alert.runModal()
-        if response == .alertSecondButtonReturn {
-            NSWorkspace.shared.open(releasesWebURL)
-        }
+        alert.runModal()
     }
 
     private func showErrorAlert(isUserInitiated: Bool) {
@@ -147,14 +134,9 @@ final class UpdateChecker: ObservableObject {
         let alert = NSAlert()
         configureAlertIcon(alert)
         alert.messageText = "Unable to Check for Updates"
-        alert.informativeText = "Could not connect to GitHub to check for updates. Would you like to check the releases page directly?"
-        alert.addButton(withTitle: "Open GitHub")
-        alert.addButton(withTitle: "Cancel")
+        alert.informativeText = "Could not check for updates. Please check your internet connection and try again."
+        alert.addButton(withTitle: "OK")
         alert.alertStyle = .warning
-
-        let response = alert.runModal()
-        if response == .alertFirstButtonReturn {
-            NSWorkspace.shared.open(releasesWebURL)
-        }
+        alert.runModal()
     }
 }
