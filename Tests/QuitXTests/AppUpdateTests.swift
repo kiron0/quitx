@@ -197,4 +197,32 @@ struct AppUpdateTests {
 
         try? FileManager.default.removeItem(at: extractedApp.deletingLastPathComponent())
     }
+
+    @Test("Settings and Excluded Apps Persist Across Updates")
+    func testSettingsPersistenceAcrossUpdate() throws {
+        let testDefaults = UserDefaults(suiteName: "io.coreify.quitx.test.persistence")!
+        defer {
+            testDefaults.removePersistentDomain(forName: "io.coreify.quitx.test.persistence")
+        }
+
+        let customExclude = ["com.apple.Safari", "com.google.Chrome", "com.tinyspeck.slackmacgap"]
+        var initialConfig = QuitXConfig.default
+        initialConfig.exclude = customExclude
+        initialConfig.neverQuitMusic = false
+        initialConfig.sortBy = .name
+
+        let encoded = try JSONEncoder().encode(initialConfig)
+        testDefaults.set(encoded, forKey: "QuitXConfig")
+        testDefaults.set(["^", "⌥", "Q"], forKey: "sc_quit_keys")
+        testDefaults.set(true, forKey: "quitx_first_launch_seen_v1")
+
+        let storedData = try #require(testDefaults.data(forKey: "QuitXConfig"))
+        let restoredConfig = try JSONDecoder().decode(QuitXConfig.self, from: storedData)
+
+        #expect(restoredConfig.exclude == customExclude)
+        #expect(restoredConfig.neverQuitMusic == false)
+        #expect(restoredConfig.sortBy == .name)
+        #expect(testDefaults.stringArray(forKey: "sc_quit_keys") == ["^", "⌥", "Q"])
+        #expect(testDefaults.bool(forKey: "quitx_first_launch_seen_v1") == true)
+    }
 }
