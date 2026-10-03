@@ -22,12 +22,14 @@ final class HelpWindowController: NSObject, NSWindowDelegate {
         let hosting = NSHostingController(rootView: HelpView())
         let window = NSWindow(contentViewController: hosting)
         window.title = ""
-        window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
+        window.styleMask = [.titled, .closable, .miniaturizable, .fullSizeContentView]
         window.titlebarAppearsTransparent = true
         window.titlebarSeparatorStyle = .none
         window.titleVisibility = .hidden
-        window.setContentSize(NSSize(width: 820, height: 560))
-        window.minSize = NSSize(width: 680, height: 440)
+        window.setContentSize(NSSize(width: 740, height: 520))
+        window.minSize = window.frame.size
+        window.maxSize = window.frame.size
+        window.collectionBehavior = [.fullScreenNone]
         window.isOpaque = true
         window.isReleasedWhenClosed = false
         window.backgroundColor = QuitXTheme.windowBackgroundNSColor

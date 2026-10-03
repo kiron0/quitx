@@ -287,7 +287,7 @@ struct HelpView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(minWidth: 680, maxWidth: .infinity, minHeight: 440, maxHeight: .infinity)
+        .frame(minWidth: 740, maxWidth: .infinity, minHeight: 520, maxHeight: .infinity)
         .background {
             QuitXTheme.windowBackground
                 .ignoresSafeArea()
@@ -300,7 +300,7 @@ struct HelpView: View {
     }
 
     private var header: some View {
-        Text("Help")
+        Text(selectedTopic?.title ?? "Help")
             .font(.system(size: 13, weight: .semibold))
             .foregroundStyle(Color.primary)
             .frame(maxWidth: .infinity)
@@ -437,50 +437,27 @@ struct HelpView: View {
     @ViewBuilder
     private var detail: some View {
         if let topic = selectedTopic {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    HStack(alignment: .top, spacing: 14) {
-                        Image(systemName: topic.symbol)
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundStyle(QuitXTheme.accent)
-                            .frame(width: 42, height: 42)
-                            .background(QuitXTheme.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 18) {
+                        contentHeader(for: topic)
 
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text(topic.title)
-                                .font(.system(size: 24, weight: .bold))
-                            Text(topic.summary)
-                                .font(.system(size: 13))
-                                .foregroundStyle(Color.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
+                        ForEach(Array(topic.sections.enumerated()), id: \.offset) { _, section in
+                            sectionView(section)
                         }
                     }
-
-                    ForEach(Array(topic.sections.enumerated()), id: \.offset) { _, section in
-                        VStack(alignment: .leading, spacing: 7) {
-                            Text(section.title)
-                                .font(.system(size: 15, weight: .semibold))
-                            Text(section.body)
-                                .font(.system(size: 13))
-                                .foregroundStyle(Color.primary.opacity(0.88))
-                                .lineSpacing(3)
-                                .fixedSize(horizontal: false, vertical: true)
-
-                            ForEach(section.bullets, id: \.self) { bullet in
-                                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                                    Text("•")
-                                    Text(bullet)
-                                }
-                                .font(.system(size: 13))
-                                .foregroundStyle(Color.primary.opacity(0.88))
-                            }
-                        }
-                    }
-
-                    supportActions
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 20)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(32)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                Divider()
+
+                footerLinks(for: topic)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 10)
+                    .background(QuitXTheme.windowBackground)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .id(topic.id)
@@ -498,32 +475,145 @@ struct HelpView: View {
         }
     }
 
-    private var supportActions: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Divider()
+    private func contentHeader(for topic: QuitXHelpTopic) -> some View {
+        HStack(alignment: .center, spacing: 10) {
+            Image(systemName: topic.symbol)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(QuitXTheme.accent)
+                .frame(width: 28, height: 28)
+                .background(QuitXTheme.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 7))
 
-            HStack(spacing: 8) {
-                Button("Open Settings") {
-                    SettingsWindowController.shared.show()
+            VStack(alignment: .leading, spacing: 2) {
+                Text(topic.title)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Color.primary)
+                Text(topic.summary)
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(Color.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private func sectionView(_ section: QuitXHelpSection) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(section.title)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color.primary)
+
+            Text(section.body)
+                .font(.system(size: 12))
+                .foregroundStyle(Color.primary.opacity(0.88))
+                .lineSpacing(2.5)
+                .fixedSize(horizontal: false, vertical: true)
+
+            ForEach(section.bullets, id: \.self) { bullet in
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text("•")
+                    Text(bullet)
                 }
+                .font(.system(size: 12))
+                .foregroundStyle(Color.primary.opacity(0.88))
+            }
+        }
+    }
 
+    @ViewBuilder
+    private func footerLinks(for topic: QuitXHelpTopic) -> some View {
+        HStack(spacing: 8) {
+            switch topic.id {
+            case "quick-start":
                 Button("Welcome Guide") {
                     WelcomeWindowController.shared.show()
                 }
+                Button("Open Settings") {
+                    SettingsWindowController.shared.show(tab: .general)
+                }
 
-                Spacer()
+            case "app-list":
+                Button("General Settings") {
+                    SettingsWindowController.shared.show(tab: .general)
+                }
+                Button("Manage Exclusions") {
+                    SettingsWindowController.shared.show(tab: .exclude)
+                }
 
+            case "quit-modes":
+                Button("Quit Mode Settings") {
+                    SettingsWindowController.shared.show(tab: .general)
+                }
+                Button("Shortcuts") {
+                    SettingsWindowController.shared.show(tab: .shortcuts)
+                }
+
+            case "exclude":
+                Button("Exclude Settings") {
+                    SettingsWindowController.shared.show(tab: .exclude)
+                }
+                Button("Add Apps") {
+                    ExcludeAppPickerWindowController.shared.show()
+                }
+
+            case "auto-quit":
+                Button("Auto Quit Settings") {
+                    SettingsWindowController.shared.show(tab: .general)
+                }
+
+            case "finder-trash":
+                Button("Finder & Trash Settings") {
+                    SettingsWindowController.shared.show(tab: .general)
+                }
+
+            case "shortcuts":
+                Button("Shortcuts Settings") {
+                    SettingsWindowController.shared.show(tab: .shortcuts)
+                }
+
+            case "settings":
+                Button("Open Settings") {
+                    SettingsWindowController.shared.show()
+                }
+                Button("About & Updates") {
+                    SettingsWindowController.shared.show(tab: .about)
+                }
+
+            case "troubleshooting":
+                Button("Open Settings") {
+                    SettingsWindowController.shared.show()
+                }
                 Button("Contact Support") {
                     guard let url = QuitXConstants.contactURL() else { return }
                     NSWorkspace.shared.open(url)
                 }
 
-                Button("Report an Issue") {
-                    NSWorkspace.shared.open(QuitXConstants.githubIssuesURL)
+            case "privacy-support":
+                Button("About QuitX") {
+                    SettingsWindowController.shared.show(tab: .about)
+                }
+                Button("Contact Support") {
+                    guard let url = QuitXConstants.contactURL() else { return }
+                    NSWorkspace.shared.open(url)
+                }
+
+            default:
+                Button("Open Settings") {
+                    SettingsWindowController.shared.show()
                 }
             }
-            .controlSize(.small)
+
+            Spacer()
+
+            if topic.id != "troubleshooting" && topic.id != "privacy-support" {
+                Button("Contact Support") {
+                    guard let url = QuitXConstants.contactURL() else { return }
+                    NSWorkspace.shared.open(url)
+                }
+            }
+
+            Button("Report an Issue") {
+                NSWorkspace.shared.open(QuitXConstants.githubIssuesURL)
+            }
         }
-        .padding(.top, 4)
+        .controlSize(.small)
     }
 }
