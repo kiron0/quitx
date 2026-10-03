@@ -36,7 +36,7 @@ enum WindowAnimator {
 
         var t = CATransform3DIdentity
         t = CATransform3DTranslate(t, bounds.midX, bounds.midY, 0)
-        t = CATransform3DScale(t, 0.94, 0.94, 1.0)
+        t = CATransform3DScale(t, 0.92, 0.92, 1.0)
         t = CATransform3DTranslate(t, -bounds.midX, -bounds.midY, 0)
 
         let scaleAnim = CABasicAnimation(keyPath: "transform")
