@@ -90,5 +90,8 @@ struct AppIconView: View {
                 loader.load(bundleId: bundleId)
             }
         }
+        .onChange(of: bundleId) { _, newId in
+            loader.load(bundleId: newId)
+        }
     }
 }

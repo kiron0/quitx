@@ -132,6 +132,14 @@ final class AppListViewModel: ObservableObject {
         }
     }
 
+    private var activeScanConfig: QuitXConfig {
+        var cfg = configStore.config
+        if showBackgroundApps {
+            cfg.includeBackground = true
+        }
+        return cfg
+    }
+
     func refresh() async {
         scanGeneration += 1
         let generation = scanGeneration
@@ -140,10 +148,7 @@ final class AppListViewModel: ObservableObject {
             if generation == scanGeneration { isLoading = false }
         }
         let selectedAllBeforeRefresh = isAllSelected
-        var cfg = configStore.config
-        if showBackgroundApps {
-            cfg.includeBackground = true
-        }
+        let cfg = activeScanConfig
         let fetched = await AppListService.shared.fetchApps(config: cfg)
         guard !Task.isCancelled, generation == scanGeneration else { return }
         apps = fetched
@@ -172,15 +177,17 @@ final class AppListViewModel: ObservableObject {
         scanGeneration += 1
         let generation = scanGeneration
         defer { isUpdatingLiveStats = false }
-        var cfg = configStore.config
-        if showBackgroundApps {
-            cfg.includeBackground = true
-        }
+        let selectedAllBeforeRefresh = isAllSelected
+        let cfg = activeScanConfig
         let fetched = await AppListService.shared.fetchApps(config: cfg)
         guard !Task.isCancelled, generation == scanGeneration else { return }
         apps = fetched
-        let validIds = Set(apps.map(\.id))
-        selected = selected.intersection(validIds)
+        if selectedAllBeforeRefresh {
+            selected = visibleIds
+        } else {
+            let validIds = Set(apps.map(\.id))
+            selected = selected.intersection(validIds)
+        }
     }
 
     func quitSingle(app: AppInfo, force: Bool) async {

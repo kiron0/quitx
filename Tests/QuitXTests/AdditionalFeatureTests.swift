@@ -33,6 +33,15 @@ struct SingleInstanceVersionTests {
         #expect(SingleInstanceService.isPreferred(version: "1.0.2", pid: 100, over: "1.0.2", pid: 200))
         #expect(!SingleInstanceService.isPreferred(version: "1.0.2", pid: 200, over: "1.0.2", pid: 100))
     }
+
+    @Test("VersionComparator handles greaterThan and comparisons")
+    func testVersionComparator() {
+        #expect(VersionComparator.isGreaterThan("1.0.3", "1.0.2"))
+        #expect(!VersionComparator.isGreaterThan("1.0.2", "1.0.3"))
+        #expect(!VersionComparator.isGreaterThan("1.0.2", "1.0.2"))
+        #expect(VersionComparator.compare("v2.1.0", "2.0.9") == 1)
+        #expect(VersionComparator.compare("1.0.0", "1.0.0") == 0)
+    }
 }
 
 @Suite("AutoQuit and Timing Tests")

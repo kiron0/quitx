@@ -52,8 +52,11 @@ final class AutoQuitService {
             guard app.activationPolicy == .regular else { continue }
 
             let pid = app.processIdentifier
-            if pid == frontmostPid {
+            if pid == ProcessInfo.processInfo.processIdentifier || pid == frontmostPid {
                 lastActiveTimestamps[pid] = now
+                continue
+            }
+            if let rawBid = app.bundleIdentifier, QuitXIdentity.supportedBundleIdentifiers.contains(rawBid) {
                 continue
             }
             guard let lastActive = lastActiveTimestamps[pid] else {

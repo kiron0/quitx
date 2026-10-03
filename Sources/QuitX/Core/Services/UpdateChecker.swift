@@ -83,17 +83,7 @@ final class UpdateChecker: ObservableObject {
     }
 
     func isVersion(_ v1: String, greaterThan v2: String) -> Bool {
-        let parts1 = v1.split(separator: ".").compactMap { Int($0.prefix(while: { $0.isNumber })) }
-        let parts2 = v2.split(separator: ".").compactMap { Int($0.prefix(while: { $0.isNumber })) }
-
-        let maxCount = max(parts1.count, parts2.count)
-        for i in 0..<maxCount {
-            let p1 = i < parts1.count ? parts1[i] : 0
-            let p2 = i < parts2.count ? parts2[i] : 0
-            if p1 > p2 { return true }
-            if p1 < p2 { return false }
-        }
-        return false
+        VersionComparator.isGreaterThan(v1, v2)
     }
 
     private func configureAlertIcon(_ alert: NSAlert) {

@@ -37,13 +37,6 @@ struct AppRowView: View {
 
             Spacer(minLength: 4)
 
-            let hasUrl: Bool = {
-                if let bid = app.bundleId {
-                    return NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid) != nil
-                }
-                return false
-            }()
-
             Text(usageText)
                 .font(.system(size: 10.5, design: .monospaced))
                 .foregroundStyle(Color.secondary)
@@ -57,7 +50,7 @@ struct AppRowView: View {
                 toolTip: "Options",
                 isEnabled: !isPending,
                 menu: {
-                    buildMenu(hasUrl: hasUrl)
+                    buildMenu()
                 }
             )
             .frame(width: 16, height: 16)
@@ -128,7 +121,7 @@ struct AppRowView: View {
         .frame(width: 18, height: 18)
     }
 
-    private func buildMenu(hasUrl: Bool) -> NSMenu {
+    private func buildMenu() -> NSMenu {
         let menu = NSMenu()
 
         let quitTitle = isOptionKeyPressed ? "Force Quit" : "Quit"
@@ -161,15 +154,13 @@ struct AppRowView: View {
             action: { onExclude() }
         ))
 
-        if hasUrl {
+        if let bid = app.bundleId, let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid) {
             menu.addItem(MenuHelper.makeItem(
                 title: "Reveal in Finder",
                 keyEquivalent: "f",
                 systemSymbolName: "folder",
                 action: {
-                    if let bid = app.bundleId, let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid) {
-                        NSWorkspace.shared.activateFileViewerSelecting([url])
-                    }
+                    NSWorkspace.shared.activateFileViewerSelecting([url])
                 }
             ))
         }

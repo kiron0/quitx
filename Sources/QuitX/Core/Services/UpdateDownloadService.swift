@@ -174,7 +174,8 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         }
 
         guard let bundle = Bundle(url: stagedAppURL),
-              bundle.bundleIdentifier == "io.coreify.quitx" else {
+              let bundleId = bundle.bundleIdentifier,
+              QuitXConstants.supportedBundleIdentifiers.contains(bundleId) else {
             try? FileManager.default.removeItem(at: stagingDir)
             throw UpdateError.invalidBundle
         }

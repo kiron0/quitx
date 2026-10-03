@@ -201,16 +201,18 @@ final class AppListService {
     }
 
     private static func visibleWindowCounts() -> [pid_t: Int] {
-        guard let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else {
-            return [:]
-        }
+        autoreleasepool {
+            guard let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else {
+                return [:]
+            }
 
-        var counts: [pid_t: Int] = [:]
-        for window in list {
-            guard let ownerPid = window[kCGWindowOwnerPID as String] as? pid_t else { continue }
-            guard let layer = window[kCGWindowLayer as String] as? Int, layer == 0 else { continue }
-            counts[ownerPid, default: 0] += 1
+            var counts: [pid_t: Int] = [:]
+            for window in list {
+                guard let ownerPid = window[kCGWindowOwnerPID as String] as? pid_t else { continue }
+                guard let layer = window[kCGWindowLayer as String] as? Int, layer == 0 else { continue }
+                counts[ownerPid, default: 0] += 1
+            }
+            return counts
         }
-        return counts
     }
 }
