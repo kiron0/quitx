@@ -87,7 +87,6 @@ struct HelpPopoverButton: View {
                 .padding(.horizontal, 13)
                 .padding(.vertical, 10)
                 .frame(width: 230)
-                .background(VisualEffectBlur(material: .popover, blendingMode: .behindWindow))
         }
     }
 }
