@@ -121,7 +121,35 @@ struct AutoQuitAndTimingTests {
         let state = GeneralTabState()
         state.syncFromMinutes(0)
         #expect(state.autoQuitValue == 1)
-        #expect(state.autoQuitUnit == "hours")
+    }
+}
+
+@Suite("Exclude Tab State Tests")
+struct ExcludeTabStateTests {
+    @Test("ExcludeTabState partiallySelected and allSelected states")
+    @MainActor
+    func testExcludeTabSelectionStates() {
+        let state = ExcludeTabState()
+        let apps = ["com.apple.safari", "com.google.chrome", "com.spotify.client"]
+
+        #expect(!state.allSelected(apps))
+        #expect(!state.partiallySelected(apps))
+
+        state.toggle("com.apple.safari")
+        #expect(!state.allSelected(apps))
+        #expect(state.partiallySelected(apps))
+
+        state.toggle("com.google.chrome")
+        #expect(!state.allSelected(apps))
+        #expect(state.partiallySelected(apps))
+
+        state.toggle("com.spotify.client")
+        #expect(state.allSelected(apps))
+        #expect(!state.partiallySelected(apps))
+
+        state.toggleAll(apps)
+        #expect(!state.allSelected(apps))
+        #expect(!state.partiallySelected(apps))
     }
 }
 

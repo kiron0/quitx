@@ -169,7 +169,10 @@ struct ExcludeTabView: View {
                             state.toggleAll(configStore.config.exclude)
                         } label: {
                             HStack(spacing: 8) {
-                                QuitXSelectionCheckbox(isSelected: state.allSelected(configStore.config.exclude))
+                                QuitXSelectionCheckbox(
+                                    isSelected: state.allSelected(configStore.config.exclude),
+                                    isPartial: state.partiallySelected(configStore.config.exclude)
+                                )
                                 Text(state.allSelected(configStore.config.exclude) ? "Deselect All" : "Select All")
                                     .font(.system(size: 11.5, weight: .medium))
                                     .foregroundStyle(Color.primary)
@@ -252,7 +255,7 @@ struct ExcludeTabView: View {
 
 }
 
-private final class ExcludeTabState: ObservableObject {
+final class ExcludeTabState: ObservableObject {
     @Published var pendingRemoval: ExcludeRemovalRequest?
     @Published var selectedIdentifiers: Set<String> = []
 
@@ -269,6 +272,12 @@ private final class ExcludeTabState: ObservableObject {
         return !all.isEmpty && all.isSubset(of: selectedIdentifiers)
     }
 
+    func partiallySelected(_ identifiers: [String]) -> Bool {
+        let all = Set(identifiers.map { $0.lowercased() })
+        let intersection = selectedIdentifiers.intersection(all)
+        return !intersection.isEmpty && intersection.count < all.count
+    }
+
     func toggleAll(_ identifiers: [String]) {
         let all = Set(identifiers.map { $0.lowercased() })
         if all.isSubset(of: selectedIdentifiers) {
@@ -279,7 +288,7 @@ private final class ExcludeTabState: ObservableObject {
     }
 }
 
-private struct ExcludeRemovalRequest: Identifiable {
+struct ExcludeRemovalRequest: Identifiable {
     let identifiers: [String]
     let removesAll: Bool
 
