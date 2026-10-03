@@ -114,6 +114,29 @@ final class ExcludeAppPickerViewModel: ObservableObject {
             selectedIdentifiers.insert(application.id)
         }
     }
+
+    func isAllSelected(for applications: [InstalledApplication]) -> Bool {
+        guard !applications.isEmpty else { return false }
+        return applications.allSatisfy { selectedIdentifiers.contains($0.id) }
+    }
+
+    func isPartiallySelected(for applications: [InstalledApplication]) -> Bool {
+        guard !applications.isEmpty else { return false }
+        let selectedCount = applications.filter { selectedIdentifiers.contains($0.id) }.count
+        return selectedCount > 0 && selectedCount < applications.count
+    }
+
+    func toggleSelectAll(for applications: [InstalledApplication]) {
+        if isAllSelected(for: applications) {
+            for app in applications {
+                selectedIdentifiers.remove(app.id)
+            }
+        } else {
+            for app in applications {
+                selectedIdentifiers.insert(app.id)
+            }
+        }
+    }
 }
 
 @MainActor
@@ -269,21 +292,49 @@ struct ExcludeAppPickerView: View {
     }
 
     private var appList: some View {
-        ScrollView(.vertical, showsIndicators: true) {
-            LazyVStack(spacing: 2) {
-                ForEach(visibleApplications) { application in
-                    Button {
-                        viewModel.toggle(application)
-                    } label: {
-                        InstalledAppPickerRow(
-                            application: application,
-                            isSelected: viewModel.selectedIdentifiers.contains(application.id)
-                        )
-                    }
-                    .buttonStyle(.plain)
+        VStack(spacing: 0) {
+            Button {
+                viewModel.toggleSelectAll(for: visibleApplications)
+            } label: {
+                HStack(spacing: 8) {
+                    QuitXSelectionCheckbox(
+                        isSelected: viewModel.isAllSelected(for: visibleApplications),
+                        isPartial: viewModel.isPartiallySelected(for: visibleApplications)
+                    )
+                    Text(viewModel.isAllSelected(for: visibleApplications) ? "Deselect All" : "Select All")
+                        .font(.system(size: 11.5, weight: .medium))
+                        .foregroundStyle(Color.primary)
+                    Spacer()
+                    Text("\(visibleApplications.count) apps")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.secondary)
                 }
+                .padding(.horizontal, 8)
+                .frame(height: 27)
+                .contentShape(Rectangle())
             }
-            .padding(.vertical, 2)
+            .buttonStyle(.plain)
+            .padding(.horizontal, 8)
+
+            Divider()
+
+            ScrollView(.vertical, showsIndicators: true) {
+                LazyVStack(spacing: 2) {
+                    ForEach(visibleApplications) { application in
+                        Button {
+                            viewModel.toggle(application)
+                        } label: {
+                            InstalledAppPickerRow(
+                                application: application,
+                                isSelected: viewModel.selectedIdentifiers.contains(application.id)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 2)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

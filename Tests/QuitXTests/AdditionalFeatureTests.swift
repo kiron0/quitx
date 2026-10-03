@@ -374,3 +374,54 @@ struct ModelIntegrityTests {
         #expect(app.pid == 100)
     }
 }
+
+@Suite("Exclude App Picker Selection Tests")
+@MainActor
+struct ExcludeAppPickerSelectionTests {
+    private func makeApp(id: String, name: String) -> InstalledApplication {
+        InstalledApplication(
+            bundleIdentifier: id,
+            name: name,
+            url: URL(fileURLWithPath: "/Applications/\(name).app"),
+            isBackground: false
+        )
+    }
+
+    @Test("Select-all helpers toggle and calculate state accurately")
+    func testSelectAllCycle() {
+        let vm = ExcludeAppPickerViewModel()
+        let app1 = makeApp(id: "com.apple.safari", name: "Safari")
+        let app2 = makeApp(id: "com.apple.mail", name: "Mail")
+        let app3 = makeApp(id: "com.apple.finder", name: "Finder")
+        let apps = [app1, app2, app3]
+
+        #expect(!vm.isAllSelected(for: apps))
+        #expect(!vm.isPartiallySelected(for: apps))
+
+        // Select one: partial
+        vm.toggle(app1)
+        #expect(!vm.isAllSelected(for: apps))
+        #expect(vm.isPartiallySelected(for: apps))
+
+        // Select all
+        vm.toggleSelectAll(for: apps)
+        #expect(vm.isAllSelected(for: apps))
+        #expect(!vm.isPartiallySelected(for: apps))
+        #expect(vm.selectedIdentifiers.count == 3)
+
+        // Deselect all
+        vm.toggleSelectAll(for: apps)
+        #expect(!vm.isAllSelected(for: apps))
+        #expect(!vm.isPartiallySelected(for: apps))
+        #expect(vm.selectedIdentifiers.isEmpty)
+    }
+
+    @Test("Select-all handles empty application list")
+    func testEmptyList() {
+        let vm = ExcludeAppPickerViewModel()
+        #expect(!vm.isAllSelected(for: []))
+        #expect(!vm.isPartiallySelected(for: []))
+        vm.toggleSelectAll(for: [])
+        #expect(vm.selectedIdentifiers.isEmpty)
+    }
+}
