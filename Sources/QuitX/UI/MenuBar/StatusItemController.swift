@@ -283,7 +283,7 @@ final class StatusItemController: NSObject {
         ))
 
         menu.addItem(MenuHelper.makeItem(
-            title: "QuitX Help",
+            title: "Help",
             action: #selector(openHelp),
             target: self,
             keyEquivalent: "?",
