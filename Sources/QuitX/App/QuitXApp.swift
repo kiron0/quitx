@@ -18,7 +18,7 @@ struct QuitXApp: App {
             }
 
             CommandGroup(replacing: .help) {
-                Button("QuitX Help") {
+                Button("Help") {
                     HelpWindowController.shared.show()
                 }
                 .keyboardShortcut("?", modifiers: .command)

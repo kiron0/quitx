@@ -21,14 +21,18 @@ final class HelpWindowController: NSObject, NSWindowDelegate {
 
         let hosting = NSHostingController(rootView: HelpView())
         let window = NSWindow(contentViewController: hosting)
-        window.title = "QuitX Help"
-        window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
+        window.title = ""
+        window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
+        window.titlebarAppearsTransparent = true
+        window.titlebarSeparatorStyle = .none
+        window.titleVisibility = .hidden
         window.setContentSize(NSSize(width: 820, height: 560))
         window.minSize = NSSize(width: 680, height: 440)
         window.isOpaque = true
         window.isReleasedWhenClosed = false
         window.backgroundColor = QuitXTheme.windowBackgroundNSColor
         window.appearance = NSApp.effectiveAppearance
+        window.isMovableByWindowBackground = true
         window.tabbingMode = .disallowed
         window.delegate = self
 

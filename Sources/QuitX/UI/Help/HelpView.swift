@@ -183,7 +183,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Menu commands",
-                    body: "Use Command-comma for Settings and Command-question-mark for QuitX Help while QuitX is active."
+                    body: "Use Command-comma for Settings and Command-question-mark for Help while QuitX is active."
                 )
             ]
         ),
@@ -257,6 +257,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
 final class HelpViewState: ObservableObject {
     @Published var selection: String? = QuitXHelpTopic.all.first?.id
     @Published var searchText = ""
+    @Published var hoveredTopicId: String?
 }
 
 struct HelpView: View {
@@ -272,50 +273,163 @@ struct HelpView: View {
     }
 
     var body: some View {
-        NavigationSplitView {
-            sidebar
-        } detail: {
-            detail
+        VStack(spacing: 0) {
+            header
+
+            Divider()
+
+            HStack(spacing: 0) {
+                sidebar
+
+                Divider()
+
+                detail
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .navigationSplitViewStyle(.balanced)
-        .frame(minWidth: 680, minHeight: 440)
-        .background(QuitXTheme.windowBackground)
+        .frame(minWidth: 680, maxWidth: .infinity, minHeight: 440, maxHeight: .infinity)
+        .background {
+            QuitXTheme.windowBackground
+                .ignoresSafeArea()
+        }
+        .ignoresSafeArea()
         .onChange(of: state.searchText) {
             guard !filteredTopics.contains(where: { $0.id == state.selection }) else { return }
             state.selection = filteredTopics.first?.id
         }
     }
 
+    private var header: some View {
+        Text("Help")
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(Color.primary)
+            .frame(maxWidth: .infinity)
+            .frame(height: 38)
+            .background(QuitXTheme.windowBackground)
+    }
+
     private var sidebar: some View {
-        List(selection: $state.selection) {
-            ForEach(QuitXHelpCategory.allCases) { category in
-                let topics = filteredTopics.filter { $0.category == category }
-                if !topics.isEmpty {
-                    Section(category.rawValue) {
-                        ForEach(topics) { topic in
-                            Label(topic.title, systemImage: topic.symbol)
-                                .tag(topic.id)
+        VStack(spacing: 0) {
+            searchBar
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+
+            Divider()
+
+            if filteredTopics.isEmpty {
+                emptySearch
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                topicList
+            }
+        }
+        .frame(width: 235)
+        .frame(maxHeight: .infinity)
+        .background(QuitXTheme.windowBackground)
+    }
+
+    private var searchBar: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 12))
+                .foregroundStyle(Color.secondary)
+
+            TextField("Search Help...", text: $state.searchText)
+                .textFieldStyle(.plain)
+                .font(.system(size: 12))
+
+            if !state.searchText.isEmpty {
+                Button {
+                    state.searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(Color(NSColor.controlBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(Color.primary.opacity(0.12), lineWidth: 1)
+        )
+    }
+
+    private var emptySearch: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 24))
+                .foregroundStyle(Color.secondary)
+            Text("No Results")
+                .font(.system(size: 13, weight: .semibold))
+            Text("Try another search.")
+                .font(.system(size: 11.5))
+                .foregroundStyle(Color.secondary)
+        }
+    }
+
+    private var topicList: some View {
+        ScrollView(.vertical, showsIndicators: true) {
+            LazyVStack(alignment: .leading, spacing: 14) {
+                ForEach(QuitXHelpCategory.allCases) { category in
+                    let topics = filteredTopics.filter { $0.category == category }
+                    if !topics.isEmpty {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(category.rawValue.uppercased())
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(Color.secondary)
+                                .padding(.horizontal, 10)
+                                .padding(.bottom, 2)
+
+                            ForEach(topics) { topic in
+                                topicRow(topic)
+                            }
                         }
                     }
                 }
             }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 8)
         }
-        .listStyle(.sidebar)
-        .navigationTitle("QuitX Help")
-        .navigationSplitViewColumnWidth(min: 210, ideal: 235, max: 285)
-        .searchable(text: $state.searchText, placement: .sidebar, prompt: "Search Help")
-        .overlay {
-            if filteredTopics.isEmpty {
-                VStack(spacing: 8) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 24))
-                        .foregroundStyle(Color.secondary)
-                    Text("No Results")
-                        .font(.system(size: 13, weight: .semibold))
-                    Text("Try another search.")
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(Color.secondary)
-                }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func topicRow(_ topic: QuitXHelpTopic) -> some View {
+        let isSelected = state.selection == topic.id
+        return Button {
+            state.selection = topic.id
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: topic.symbol)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(isSelected ? QuitXTheme.accent : Color.secondary)
+                    .frame(width: 18)
+
+                Text(topic.title)
+                    .font(.system(size: 12.5, weight: isSelected ? .semibold : .regular))
+                    .foregroundStyle(Color.primary)
+                    .lineLimit(1)
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(isSelected ? QuitXTheme.accent.opacity(0.18) : (state.hoveredTopicId == topic.id ? Color.primary.opacity(0.06) : Color.clear))
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovered in
+            if isHovered {
+                state.hoveredTopicId = topic.id
+            } else if state.hoveredTopicId == topic.id {
+                state.hoveredTopicId = nil
             }
         }
     }
@@ -365,12 +479,12 @@ struct HelpView: View {
 
                     supportActions
                 }
-                .frame(maxWidth: 680, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(32)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .id(topic.id)
             .background(QuitXTheme.windowBackground)
-            .navigationTitle(topic.title)
         } else {
             VStack(spacing: 9) {
                 Image(systemName: "questionmark.circle")

@@ -221,12 +221,12 @@ struct ExcludeAppPickerView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
         }
-        .frame(width: 500, height: 520)
+        .frame(minWidth: 500, maxWidth: .infinity, minHeight: 520, maxHeight: .infinity)
         .background {
             QuitXTheme.windowBackground
                 .ignoresSafeArea()
         }
-        .ignoresSafeArea(edges: .top)
+        .ignoresSafeArea()
         .task {
             await viewModel.load()
         }
@@ -299,6 +299,7 @@ struct ExcludeAppPickerView: View {
             }
             .padding(.vertical, 2)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var emptyView: some View {
