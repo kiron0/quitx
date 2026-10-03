@@ -2,6 +2,12 @@
 
 All notable changes to QuitX macOS App will be documented in this file.
 
+## 1.0.4
+
+### Changed
+
+- 
+
 ## 1.0.3
 
 ### Added

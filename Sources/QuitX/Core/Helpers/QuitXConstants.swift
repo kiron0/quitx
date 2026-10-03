@@ -27,11 +27,11 @@ enum QuitXConstants {
     }
 
     static var appVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.3"
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.4"
     }
 
     static var buildNumber: String {
-        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "4"
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "5"
     }
 
     static func sayHiURL() -> URL? {
