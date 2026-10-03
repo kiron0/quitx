@@ -214,8 +214,6 @@ struct ExcludeAppPickerView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
 
-            Divider()
-
             Group {
                 if viewModel.isLoading {
                     InstalledAppsSkeletonView()
@@ -226,8 +224,6 @@ struct ExcludeAppPickerView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            Divider()
 
             footer
                 .padding(.horizontal, 16)
@@ -315,8 +311,6 @@ struct ExcludeAppPickerView: View {
             }
             .buttonStyle(.plain)
             .padding(.horizontal, 8)
-
-            Divider()
 
             ScrollView(.vertical, showsIndicators: true) {
                 LazyVStack(spacing: 2) {
