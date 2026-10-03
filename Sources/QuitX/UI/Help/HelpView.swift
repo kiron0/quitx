@@ -251,6 +251,13 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             ]
         )
     ]
+
+    static let byCategory: [(category: QuitXHelpCategory, topics: [QuitXHelpTopic])] = {
+        QuitXHelpCategory.allCases.compactMap { cat in
+            let matching = all.filter { $0.category == cat }
+            return matching.isEmpty ? nil : (category: cat, topics: matching)
+        }
+    }()
 }
 
 @MainActor
@@ -302,19 +309,16 @@ struct HelpView: View {
     private var topicList: some View {
         ScrollView(.vertical, showsIndicators: true) {
             LazyVStack(alignment: .leading, spacing: 14) {
-                ForEach(QuitXHelpCategory.allCases) { category in
-                    let topics = filteredTopics.filter { $0.category == category }
-                    if !topics.isEmpty {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(category.rawValue.uppercased())
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(Color.secondary)
-                                .padding(.horizontal, 10)
-                                .padding(.bottom, 2)
+                ForEach(QuitXHelpTopic.byCategory, id: \.category) { section in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(section.category.rawValue.uppercased())
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(Color.secondary)
+                            .padding(.horizontal, 10)
+                            .padding(.bottom, 2)
 
-                            ForEach(topics) { topic in
-                                topicRow(topic)
-                            }
+                        ForEach(section.topics) { topic in
+                            topicRow(topic)
                         }
                     }
                 }

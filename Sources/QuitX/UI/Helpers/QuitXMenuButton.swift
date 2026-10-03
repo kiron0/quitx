@@ -121,12 +121,12 @@ private struct MenuAnchorRepresentable: NSViewRepresentable {
 
     func makeNSView(context: Context) -> NSView {
         let view = NSView()
-        DispatchQueue.main.async { onView(view) }
+        onView(view)
         return view
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {
-        DispatchQueue.main.async { onView(nsView) }
+        onView(nsView)
     }
 }
 
@@ -134,6 +134,7 @@ final class MenuButtonState: ObservableObject {
     @Published var isHovered = false
     @Published var isMenuOpen = false
     var anchorView: NSView?
+    var imagePair: (normal: NSImage, hovered: NSImage)?
 }
 
 struct QuitXMenuButton: View {
@@ -171,15 +172,19 @@ struct QuitXMenuButton: View {
 
     private var iconImage: some View {
         let isActive = state.isHovered || state.isMenuOpen
-        let (normalImg, hoveredImg) = MenuButtonImageCache.images(
-            assetName: assetName,
-            selectedAssetName: selectedAssetName,
-            systemSymbolName: systemSymbolName,
-            symbolPointSize: symbolPointSize,
-            symbolWeight: symbolWeight,
-            size: size
-        )
-        return Image(nsImage: isActive ? hoveredImg : normalImg)
+        let pair = state.imagePair ?? {
+            let images = MenuButtonImageCache.images(
+                assetName: assetName,
+                selectedAssetName: selectedAssetName,
+                systemSymbolName: systemSymbolName,
+                symbolPointSize: symbolPointSize,
+                symbolWeight: symbolWeight,
+                size: size
+            )
+            state.imagePair = images
+            return images
+        }()
+        return Image(nsImage: isActive ? pair.hovered : pair.normal)
     }
 
     private func showMenu() {

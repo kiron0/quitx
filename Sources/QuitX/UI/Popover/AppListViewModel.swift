@@ -5,10 +5,18 @@ import AppKit
 final class AppListViewModel: ObservableObject {
     static let shared = AppListViewModel()
 
-    @Published var apps: [AppInfo] = []
+    @Published var apps: [AppInfo] = [] {
+        didSet { updateFilteredApps() }
+    }
     @Published var selected: Set<String> = []
-    @Published var searchQuery: String = ""
-    @Published var showBackgroundApps: Bool
+    @Published var searchQuery: String = "" {
+        didSet { updateFilteredApps() }
+    }
+    @Published var showBackgroundApps: Bool {
+        didSet { updateFilteredApps() }
+    }
+    @Published private(set) var filteredApps: [AppInfo] = []
+    private(set) var visibleIds: Set<String> = []
     @Published var isOptionKeyPressed: Bool = false
     @Published var isLoading: Bool = false
     @Published var lastQuitCount: Int = 0
@@ -40,6 +48,7 @@ final class AppListViewModel: ObservableObject {
 
     init() {
         showBackgroundApps = ConfigStore.shared.config.includeBackground
+        updateFilteredApps()
         startModifierMonitor()
         randomizeQuote()
     }
@@ -52,9 +61,7 @@ final class AppListViewModel: ObservableObject {
 
     private func startModifierMonitor() {
         flagsMonitor = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
-            DispatchQueue.main.async {
-                self?.isOptionKeyPressed = event.modifierFlags.contains(.option)
-            }
+            self?.isOptionKeyPressed = event.modifierFlags.contains(.option)
             return event
         }
     }
@@ -63,33 +70,31 @@ final class AppListViewModel: ObservableObject {
         currentQuote = quotes.randomElement() ?? "Don't give up quitting ⚡"
     }
 
-    var filteredApps: [AppInfo] {
+    private func updateFilteredApps() {
         var list = apps
         if !showBackgroundApps {
             list = list.filter { !$0.isBackground }
         }
         let normalizedQuery = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         if !normalizedQuery.isEmpty {
-            let q = normalizedQuery
-            list = list.filter { $0.name.lowercased().contains(q) }
+            list = list.filter { $0.name.lowercased().contains(normalizedQuery) }
         }
-        return list
+        filteredApps = list
+        visibleIds = Set(list.map(\.id))
     }
 
     var isAllSelected: Bool {
-        let current = filteredApps
-        return !current.isEmpty && current.allSatisfy { selected.contains($0.id) }
+        !visibleIds.isEmpty && visibleIds.isSubset(of: selected)
     }
 
     var isPartiallySelected: Bool {
-        let visibleIds = Set(filteredApps.map(\.id))
-        let visibleSelection = selected.intersection(visibleIds)
-        return !visibleSelection.isEmpty && visibleSelection.count < visibleIds.count
+        guard !visibleIds.isEmpty else { return false }
+        let count = selected.intersection(visibleIds).count
+        return count > 0 && count < visibleIds.count
     }
 
     var selectedVisibleCount: Int {
-        let visibleIds = Set(filteredApps.map(\.id))
-        return selected.intersection(visibleIds).count
+        selected.intersection(visibleIds).count
     }
 
     var hasPendingOperations: Bool {
@@ -97,7 +102,6 @@ final class AppListViewModel: ObservableObject {
     }
 
     func toggleSelectAll() {
-        let visibleIds = Set(filteredApps.map(\.id))
         if visibleIds.isSubset(of: selected) {
             selected.subtract(visibleIds)
         } else {
@@ -131,13 +135,13 @@ final class AppListViewModel: ObservableObject {
 
         if !hasInitializedSelection {
             if cfg.defaultSelectAll {
-                selected = Set(filteredApps.map(\.id))
+                selected = visibleIds
             } else {
                 selected = []
             }
             hasInitializedSelection = true
         } else if selectedAllBeforeRefresh {
-            selected = Set(filteredApps.map(\.id))
+            selected = visibleIds
         } else {
             let validIds = Set(apps.map(\.id))
             selected = selected.intersection(validIds)

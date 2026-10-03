@@ -11,7 +11,17 @@ struct InstalledApplication: Identifiable, Hashable, Sendable {
 }
 
 enum InstalledApplicationScanner {
-    static func scan() -> [InstalledApplication] {
+    private static var cached: [InstalledApplication]?
+    private static let lock = NSLock()
+
+    static func scan(forceRefresh: Bool = false) -> [InstalledApplication] {
+        lock.lock()
+        if !forceRefresh, let cached = cached {
+            lock.unlock()
+            return cached
+        }
+        lock.unlock()
+
         let fileManager = FileManager.default
         let roots = fileManager.urls(for: .applicationDirectory, in: .localDomainMask)
             + fileManager.urls(for: .applicationDirectory, in: .systemDomainMask)
@@ -58,9 +68,15 @@ enum InstalledApplicationScanner {
             }
         }
 
-        return applicationsByIdentifier.values.sorted {
+        let sorted = applicationsByIdentifier.values.sorted {
             $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
         }
+
+        lock.lock()
+        cached = sorted
+        lock.unlock()
+
+        return sorted
     }
 
     private static func preferred(_ candidate: InstalledApplication, over existing: InstalledApplication) -> Bool {

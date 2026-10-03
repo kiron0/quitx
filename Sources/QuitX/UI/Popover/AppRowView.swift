@@ -6,32 +6,6 @@ private final class RowState: ObservableObject {
     @Published var isQuitHovered = false
 }
 
-private final class IconLoader: ObservableObject {
-    @Published var icon: NSImage?
-
-    func load(bundleId: String?) {
-        guard let bid = bundleId else { return }
-        if bid == "com.apple.trash" {
-            let img = NSImage(systemSymbolName: "trash", accessibilityDescription: "Trash")
-            img?.isTemplate = true
-            self.icon = img
-            return
-        }
-        if bid == "com.apple.finder" {
-            if let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid)?.path {
-                let img = NSWorkspace.shared.icon(forFile: path)
-                self.icon = img
-                return
-            }
-        }
-        guard let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid)?.path else { return }
-        DispatchQueue.global(qos: .userInitiated).async {
-            let img = NSWorkspace.shared.icon(forFile: path)
-            DispatchQueue.main.async { self.icon = img }
-        }
-    }
-}
-
 struct AppRowView: View {
     let app: AppInfo
     let isSelected: Bool
@@ -43,7 +17,6 @@ struct AppRowView: View {
     let onExclude: () -> Void
 
     @StateObject private var state = RowState()
-    @StateObject private var iconLoader = IconLoader()
     @ObservedObject private var configStore = ConfigStore.shared
 
     private let goldColor = QuitXTheme.accent
@@ -54,20 +27,7 @@ struct AppRowView: View {
 
             QuitXSelectionCheckbox(isSelected: isSelected)
 
-            Group {
-                if let icon = iconLoader.icon {
-                    Image(nsImage: icon)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 18, height: 18)
-                        .cornerRadius(3)
-                } else {
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.primary.opacity(0.08))
-                        .frame(width: 18, height: 18)
-                }
-            }
-            .onAppear { iconLoader.load(bundleId: app.bundleId) }
+            AppIconView(bundleId: app.bundleId, size: 18, cornerRadius: 3)
 
             Text(app.name)
                 .font(.system(size: 12.5, weight: .regular))
