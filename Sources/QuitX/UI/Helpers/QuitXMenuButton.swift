@@ -44,10 +44,8 @@ private enum MenuButtonImageCache {
         let baseNormal = normalSource ?? NSImage(size: size)
         let baseHovered = hoveredSource ?? baseNormal
 
-        // Normalize alpha on hovered image so it glows with full 100% saturation and opacity, matching the quit icon
         let normalizedHovered = normalizeAlpha(baseHovered)
 
-        // Tint directly into non-template images so AppKit does not apply vibrancy / dark-mode dimming
         let normal = tint(image: baseNormal, with: NSColor.secondaryLabelColor, size: size)
         let hovered = tint(image: normalizedHovered, with: QuitXTheme.accentNSColor, size: size)
 

@@ -33,8 +33,6 @@ private struct InitialFocusDisabler: NSViewRepresentable {
 }
 
 extension View {
-    /// Prevents a control from taking focus when its window first appears.
-    /// Normal click and keyboard focus remain available afterward.
     func disableInitialFocus() -> some View {
         background(InitialFocusDisabler())
     }

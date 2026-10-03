@@ -7,7 +7,6 @@ struct AppUpdateView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Main Content Area
             HStack(alignment: .top, spacing: 18) {
                 appIconSection
 
@@ -23,11 +22,9 @@ struct AppUpdateView: View {
 
             Spacer(minLength: 0)
 
-            // Bottom Divider
             Divider()
                 .opacity(0.35)
 
-            // Footer Actions
             footerActions
                 .padding(.horizontal, 20)
                 .padding(.vertical, 13)
@@ -37,7 +34,6 @@ struct AppUpdateView: View {
         .background(QuitXTheme.windowBackground)
     }
 
-    // MARK: - Sections
 
     private var appIconSection: some View {
         ZStack(alignment: .bottomTrailing) {

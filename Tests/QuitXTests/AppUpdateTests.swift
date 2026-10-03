@@ -144,7 +144,6 @@ struct AppUpdateTests {
 
     @Test("DMG Mount, Extraction and Bundle Validation Pipeline")
     func testDMGExtractionPipeline() async throws {
-        // Setup a temporary workspace
         let tempRoot = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("QuitXTest-\(UUID().uuidString)")
         let stageDir = tempRoot.appendingPathComponent("stage")
@@ -172,12 +171,10 @@ struct AppUpdateTests {
         """
         try plistContent.write(to: infoPlistURL, atomically: true, encoding: .utf8)
 
-        // Create dummy executable
         let dummyScript = "#!/bin/sh\nexit 0\n"
         try dummyScript.write(to: execURL, atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: execURL.path)
 
-        // Create disk image using hdiutil
         let hdiutilProcess = Process()
         hdiutilProcess.executableURL = URL(fileURLWithPath: "/usr/bin/hdiutil")
         hdiutilProcess.arguments = ["create", "-volname", "QuitX", "-srcfolder", stageDir.path, "-ov", "-format", "UDZO", dmgURL.path]
@@ -189,7 +186,6 @@ struct AppUpdateTests {
             try? FileManager.default.removeItem(at: tempRoot)
         }
 
-        // Test extraction
         let service = UpdateDownloadService.shared
         let extractedApp = try await service.extractAppFromDMG(dmgURL: dmgURL)
 
@@ -199,7 +195,6 @@ struct AppUpdateTests {
         let bundle = try #require(Bundle(url: extractedApp))
         #expect(bundle.bundleIdentifier == "io.coreify.quitx")
 
-        // Clean up staged
         try? FileManager.default.removeItem(at: extractedApp.deletingLastPathComponent())
     }
 }

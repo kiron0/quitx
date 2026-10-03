@@ -36,7 +36,7 @@ struct AppSortingAndGroupingTests {
 
     @Test("Sort by CPU Descending with tie breaker by name")
     func testSortCpuDescTieBreaker() {
-        let list = [appD, appA] // both 5.0% CPU: Alpha vs Delta
+        let list = [appD, appA]
         let sorted = list.sorted {
             if $0.cpuUsage != $1.cpuUsage { return $0.cpuUsage > $1.cpuUsage }
             return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
@@ -66,7 +66,7 @@ struct AppSortingAndGroupingTests {
 
     @Test("Sort by Memory Descending with tie breaker by name")
     func testSortMemoryDescTieBreaker() {
-        let list = [appD, appB] // both 500 MB: Beta vs Delta
+        let list = [appD, appB]
         let sorted = list.sorted {
             if $0.memoryBytes != $1.memoryBytes { return $0.memoryBytes > $1.memoryBytes }
             return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending

@@ -63,8 +63,6 @@ final class AppUpdateWindowController: NSWindowController, NSWindowDelegate {
         UpdateDownloadService.shared.cancelDownload()
     }
 
-    // MARK: - NSWindowDelegate
-
     nonisolated func windowWillClose(_ notification: Notification) {
         Task { @MainActor in
             UpdateDownloadService.shared.cancelDownload()

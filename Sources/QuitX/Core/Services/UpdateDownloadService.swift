@@ -110,8 +110,6 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         currentReleaseWebURL = nil
     }
 
-    // MARK: - DMG Extraction Pipeline
-
     nonisolated func extractAppFromDMG(dmgURL: URL) async throws -> URL {
         let mountPoint = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("QuitXMount-\(UUID().uuidString)")
@@ -122,7 +120,6 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         try FileManager.default.createDirectory(at: mountPoint, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: stagingDir, withIntermediateDirectories: true)
 
-        // 1. Mount DMG silently without showing in Finder
         let attachProcess = Process()
         attachProcess.executableURL = URL(fileURLWithPath: "/usr/bin/hdiutil")
         attachProcess.arguments = [
@@ -144,7 +141,6 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         }
 
         defer {
-            // Detach DMG when finished or on error
             let detachProcess = Process()
             detachProcess.executableURL = URL(fileURLWithPath: "/usr/bin/hdiutil")
             detachProcess.arguments = ["detach", mountPoint.path, "-force", "-quiet"]
@@ -154,7 +150,6 @@ final class UpdateDownloadService: NSObject, ObservableObject {
             try? FileManager.default.removeItem(at: dmgURL.deletingLastPathComponent())
         }
 
-        // 2. Locate QuitX.app in mount point
         let sourceAppURL: URL
         let defaultAppURL = mountPoint.appendingPathComponent("QuitX.app")
         if FileManager.default.fileExists(atPath: defaultAppURL.path) {
@@ -168,7 +163,6 @@ final class UpdateDownloadService: NSObject, ObservableObject {
             sourceAppURL = foundApp
         }
 
-        // 3. Copy .app to staging directory
         let copyProcess = Process()
         copyProcess.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
         copyProcess.arguments = [sourceAppURL.path, stagedAppURL.path]
@@ -179,7 +173,6 @@ final class UpdateDownloadService: NSObject, ObservableObject {
             throw UpdateError.copyFailed
         }
 
-        // 4. Verify bundle structure and identifier
         guard let bundle = Bundle(url: stagedAppURL),
               bundle.bundleIdentifier == "io.coreify.quitx" else {
             try? FileManager.default.removeItem(at: stagingDir)
@@ -195,7 +188,6 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         return stagedAppURL
     }
 
-    // MARK: - Atomic Replacement & Relaunch
 
     nonisolated static func resolveDestinationAppURL() -> URL {
         let mainBundle = Bundle.main.bundleURL
@@ -224,7 +216,6 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         SRC_APP="\(srcAppPath)"
         DEST_APP="\(destAppPath)"
 
-        # 1. Wait for current running QuitX process to exit (max 5 seconds)
         COUNT=0
         while kill -0 "$TARGET_PID" 2>/dev/null; do
             sleep 0.1
@@ -235,18 +226,14 @@ final class UpdateDownloadService: NSObject, ObservableObject {
             fi
         done
 
-        # 2. Atomically swap bundle
         rm -rf "$DEST_APP"
         ditto "$SRC_APP" "$DEST_APP"
 
-        # 3. Clean attributes & staging
         xattr -rd com.apple.quarantine "$DEST_APP" 2>/dev/null || true
         rm -rf "$(dirname "$SRC_APP")"
 
-        # 4. Relaunch QuitX
         open "$DEST_APP"
 
-        # 5. Remove updater script
         rm -- "$0"
         """
     }
@@ -285,7 +272,6 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         }
     }
 
-    // MARK: - Progress & Format Helpers
 
     nonisolated static func formatBytes(_ bytes: Int64) -> String {
         let formatter = ByteCountFormatter()
@@ -365,7 +351,6 @@ final class UpdateDownloadService: NSObject, ObservableObject {
     }
 }
 
-// MARK: - URLSessionDownloadDelegate
 
 extension UpdateDownloadService: URLSessionDownloadDelegate {
     nonisolated func urlSession(
@@ -389,7 +374,6 @@ extension UpdateDownloadService: URLSessionDownloadDelegate {
         downloadTask: URLSessionDownloadTask,
         didFinishDownloadingTo location: URL
     ) {
-        // Move file synchronously out of location before delegate returns
         let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("QuitXDownload-\(UUID().uuidString)")
         let savedTempFile = tempDir.appendingPathComponent("QuitX.dmg")

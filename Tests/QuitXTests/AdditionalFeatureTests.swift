@@ -398,18 +398,15 @@ struct ExcludeAppPickerSelectionTests {
         #expect(!vm.isAllSelected(for: apps))
         #expect(!vm.isPartiallySelected(for: apps))
 
-        // Select one: partial
         vm.toggle(app1)
         #expect(!vm.isAllSelected(for: apps))
         #expect(vm.isPartiallySelected(for: apps))
 
-        // Select all
         vm.toggleSelectAll(for: apps)
         #expect(vm.isAllSelected(for: apps))
         #expect(!vm.isPartiallySelected(for: apps))
         #expect(vm.selectedIdentifiers.count == 3)
 
-        // Deselect all
         vm.toggleSelectAll(for: apps)
         #expect(!vm.isAllSelected(for: apps))
         #expect(!vm.isPartiallySelected(for: apps))
