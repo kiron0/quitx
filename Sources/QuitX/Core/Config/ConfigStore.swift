@@ -25,4 +25,34 @@ final class ConfigStore: ObservableObject {
             StatusItemController.shared?.updatePopoverSize()
         }
     }
+
+    @discardableResult
+    func addExcludedApps(_ identifiers: [String]) -> Int {
+        var known = Set(config.exclude.map { $0.lowercased() })
+        var added = 0
+
+        for rawIdentifier in identifiers {
+            let identifier = rawIdentifier.trimmingCharacters(in: .whitespacesAndNewlines)
+            let normalized = identifier.lowercased()
+            guard !normalized.isEmpty, known.insert(normalized).inserted else { continue }
+            config.exclude.append(identifier)
+            added += 1
+        }
+
+        if added > 0 { save() }
+        return added
+    }
+
+    func removeExcludedApp(_ identifier: String) {
+        let normalized = identifier.lowercased()
+        let oldCount = config.exclude.count
+        config.exclude.removeAll { $0.lowercased() == normalized }
+        if config.exclude.count != oldCount { save() }
+    }
+
+    func removeAllExcludedApps() {
+        guard !config.exclude.isEmpty else { return }
+        config.exclude.removeAll()
+        save()
+    }
 }

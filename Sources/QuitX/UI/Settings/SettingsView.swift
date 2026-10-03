@@ -3,6 +3,7 @@ import AppKit
 
 enum SettingsTab: String, CaseIterable {
     case general = "General"
+    case exclude = "Exclude"
     case shortcuts = "Shortcuts"
     case support = "Support"
     case about = "About"
@@ -14,6 +15,7 @@ enum SettingsTab: String, CaseIterable {
     var iconName: String {
         switch self {
         case .general:   return "preferences-general"
+        case .exclude:   return "preferences-exclude"
         case .shortcuts: return "preferences-shortcuts"
         case .support:   return "preferences-support"
         case .about:     return "preferences-about"
@@ -23,6 +25,7 @@ enum SettingsTab: String, CaseIterable {
     var fallbackSymbolName: String {
         switch self {
         case .general:   return "gearshape"
+        case .exclude:   return "nosign"
         case .shortcuts: return "command"
         case .support:   return "bubble.left.and.bubble.right"
         case .about:     return "bolt.fill"
@@ -46,6 +49,7 @@ enum SettingsTab: String, CaseIterable {
     var contentHeight: CGFloat {
         switch self {
         case .general:   return 475
+        case .exclude:   return 300
         case .shortcuts: return 215
         case .support:   return 139
         case .about:     return 130
@@ -109,6 +113,9 @@ struct SettingsContainerView: View {
             case .general:
                 GeneralTabCloneView()
                     .environmentObject(configStore)
+            case .exclude:
+                ExcludeTabView()
+                    .environmentObject(configStore)
             case .shortcuts:
                 ShortcutsTabCloneView()
             case .support:
@@ -129,6 +136,191 @@ struct SettingsView: View {
     var body: some View {
         SettingsContainerView(tabModel: tabModel)
             .environmentObject(configStore)
+    }
+}
+
+struct ExcludeTabView: View {
+    @EnvironmentObject private var configStore: ConfigStore
+    @StateObject private var state = ExcludeTabState()
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Apps on this list stay out of manual and automatic Quit actions.")
+                .font(.system(size: 12))
+                .foregroundStyle(Color.secondary)
+
+            HStack {
+                Button {
+                    ExcludeAppPickerWindowController.shared.show()
+                } label: {
+                    Label("Add Apps…", systemImage: "plus")
+                }
+                .font(.system(size: 11.5))
+
+                Spacer()
+            }
+
+            Group {
+                if configStore.config.exclude.isEmpty {
+                    VStack(spacing: 8) {
+                        Image(systemName: "nosign")
+                            .font(.system(size: 24))
+                            .foregroundStyle(QuitXTheme.accent)
+                        Text("No excluded apps")
+                            .font(.system(size: 12.5, weight: .medium))
+                            .foregroundStyle(Color.primary)
+                        Text("Use an app's ••• menu in the QuitX popover to add it.")
+                            .font(.system(size: 11.5))
+                            .foregroundStyle(Color.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ScrollView(.vertical, showsIndicators: true) {
+                        LazyVStack(spacing: 0) {
+                            ForEach(Array(configStore.config.exclude.enumerated()), id: \.offset) { index, identifier in
+                                ExcludedAppRow(identifier: identifier) {
+                                    state.pendingRemoval = ExcludeRemovalRequest(identifier: identifier)
+                                }
+
+                                if index < configStore.config.exclude.count - 1 {
+                                    Divider().padding(.leading, 38)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 7))
+            .overlay(
+                RoundedRectangle(cornerRadius: 7)
+                    .stroke(Color.primary.opacity(0.09), lineWidth: 0.5)
+            )
+
+            HStack {
+                Text("\(configStore.config.exclude.count) excluded")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color.secondary)
+
+                Spacer()
+
+                Button("Remove All") {
+                    state.showRemoveAllPrompt = true
+                }
+                .font(.system(size: 11.5))
+                .disabled(configStore.config.exclude.isEmpty)
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .frame(width: 400, height: 300, alignment: .topLeading)
+        .background(QuitXTheme.windowBackground)
+        .alert(item: $state.pendingRemoval) { request in
+            Alert(
+                title: Text("Remove from Exclude list?"),
+                message: Text("QuitX may quit \(request.displayName) after removal."),
+                primaryButton: .destructive(Text("Remove")) {
+                    configStore.removeExcludedApp(request.identifier)
+                },
+                secondaryButton: .cancel()
+            )
+        }
+        .alert("Remove all excluded apps?", isPresented: $state.showRemoveAllPrompt) {
+            Button("Remove All", role: .destructive) {
+                configStore.removeAllExcludedApps()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("QuitX may quit these apps after removal. This action clears the entire Exclude list.")
+        }
+    }
+}
+
+private final class ExcludeTabState: ObservableObject {
+    @Published var pendingRemoval: ExcludeRemovalRequest?
+    @Published var showRemoveAllPrompt = false
+}
+
+private struct ExcludeRemovalRequest: Identifiable {
+    let identifier: String
+    let displayName: String
+
+    var id: String { identifier.lowercased() }
+
+    init(identifier: String) {
+        self.identifier = identifier
+        if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: identifier),
+           let bundle = Bundle(url: appURL),
+           let name = bundle.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
+            ?? bundle.object(forInfoDictionaryKey: "CFBundleName") as? String {
+            displayName = name
+        } else {
+            displayName = identifier
+        }
+    }
+}
+
+private struct ExcludedAppRow: View {
+    let identifier: String
+    let onRemove: () -> Void
+
+    private var appURL: URL? {
+        NSWorkspace.shared.urlForApplication(withBundleIdentifier: identifier)
+    }
+
+    private var displayName: String {
+        guard let appURL,
+              let bundle = Bundle(url: appURL),
+              let name = bundle.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
+                ?? bundle.object(forInfoDictionaryKey: "CFBundleName") as? String else {
+            return identifier
+        }
+        return name
+    }
+
+    var body: some View {
+        HStack(spacing: 9) {
+            Group {
+                if let appURL {
+                    Image(nsImage: NSWorkspace.shared.icon(forFile: appURL.path))
+                        .resizable()
+                        .scaledToFit()
+                } else {
+                    Image(systemName: "app.dashed")
+                        .resizable()
+                        .scaledToFit()
+                        .foregroundStyle(Color.secondary)
+                        .padding(3)
+                }
+            }
+            .frame(width: 22, height: 22)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(displayName)
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(Color.primary)
+                    .lineLimit(1)
+
+                if displayName != identifier {
+                    Text(identifier)
+                        .font(.system(size: 10.5))
+                        .foregroundStyle(Color.secondary)
+                        .lineLimit(1)
+                }
+            }
+
+            Spacer(minLength: 6)
+
+            Button(action: onRemove) {
+                Image(systemName: "minus.circle.fill")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.secondary)
+            }
+            .buttonStyle(.plain)
+            .help("Remove \(displayName) from Exclude list")
+        }
+        .padding(.horizontal, 10)
+        .frame(height: 40)
     }
 }
 

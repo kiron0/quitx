@@ -34,9 +34,7 @@ struct AppListView: View {
                     },
                     onExclude: {
                         if let bid = app.bundleId {
-                            ConfigStore.shared.config.exclude.append(bid)
-                            ConfigStore.shared.save()
-                            Task { await vm.refresh() }
+                            ConfigStore.shared.addExcludedApps([bid])
                         }
                     }
                 )

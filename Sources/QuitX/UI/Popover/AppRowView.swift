@@ -93,6 +93,10 @@ struct AppRowView: View {
                 return false
             }()
 
+            Text(app.cpuFormatted)
+                .font(.system(size: 10.5, design: .monospaced))
+                .foregroundStyle(Color.secondary)
+
             AppRowOptionsButton(
                 isForced: isOptionKeyPressed,
                 isEnabled: !isPending,
@@ -107,10 +111,6 @@ struct AppRowView: View {
                 }
             )
             .frame(width: 16, height: 16)
-
-            Text(app.cpuFormatted)
-                .font(.system(size: 10.5, design: .monospaced))
-                .foregroundStyle(Color.secondary)
 
             Button {
                 onQuit(isOptionKeyPressed)
