@@ -174,13 +174,11 @@ final class AppListViewModel: ObservableObject {
     func updateLiveStats() async {
         guard !isLoading, !isUpdatingLiveStats else { return }
         isUpdatingLiveStats = true
-        scanGeneration += 1
-        let generation = scanGeneration
         defer { isUpdatingLiveStats = false }
         let selectedAllBeforeRefresh = isAllSelected
         let cfg = activeScanConfig
         let fetched = await AppListService.shared.fetchApps(config: cfg)
-        guard !Task.isCancelled, generation == scanGeneration else { return }
+        guard !Task.isCancelled, !isLoading else { return }
         apps = fetched
         if selectedAllBeforeRefresh {
             selected = visibleIds

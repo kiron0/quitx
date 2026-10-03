@@ -45,6 +45,8 @@ final class ShortcutManager: ObservableObject {
         if let g = globalMonitor { NSEvent.removeMonitor(g); globalMonitor = nil }
         if let l = localMonitor { NSEvent.removeMonitor(l); localMonitor = nil }
 
+        guard activateMenuEnabled || quitAllEnabled || forceQuitAllEnabled else { return }
+
         globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
             self?.handleKeyEvent(event)
         }

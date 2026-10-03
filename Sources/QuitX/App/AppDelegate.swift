@@ -67,14 +67,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func showSettingsWindow(_ sender: Any?) {
-        Task { @MainActor in
-            SettingsWindowController.shared.show()
-        }
+        SettingsWindowController.shared.show()
     }
 
     @objc func showPreferencesWindow(_ sender: Any?) {
-        Task { @MainActor in
-            SettingsWindowController.shared.show()
-        }
+        SettingsWindowController.shared.show()
     }
 }

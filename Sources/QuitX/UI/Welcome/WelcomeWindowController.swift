@@ -78,6 +78,7 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
     func close() {
         window?.close()
         window = nil
+        WindowActivationCoordinator.update()
     }
 
     func windowWillClose(_ notification: Notification) {

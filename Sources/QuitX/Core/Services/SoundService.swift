@@ -1,6 +1,8 @@
 import AppKit
 
 enum SoundService {
+    private static var currentSound: NSSound?
+
     static func playQuitSingle() {
         guard ConfigStore.shared.config.playSounds else { return }
         playSound(named: "quit-single")
@@ -14,6 +16,7 @@ enum SoundService {
     private static func playSound(named name: String) {
         if let url = Bundle.main.url(forResource: name, withExtension: "aiff"),
            let sound = NSSound(contentsOf: url, byReference: true) {
+            currentSound = sound
             sound.play()
             return
         }
@@ -21,6 +24,7 @@ enum SoundService {
         let localPath = "Support/Sounds/\(name).aiff"
         if FileManager.default.fileExists(atPath: localPath),
            let sound = NSSound(contentsOfFile: localPath, byReference: true) {
+            currentSound = sound
             sound.play()
         }
     }

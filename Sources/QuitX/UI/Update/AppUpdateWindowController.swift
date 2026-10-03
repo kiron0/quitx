@@ -78,9 +78,6 @@ final class AppUpdateWindowController: NSObject, NSWindowDelegate {
         WindowActivationCoordinator.update()
     }
 
-    func closeWindow() {
-        close()
-    }
 
     func windowWillClose(_ notification: Notification) {
         window = nil
