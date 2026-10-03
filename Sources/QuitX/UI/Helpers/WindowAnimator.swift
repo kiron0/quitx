@@ -8,6 +8,15 @@ enum WindowAnimator {
         targetFrame: NSRect,
         duration: TimeInterval = 0.25
     ) {
+        let isFullSize = window.styleMask.contains(.fullSizeContentView) && window.toolbar == nil
+        if isFullSize {
+            window.isOpaque = false
+            window.backgroundColor = .clear
+        } else {
+            window.isOpaque = false
+            window.backgroundColor = QuitXTheme.windowBackgroundNSColor
+        }
+
         window.animationBehavior = .none
         window.alphaValue = 0.0
         window.setFrame(targetFrame, display: true)
