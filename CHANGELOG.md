@@ -14,7 +14,7 @@ All notable changes to QuitX macOS App will be documented in this file.
 
 - Prevented default autofocus on popover search bar on open to avoid trapping keystrokes.
 - Restored "Quit All" button 6pt corner radius and border overlay design matching v1.0.1 aesthetic.
-- Menubar right-click "About QuitX" action now directs straight to the About tab in Settings.
+- Menubar right-click "About" action now directs straight to the About tab in Settings.
 - Repositioned General Settings help tooltip below button with native system blur styling.
 
 ### Removed
