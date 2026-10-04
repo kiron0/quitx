@@ -18,12 +18,31 @@ All notable changes to QuitX macOS App will be documented in this file.
 - Optimized app row layout spacing in main popover: widened visible application title container to 108pt within the fixed 270pt popover window, preventing truncation of common application names like "Google Chrome" and "Activity Monitor".
 - Adjusted resource usage display frame width to 46pt to prevent high memory readings (e.g. `15.4 GB`) from clipping.
 - Synchronized `Force Quit Selected` button text color with `Quit All Selected` and wired it to the confirmation modal dialog.
+- Unified dual 50-case keycode translation maps in `ShortcutManager` into a single bidirectional dictionary.
+- Moved AppleScript execution in `QuitService` to a detached background task to prevent blocking the main thread during Finder or Trash operations.
+- Debounced `ConfigStore.save()` disk writes by 150ms using `DispatchWorkItem` to prevent write bursts during rapid settings toggles.
+- Decoupled `AppListViewModel.updateLiveStats` into lightweight `fetchLiveStats`, refreshing CPU and memory metrics in-place every 2 seconds without full process re-enumeration or window list queries.
+- Bounded `AppIconCache` image memory with `countLimit = 150`.
+- Added TTL-based caching for per-PID memory and CPU metrics in `AppListService` to avoid redundant system calls and subprocess executions.
+- Cached rendered menu bar status item icons in `StatusItemController` to eliminate repeated filesystem reads.
+- Hoisted popover styling constants and reused `PopoverContainerShape` instances in `MainPopoverView` to minimize per-render overhead.
+- Cached excluded application set against modification in `AutoQuitService`.
+- Hardened update API key handling in `QuitXConstants` to support dynamic bundle and environment injection with obfuscated fallback components.
 
 ### Fixed
 
 - Fixed unclickable confirmation alerts when quitting 4 or more applications from the popover.
 - Fixed keyboard navigation shortcuts (`Esc` to dismiss confirmation, `Return` to confirm action) inside the popover window.
 - Fixed `SettingsTab.general.contentHeight` unit test expectation mismatch following the addition of the individual confirmation toggle.
+- Fixed potential pipe read deadlock in `AppListService.fetchCpuUsages()` by waiting for process exit before reading stdout.
+- Fixed unhandled regex crash risk in `SystemAppProtection` by using graceful optional regex compilation.
+- Enforced `@MainActor` thread-safety on `AppIconCache` AppKit operations.
+- Fixed timer lifecycle leak in `AutoQuitService` by adding explicit `stopTracking()` and deinit invalidation.
+- Fixed `QuitXConfig.SortBy` decoder fallback to align with default `.name` alphabetical sort instead of resetting to CPU sort.
+- Fixed unreleased `DistributedNotificationCenter` observer tokens on application termination in `AppDelegate`.
+- Fixed SwiftUI list identity collision risk for grouped background apps and apps without bundle IDs in `AppInfo`.
+- Clarified `restartApp` failure toast messaging with actionable force-quit guidance.
+- Fixed CoreGraphics off-main-thread warnings on macOS 14+ by capturing window list snapshots on `@MainActor`.
 
 ## 1.0.5
 
