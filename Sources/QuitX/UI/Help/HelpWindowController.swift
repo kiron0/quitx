@@ -13,6 +13,9 @@ final class HelpWindowController: NSObject, NSWindowDelegate {
         StatusItemController.shared?.closePopover()
 
         if let window {
+            if let screen = WindowPositioner.targetScreen {
+                window.setFrameOrigin(WindowPositioner.topBiasedOrigin(for: window.frame.size, on: screen))
+            }
             WindowAnimator.activateExisting(window)
             return
         }
@@ -28,28 +31,25 @@ final class HelpWindowController: NSObject, NSWindowDelegate {
         window.minSize = window.frame.size
         window.maxSize = window.frame.size
         window.collectionBehavior = [.fullScreenNone]
-        window.isOpaque = true
+        window.isOpaque = false
         window.isReleasedWhenClosed = false
-        window.backgroundColor = QuitXTheme.windowBackgroundNSColor
+        window.backgroundColor = .clear
         window.isMovableByWindowBackground = true
         window.tabbingMode = .disallowed
-        window.animationBehavior = .documentWindow
+        window.animationBehavior = .none
         window.delegate = self
 
-        if let screen = NSScreen.main ?? NSScreen.screens.first {
-            let sf = screen.visibleFrame
-            let origin = NSPoint(
-                x: sf.midX - window.frame.width / 2,
-                y: sf.maxY - window.frame.height - 110
-            )
-            window.setFrameOrigin(origin)
+        let targetFrame: NSRect
+        if let screen = WindowPositioner.targetScreen {
+            targetFrame = WindowPositioner.topBiasedFrame(for: window.frame.size, on: screen)
         } else {
             window.center()
+            targetFrame = window.frame
         }
 
         self.window = window
         WindowActivationCoordinator.update()
-        WindowAnimator.present(window, targetFrame: window.frame)
+        WindowAnimator.present(window, targetFrame: targetFrame)
     }
 
     func close() {

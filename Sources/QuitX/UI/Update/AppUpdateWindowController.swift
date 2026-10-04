@@ -13,8 +13,8 @@ final class AppUpdateWindowController: NSObject, NSWindowDelegate {
         StatusItemController.shared?.closePopover()
 
         if let win = window {
-            if let screen = NSScreen.main ?? NSScreen.screens.first {
-                win.setFrameOrigin(windowOrigin(for: win.frame.size, on: screen))
+            if let screen = WindowPositioner.targetScreen {
+                win.setFrameOrigin(WindowPositioner.topBiasedOrigin(for: win.frame.size, on: screen))
             }
             WindowAnimator.activateExisting(win)
             return
@@ -39,14 +39,14 @@ final class AppUpdateWindowController: NSObject, NSWindowDelegate {
             in: NSSize(width: windowWidth, height: CGFloat.greatestFiniteMagnitude)
         )
         win.setContentSize(NSSize(width: windowWidth, height: ceil(fittingSize.height)))
-        win.isOpaque = true
-        win.backgroundColor = QuitXTheme.windowBackgroundNSColor
+        win.isOpaque = false
+        win.backgroundColor = .clear
         win.isMovableByWindowBackground = true
         win.standardWindowButton(.closeButton)?.isEnabled = true
         win.standardWindowButton(.closeButton)?.isHidden = false
         win.hasShadow = true
         win.isReleasedWhenClosed = false
-        win.animationBehavior = .documentWindow
+        win.animationBehavior = .none
         win.delegate = self
         self.window = win
         WindowActivationCoordinator.update()
@@ -58,11 +58,8 @@ final class AppUpdateWindowController: NSObject, NSWindowDelegate {
         )
 
         let targetFrame: NSRect
-        if let screen = NSScreen.main ?? NSScreen.screens.first {
-            targetFrame = NSRect(
-                origin: windowOrigin(for: win.frame.size, on: screen),
-                size: win.frame.size
-            )
+        if let screen = WindowPositioner.targetScreen {
+            targetFrame = WindowPositioner.topBiasedFrame(for: win.frame.size, on: screen)
         } else {
             win.center()
             targetFrame = win.frame
@@ -83,13 +80,5 @@ final class AppUpdateWindowController: NSObject, NSWindowDelegate {
         window = nil
         UpdateDownloadService.shared.cancelDownload()
         WindowActivationCoordinator.update()
-    }
-
-    private func windowOrigin(for size: NSSize, on screen: NSScreen) -> NSPoint {
-        let visibleFrame = screen.visibleFrame
-        return NSPoint(
-            x: visibleFrame.midX - (size.width / 2),
-            y: visibleFrame.maxY - size.height - 110
-        )
     }
 }

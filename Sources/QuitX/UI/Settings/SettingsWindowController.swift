@@ -27,7 +27,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
             if let tab = tab {
                 switchToTab(tab)
             }
-            if let screen = NSScreen.main ?? NSScreen.screens.first {
+            if let screen = WindowPositioner.targetScreen {
                 let targetFrame = targetFrameFor(win, tab: activeTab, screen: screen)
                 win.setFrame(targetFrame, display: true)
             }
@@ -76,7 +76,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         WindowActivationCoordinator.update()
 
         let targetFrame: NSRect
-        if let screen = NSScreen.main ?? NSScreen.screens.first {
+        if let screen = WindowPositioner.targetScreen {
             targetFrame = targetFrameFor(win, tab: targetTab, screen: screen)
         } else {
             win.center()
@@ -88,10 +88,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
     private func targetFrameFor(_ win: NSWindow, tab: SettingsTab, screen: NSScreen) -> NSRect {
         let contentRect = NSRect(x: 0, y: 0, width: 400, height: tab.contentHeight)
         let frameRect = win.frameRect(forContentRect: contentRect)
-        let screenFrame = screen.visibleFrame
-        let x = screenFrame.origin.x + (screenFrame.width - 400) / 2
-        let y = screenFrame.origin.y + screenFrame.height - frameRect.height - 110
-        return NSRect(x: x, y: y, width: 400, height: frameRect.height)
+        return WindowPositioner.topBiasedFrame(for: frameRect.size, on: screen)
     }
 
     func windowWillClose(_ notification: Notification) {

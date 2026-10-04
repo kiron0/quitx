@@ -164,6 +164,9 @@ final class ExcludeAppPickerWindowController: NSObject, NSWindowDelegate {
 
     func show() {
         if let window {
+            if let screen = WindowPositioner.targetScreen {
+                window.setFrameOrigin(WindowPositioner.topBiasedOrigin(for: window.frame.size, on: screen))
+            }
             WindowAnimator.activateExisting(window)
             return
         }
@@ -182,16 +185,24 @@ final class ExcludeAppPickerWindowController: NSObject, NSWindowDelegate {
         window.setContentSize(NSSize(width: 500, height: 520))
         window.minSize = window.frame.size
         window.maxSize = window.frame.size
-        window.isOpaque = true
+        window.isOpaque = false
         window.isReleasedWhenClosed = false
-        window.backgroundColor = QuitXTheme.windowBackgroundNSColor
+        window.backgroundColor = .clear
         window.isMovableByWindowBackground = true
-        window.animationBehavior = .documentWindow
+        window.animationBehavior = .none
         window.delegate = self
-        window.center()
+
+        let targetFrame: NSRect
+        if let screen = WindowPositioner.targetScreen {
+            targetFrame = WindowPositioner.topBiasedFrame(for: window.frame.size, on: screen)
+        } else {
+            window.center()
+            targetFrame = window.frame
+        }
+
         self.window = window
         WindowActivationCoordinator.update()
-        WindowAnimator.present(window, targetFrame: window.frame)
+        WindowAnimator.present(window, targetFrame: targetFrame)
     }
 
     func close() {
