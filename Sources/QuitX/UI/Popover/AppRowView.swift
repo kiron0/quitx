@@ -23,7 +23,7 @@ struct AppRowView: View {
     private let forceColor = Color(red: 240/255, green: 70/255, blue: 50/255)
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 5) {
 
             QuitXSelectionCheckbox(isSelected: isSelected)
 
@@ -34,13 +34,14 @@ struct AppRowView: View {
                 .foregroundStyle(Color.primary)
                 .lineLimit(1)
                 .truncationMode(.tail)
+                .help(app.name)
 
             Spacer(minLength: 4)
 
             Text(usageText)
                 .font(.system(size: 10.5, design: .monospaced))
                 .foregroundStyle(Color.secondary)
-                .frame(width: 56, alignment: .trailing)
+                .frame(width: 46, alignment: .trailing)
 
             QuitXMenuButton(
                 assetName: "menu-options",

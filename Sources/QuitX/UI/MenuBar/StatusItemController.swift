@@ -31,6 +31,7 @@ final class MenuPopupWindow: NSPanel {
 @MainActor
 final class StatusItemController: NSObject {
     static weak var shared: StatusItemController?
+    static let popoverWidth: CGFloat = 270
 
     private var statusItem: NSStatusItem
     private var window: MenuPopupWindow?
@@ -136,7 +137,7 @@ final class StatusItemController: NSObject {
         hosting.view.wantsLayer = true
         self.hostingController = hosting
 
-        let win = MenuPopupWindow(contentRect: NSRect(x: 0, y: 0, width: 270, height: 200))
+        let win = MenuPopupWindow(contentRect: NSRect(x: 0, y: 0, width: Self.popoverWidth, height: 200))
         win.contentViewController = hosting
         self.window = win
 
@@ -172,7 +173,7 @@ final class StatusItemController: NSObject {
         }
 
         let totalHeight = targetHeight + arrowHeight
-        let newSize = NSSize(width: 270, height: totalHeight)
+        let newSize = NSSize(width: Self.popoverWidth, height: totalHeight)
         guard let win = window else { return }
 
         var frame = win.frame
