@@ -492,7 +492,7 @@ struct GeneralTabCloneView: View {
                     set: { configStore.config.confirmIndividualAction = $0; configStore.save() }
                 ))
             } help: {
-                HelpPopoverButton(text: "Prompt for confirmation when quitting or restarting an individual app from the list. 🛑")
+                HelpPopoverButton(text: "Look before you leap. Adds an 'Are you sure?' safety net before kicking out individual apps. 🛡️")
             }
 
             row(label: "Extras:") {
@@ -501,7 +501,7 @@ struct GeneralTabCloneView: View {
                     set: { configStore.config.includeFinder = $0; configStore.save(refreshAppList: true) }
                 ))
             } help: {
-                HelpPopoverButton(text: "Find yourself finding Finder windows too often? Enable this to easily close them all when you quit all apps.")
+                HelpPopoverButton(text: "Find yourself finding Finder windows too often? Close every single one in one fell swoop. 📁🗂️")
             }
 
             row(label: "") {
@@ -567,7 +567,7 @@ struct GeneralTabCloneView: View {
                 .frame(width: 175, alignment: .leading)
                 .labelsHidden()
             } help: {
-                HelpPopoverButton(text: "Sort the app list alphabetically, by CPU usage, or by memory usage. The row metric follows the selected resource sort.")
+                HelpPopoverButton(text: "Keep your apps in line: sort alphabetically, by heavy CPU hogs, or by memory gobblers. 📊🧭")
             }
 
             row(label: "Default:") {
@@ -581,7 +581,7 @@ struct GeneralTabCloneView: View {
                 .frame(width: 175, alignment: .leading)
                 .labelsHidden()
             } help: {
-                HelpPopoverButton(text: "You can also temporarily toggle between quit and force quit by holding ⌥ (Option key). ⌥")
+                HelpPopoverButton(text: "Choose how aggressive QuitX should be by default. Tip: hold ⌥ (Option) anytime to flip modes on the fly. ⚡️")
             }
 
             row(label: "Reset:") {
