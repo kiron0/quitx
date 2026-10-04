@@ -373,7 +373,7 @@ struct QuitXConfigTests {
     @Test("Config equality when modifying defaultSelectAll")
     func testConfigMutationDefaultSelectAll() {
         var a = QuitXConfig.default
-        a.defaultSelectAll = true
+        a.defaultSelectAll = false
         #expect(a != QuitXConfig.default)
     }
 
