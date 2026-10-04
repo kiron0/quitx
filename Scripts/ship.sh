@@ -11,10 +11,10 @@ ALT_DEST_APP="$HOME/Applications/$APP_NAME.app"
 cd "$ROOT_DIR"
 
 echo "🧪 [1/5] Testing..."
-make test
+swift test --build-system native
 
 echo "📦 [2/5] Bundling..."
-make bundle
+"$SCRIPT_DIR/build.sh"
 
 echo "🛑 [3/5] Killing running instances..."
 pkill -x "$APP_NAME" 2>/dev/null || true

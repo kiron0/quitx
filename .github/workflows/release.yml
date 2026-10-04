@@ -63,7 +63,7 @@ jobs:
         run: swift test
 
       - name: Build and Bundle App
-        run: make bundle
+        run: ./Scripts/build.sh
 
       - name: Create DMG Installer
         run: |

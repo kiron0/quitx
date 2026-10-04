@@ -30,7 +30,7 @@ QuitX is built completely using Swift Package Manager (SPM) with no mandatory Xc
 
 4. Create and launch the macOS app bundle:
    ```bash
-   make run
+   ./Scripts/build.sh --run
    ```
 
 ## Pull Request Guidelines

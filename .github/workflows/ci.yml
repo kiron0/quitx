@@ -32,8 +32,5 @@ jobs:
       - name: Run Tests
         run: swift test
 
-      - name: Build Release Binary
-        run: swift build -c release
-
-      - name: Package .app Bundle
-        run: make bundle
+      - name: Build & Package .app Bundle
+        run: ./Scripts/build.sh
