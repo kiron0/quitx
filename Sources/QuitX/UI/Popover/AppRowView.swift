@@ -27,7 +27,7 @@ struct AppRowView: View {
 
             QuitXSelectionCheckbox(isSelected: isSelected)
 
-            AppIconView(bundleId: app.bundleId, size: 18, cornerRadius: 3)
+            AppIconView(bundleId: app.bundleId, pid: app.pid, size: 18, cornerRadius: 3)
 
             Text(app.name)
                 .font(.system(size: 12.5, weight: .regular))
@@ -154,7 +154,9 @@ struct AppRowView: View {
             action: { onExclude() }
         ))
 
-        if let bid = app.bundleId, let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid) {
+        let appUrl = (app.bundleId.flatMap { NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) })
+            ?? (app.pid.flatMap { NSRunningApplication(processIdentifier: $0)?.bundleURL })
+        if let url = appUrl {
             menu.addItem(MenuHelper.makeItem(
                 title: "Reveal in Finder",
                 keyEquivalent: "f",

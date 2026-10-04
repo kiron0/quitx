@@ -109,7 +109,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
             includeTrash: false,
             includeBackground: false,
             groupBackground: true,
-            defaultSelectAll: false,
+            defaultSelectAll: true,
             neverQuitMusic: false,
             musicApps: ["Music", "Spotify", "Deezer", "Tidal", "Doppler"],
             autoUpdate: true,

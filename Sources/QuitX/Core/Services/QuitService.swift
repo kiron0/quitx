@@ -100,7 +100,15 @@ final class QuitService {
         if let expectedBundleId = app.bundleId {
             return running.bundleIdentifier == expectedBundleId
         }
-        guard let expectedName = running.localizedName else { return false }
-        return expectedName.caseInsensitiveCompare(app.name) == .orderedSame
+        let runningName = running.localizedName
+            ?? running.bundleURL?.deletingPathExtension().lastPathComponent
+            ?? running.executableURL?.lastPathComponent
+        guard let runningName else { return false }
+        let cleanRunningName = runningName.replacingOccurrences(
+            of: "[\u{200B}-\u{200D}\u{200E}\u{200F}\u{FEFF}]",
+            with: "",
+            options: .regularExpression
+        ).trimmingCharacters(in: .whitespacesAndNewlines)
+        return cleanRunningName.caseInsensitiveCompare(app.name) == .orderedSame
     }
 }

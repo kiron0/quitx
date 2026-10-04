@@ -8,18 +8,78 @@ final class AppListService {
         let pid: pid_t
         let name: String
         let bundleId: String?
+        let bundleURL: URL?
+        let executableURL: URL?
         let isRegular: Bool
         let isBackground: Bool
+    }
+
+    private static func isSystemProtected(app: RunningAppSnapshot) -> Bool {
+        let bid = app.bundleId ?? ""
+        if !bid.isEmpty && QuitXIdentity.supportedBundleIdentifiers.contains(bid) {
+            return true
+        }
+
+        let bundlePath = app.bundleURL?.path ?? ""
+        let execPath = app.executableURL?.path ?? ""
+        let path = bundlePath.isEmpty ? execPath : bundlePath
+
+        if path.hasPrefix("/System/Library/CoreServices/") && bid != "com.apple.finder" {
+            return true
+        }
+        if path.hasPrefix("/System/Library/PrivateFrameworks/") || path.hasPrefix("/usr/") {
+            return true
+        }
+
+        if app.isBackground {
+            if bid.hasPrefix("com.apple.") {
+                return true
+            }
+            if path.hasPrefix("/System/") || path.hasPrefix("/System/Volumes/") || path.hasPrefix("/Library/Apple/") {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    private static func cleanAppName(_ rawName: String) -> String {
+        rawName.replacingOccurrences(
+            of: "[\u{200B}-\u{200D}\u{200E}\u{200F}\u{FEFF}]",
+            with: "",
+            options: .regularExpression
+        ).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func cleanGroupedName(_ name: String) -> String {
+        let pattern = #"\s*\([^)]*\)$"#
+        if let regex = try? NSRegularExpression(pattern: pattern) {
+            let range = NSRange(name.startIndex..<name.endIndex, in: name)
+            let stripped = regex.stringByReplacingMatches(in: name, options: [], range: range, withTemplate: "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if !stripped.isEmpty {
+                return stripped
+            }
+        }
+        return name
     }
 
     @MainActor
     func fetchApps(config: QuitXConfig) async -> [AppInfo] {
         let running = NSWorkspace.shared.runningApplications.compactMap { app -> RunningAppSnapshot? in
-            guard let name = app.localizedName else { return nil }
+            guard !app.isTerminated else { return nil }
+            let rawName = app.localizedName
+                ?? app.bundleURL?.deletingPathExtension().lastPathComponent
+                ?? app.executableURL?.lastPathComponent
+            guard let rawName else { return nil }
+            let name = Self.cleanAppName(rawName)
+            guard !name.isEmpty else { return nil }
             return RunningAppSnapshot(
                 pid: app.processIdentifier,
                 name: name,
                 bundleId: app.bundleIdentifier,
+                bundleURL: app.bundleURL,
+                executableURL: app.executableURL,
                 isRegular: app.activationPolicy == .regular,
                 isBackground: app.activationPolicy == .accessory
             )
@@ -48,9 +108,6 @@ final class AppListService {
             if Task.isCancelled { return [] }
             let pid = app.pid
             if pid == currentPid { continue }
-            let name = app.name
-            let bundleId = app.bundleId
-            if let bundleId, QuitXIdentity.supportedBundleIdentifiers.contains(bundleId) { continue }
 
             let isRegularApp = app.isRegular
             let isBackground = app.isBackground
@@ -58,6 +115,10 @@ final class AppListService {
             if !isRegularApp && !isBackground { continue }
             if isBackground && !config.includeBackground { continue }
 
+            if isSystemProtected(app: app) { continue }
+
+            let name = app.name
+            let bundleId = app.bundleId
             let lowerName = name.lowercased()
             let lowerBid = bundleId?.lowercased()
 
@@ -90,11 +151,12 @@ final class AppListService {
 
         if config.includeBackground && config.groupBackground {
             var groupedResults: [AppInfo] = []
-            var bgGroups: [String: (app: AppInfo, pids: [pid_t], mem: UInt64, cpu: Double, windows: Int)] = [:]
+            var bgGroups: [String: (app: AppInfo, cleanName: String, pids: [pid_t], mem: UInt64, cpu: Double, windows: Int)] = [:]
 
             for app in results {
                 if app.isBackground {
-                    let key = (app.bundleId ?? app.name).lowercased()
+                    let cleanedName = cleanGroupedName(app.name)
+                    let key = (app.bundleId ?? cleanedName).lowercased()
                     if var existing = bgGroups[key] {
                         existing.pids.append(contentsOf: app.pids)
                         existing.mem += app.memoryBytes
@@ -102,7 +164,7 @@ final class AppListService {
                         existing.windows += app.windowCount
                         bgGroups[key] = existing
                     } else {
-                        bgGroups[key] = (app: app, pids: app.pids, mem: app.memoryBytes, cpu: app.cpuUsage, windows: app.windowCount)
+                        bgGroups[key] = (app: app, cleanName: cleanedName, pids: app.pids, mem: app.memoryBytes, cpu: app.cpuUsage, windows: app.windowCount)
                     }
                 } else {
                     groupedResults.append(app)
@@ -112,7 +174,7 @@ final class AppListService {
             for (_, group) in bgGroups {
                 let first = group.app
                 groupedResults.append(AppInfo(
-                    name: first.name,
+                    name: group.cleanName,
                     bundleId: first.bundleId,
                     pid: group.pids.first,
                     pids: group.pids,

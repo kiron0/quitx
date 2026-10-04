@@ -13,7 +13,16 @@ final class AppListViewModel: ObservableObject {
         didSet { updateFilteredApps() }
     }
     @Published var showBackgroundApps: Bool {
-        didSet { updateFilteredApps() }
+        didSet {
+            if configStore.config.includeBackground != showBackgroundApps {
+                configStore.config.includeBackground = showBackgroundApps
+                configStore.save()
+            }
+            updateFilteredApps()
+            Task { [weak self] in
+                await self?.refresh()
+            }
+        }
     }
     @Published private(set) var filteredApps: [AppInfo] = []
     private(set) var visibleIds: Set<String> = []

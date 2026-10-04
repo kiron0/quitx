@@ -218,7 +218,7 @@ struct QuitXConfigTests {
         #expect(!cfg.includeTrash)
         #expect(!cfg.includeBackground)
         #expect(cfg.groupBackground)
-        #expect(!cfg.defaultSelectAll)
+        #expect(cfg.defaultSelectAll)
         #expect(!cfg.neverQuitMusic)
         #expect(cfg.musicApps.contains("Music"))
         #expect(cfg.musicApps.contains("Spotify"))
