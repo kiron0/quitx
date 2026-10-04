@@ -291,6 +291,14 @@ final class StatusItemController: NSObject {
         ))
 
         menu.addItem(MenuHelper.makeItem(
+            title: "Check for Updates",
+            action: #selector(checkForUpdates),
+            target: self,
+            keyEquivalent: "u",
+            systemSymbolName: "arrow.triangle.2.circlepath"
+        ))
+
+        menu.addItem(MenuHelper.makeItem(
             title: "About",
             action: #selector(openAbout),
             target: self,
@@ -319,6 +327,12 @@ final class StatusItemController: NSObject {
 
     @objc private func openAbout() {
         SettingsWindowController.shared.show(tab: .about)
+    }
+
+    @objc private func checkForUpdates() {
+        Task {
+            await UpdateChecker.shared.checkForUpdates(isUserInitiated: true)
+        }
     }
 
     @objc private func openWelcomeGuide() {

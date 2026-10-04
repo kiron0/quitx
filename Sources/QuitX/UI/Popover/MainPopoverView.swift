@@ -272,6 +272,18 @@ struct MainPopoverView: View {
         ))
 
         menu.addItem(MenuHelper.makeItem(
+            title: "Check for Updates",
+            keyEquivalent: "u",
+            systemSymbolName: "arrow.triangle.2.circlepath",
+            action: {
+                StatusItemController.shared?.closePopover()
+                Task {
+                    await UpdateChecker.shared.checkForUpdates(isUserInitiated: true)
+                }
+            }
+        ))
+
+        menu.addItem(MenuHelper.makeItem(
             title: "Help",
             keyEquivalent: "h",
             assetName: "settings-help",
