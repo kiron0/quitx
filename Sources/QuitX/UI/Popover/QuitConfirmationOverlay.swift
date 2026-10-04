@@ -1,0 +1,118 @@
+import SwiftUI
+
+private final class OverlayState: ObservableObject {
+    @Published var isCancelHovered = false
+    @Published var isConfirmHovered = false
+}
+
+struct QuitConfirmationOverlay: View {
+    let count: Int
+    let isAll: Bool
+    let isForced: Bool
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+
+    @StateObject private var state = OverlayState()
+
+    private var confirmTitle: String {
+        if isForced {
+            return isAll ? "Force Quit All" : "Force Quit"
+        } else {
+            return isAll ? "Quit All" : "Quit"
+        }
+    }
+
+    private var title: String {
+        let noun = count == 1 ? "App" : "Apps"
+        if isForced {
+            return isAll ? "Force Quit All \(noun)?" : "Force Quit \(count) \(noun)?"
+        } else {
+            return isAll ? "Quit All \(noun)?" : "Quit \(count) \(noun)?"
+        }
+    }
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.45)
+                .ignoresSafeArea()
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    onCancel()
+                }
+
+            VStack(spacing: 10) {
+                Image(systemName: isForced ? "bolt.trianglebadge.exclamationmark.fill" : "questionmark.circle.fill")
+                    .font(.system(size: 26, weight: .semibold))
+                    .foregroundStyle(isForced ? Color.red : QuitXTheme.accent)
+
+                VStack(spacing: 3) {
+                    Text(title)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.primary)
+                        .multilineTextAlignment(.center)
+
+                    Text("This will close \(count) applications.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.secondary)
+                        .multilineTextAlignment(.center)
+                }
+
+                HStack(spacing: 8) {
+                    Button(action: onCancel) {
+                        Text("Cancel")
+                            .font(.system(size: 11.5, weight: .medium))
+                            .foregroundStyle(Color.primary.opacity(0.85))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 24)
+                            .background(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(Color.primary.opacity(state.isCancelHovered ? 0.12 : 0.07))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(Color.primary.opacity(0.12), lineWidth: 0.5)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .onHover { state.isCancelHovered = $0 }
+
+                    Button(action: onConfirm) {
+                        Text(confirmTitle)
+                            .font(.system(size: 11.5, weight: .bold))
+                            .foregroundStyle(isForced ? Color.white : Color.black.opacity(0.88))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 24)
+                            .background(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(
+                                        isForced
+                                            ? LinearGradient(colors: [Color.red, Color(red: 210/255, green: 40/255, blue: 40/255)], startPoint: .top, endPoint: .bottom)
+                                            : LinearGradient(colors: [QuitXTheme.accent, Color(red: 232/255, green: 155/255, blue: 0/255)], startPoint: .top, endPoint: .bottom)
+                                    )
+                            )
+                            .shadow(
+                                color: (isForced ? Color.red : QuitXTheme.accent).opacity(state.isConfirmHovered ? 0.35 : 0.15),
+                                radius: 2,
+                                y: 1
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .onHover { state.isConfirmHovered = $0 }
+                }
+                .padding(.top, 2)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .frame(width: 236)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(NSColor.windowBackgroundColor))
+                    .shadow(color: Color.black.opacity(0.4), radius: 8, y: 3)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.primary.opacity(0.12), lineWidth: 0.8)
+            )
+        }
+    }
+}

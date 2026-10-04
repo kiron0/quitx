@@ -37,6 +37,19 @@ final class AppListViewModel: ObservableObject {
     @Published var currentQuote: String = "Don't give up quitting ⚡"
     @Published var listNeedsScrolling: Bool = false
     @Published var arrowX: CGFloat = 135
+    @Published var showConfirmQuitAll: Bool = false
+
+    func confirmQuitAllAction() {
+        showConfirmQuitAll = false
+        let isForced = isOptionKeyPressed ? (configStore.config.force != .force) : (configStore.config.force == .force)
+        Task {
+            await quitAll(force: isForced)
+        }
+    }
+
+    func cancelConfirmQuitAll() {
+        showConfirmQuitAll = false
+    }
 
     private var hasInitializedSelection = false
     private var lastConfigDefaultSelectAll: Bool?

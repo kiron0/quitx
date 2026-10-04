@@ -2,7 +2,6 @@ import SwiftUI
 import AppKit
 
 private final class PopoverUIState: ObservableObject {
-    @Published var showConfirmQuitAll = false
     @Published var isQuitAllHovered = false
 }
 
@@ -60,10 +59,6 @@ struct MainPopoverView: View {
             PopoverContainerShape(arrowX: vm.arrowX, cornerRadius: 10)
                 .stroke(Color.primary.opacity(0.12), lineWidth: 0.5)
         )
-        .clipShape(PopoverContainerShape(arrowX: vm.arrowX, cornerRadius: 10))
-        .onChange(of: vm.filteredApps.count) {
-            StatusItemController.shared?.updatePopoverSize()
-        }
         .overlay(alignment: .bottom) {
             if vm.showToast {
                 ToastView(message: vm.toastMessage, isError: vm.toastIsError)
@@ -72,18 +67,28 @@ struct MainPopoverView: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: vm.showToast)
-        .alert("Quit selected apps?", isPresented: $uiState.showConfirmQuitAll) {
-            let isAll = vm.isAllSelected
-            let isForced = vm.isOptionKeyPressed ? (configStore.config.force != .force) : (configStore.config.force == .force)
-            let confirmTitle = isForced ? (isAll ? "Force Quit All" : "Force Quit Selected") : (isAll ? "Quit All" : "Quit Selected")
-            Button(confirmTitle, role: .destructive) {
-                Task {
-                    await vm.quitAll(force: isForced)
-                }
+        .overlay {
+            if vm.showConfirmQuitAll {
+                QuitConfirmationOverlay(
+                    count: vm.selectedVisibleCount,
+                    isAll: vm.isAllSelected,
+                    isForced: vm.isOptionKeyPressed ? (configStore.config.force != .force) : (configStore.config.force == .force),
+                    onConfirm: {
+                        vm.confirmQuitAllAction()
+                    },
+                    onCancel: {
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            vm.cancelConfirmQuitAll()
+                        }
+                    }
+                )
+                .transition(.opacity.combined(with: .scale(scale: 0.95)))
             }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This will close \(vm.selectedVisibleCount) applications.")
+        }
+        .animation(.easeInOut(duration: 0.18), value: vm.showConfirmQuitAll)
+        .clipShape(PopoverContainerShape(arrowX: vm.arrowX, cornerRadius: 10))
+        .onChange(of: vm.filteredApps.count) {
+            StatusItemController.shared?.updatePopoverSize()
         }
     }
 
@@ -102,7 +107,9 @@ struct MainPopoverView: View {
 
         return Button {
             if count >= 4 && configStore.config.confirmQuitAll {
-                uiState.showConfirmQuitAll = true
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                    vm.showConfirmQuitAll = true
+                }
             } else {
                 Task { await vm.quitAll(force: isForced) }
             }

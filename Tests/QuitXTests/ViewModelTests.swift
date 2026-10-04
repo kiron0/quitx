@@ -289,4 +289,13 @@ struct AppListViewModelTests {
         #expect(vm.selected.contains(app3.id))
         #expect(vm.selected.count == 2)
     }
+
+    @Test("Confirmation modal state can be set and cancelled")
+    func testConfirmationModalState() {
+        vm.showConfirmQuitAll = true
+        #expect(vm.showConfirmQuitAll)
+
+        vm.cancelConfirmQuitAll()
+        #expect(!vm.showConfirmQuitAll)
+    }
 }
