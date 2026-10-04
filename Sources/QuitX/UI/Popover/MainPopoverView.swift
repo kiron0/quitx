@@ -72,7 +72,7 @@ struct MainPopoverView: View {
                 QuitConfirmationOverlay(
                     count: vm.selectedVisibleCount,
                     isAll: vm.isAllSelected,
-                    isForced: vm.isOptionKeyPressed ? (configStore.config.force != .force) : (configStore.config.force == .force),
+                    isForced: vm.isConfirmQuitAllForced,
                     onConfirm: {
                         vm.confirmQuitAllAction()
                     },
@@ -83,9 +83,47 @@ struct MainPopoverView: View {
                     }
                 )
                 .transition(.opacity.combined(with: .scale(scale: 0.95)))
+            } else if let action = vm.pendingIndividualAction {
+                switch action {
+                case .quit(let app, let force):
+                    QuitConfirmationOverlay(
+                        title: force ? "Force Quit \(app.name)?" : "Quit \(app.name)?",
+                        subtitle: "This will close \(app.name).",
+                        confirmTitle: force ? "Force Quit" : "Quit",
+                        systemImage: force ? "bolt.trianglebadge.exclamationmark.fill" : "questionmark.circle.fill",
+                        isForced: force,
+                        onConfirm: {
+                            vm.confirmIndividualAction()
+                        },
+                        onCancel: {
+                            withAnimation(.easeInOut(duration: 0.15)) {
+                                vm.cancelIndividualAction()
+                            }
+                        }
+                    )
+                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                case .restart(let app):
+                    QuitConfirmationOverlay(
+                        title: "Restart \(app.name)?",
+                        subtitle: "This will close and reopen \(app.name).",
+                        confirmTitle: "Restart",
+                        systemImage: "arrow.clockwise.circle.fill",
+                        isForced: false,
+                        onConfirm: {
+                            vm.confirmIndividualAction()
+                        },
+                        onCancel: {
+                            withAnimation(.easeInOut(duration: 0.15)) {
+                                vm.cancelIndividualAction()
+                            }
+                        }
+                    )
+                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                }
             }
         }
         .animation(.easeInOut(duration: 0.18), value: vm.showConfirmQuitAll)
+        .animation(.easeInOut(duration: 0.18), value: vm.pendingIndividualAction)
         .clipShape(PopoverContainerShape(arrowX: vm.arrowX, cornerRadius: 10))
         .onChange(of: vm.filteredApps.count) {
             StatusItemController.shared?.updatePopoverSize()
@@ -106,9 +144,25 @@ struct MainPopoverView: View {
         let canStart = isActive && !vm.hasPendingOperations
 
         return Button {
-            if count >= 4 && configStore.config.confirmQuitAll {
-                withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
-                    vm.showConfirmQuitAll = true
+            let shouldConfirm: Bool
+            if count == 1 {
+                shouldConfirm = configStore.config.confirmIndividualAction || (isForced && configStore.config.confirmQuitAll)
+            } else if count >= 4 {
+                shouldConfirm = configStore.config.confirmQuitAll
+            } else {
+                shouldConfirm = isForced && configStore.config.confirmQuitAll
+            }
+
+            if shouldConfirm {
+                if count == 1, let singleApp = vm.filteredApps.first(where: { vm.selected.contains($0.id) }) ?? vm.apps.first(where: { vm.selected.contains($0.id) }) {
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                        vm.pendingIndividualAction = .quit(app: singleApp, force: isForced)
+                    }
+                } else {
+                    vm.isConfirmQuitAllForced = isForced
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                        vm.showConfirmQuitAll = true
+                    }
                 }
             } else {
                 Task { await vm.quitAll(force: isForced) }
@@ -118,7 +172,7 @@ struct MainPopoverView: View {
                 if vm.isBatchQuitting {
                     ProgressView()
                         .controlSize(.small)
-                        .tint(isForced ? Color.white : Color.black.opacity(0.88))
+                        .tint(Color.black.opacity(0.88))
                         .scaleEffect(0.65)
                     Text("Quitting…")
                         .font(.system(size: 12, weight: .bold))
@@ -134,7 +188,7 @@ struct MainPopoverView: View {
             }
             .foregroundStyle(
                 isActive
-                    ? (isForced ? Color.white : Color.black.opacity(0.88))
+                    ? Color.black.opacity(0.88)
                     : Color.primary.opacity(0.35)
             )
             .opacity(canStart || vm.isBatchQuitting ? 1 : 0.55)

@@ -27,10 +27,10 @@ struct AppListView: View {
                         vm.toggleSelection(for: app)
                     },
                     onQuit: { force in
-                        Task { await vm.quitSingle(app: app, force: force) }
+                        vm.requestQuitSingle(app: app, force: force)
                     },
                     onRestart: {
-                        Task { await vm.restartApp(app) }
+                        vm.requestRestart(app: app)
                     },
                     onExclude: {
                         let identifier = app.bundleId ?? app.name

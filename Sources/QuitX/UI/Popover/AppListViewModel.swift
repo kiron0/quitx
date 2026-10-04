@@ -38,17 +38,59 @@ final class AppListViewModel: ObservableObject {
     @Published var listNeedsScrolling: Bool = false
     @Published var arrowX: CGFloat = 135
     @Published var showConfirmQuitAll: Bool = false
+    @Published var isConfirmQuitAllForced: Bool = false
+    @Published var pendingIndividualAction: IndividualAction? = nil
+
+    enum IndividualAction: Equatable {
+        case quit(app: AppInfo, force: Bool)
+        case restart(app: AppInfo)
+    }
 
     func confirmQuitAllAction() {
         showConfirmQuitAll = false
-        let isForced = isOptionKeyPressed ? (configStore.config.force != .force) : (configStore.config.force == .force)
+        let force = isConfirmQuitAllForced
+        isConfirmQuitAllForced = false
         Task {
-            await quitAll(force: isForced)
+            await quitAll(force: force)
         }
     }
 
     func cancelConfirmQuitAll() {
         showConfirmQuitAll = false
+        isConfirmQuitAllForced = false
+    }
+
+    func requestQuitSingle(app: AppInfo, force: Bool) {
+        if configStore.config.confirmIndividualAction {
+            pendingIndividualAction = .quit(app: app, force: force)
+        } else {
+            Task { await quitSingle(app: app, force: force) }
+        }
+    }
+
+    func requestRestart(app: AppInfo) {
+        if configStore.config.confirmIndividualAction {
+            pendingIndividualAction = .restart(app: app)
+        } else {
+            Task { await restartApp(app) }
+        }
+    }
+
+    func confirmIndividualAction() {
+        guard let action = pendingIndividualAction else { return }
+        pendingIndividualAction = nil
+        Task {
+            switch action {
+            case .quit(let app, let force):
+                await quitSingle(app: app, force: force)
+            case .restart(let app):
+                await restartApp(app)
+            }
+        }
+    }
+
+    func cancelIndividualAction() {
+        pendingIndividualAction = nil
     }
 
     private var hasInitializedSelection = false

@@ -243,6 +243,7 @@ final class StatusItemController: NSObject {
 
     func closePopover() {
         AppListViewModel.shared.cancelConfirmQuitAll()
+        AppListViewModel.shared.cancelIndividualAction()
         lastCloseTimestamp = Date()
         stopLiveMonitoring()
         window?.orderOut(nil)
@@ -413,6 +414,10 @@ final class StatusItemController: NSObject {
 
             if event.type == .keyDown {
                 if event.keyCode == 53 {
+                    if AppListViewModel.shared.pendingIndividualAction != nil {
+                        AppListViewModel.shared.cancelIndividualAction()
+                        return nil
+                    }
                     if AppListViewModel.shared.showConfirmQuitAll {
                         AppListViewModel.shared.cancelConfirmQuitAll()
                         return nil
@@ -421,6 +426,10 @@ final class StatusItemController: NSObject {
                     return nil
                 }
                 if event.keyCode == 36 {
+                    if AppListViewModel.shared.pendingIndividualAction != nil {
+                        AppListViewModel.shared.confirmIndividualAction()
+                        return nil
+                    }
                     if AppListViewModel.shared.showConfirmQuitAll {
                         AppListViewModel.shared.confirmQuitAllAction()
                         return nil

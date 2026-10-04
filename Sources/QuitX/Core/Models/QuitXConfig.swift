@@ -12,6 +12,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
     var musicApps: [String]
     var autoUpdate: Bool
     var confirmQuitAll: Bool = true
+    var confirmIndividualAction: Bool = false
     var playSounds: Bool = true
     var quitInactiveAfterMinutes: Int = 0
     var disableQuitTips: Bool = false
@@ -19,7 +20,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case exclude, force, includeFinder, includeTrash, includeBackground, groupBackground
-        case defaultSelectAll, neverQuitMusic, musicApps, autoUpdate, confirmQuitAll, playSounds
+        case defaultSelectAll, neverQuitMusic, musicApps, autoUpdate, confirmQuitAll, confirmIndividualAction, playSounds
         case quitInactiveAfterMinutes, disableQuitTips, sortBy
     }
 
@@ -35,6 +36,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         musicApps: [String],
         autoUpdate: Bool,
         confirmQuitAll: Bool = true,
+        confirmIndividualAction: Bool = false,
         playSounds: Bool = true,
         quitInactiveAfterMinutes: Int = 0,
         disableQuitTips: Bool = false,
@@ -51,6 +53,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         self.musicApps = musicApps
         self.autoUpdate = autoUpdate
         self.confirmQuitAll = confirmQuitAll
+        self.confirmIndividualAction = confirmIndividualAction
         self.playSounds = playSounds
         self.quitInactiveAfterMinutes = quitInactiveAfterMinutes
         self.disableQuitTips = disableQuitTips
@@ -71,6 +74,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         musicApps = try container.decodeIfPresent([String].self, forKey: .musicApps) ?? defaults.musicApps
         autoUpdate = try container.decodeIfPresent(Bool.self, forKey: .autoUpdate) ?? defaults.autoUpdate
         confirmQuitAll = try container.decodeIfPresent(Bool.self, forKey: .confirmQuitAll) ?? defaults.confirmQuitAll
+        confirmIndividualAction = try container.decodeIfPresent(Bool.self, forKey: .confirmIndividualAction) ?? defaults.confirmIndividualAction
         playSounds = try container.decodeIfPresent(Bool.self, forKey: .playSounds) ?? defaults.playSounds
         quitInactiveAfterMinutes = try container.decodeIfPresent(Int.self, forKey: .quitInactiveAfterMinutes) ?? defaults.quitInactiveAfterMinutes
         disableQuitTips = try container.decodeIfPresent(Bool.self, forKey: .disableQuitTips) ?? defaults.disableQuitTips
@@ -114,6 +118,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
             musicApps: ["Music", "Spotify", "Deezer", "Tidal", "Doppler"],
             autoUpdate: true,
             confirmQuitAll: true,
+            confirmIndividualAction: false,
             playSounds: true,
             quitInactiveAfterMinutes: 0,
             disableQuitTips: false,

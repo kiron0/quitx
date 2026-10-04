@@ -224,6 +224,7 @@ struct QuitXConfigTests {
         #expect(cfg.musicApps.contains("Spotify"))
         #expect(cfg.autoUpdate)
         #expect(cfg.confirmQuitAll)
+        #expect(!cfg.confirmIndividualAction)
         #expect(cfg.playSounds)
         #expect(cfg.quitInactiveAfterMinutes == 0)
         #expect(!cfg.disableQuitTips)
@@ -242,6 +243,7 @@ struct QuitXConfigTests {
         cfg.defaultSelectAll = true
         cfg.neverQuitMusic = true
         cfg.confirmQuitAll = false
+        cfg.confirmIndividualAction = true
         cfg.playSounds = false
         cfg.quitInactiveAfterMinutes = 120
         cfg.disableQuitTips = true

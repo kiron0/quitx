@@ -6,29 +6,60 @@ private final class OverlayState: ObservableObject {
 }
 
 struct QuitConfirmationOverlay: View {
-    let count: Int
-    let isAll: Bool
+    let title: String
+    let subtitle: String
+    let confirmTitle: String
+    let systemImage: String
     let isForced: Bool
     let onConfirm: () -> Void
     let onCancel: () -> Void
 
     @StateObject private var state = OverlayState()
 
-    private var confirmTitle: String {
-        if isForced {
-            return isAll ? "Force Quit All" : "Force Quit"
-        } else {
-            return isAll ? "Quit All" : "Quit"
-        }
+    init(
+        title: String,
+        subtitle: String,
+        confirmTitle: String,
+        systemImage: String,
+        isForced: Bool,
+        onConfirm: @escaping () -> Void,
+        onCancel: @escaping () -> Void
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.confirmTitle = confirmTitle
+        self.systemImage = systemImage
+        self.isForced = isForced
+        self.onConfirm = onConfirm
+        self.onCancel = onCancel
     }
 
-    private var title: String {
+    init(
+        count: Int,
+        isAll: Bool,
+        isForced: Bool,
+        onConfirm: @escaping () -> Void,
+        onCancel: @escaping () -> Void
+    ) {
         let noun = count == 1 ? "App" : "Apps"
+        let computedTitle: String
+        let computedConfirmTitle: String
         if isForced {
-            return isAll ? "Force Quit All \(noun)?" : "Force Quit \(count) \(noun)?"
+            computedTitle = isAll ? "Force Quit All \(noun)?" : "Force Quit \(count) \(noun)?"
+            computedConfirmTitle = isAll ? "Force Quit All" : "Force Quit"
         } else {
-            return isAll ? "Quit All \(noun)?" : "Quit \(count) \(noun)?"
+            computedTitle = isAll ? "Quit All \(noun)?" : "Quit \(count) \(noun)?"
+            computedConfirmTitle = isAll ? "Quit All" : "Quit"
         }
+        self.init(
+            title: computedTitle,
+            subtitle: "This will close \(count) applications.",
+            confirmTitle: computedConfirmTitle,
+            systemImage: isForced ? "bolt.trianglebadge.exclamationmark.fill" : "questionmark.circle.fill",
+            isForced: isForced,
+            onConfirm: onConfirm,
+            onCancel: onCancel
+        )
     }
 
     var body: some View {
@@ -41,7 +72,7 @@ struct QuitConfirmationOverlay: View {
                 }
 
             VStack(spacing: 10) {
-                Image(systemName: isForced ? "bolt.trianglebadge.exclamationmark.fill" : "questionmark.circle.fill")
+                Image(systemName: systemImage)
                     .font(.system(size: 26, weight: .semibold))
                     .foregroundStyle(isForced ? Color.red : QuitXTheme.accent)
 
@@ -51,7 +82,7 @@ struct QuitConfirmationOverlay: View {
                         .foregroundStyle(Color.primary)
                         .multilineTextAlignment(.center)
 
-                    Text("This will close \(count) applications.")
+                    Text(subtitle)
                         .font(.system(size: 11))
                         .foregroundStyle(Color.secondary)
                         .multilineTextAlignment(.center)

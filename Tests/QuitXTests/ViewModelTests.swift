@@ -298,4 +298,26 @@ struct AppListViewModelTests {
         vm.cancelConfirmQuitAll()
         #expect(!vm.showConfirmQuitAll)
     }
+
+    @Test("Individual action confirmation prompts only when enabled")
+    func testIndividualActionConfirmation() {
+        ConfigStore.shared.config.confirmIndividualAction = true
+        vm.pendingIndividualAction = nil
+
+        vm.requestQuitSingle(app: app1, force: false)
+        #expect(vm.pendingIndividualAction == .quit(app: app1, force: false))
+
+        vm.cancelIndividualAction()
+        #expect(vm.pendingIndividualAction == nil)
+
+        vm.requestRestart(app: app2)
+        #expect(vm.pendingIndividualAction == .restart(app: app2))
+
+        vm.cancelIndividualAction()
+        #expect(vm.pendingIndividualAction == nil)
+
+        ConfigStore.shared.config.confirmIndividualAction = false
+        vm.cancelIndividualAction()
+        #expect(vm.pendingIndividualAction == nil)
+    }
 }

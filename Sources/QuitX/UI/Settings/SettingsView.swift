@@ -48,7 +48,7 @@ enum SettingsTab: String, CaseIterable {
 
     var contentHeight: CGFloat {
         switch self {
-        case .general:   return 475
+        case .general:   return 505
         case .exclude:   return 300
         case .shortcuts: return 215
         case .support:   return 139
@@ -484,6 +484,15 @@ struct GeneralTabCloneView: View {
                 ))
             } help: {
                 HelpPopoverButton(text: "The rotating tips at the bottom of the QuitX dropdown will cease to show. It’s okay. We can still be friends. 🤗")
+            }
+
+            row(label: "") {
+                toggle("Confirm single app quit & restart", isOn: Binding(
+                    get: { configStore.config.confirmIndividualAction },
+                    set: { configStore.config.confirmIndividualAction = $0; configStore.save() }
+                ))
+            } help: {
+                HelpPopoverButton(text: "Prompt for confirmation when quitting or restarting an individual app from the list. 🛑")
             }
 
             row(label: "Extras:") {
