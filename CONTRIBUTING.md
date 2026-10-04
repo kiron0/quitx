@@ -20,12 +20,12 @@ QuitX is built completely using Swift Package Manager (SPM) with no mandatory Xc
 
 2. Build debug binary:
    ```bash
-   swift build --build-system native
+   swift build
    ```
 
 3. Run automated tests:
    ```bash
-   swift test --build-system native
+   swift test
    ```
 
 4. Create and launch the macOS app bundle:
@@ -35,6 +35,6 @@ QuitX is built completely using Swift Package Manager (SPM) with no mandatory Xc
 
 ## Pull Request Guidelines
 
-- Ensure your code builds cleanly without warnings using `swift build --build-system native`.
+- Ensure your code builds cleanly without warnings using `swift build`.
 - Follow standard Swift coding style and keep the interface minimal, snappy, and native to macOS.
 - Keep commits descriptive and concise.

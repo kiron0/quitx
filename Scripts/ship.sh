@@ -11,7 +11,7 @@ ALT_DEST_APP="$HOME/Applications/$APP_NAME.app"
 cd "$ROOT_DIR"
 
 echo "🧪 [1/5] Testing..."
-swift test --build-system native
+swift test --build-system native 2>&1 | sed -E '/warning:.*build-system native.*deprecated/d'
 
 echo "📦 [2/5] Bundling..."
 "$SCRIPT_DIR/build.sh"

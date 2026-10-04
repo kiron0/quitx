@@ -2,6 +2,29 @@
 
 All notable changes to QuitX macOS App will be documented in this file.
 
+## 1.0.6
+
+### Added
+
+- In-popover `QuitConfirmationOverlay` modal replacing macOS native `NSAlert` dialogs, fixing unresponsive sheets on borderless menu bar panels.
+- User configuration setting "Confirm single app quit & restart" in Settings > General, allowing toggleable confirmation prompts for individual app actions.
+- Permanent static "Force Quit" action in each app row's three-dot options menu alongside standard "Quit", regardless of Option modifier key state.
+
+### Changed
+
+- Replaced global `NSEvent` key monitoring with Carbon `RegisterEventHotKey` APIs for background shortcuts, enabling reliable global shortcut activation without requiring Accessibility permissions.
+- Improved hotkey event decoder to correctly handle ASCII control character offsets and prevent modifier-key dropping during shortcut recording.
+- Replaced legacy `Makefile` with unified native shell scripts (`Scripts/build.sh`, `Scripts/ship.sh`) and direct Swift Package Manager commands in `package.json` and CI workflows.
+- Optimized app row layout spacing in main popover: widened visible application title container to 108pt within the fixed 270pt popover window, preventing truncation of common application names like "Google Chrome" and "Activity Monitor".
+- Adjusted resource usage display frame width to 46pt to prevent high memory readings (e.g. `15.4 GB`) from clipping.
+- Synchronized `Force Quit Selected` button text color with `Quit All Selected` and wired it to the confirmation modal dialog.
+
+### Fixed
+
+- Fixed unclickable confirmation alerts when quitting 4 or more applications from the popover.
+- Fixed keyboard navigation shortcuts (`Esc` to dismiss confirmation, `Return` to confirm action) inside the popover window.
+- Fixed `SettingsTab.general.contentHeight` unit test expectation mismatch following the addition of the individual confirmation toggle.
+
 ## 1.0.5
 
 ### Added
