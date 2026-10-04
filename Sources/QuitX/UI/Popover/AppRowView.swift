@@ -124,18 +124,22 @@ struct AppRowView: View {
     private func buildMenu() -> NSMenu {
         let menu = NSMenu()
 
-        let quitTitle = isOptionKeyPressed ? "Force Quit" : "Quit"
-        let quitAsset = isOptionKeyPressed ? "settings-force-quit" : "settings-quit"
-        let quitSymbol = isOptionKeyPressed ? "bolt.fill" : "power"
-        let quitMask: NSEvent.ModifierFlags = isOptionKeyPressed ? [.command, .option] : [.command]
+        menu.addItem(MenuHelper.makeItem(
+            title: "Quit",
+            keyEquivalent: "q",
+            keyEquivalentModifierMask: [.command],
+            assetName: "settings-quit",
+            systemSymbolName: "power",
+            action: { onQuit(false) }
+        ))
 
         menu.addItem(MenuHelper.makeItem(
-            title: quitTitle,
+            title: "Force Quit",
             keyEquivalent: "q",
-            keyEquivalentModifierMask: quitMask,
-            assetName: quitAsset,
-            systemSymbolName: quitSymbol,
-            action: { onQuit(isOptionKeyPressed) }
+            keyEquivalentModifierMask: [.command, .option],
+            assetName: "settings-force-quit",
+            systemSymbolName: "bolt.fill",
+            action: { onQuit(true) }
         ))
 
         menu.addItem(MenuHelper.makeItem(
