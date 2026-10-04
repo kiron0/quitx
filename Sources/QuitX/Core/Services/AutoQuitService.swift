@@ -59,6 +59,14 @@ final class AutoQuitService {
             if let rawBid = app.bundleIdentifier, QuitXIdentity.supportedBundleIdentifiers.contains(rawBid) {
                 continue
             }
+            if SystemAppProtection.isSystemProtected(
+                bundleIdentifier: app.bundleIdentifier,
+                isBackground: false,
+                bundleURL: app.bundleURL,
+                executableURL: app.executableURL
+            ) {
+                continue
+            }
             guard let lastActive = lastActiveTimestamps[pid] else {
                 lastActiveTimestamps[pid] = now
                 continue

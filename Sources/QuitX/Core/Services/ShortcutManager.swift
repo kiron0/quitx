@@ -69,12 +69,12 @@ final class ShortcutManager: ObservableObject {
         }
 
         if quitAllEnabled && pressedKeys == quitAllKeys {
-            Task { await AppListViewModel.shared.quitAll(force: false) }
+            Task { await AppListViewModel.shared.quitAllFromShortcut(force: false) }
             return true
         }
 
         if forceQuitAllEnabled && pressedKeys == forceQuitAllKeys {
-            Task { await AppListViewModel.shared.quitAll(force: true) }
+            Task { await AppListViewModel.shared.quitAllFromShortcut(force: true) }
             return true
         }
 

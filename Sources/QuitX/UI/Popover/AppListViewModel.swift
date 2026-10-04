@@ -89,7 +89,9 @@ final class AppListViewModel: ObservableObject {
         if !normalizedQuery.isEmpty {
             list = list.filter { $0.name.lowercased().contains(normalizedQuery) }
         }
-        filteredApps = list
+        if filteredApps != list {
+            filteredApps = list
+        }
         visibleIds = Set(list.map(\.id))
     }
 
@@ -160,23 +162,24 @@ final class AppListViewModel: ObservableObject {
         let cfg = activeScanConfig
         let fetched = await AppListService.shared.fetchApps(config: cfg)
         guard !Task.isCancelled, generation == scanGeneration else { return }
-        apps = fetched
+        if apps != fetched {
+            apps = fetched
+        }
 
         let configSettingChanged = (lastConfigDefaultSelectAll != nil && lastConfigDefaultSelectAll != cfg.defaultSelectAll)
         lastConfigDefaultSelectAll = cfg.defaultSelectAll
 
+        let newSelection: Set<String>
         if !hasInitializedSelection || configSettingChanged {
-            if cfg.defaultSelectAll {
-                selected = visibleIds
-            } else {
-                selected = []
-            }
+            newSelection = cfg.defaultSelectAll ? visibleIds : []
             hasInitializedSelection = true
         } else if selectedAllBeforeRefresh {
-            selected = visibleIds
+            newSelection = visibleIds
         } else {
-            let validIds = Set(apps.map(\.id))
-            selected = selected.intersection(validIds)
+            newSelection = selected.intersection(Set(apps.map(\.id)))
+        }
+        if selected != newSelection {
+            selected = newSelection
         }
     }
 
@@ -188,13 +191,21 @@ final class AppListViewModel: ObservableObject {
         let cfg = activeScanConfig
         let fetched = await AppListService.shared.fetchApps(config: cfg)
         guard !Task.isCancelled, !isLoading else { return }
-        apps = fetched
-        if selectedAllBeforeRefresh {
-            selected = visibleIds
-        } else {
-            let validIds = Set(apps.map(\.id))
-            selected = selected.intersection(validIds)
+        if apps != fetched {
+            apps = fetched
         }
+        let newSelection = selectedAllBeforeRefresh
+            ? visibleIds
+            : selected.intersection(Set(apps.map(\.id)))
+        if selected != newSelection {
+            selected = newSelection
+        }
+    }
+
+    func quitAllFromShortcut(force: Bool) async {
+        guard !hasPendingOperations else { return }
+        await refresh()
+        await quitAll(force: force)
     }
 
     func quitSingle(app: AppInfo, force: Bool) async {
@@ -202,8 +213,7 @@ final class AppListViewModel: ObservableObject {
         defer { pendingAppIds.remove(app.id) }
 
         SoundService.playQuitSingle()
-        let initialResults = await QuitService.shared.quit(apps: [app], force: force)
-        let results = await resolveFailures(in: initialResults, initiallyForced: force)
+        let results = await QuitService.shared.quit(apps: [app], force: force)
         let succeeded = results.first?.success == true
         if succeeded {
             selected.remove(app.id)
@@ -212,6 +222,8 @@ final class AppListViewModel: ObservableObject {
         await refresh()
         if succeeded {
             triggerToast(message: "\(app.name) quit", isError: false)
+        } else if !force {
+            triggerToast(message: "\(app.name) is still open — ⌥ to force quit", isError: true)
         } else {
             triggerToast(message: "Couldn’t quit \(app.name)", isError: true)
         }
@@ -231,8 +243,7 @@ final class AppListViewModel: ObservableObject {
         }
 
         SoundService.playQuitAll()
-        let initialResults = await QuitService.shared.quit(apps: targets, force: force)
-        let results = await resolveFailures(in: initialResults, initiallyForced: force)
+        let results = await QuitService.shared.quit(apps: targets, force: force)
         let successfulIds = Set(results.filter(\.success).map { $0.app.id })
         let failureCount = targets.count - successfulIds.count
         lastQuitCount = successfulIds.count
@@ -258,19 +269,6 @@ final class AppListViewModel: ObservableObject {
         await refresh()
         if !succeeded {
             triggerToast(message: "Couldn’t restart \(app.name)", isError: true)
-        }
-    }
-
-
-    private func resolveFailures(in results: [QuitResult], initiallyForced: Bool) async -> [QuitResult] {
-        guard !initiallyForced else { return results }
-        let failedApps = results.filter { !$0.success }.map(\.app)
-        guard !failedApps.isEmpty else { return results }
-
-        let retryResults = await QuitService.shared.quit(apps: failedApps, force: true)
-        let retryById = Dictionary(uniqueKeysWithValues: retryResults.map { ($0.app.id, $0) })
-        return results.map { result in
-            result.success ? result : (retryById[result.app.id] ?? result)
         }
     }
 

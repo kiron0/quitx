@@ -256,7 +256,6 @@ struct MainPopoverView: View {
             systemSymbolName: bgSymbol,
             action: {
                 vm.showBackgroundApps.toggle()
-                Task { await vm.refresh() }
             }
         ))
 

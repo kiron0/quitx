@@ -33,12 +33,7 @@ final class QuitService {
                 end tell
             end ignoring
             """
-            var error: NSDictionary?
-            guard let appleScript = NSAppleScript(source: script) else {
-                return QuitResult(app: app, success: false, forced: false, error: "Could not create Trash AppleScript")
-            }
-            appleScript.executeAndReturnError(&error)
-            return QuitResult(app: app, success: error == nil, forced: false, error: error?.description)
+            return await Self.runAppleScript(script, app: app, label: "Trash")
         }
 
         if app.bundleId == "com.apple.finder" || app.name.lowercased() == "finder" {
@@ -47,12 +42,7 @@ final class QuitService {
                 close every window
             end tell
             """
-            var error: NSDictionary?
-            guard let appleScript = NSAppleScript(source: script) else {
-                return QuitResult(app: app, success: false, forced: false, error: "Could not create Finder AppleScript")
-            }
-            appleScript.executeAndReturnError(&error)
-            return QuitResult(app: app, success: error == nil, forced: false, error: error?.description)
+            return await Self.runAppleScript(script, app: app, label: "Finder")
         }
 
         let pidsToKill = app.pids.isEmpty ? (app.pid.map { [$0] } ?? []) : app.pids
@@ -94,6 +84,16 @@ final class QuitService {
             forced: force,
             error: firstError
         )
+    }
+
+    @MainActor
+    private static func runAppleScript(_ source: String, app: AppInfo, label: String) -> QuitResult {
+        var error: NSDictionary?
+        guard let appleScript = NSAppleScript(source: source) else {
+            return QuitResult(app: app, success: false, forced: false, error: "Could not create \(label) AppleScript")
+        }
+        appleScript.executeAndReturnError(&error)
+        return QuitResult(app: app, success: error == nil, forced: false, error: error?.description)
     }
 
     static func matches(running: NSRunningApplication, app: AppInfo) -> Bool {

@@ -179,9 +179,15 @@ final class AppListService {
                 return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
             }
         case .name:
-            return results.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+            return results.sorted {
+                let order = $0.name.localizedCaseInsensitiveCompare($1.name)
+                return order == .orderedSame ? $0.id < $1.id : order == .orderedAscending
+            }
         case .nameDesc:
-            return results.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedDescending }
+            return results.sorted {
+                let order = $0.name.localizedCaseInsensitiveCompare($1.name)
+                return order == .orderedSame ? $0.id < $1.id : order == .orderedDescending
+            }
         }
     }
 

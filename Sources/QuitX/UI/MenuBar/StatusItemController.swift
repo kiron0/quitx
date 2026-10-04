@@ -40,6 +40,8 @@ final class StatusItemController: NSObject {
     private var refreshTask: Task<Void, Never>?
     private var liveMonitoringTask: Task<Void, Never>?
     private var lastCloseTimestamp: Date = .distantPast
+    private var workspaceObservers: [NSObjectProtocol] = []
+    private var backgroundRefreshTask: Task<Void, Never>?
 
     var isShown: Bool {
         window?.isVisible ?? false
@@ -53,11 +55,15 @@ final class StatusItemController: NSObject {
         configureButton()
         configureWindow()
         startEventMonitor()
+        startWorkspaceObservers()
     }
 
     deinit {
         refreshTask?.cancel()
         liveMonitoringTask?.cancel()
+        backgroundRefreshTask?.cancel()
+        let center = NSWorkspace.shared.notificationCenter
+        workspaceObservers.forEach { center.removeObserver($0) }
         if let g = globalEventMonitor { NSEvent.removeMonitor(g) }
         if let l = localEventMonitor { NSEvent.removeMonitor(l) }
     }
@@ -126,6 +132,7 @@ final class StatusItemController: NSObject {
                 .environmentObject(ConfigStore.shared)
         )
         let hosting = NSHostingController(rootView: rootView)
+        hosting.sizingOptions = []
         hosting.view.wantsLayer = true
         self.hostingController = hosting
 
@@ -159,7 +166,10 @@ final class StatusItemController: NSObject {
         let screenHeight = screen?.visibleFrame.height ?? 800
         let maximumHeight = max(100, screenHeight - 48)
         let targetHeight = min(maximumHeight, calculated)
-        AppListViewModel.shared.listNeedsScrolling = calculated > maximumHeight
+        let needsScrolling = calculated > maximumHeight
+        if AppListViewModel.shared.listNeedsScrolling != needsScrolling {
+            AppListViewModel.shared.listNeedsScrolling = needsScrolling
+        }
 
         let totalHeight = targetHeight + arrowHeight
         let newSize = NSSize(width: 270, height: totalHeight)
@@ -183,11 +193,39 @@ final class StatusItemController: NSObject {
             frame.origin = NSPoint(x: originX, y: originY)
 
             let arrowX = max(18, min(buttonScreenRect.midX - originX, newSize.width - 18))
-            AppListViewModel.shared.arrowX = arrowX
+            if abs(AppListViewModel.shared.arrowX - arrowX) > 0.5 {
+                AppListViewModel.shared.arrowX = arrowX
+            }
         }
 
-        win.setFrame(frame, display: true, animate: false)
+        frame = frame.integral
+        guard frame != win.frame else { return }
+        win.setFrame(frame, display: win.isVisible, animate: false)
         win.invalidateShadow()
+    }
+
+    private func startWorkspaceObservers() {
+        let center = NSWorkspace.shared.notificationCenter
+        let names: [Notification.Name] = [
+            NSWorkspace.didLaunchApplicationNotification,
+            NSWorkspace.didTerminateApplicationNotification
+        ]
+        workspaceObservers = names.map { name in
+            center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor in self?.scheduleBackgroundRefresh() }
+            }
+        }
+    }
+
+    private func scheduleBackgroundRefresh() {
+        backgroundRefreshTask?.cancel()
+        backgroundRefreshTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            guard !Task.isCancelled, let self else { return }
+            await AppListViewModel.shared.refresh()
+            guard !Task.isCancelled else { return }
+            self.updatePopoverSize()
+        }
     }
 
     @objc private func handleStatusItemClick(_ sender: Any?) {
@@ -225,8 +263,11 @@ final class StatusItemController: NSObject {
                 return
             }
             guard let win = window else { return }
-            NSApp.activate(ignoringOtherApps: true)
             updatePopoverSize()
+            win.contentView?.layoutSubtreeIfNeeded()
+            if !NSApp.isActive {
+                NSApp.activate(ignoringOtherApps: true)
+            }
             win.makeKeyAndOrderFront(nil)
             win.makeFirstResponder(nil)
             win.invalidateShadow()
