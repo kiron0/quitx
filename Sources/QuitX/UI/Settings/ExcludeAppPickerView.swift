@@ -58,6 +58,7 @@ enum InstalledApplicationScanner {
             URL(fileURLWithPath: "/Applications"),
             URL(fileURLWithPath: "/System/Applications"),
             fileManager.homeDirectoryForCurrentUser.appendingPathComponent("Applications"),
+            URL(fileURLWithPath: "/System/Cryptexes/App/System/Applications"),
             URL(fileURLWithPath: "/Library/Input Methods"),
             fileManager.homeDirectoryForCurrentUser.appendingPathComponent("Library/Input Methods"),
             URL(fileURLWithPath: "/System/Library/CoreServices/Finder.app")
@@ -80,12 +81,13 @@ enum InstalledApplicationScanner {
             guard let enumerator = fileManager.enumerator(
                 at: root,
                 includingPropertiesForKeys: [.isDirectoryKey, .isPackageKey],
-                options: [.skipsHiddenFiles, .skipsPackageDescendants]
+                options: [.skipsPackageDescendants]
             ) else { continue }
 
             for case let url as URL in enumerator {
                 if Task.isCancelled { return [] }
-                guard url.pathExtension.lowercased() == "app" else { continue }
+                guard !url.lastPathComponent.hasPrefix("."),
+                      url.pathExtension.lowercased() == "app" else { continue }
                 processAppBundle(at: url, into: &applicationsByIdentifier)
             }
         }

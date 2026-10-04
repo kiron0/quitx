@@ -2,6 +2,35 @@
 
 All notable changes to QuitX macOS App will be documented in this file.
 
+## 1.0.5
+
+### Added
+
+- Reusable `SystemAppProtection` architecture utility consolidating system daemon protection rules, invisible Unicode scalar cleaning, and parenthetical helper grouping logic across all core services and settings views.
+- Dedicated update check window (`AppUpdateWindowController`) with an immediate indeterminate loading indicator and real-time status presentation for update discovery.
+- Added "Check for Updates..." to both the popover options menu and status bar right-click context menu.
+- Support for detecting APFS Cryptex applications (`/System/Cryptexes/App/System/Applications`) and translocated applications (e.g., Maccy running from `/private/var/folders/...`) in the exclude app picker.
+
+### Changed
+
+- Replaced fragile hardcoded protected bundle identifier arrays with architecture-driven system protection (protects `/System/Library/CoreServices/`, `/System/Library/PrivateFrameworks/`, `/usr/`, `/Library/Apple/`, and system accessory agents while leaving user-facing Apple apps like Safari, Music, Notes, and Pages selectable and quit-able).
+- "Deselect apps by default" configuration setting now defaults to `false` (`defaultSelectAll = true`).
+- Optimized `ExcludeAppPickerView` scanning and selection state computation (`selectionState(for:)`) to O(N) single-pass without redundant intermediate array allocations.
+- Optimized `AppListService.fetchCpuUsages()` to use direct string slice scanning, eliminating per-process substring array allocations.
+- Replaced regex compilation in `cleanAppName` with allocation-free Unicode scalar filtering for invisible bidi and zero-width formatting characters (`\u{200B}-\u{200D}`, `\u{200E}`, `\u{200F}`, `\u{FEFF}`).
+- Replaced multi-pass directory walking in `InstalledApplicationScanner` with deduplicated root scanning and unified `processAppBundle` + `insertOrUpdate` pipeline, cutting ~75 lines of duplicated logic.
+- Exclude app picker search query now strictly respects the `showBackgroundApps` toggle.
+- Unified `AppIconCache` key resolution between synchronous and asynchronous loading paths with Sendable `String` keys to prevent cache misses and eliminate concurrency warnings.
+- Pre-resolved application bundle URLs before termination in `RestartService` for reliable relaunching of background and helper applications.
+- "Reveal in Finder" in popover app rows now falls back to PID-based bundle URLs when LaunchServices URLs are unavailable.
+
+### Fixed
+
+- Fixed critical bug where Safari was missing from the Exclude App Picker when not running, caused by the `UF_HIDDEN` flag on the `/Applications/Safari.app` APFS Cryptex firmlink interacting with `.skipsHiddenFiles` in `DirectoryEnumerator`.
+- Fixed window centering across all auxiliary windows (`HelpWindowController`, `SettingsWindowController`, `AppUpdateWindowController`, `ExcludeAppPickerWindowController`) to ensure consistent horizontal centering and top-biased vertical positioning.
+- Fixed non-Sendable `NSString` capture warnings across AppKit icon loaders.
+- Removed outdated "View/Hide background apps" option from the status bar menu.
+
 ## 1.0.4
 
 
