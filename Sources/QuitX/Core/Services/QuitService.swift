@@ -104,11 +104,7 @@ final class QuitService {
             ?? running.bundleURL?.deletingPathExtension().lastPathComponent
             ?? running.executableURL?.lastPathComponent
         guard let runningName else { return false }
-        let cleanRunningName = runningName.replacingOccurrences(
-            of: "[\u{200B}-\u{200D}\u{200E}\u{200F}\u{FEFF}]",
-            with: "",
-            options: .regularExpression
-        ).trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanRunningName = SystemAppProtection.cleanAppName(runningName)
         return cleanRunningName.caseInsensitiveCompare(app.name) == .orderedSame
     }
 }

@@ -14,35 +14,6 @@ enum InstalledApplicationScanner {
     private static var cached: [InstalledApplication]?
     private static let lock = NSLock()
 
-    private static func isSystemProtected(bundleIdentifier: String, isBackground: Bool, path: String) -> Bool {
-        if QuitXIdentity.supportedBundleIdentifiers.contains(bundleIdentifier) {
-            return true
-        }
-        if path.hasPrefix("/System/Library/CoreServices/") && bundleIdentifier != "com.apple.finder" {
-            return true
-        }
-        if path.hasPrefix("/System/Library/PrivateFrameworks/") || path.hasPrefix("/usr/") {
-            return true
-        }
-        if isBackground {
-            if bundleIdentifier.hasPrefix("com.apple.") {
-                return true
-            }
-            if path.hasPrefix("/System/") || path.hasPrefix("/System/Volumes/") || path.hasPrefix("/Library/Apple/") {
-                return true
-            }
-        }
-        return false
-    }
-
-    private static func cleanAppName(_ rawName: String) -> String {
-        rawName.replacingOccurrences(
-            of: "[\u{200B}-\u{200D}\u{200E}\u{200F}\u{FEFF}]",
-            with: "",
-            options: .regularExpression
-        ).trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
     static func scan(forceRefresh: Bool = false) -> [InstalledApplication] {
         lock.lock()
         if !forceRefresh, let cached = cached {
@@ -52,8 +23,6 @@ enum InstalledApplicationScanner {
         lock.unlock()
 
         var applicationsByIdentifier: [String: InstalledApplication] = [:]
-
-        // 1. Scan running applications (catches translocated apps like Maccy, and apps running from custom locations)
         for app in NSWorkspace.shared.runningApplications {
             if Task.isCancelled { return [] }
             guard !app.isTerminated else { continue }
@@ -63,7 +32,7 @@ enum InstalledApplicationScanner {
             let bundleURL = app.bundleURL ?? (app.executableURL.map { URL(fileURLWithPath: $0.path) })
             let path = bundleURL?.path ?? ""
 
-            if isSystemProtected(bundleIdentifier: bundleIdentifier, isBackground: isBackground, path: path) {
+            if SystemAppProtection.isSystemProtected(bundleIdentifier: bundleIdentifier, isBackground: isBackground, path: path) {
                 continue
             }
 
@@ -71,10 +40,9 @@ enum InstalledApplicationScanner {
                 ?? bundleURL?.deletingPathExtension().lastPathComponent
                 ?? app.executableURL?.lastPathComponent
                 ?? bundleIdentifier
-            let name = cleanAppName(rawName)
+            let name = SystemAppProtection.cleanAppName(rawName)
             guard !name.isEmpty else { continue }
 
-            let key = bundleIdentifier.lowercased()
             let application = InstalledApplication(
                 bundleIdentifier: bundleIdentifier,
                 name: name,
@@ -82,58 +50,30 @@ enum InstalledApplicationScanner {
                 isBackground: isBackground
             )
 
-            if let existing = applicationsByIdentifier[key] {
-                if preferred(application, over: existing) {
-                    applicationsByIdentifier[key] = application
-                }
-            } else {
-                applicationsByIdentifier[key] = application
-            }
+            insertOrUpdate(application, into: &applicationsByIdentifier)
         }
 
-        // 2. Scan filesystem roots
         let fileManager = FileManager.default
-        let roots = fileManager.urls(for: .applicationDirectory, in: .localDomainMask)
-            + fileManager.urls(for: .applicationDirectory, in: .systemDomainMask)
-            + fileManager.urls(for: .applicationDirectory, in: .userDomainMask)
-            + [
-                URL(fileURLWithPath: "/System/Applications/Utilities"),
-                URL(fileURLWithPath: "/Library/Input Methods"),
-                URL(fileURLWithPath: ("~/Library/Input Methods" as NSString).expandingTildeInPath),
-                URL(fileURLWithPath: "/System/Library/CoreServices/Finder.app")
-            ]
+        let searchRoots: [URL] = [
+            URL(fileURLWithPath: "/Applications"),
+            URL(fileURLWithPath: "/System/Applications"),
+            fileManager.homeDirectoryForCurrentUser.appendingPathComponent("Applications"),
+            URL(fileURLWithPath: "/Library/Input Methods"),
+            fileManager.homeDirectoryForCurrentUser.appendingPathComponent("Library/Input Methods"),
+            URL(fileURLWithPath: "/System/Library/CoreServices/Finder.app")
+        ]
 
-        for root in roots where fileManager.fileExists(atPath: root.path) {
+        var visitedPaths = Set<String>()
+
+        for root in searchRoots where fileManager.fileExists(atPath: root.path) {
             if Task.isCancelled { return [] }
 
+            let rootPath = root.standardizedFileURL.path
+            guard !visitedPaths.contains(rootPath) else { continue }
+            visitedPaths.insert(rootPath)
+
             if root.pathExtension.lowercased() == "app" {
-                if let bundle = Bundle(url: root),
-                   let bundleIdentifier = bundle.bundleIdentifier {
-                    let info = bundle.infoDictionary ?? [:]
-                    let isBackground = flagIsEnabled(info["LSUIElement"]) || flagIsEnabled(info["LSBackgroundOnly"])
-                    if !isSystemProtected(bundleIdentifier: bundleIdentifier, isBackground: isBackground, path: root.path) {
-                        let rawName = (info["CFBundleDisplayName"] as? String)
-                            ?? (info["CFBundleName"] as? String)
-                            ?? root.deletingPathExtension().lastPathComponent
-                        let name = cleanAppName(rawName)
-                        if !name.isEmpty {
-                            let key = bundleIdentifier.lowercased()
-                            let application = InstalledApplication(
-                                bundleIdentifier: bundleIdentifier,
-                                name: name,
-                                url: root,
-                                isBackground: isBackground
-                            )
-                            if let existing = applicationsByIdentifier[key] {
-                                if preferred(application, over: existing) {
-                                    applicationsByIdentifier[key] = application
-                                }
-                            } else {
-                                applicationsByIdentifier[key] = application
-                            }
-                        }
-                    }
-                }
+                processAppBundle(at: root, into: &applicationsByIdentifier)
                 continue
             }
 
@@ -145,39 +85,8 @@ enum InstalledApplicationScanner {
 
             for case let url as URL in enumerator {
                 if Task.isCancelled { return [] }
-                guard url.pathExtension.lowercased() == "app",
-                      let bundle = Bundle(url: url),
-                      let bundleIdentifier = bundle.bundleIdentifier else { continue }
-
-                let info = bundle.infoDictionary ?? [:]
-                let isBackground = flagIsEnabled(info["LSUIElement"])
-                    || flagIsEnabled(info["LSBackgroundOnly"])
-
-                if isSystemProtected(bundleIdentifier: bundleIdentifier, isBackground: isBackground, path: url.path) {
-                    continue
-                }
-
-                let rawName = (info["CFBundleDisplayName"] as? String)
-                    ?? (info["CFBundleName"] as? String)
-                    ?? url.deletingPathExtension().lastPathComponent
-                let name = cleanAppName(rawName)
-                guard !name.isEmpty else { continue }
-
-                let key = bundleIdentifier.lowercased()
-                let application = InstalledApplication(
-                    bundleIdentifier: bundleIdentifier,
-                    name: name,
-                    url: url,
-                    isBackground: isBackground
-                )
-
-                if let existing = applicationsByIdentifier[key] {
-                    if preferred(application, over: existing) {
-                        applicationsByIdentifier[key] = application
-                    }
-                } else {
-                    applicationsByIdentifier[key] = application
-                }
+                guard url.pathExtension.lowercased() == "app" else { continue }
+                processAppBundle(at: url, into: &applicationsByIdentifier)
             }
         }
 
@@ -190,6 +99,54 @@ enum InstalledApplicationScanner {
         lock.unlock()
 
         return sorted
+    }
+
+    private static func processAppBundle(
+        at url: URL,
+        into dict: inout [String: InstalledApplication]
+    ) {
+        guard let bundle = Bundle(url: url),
+              let bundleIdentifier = bundle.bundleIdentifier else { return }
+
+        let info = bundle.infoDictionary ?? [:]
+        let isBackground = flagIsEnabled(info["LSUIElement"]) || flagIsEnabled(info["LSBackgroundOnly"])
+
+        if SystemAppProtection.isSystemProtected(
+            bundleIdentifier: bundleIdentifier,
+            isBackground: isBackground,
+            path: url.path
+        ) {
+            return
+        }
+
+        let rawName = (info["CFBundleDisplayName"] as? String)
+            ?? (info["CFBundleName"] as? String)
+            ?? url.deletingPathExtension().lastPathComponent
+        let name = SystemAppProtection.cleanAppName(rawName)
+        guard !name.isEmpty else { return }
+
+        let application = InstalledApplication(
+            bundleIdentifier: bundleIdentifier,
+            name: name,
+            url: url,
+            isBackground: isBackground
+        )
+
+        insertOrUpdate(application, into: &dict)
+    }
+
+    private static func insertOrUpdate(
+        _ application: InstalledApplication,
+        into dict: inout [String: InstalledApplication]
+    ) {
+        let key = application.id
+        if let existing = dict[key] {
+            if preferred(application, over: existing) {
+                dict[key] = application
+            }
+        } else {
+            dict[key] = application
+        }
     }
 
     private static func preferred(_ candidate: InstalledApplication, over existing: InstalledApplication) -> Bool {
@@ -244,15 +201,29 @@ final class ExcludeAppPickerViewModel: ObservableObject {
         }
     }
 
+    func selectionState(for applications: [InstalledApplication]) -> (isAll: Bool, isPartial: Bool) {
+        guard !applications.isEmpty else { return (false, false) }
+        var selectedCount = 0
+        for app in applications {
+            if selectedIdentifiers.contains(app.id) {
+                selectedCount += 1
+            }
+        }
+        if selectedCount == 0 {
+            return (false, false)
+        } else if selectedCount == applications.count {
+            return (true, false)
+        } else {
+            return (false, true)
+        }
+    }
+
     func isAllSelected(for applications: [InstalledApplication]) -> Bool {
-        guard !applications.isEmpty else { return false }
-        return applications.allSatisfy { selectedIdentifiers.contains($0.id) }
+        selectionState(for: applications).isAll
     }
 
     func isPartiallySelected(for applications: [InstalledApplication]) -> Bool {
-        guard !applications.isEmpty else { return false }
-        let selectedCount = applications.filter { selectedIdentifiers.contains($0.id) }.count
-        return selectedCount > 0 && selectedCount < applications.count
+        selectionState(for: applications).isPartial
     }
 
     func toggleSelectAll(for applications: [InstalledApplication]) {
@@ -434,20 +405,22 @@ struct ExcludeAppPickerView: View {
     }
 
     private var appList: some View {
-        VStack(spacing: 0) {
+        let apps = visibleApplications
+        let state = viewModel.selectionState(for: apps)
+        return VStack(spacing: 0) {
             Button {
-                viewModel.toggleSelectAll(for: visibleApplications)
+                viewModel.toggleSelectAll(for: apps)
             } label: {
                 HStack(spacing: 8) {
                     QuitXSelectionCheckbox(
-                        isSelected: viewModel.isAllSelected(for: visibleApplications),
-                        isPartial: viewModel.isPartiallySelected(for: visibleApplications)
+                        isSelected: state.isAll,
+                        isPartial: state.isPartial
                     )
-                    Text(viewModel.isAllSelected(for: visibleApplications) ? "Deselect All" : "Select All")
+                    Text(state.isAll ? "Deselect All" : "Select All")
                         .font(.system(size: 11.5, weight: .medium))
                         .foregroundStyle(Color.primary)
                     Spacer()
-                    Text("\(visibleApplications.count) apps")
+                    Text("\(apps.count) apps")
                         .font(.system(size: 11))
                         .foregroundStyle(Color.secondary)
                 }
@@ -460,7 +433,7 @@ struct ExcludeAppPickerView: View {
 
             ScrollView(.vertical, showsIndicators: true) {
                 LazyVStack(spacing: 2) {
-                    ForEach(visibleApplications) { application in
+                    ForEach(apps) { application in
                         Button {
                             viewModel.toggle(application)
                         } label: {

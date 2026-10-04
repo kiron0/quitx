@@ -14,56 +14,6 @@ final class AppListService {
         let isBackground: Bool
     }
 
-    private static func isSystemProtected(app: RunningAppSnapshot) -> Bool {
-        let bid = app.bundleId ?? ""
-        if !bid.isEmpty && QuitXIdentity.supportedBundleIdentifiers.contains(bid) {
-            return true
-        }
-
-        let bundlePath = app.bundleURL?.path ?? ""
-        let execPath = app.executableURL?.path ?? ""
-        let path = bundlePath.isEmpty ? execPath : bundlePath
-
-        if path.hasPrefix("/System/Library/CoreServices/") && bid != "com.apple.finder" {
-            return true
-        }
-        if path.hasPrefix("/System/Library/PrivateFrameworks/") || path.hasPrefix("/usr/") {
-            return true
-        }
-
-        if app.isBackground {
-            if bid.hasPrefix("com.apple.") {
-                return true
-            }
-            if path.hasPrefix("/System/") || path.hasPrefix("/System/Volumes/") || path.hasPrefix("/Library/Apple/") {
-                return true
-            }
-        }
-
-        return false
-    }
-
-    private static func cleanAppName(_ rawName: String) -> String {
-        rawName.replacingOccurrences(
-            of: "[\u{200B}-\u{200D}\u{200E}\u{200F}\u{FEFF}]",
-            with: "",
-            options: .regularExpression
-        ).trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private static func cleanGroupedName(_ name: String) -> String {
-        let pattern = #"\s*\([^)]*\)$"#
-        if let regex = try? NSRegularExpression(pattern: pattern) {
-            let range = NSRange(name.startIndex..<name.endIndex, in: name)
-            let stripped = regex.stringByReplacingMatches(in: name, options: [], range: range, withTemplate: "")
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            if !stripped.isEmpty {
-                return stripped
-            }
-        }
-        return name
-    }
-
     @MainActor
     func fetchApps(config: QuitXConfig) async -> [AppInfo] {
         let running = NSWorkspace.shared.runningApplications.compactMap { app -> RunningAppSnapshot? in
@@ -72,7 +22,7 @@ final class AppListService {
                 ?? app.bundleURL?.deletingPathExtension().lastPathComponent
                 ?? app.executableURL?.lastPathComponent
             guard let rawName else { return nil }
-            let name = Self.cleanAppName(rawName)
+            let name = SystemAppProtection.cleanAppName(rawName)
             guard !name.isEmpty else { return nil }
             return RunningAppSnapshot(
                 pid: app.processIdentifier,
@@ -115,7 +65,12 @@ final class AppListService {
             if !isRegularApp && !isBackground { continue }
             if isBackground && !config.includeBackground { continue }
 
-            if isSystemProtected(app: app) { continue }
+            if SystemAppProtection.isSystemProtected(
+                bundleIdentifier: app.bundleId,
+                isBackground: isBackground,
+                bundleURL: app.bundleURL,
+                executableURL: app.executableURL
+            ) { continue }
 
             let name = app.name
             let bundleId = app.bundleId
@@ -155,7 +110,7 @@ final class AppListService {
 
             for app in results {
                 if app.isBackground {
-                    let cleanedName = cleanGroupedName(app.name)
+                    let cleanedName = SystemAppProtection.cleanGroupedName(app.name)
                     let key = (app.bundleId ?? cleanedName).lowercased()
                     if var existing = bgGroups[key] {
                         existing.pids.append(contentsOf: app.pids)
@@ -246,8 +201,11 @@ final class AppListService {
         guard let output = String(data: data, encoding: .utf8) else { return [:] }
         var result: [pid_t: Double] = [:]
         for line in output.split(separator: "\n").dropFirst() {
-            let parts = line.split(whereSeparator: { $0.isWhitespace })
-            if parts.count >= 2, let pid = pid_t(parts[0]), let cpu = Double(parts[1]) {
+            let trimmed = line.drop(while: { $0.isWhitespace })
+            guard let spaceIdx = trimmed.firstIndex(where: { $0.isWhitespace }) else { continue }
+            let pidStr = trimmed[..<spaceIdx]
+            let cpuStr = trimmed[spaceIdx...].drop(while: { $0.isWhitespace })
+            if let pid = pid_t(pidStr), let cpu = Double(cpuStr) {
                 result[pid] = cpu
             }
         }

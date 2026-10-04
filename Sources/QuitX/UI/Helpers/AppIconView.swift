@@ -4,40 +4,53 @@ import AppKit
 enum AppIconCache {
     private static let cache = NSCache<NSString, NSImage>()
 
+    private static func cacheKey(bundleId: String?, pid: pid_t?, url: URL?) -> String {
+        if let bundleId = bundleId, !bundleId.isEmpty {
+            return bundleId
+        }
+        if let url = url {
+            return url.path
+        }
+        if let pid = pid {
+            return "pid-\(pid)"
+        }
+        return "fallback"
+    }
+
     static func icon(for bundleId: String?, pid: pid_t? = nil, url: URL? = nil) -> NSImage? {
-        let cacheKey = ((bundleId ?? (url?.path ?? (pid.map { "pid-\($0)" } ?? "unknown")))) as NSString
-        if let cached = cache.object(forKey: cacheKey) {
+        let key = cacheKey(bundleId: bundleId, pid: pid, url: url) as NSString
+        if let cached = cache.object(forKey: key) {
             return cached
         }
         if bundleId == "com.apple.trash" {
             let img = NSImage(systemSymbolName: "trash", accessibilityDescription: "Trash")
             img?.isTemplate = true
-            if let img = img { cache.setObject(img, forKey: cacheKey) }
+            if let img = img { cache.setObject(img, forKey: key) }
             return img
         }
         if let url = url, FileManager.default.fileExists(atPath: url.path) {
             let img = NSWorkspace.shared.icon(forFile: url.path)
-            cache.setObject(img, forKey: cacheKey)
+            cache.setObject(img, forKey: key)
             return img
         }
         if let pid = pid, let running = NSRunningApplication(processIdentifier: pid), let icon = running.icon {
-            cache.setObject(icon, forKey: cacheKey)
+            cache.setObject(icon, forKey: key)
             return icon
         }
         if let bid = bundleId {
             if let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid)?.path {
                 let img = NSWorkspace.shared.icon(forFile: path)
-                cache.setObject(img, forKey: cacheKey)
+                cache.setObject(img, forKey: key)
                 return img
             }
             if let running = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == bid }),
                let icon = running.icon {
-                cache.setObject(icon, forKey: cacheKey)
+                cache.setObject(icon, forKey: key)
                 return icon
             }
         }
         let fallback = NSWorkspace.shared.icon(for: .applicationBundle)
-        cache.setObject(fallback, forKey: cacheKey)
+        cache.setObject(fallback, forKey: key)
         return fallback
     }
 
@@ -47,7 +60,7 @@ enum AppIconCache {
             completion(existing)
             return
         }
-        let key = bundleId ?? url?.path ?? "fallback"
+        let key = cacheKey(bundleId: bundleId, pid: pid, url: url)
         let fileUrl = url ?? (bundleId.flatMap { NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) })
         guard let path = fileUrl?.path else {
             let fallback = NSWorkspace.shared.icon(for: .applicationBundle)
