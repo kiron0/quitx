@@ -435,6 +435,24 @@ struct ShortcutManagerTests {
         let target = ["^", "⌥", "Q"]
         #expect(pressed != target)
     }
+
+    @Test("keysToCarbon converts modifier and letter correctly")
+    func testKeysToCarbon() {
+        let resultA = ShortcutManager.keysToCarbon(keys: ["^", "⌥", "A"])
+        #expect(resultA != nil)
+        #expect(resultA?.keyCode == 0)
+
+        let resultQ = ShortcutManager.keysToCarbon(keys: ["^", "⌥", "⌘", "Q"])
+        #expect(resultQ != nil)
+        #expect(resultQ?.keyCode == 12)
+    }
+
+    @Test("keyCodeToString maps standard keys")
+    func testKeyCodeToString() {
+        #expect(ShortcutManager.keyCodeToString(0) == "A")
+        #expect(ShortcutManager.keyCodeToString(12) == "Q")
+        #expect(ShortcutManager.keyCodeToString(36) == "↩")
+    }
 }
 
 @Suite("QuitService Tests")
