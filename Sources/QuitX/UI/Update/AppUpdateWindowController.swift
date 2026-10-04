@@ -9,7 +9,7 @@ final class AppUpdateWindowController: NSObject, NSWindowDelegate {
 
     var isOpen: Bool { window != nil }
 
-    func showUpdateWindow(targetVersion: String, downloadURL: URL, releaseWebURL: URL? = nil) {
+    func showCheckWindow() {
         StatusItemController.shared?.closePopover()
 
         if let win = window {
@@ -20,8 +20,40 @@ final class AppUpdateWindowController: NSObject, NSWindowDelegate {
             return
         }
 
+        buildAndPresentWindow()
+    }
+
+    func showUpdateWindow(targetVersion: String, downloadURL: URL, releaseWebURL: URL? = nil) {
+        StatusItemController.shared?.closePopover()
+
+        UpdateChecker.shared.checkState = .available(version: targetVersion, downloadURL: downloadURL)
+
+        if let win = window {
+            if let screen = WindowPositioner.targetScreen {
+                win.setFrameOrigin(WindowPositioner.topBiasedOrigin(for: win.frame.size, on: screen))
+            }
+            WindowAnimator.activateExisting(win)
+            UpdateDownloadService.shared.startDownload(
+                from: downloadURL,
+                version: targetVersion,
+                releaseWebURL: releaseWebURL
+            )
+            return
+        }
+
+        buildAndPresentWindow()
+
+        UpdateDownloadService.shared.startDownload(
+            from: downloadURL,
+            version: targetVersion,
+            releaseWebURL: releaseWebURL
+        )
+    }
+
+    private func buildAndPresentWindow() {
         let contentView = AppUpdateView(
             service: UpdateDownloadService.shared,
+            checker: UpdateChecker.shared,
             onDismiss: { [weak self] in
                 self?.close()
             }
@@ -51,12 +83,6 @@ final class AppUpdateWindowController: NSObject, NSWindowDelegate {
         self.window = win
         WindowActivationCoordinator.update()
 
-        UpdateDownloadService.shared.startDownload(
-            from: downloadURL,
-            version: targetVersion,
-            releaseWebURL: releaseWebURL
-        )
-
         let targetFrame: NSRect
         if let screen = WindowPositioner.targetScreen {
             targetFrame = WindowPositioner.topBiasedFrame(for: win.frame.size, on: screen)
@@ -72,13 +98,14 @@ final class AppUpdateWindowController: NSObject, NSWindowDelegate {
         window?.close()
         window = nil
         UpdateDownloadService.shared.cancelDownload()
+        UpdateChecker.shared.resetState()
         WindowActivationCoordinator.update()
     }
-
 
     func windowWillClose(_ notification: Notification) {
         window = nil
         UpdateDownloadService.shared.cancelDownload()
+        UpdateChecker.shared.resetState()
         WindowActivationCoordinator.update()
     }
 }

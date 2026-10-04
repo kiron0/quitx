@@ -12,6 +12,14 @@ struct GatekeeperRelease: Decodable, Equatable {
     let digest: String?
 }
 
+enum UpdateCheckState: Equatable {
+    case idle
+    case checking
+    case available(version: String, downloadURL: URL?)
+    case upToDate(version: String)
+    case failed(message: String)
+}
+
 @MainActor
 final class UpdateChecker: ObservableObject {
     static let shared = UpdateChecker()
@@ -21,15 +29,25 @@ final class UpdateChecker: ObservableObject {
     }
 
     @Published var isChecking = false
+    @Published var checkState: UpdateCheckState = .idle
 
     var currentVersion: String {
         QuitXConstants.appVersion
     }
 
+    func resetState() {
+        checkState = .idle
+    }
+
     func checkForUpdates(isUserInitiated: Bool = true) async {
         guard !isChecking else { return }
         isChecking = true
+        checkState = .checking
         defer { isChecking = false }
+
+        if isUserInitiated {
+            AppUpdateWindowController.shared.showCheckWindow()
+        }
 
         var request = URLRequest(url: updateWorkerURL)
         request.setValue(QuitXConstants.updateSecretKey, forHTTPHeaderField: "X-QuitX-Key")
@@ -40,17 +58,17 @@ final class UpdateChecker: ObservableObject {
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             guard let httpResponse = response as? HTTPURLResponse else {
-                showErrorAlert(isUserInitiated: isUserInitiated)
+                handleError(message: "Invalid response from server", isUserInitiated: isUserInitiated)
                 return
             }
 
             if httpResponse.statusCode == 404 {
-                showUpToDateAlert(isUserInitiated: isUserInitiated)
+                handleUpToDate(isUserInitiated: isUserInitiated)
                 return
             }
 
             guard httpResponse.statusCode == 200 else {
-                showErrorAlert(isUserInitiated: isUserInitiated)
+                handleError(message: "Server returned status code \(httpResponse.statusCode)", isUserInitiated: isUserInitiated)
                 return
             }
 
@@ -59,12 +77,12 @@ final class UpdateChecker: ObservableObject {
             let downloadURL = URL(string: release.downloadUrl)
 
             if isVersion(latestVersionRaw, greaterThan: currentVersion) {
-                showUpdateAvailableAlert(latestVersion: latestVersionRaw, downloadURL: downloadURL)
+                handleUpdateAvailable(latestVersion: latestVersionRaw, downloadURL: downloadURL, isUserInitiated: isUserInitiated)
             } else {
-                showUpToDateAlert(isUserInitiated: isUserInitiated)
+                handleUpToDate(isUserInitiated: isUserInitiated)
             }
         } catch {
-            showErrorAlert(isUserInitiated: isUserInitiated)
+            handleError(message: "Could not check for updates. Please check your internet connection and try again.", isUserInitiated: isUserInitiated)
         }
     }
 
@@ -72,56 +90,18 @@ final class UpdateChecker: ObservableObject {
         VersionComparator.isGreaterThan(v1, v2)
     }
 
-    private func configureAlertIcon(_ alert: NSAlert) {
-        if let appIcon = NSImage(named: "AppIcon") ?? NSApp.applicationIconImage {
-            alert.icon = appIcon
+    private func handleUpdateAvailable(latestVersion: String, downloadURL: URL?, isUserInitiated: Bool) {
+        checkState = .available(version: latestVersion, downloadURL: downloadURL)
+        if !isUserInitiated {
+            AppUpdateWindowController.shared.showCheckWindow()
         }
     }
 
-    private func showUpdateAvailableAlert(latestVersion: String, downloadURL: URL?) {
-        let alert = NSAlert()
-        configureAlertIcon(alert)
-        alert.messageText = "Update Available"
-        alert.informativeText = "A new version of QuitX (v\(latestVersion)) is available. You currently have v\(currentVersion)."
-
-        if let downloadURL = downloadURL {
-            alert.addButton(withTitle: "Update Now")
-            alert.addButton(withTitle: "Cancel")
-            alert.alertStyle = .informational
-
-            let response = alert.runModal()
-            if response == .alertFirstButtonReturn {
-                AppUpdateWindowController.shared.showUpdateWindow(
-                    targetVersion: latestVersion,
-                    downloadURL: downloadURL
-                )
-            }
-        } else {
-            alert.addButton(withTitle: "OK")
-            alert.alertStyle = .informational
-            alert.runModal()
-        }
+    private func handleUpToDate(isUserInitiated: Bool) {
+        checkState = .upToDate(version: currentVersion)
     }
 
-    private func showUpToDateAlert(isUserInitiated: Bool) {
-        guard isUserInitiated else { return }
-        let alert = NSAlert()
-        configureAlertIcon(alert)
-        alert.messageText = "You're Up to Date!"
-        alert.informativeText = "QuitX v\(currentVersion) is currently the newest version available."
-        alert.addButton(withTitle: "OK")
-        alert.alertStyle = .informational
-        alert.runModal()
-    }
-
-    private func showErrorAlert(isUserInitiated: Bool) {
-        guard isUserInitiated else { return }
-        let alert = NSAlert()
-        configureAlertIcon(alert)
-        alert.messageText = "Unable to Check for Updates"
-        alert.informativeText = "Could not check for updates. Please check your internet connection and try again."
-        alert.addButton(withTitle: "OK")
-        alert.alertStyle = .warning
-        alert.runModal()
+    private func handleError(message: String, isUserInitiated: Bool) {
+        checkState = .failed(message: message)
     }
 }
