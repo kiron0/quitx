@@ -5,7 +5,6 @@ import SwiftUI
 final class HelpWindowController: NSObject, NSWindowDelegate {
     static let shared = HelpWindowController()
 
-    private let frameAutosaveName = "QuitXHelpWindow"
     private var window: NSWindow?
 
     var isOpen: Bool { window != nil }
@@ -37,10 +36,16 @@ final class HelpWindowController: NSObject, NSWindowDelegate {
         window.animationBehavior = .documentWindow
         window.delegate = self
 
-        if !window.setFrameUsingName(frameAutosaveName) {
+        if let screen = NSScreen.main ?? NSScreen.screens.first {
+            let sf = screen.visibleFrame
+            let origin = NSPoint(
+                x: sf.midX - window.frame.width / 2,
+                y: sf.maxY - window.frame.height - 110
+            )
+            window.setFrameOrigin(origin)
+        } else {
             window.center()
         }
-        window.setFrameAutosaveName(frameAutosaveName)
 
         self.window = window
         WindowActivationCoordinator.update()
