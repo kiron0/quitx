@@ -146,8 +146,8 @@ final class AppListViewModel: ObservableObject {
         }
         if filteredApps != list {
             filteredApps = list
+            visibleIds = Set(list.map(\.id))
         }
-        visibleIds = Set(list.map(\.id))
     }
 
     var isAllSelected: Bool {
@@ -244,10 +244,10 @@ final class AppListViewModel: ObservableObject {
         defer { isUpdatingLiveStats = false }
         let selectedAllBeforeRefresh = isAllSelected
         let cfg = activeScanConfig
-        let fetched = await AppListService.shared.fetchApps(config: cfg)
+        let updated = await AppListService.shared.fetchLiveStats(currentApps: apps, config: cfg)
         guard !Task.isCancelled, !isLoading else { return }
-        if apps != fetched {
-            apps = fetched
+        if apps != updated {
+            apps = updated
         }
         let newSelection = selectedAllBeforeRefresh
             ? visibleIds
@@ -323,7 +323,7 @@ final class AppListViewModel: ObservableObject {
         let succeeded = await RestartService.shared.restart(app: app)
         await refresh()
         if !succeeded {
-            triggerToast(message: "Couldn’t restart \(app.name)", isError: true)
+            triggerToast(message: "Couldn’t restart \(app.name). Try force quit.", isError: true)
         }
     }
 

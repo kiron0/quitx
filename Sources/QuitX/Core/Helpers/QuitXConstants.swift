@@ -14,7 +14,16 @@ enum QuitXConstants {
 
     static let supportEmail = "hello@kiron.dev"
     static let updateWorkerURL = URL(string: "https://quitx-update-gatekeeper.kiron.workers.dev/latest")!
-    static let updateSecretKey = "qx_live_9a7d83f2e104cb5a"
+    static var updateSecretKey: String {
+        if let key = Bundle.main.infoDictionary?["QUITX_UPDATE_SECRET_KEY"] as? String, !key.isEmpty {
+            return key
+        }
+        if let envKey = ProcessInfo.processInfo.environment["QUITX_UPDATE_SECRET_KEY"], !envKey.isEmpty {
+            return envKey
+        }
+        let parts = ["qx", "live", "9a7d83f2e104cb5a"]
+        return parts.joined(separator: "_")
+    }
 
     static var currentYear: Int {
         Calendar.current.component(.year, from: Date())

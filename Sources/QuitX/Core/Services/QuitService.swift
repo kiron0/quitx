@@ -86,14 +86,15 @@ final class QuitService {
         )
     }
 
-    @MainActor
-    private static func runAppleScript(_ source: String, app: AppInfo, label: String) -> QuitResult {
-        var error: NSDictionary?
-        guard let appleScript = NSAppleScript(source: source) else {
-            return QuitResult(app: app, success: false, forced: false, error: "Could not create \(label) AppleScript")
-        }
-        appleScript.executeAndReturnError(&error)
-        return QuitResult(app: app, success: error == nil, forced: false, error: error?.description)
+    private static func runAppleScript(_ source: String, app: AppInfo, label: String) async -> QuitResult {
+        await Task.detached {
+            var error: NSDictionary?
+            guard let appleScript = NSAppleScript(source: source) else {
+                return QuitResult(app: app, success: false, forced: false, error: "Could not create \(label) AppleScript")
+            }
+            appleScript.executeAndReturnError(&error)
+            return QuitResult(app: app, success: error == nil, forced: false, error: error?.description)
+        }.value
     }
 
     static func matches(running: NSRunningApplication, app: AppInfo) -> Bool {

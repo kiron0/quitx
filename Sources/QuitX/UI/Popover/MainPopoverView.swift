@@ -10,13 +10,14 @@ struct MainPopoverView: View {
     @ObservedObject private var vm = AppListViewModel.shared
     @StateObject private var uiState = PopoverUIState()
 
-    private let goldColor = QuitXTheme.accent
-    private let goldGradient = LinearGradient(
+    private static let goldColor = QuitXTheme.accent
+    private static let goldGradient = LinearGradient(
         colors: [QuitXTheme.accent, Color(red: 232/255, green: 155/255, blue: 0/255)],
         startPoint: .top,
         endPoint: .bottom
     )
     var body: some View {
+        let containerShape = PopoverContainerShape(arrowX: vm.arrowX, cornerRadius: 10)
         VStack(spacing: 0) {
             Color.clear
                 .frame(height: 12)
@@ -53,10 +54,10 @@ struct MainPopoverView: View {
         .frame(maxHeight: .infinity)
         .background(
             QuitXTheme.popoverBackground
-                .clipShape(PopoverContainerShape(arrowX: vm.arrowX, cornerRadius: 10))
+                .clipShape(containerShape)
         )
         .overlay(
-            PopoverContainerShape(arrowX: vm.arrowX, cornerRadius: 10)
+            containerShape
                 .stroke(Color.primary.opacity(0.12), lineWidth: 0.5)
         )
         .overlay(alignment: .bottom) {
@@ -124,7 +125,7 @@ struct MainPopoverView: View {
         }
         .animation(.easeInOut(duration: 0.18), value: vm.showConfirmQuitAll)
         .animation(.easeInOut(duration: 0.18), value: vm.pendingIndividualAction)
-        .clipShape(PopoverContainerShape(arrowX: vm.arrowX, cornerRadius: 10))
+        .clipShape(containerShape)
         .onChange(of: vm.filteredApps.count) {
             StatusItemController.shared?.updatePopoverSize()
         }
@@ -196,12 +197,12 @@ struct MainPopoverView: View {
             .frame(height: 24)
             .background(
                 isActive
-                    ? goldGradient
+                    ? Self.goldGradient
                     : LinearGradient(colors: [Color.primary.opacity(0.08), Color.primary.opacity(0.08)], startPoint: .top, endPoint: .bottom)
             )
             .clipShape(RoundedRectangle(cornerRadius: 6))
             .shadow(
-                color: isActive ? goldColor.opacity(uiState.isQuitAllHovered ? 0.3 : 0.12) : Color.clear,
+                color: isActive ? Self.goldColor.opacity(uiState.isQuitAllHovered ? 0.3 : 0.12) : Color.clear,
                 radius: 2,
                 y: 1
             )
@@ -266,7 +267,7 @@ struct MainPopoverView: View {
             Spacer()
             Image(systemName: "sparkles")
                 .font(.system(size: 32))
-                .foregroundStyle(goldColor)
+                .foregroundStyle(Self.goldColor)
             Text(vm.searchQuery.isEmpty ? "All clean! No apps to quit." : "No running apps match '\(vm.searchQuery)'")
                 .font(.system(size: 12.5))
                 .foregroundStyle(Color.secondary)

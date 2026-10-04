@@ -82,7 +82,12 @@ final class StatusItemController: NSObject {
         button.target = self
     }
 
+    private var cachedMenuBarIcon: NSImage?
+
     private func makeMenuBarIcon() -> NSImage {
+        if let cached = cachedMenuBarIcon {
+            return cached
+        }
         let targetSize = NSSize(width: 18, height: 18)
         let icon = NSImage(size: targetSize)
         let iconNames = ["status-icon", "menubar"]
@@ -113,6 +118,7 @@ final class StatusItemController: NSObject {
 
         if loaded {
             icon.isTemplate = true
+            cachedMenuBarIcon = icon
             return icon
         }
 
@@ -123,6 +129,7 @@ final class StatusItemController: NSObject {
         rounded.fill()
         image.unlockFocus()
         image.isTemplate = true
+        cachedMenuBarIcon = image
         return image
     }
 

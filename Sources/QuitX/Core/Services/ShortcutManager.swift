@@ -180,118 +180,37 @@ final class ShortcutManager: ObservableObject {
         return (keyCode, modifiers)
     }
 
-    nonisolated static func stringToKeyCode(_ str: String) -> UInt32? {
-        switch str.uppercased() {
-        case "A": return 0
-        case "S": return 1
-        case "D": return 2
-        case "F": return 3
-        case "H": return 4
-        case "G": return 5
-        case "Z": return 6
-        case "X": return 7
-        case "C": return 8
-        case "V": return 9
-        case "B": return 11
-        case "Q": return 12
-        case "W": return 13
-        case "E": return 14
-        case "R": return 15
-        case "Y": return 16
-        case "T": return 17
-        case "1": return 18
-        case "2": return 19
-        case "3": return 20
-        case "4": return 21
-        case "6": return 22
-        case "5": return 23
-        case "=": return 24
-        case "9": return 25
-        case "7": return 26
-        case "-": return 27
-        case "8": return 28
-        case "0": return 29
-        case "]": return 30
-        case "O": return 31
-        case "U": return 32
-        case "[": return 33
-        case "I": return 34
-        case "P": return 35
-        case "↩", "RETURN": return 36
-        case "L": return 37
-        case "J": return 38
-        case "'": return 39
-        case "K": return 40
-        case ";": return 41
-        case "\\": return 42
-        case ",": return 43
-        case "/": return 44
-        case "N": return 45
-        case "M": return 46
-        case ".": return 47
-        case "TAB": return 48
-        case "SPACE": return 49
-        case "`": return 50
-        case "DELETE", "⌫": return 51
-        case "ESCAPE", "⎋": return 53
-        default: return nil
+    private nonisolated static let primaryKeyMap: [UInt16: String] = [
+        0: "A", 1: "S", 2: "D", 3: "F", 4: "H", 5: "G", 6: "Z", 7: "X",
+        8: "C", 9: "V", 11: "B", 12: "Q", 13: "W", 14: "E", 15: "R",
+        16: "Y", 17: "T", 18: "1", 19: "2", 20: "3", 21: "4", 22: "6",
+        23: "5", 24: "=", 25: "9", 26: "7", 27: "-", 28: "8", 29: "0",
+        30: "]", 31: "O", 32: "U", 33: "[", 34: "I", 35: "P", 36: "↩",
+        37: "L", 38: "J", 39: "'", 40: "K", 41: ";", 42: "\\", 43: ",",
+        44: "/", 45: "N", 46: "M", 47: ".", 48: "Tab", 49: "Space", 50: "`"
+    ]
+
+    private nonisolated static let stringAliases: [String: UInt32] = [
+        "RETURN": 36, "DELETE": 51, "⌫": 51, "ESCAPE": 53, "⎋": 53
+    ]
+
+    private nonisolated static let stringToKeyMap: [String: UInt32] = {
+        var map: [String: UInt32] = [:]
+        for (code, str) in primaryKeyMap {
+            map[str.uppercased()] = UInt32(code)
         }
+        for (alias, code) in stringAliases {
+            map[alias] = code
+        }
+        return map
+    }()
+
+    nonisolated static func stringToKeyCode(_ str: String) -> UInt32? {
+        stringToKeyMap[str.uppercased()]
     }
 
     nonisolated static func keyCodeToString(_ keyCode: UInt16) -> String? {
-        switch keyCode {
-        case 0: return "A"
-        case 1: return "S"
-        case 2: return "D"
-        case 3: return "F"
-        case 4: return "H"
-        case 5: return "G"
-        case 6: return "Z"
-        case 7: return "X"
-        case 8: return "C"
-        case 9: return "V"
-        case 11: return "B"
-        case 12: return "Q"
-        case 13: return "W"
-        case 14: return "E"
-        case 15: return "R"
-        case 16: return "Y"
-        case 17: return "T"
-        case 18: return "1"
-        case 19: return "2"
-        case 20: return "3"
-        case 21: return "4"
-        case 22: return "6"
-        case 23: return "5"
-        case 24: return "="
-        case 25: return "9"
-        case 26: return "7"
-        case 27: return "-"
-        case 28: return "8"
-        case 29: return "0"
-        case 30: return "]"
-        case 31: return "O"
-        case 32: return "U"
-        case 33: return "["
-        case 34: return "I"
-        case 35: return "P"
-        case 36: return "↩"
-        case 37: return "L"
-        case 38: return "J"
-        case 39: return "'"
-        case 40: return "K"
-        case 41: return ";"
-        case 42: return "\\"
-        case 43: return ","
-        case 44: return "/"
-        case 45: return "N"
-        case 46: return "M"
-        case 47: return "."
-        case 48: return "Tab"
-        case 49: return "Space"
-        case 50: return "`"
-        default: return nil
-        }
+        primaryKeyMap[keyCode]
     }
 
     nonisolated static func eventToKeys(_ event: NSEvent) -> [String] {

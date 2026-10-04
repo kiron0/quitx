@@ -37,20 +37,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 SettingsWindowController.shared.show(tab: tab)
             }
         }
-        DistributedNotificationCenter.default().addObserver(
+        let obs1 = DistributedNotificationCenter.default().addObserver(
             forName: NSNotification.Name("io.coreify.quitx.showSettings"),
             object: nil,
             queue: .main,
             using: handleShowSettings
         )
-        DistributedNotificationCenter.default().addObserver(
+        let obs2 = DistributedNotificationCenter.default().addObserver(
             forName: NSNotification.Name("io.coreify.quitx.showPreferences"),
             object: nil,
             queue: .main,
             using: handleShowSettings
         )
 
-        DistributedNotificationCenter.default().addObserver(
+        let obs3 = DistributedNotificationCenter.default().addObserver(
             forName: NSNotification.Name("io.coreify.quitx.showPopover"),
             object: nil,
             queue: .main
@@ -59,9 +59,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.statusItemController?.showPopover()
             }
         }
+        distributedNotificationObservers = [obs1, obs2, obs3]
     }
 
+    private var distributedNotificationObservers: [NSObjectProtocol] = []
+
     func applicationWillTerminate(_ notification: Notification) {
+        for obs in distributedNotificationObservers {
+            DistributedNotificationCenter.default().removeObserver(obs)
+        }
+        distributedNotificationObservers.removeAll()
+        AutoQuitService.shared.stopTracking()
         SingleInstanceService.shared.stopMonitoring()
         statusItemController = nil
     }

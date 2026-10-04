@@ -31,15 +31,20 @@ struct AppInfo: Identifiable, Hashable, Sendable {
         memoryBytes: UInt64 = 0,
         cpuUsage: Double = 0.0
     ) {
+        let resolvedPids = pids.isEmpty ? (pid.map { [$0] } ?? []) : pids
         if let p = pid {
             self.id = "\(p)-\(bundleId ?? name)"
+        } else if !resolvedPids.isEmpty {
+            self.id = "pids-\(resolvedPids.sorted().map(String.init).joined(separator: ","))-\(bundleId ?? name)"
+        } else if isBackground && bundleId == nil {
+            self.id = "bg-\(name)"
         } else {
             self.id = bundleId ?? name
         }
         self.name = name
         self.bundleId = bundleId
         self.pid = pid
-        self.pids = pids.isEmpty ? (pid.map { [$0] } ?? []) : pids
+        self.pids = resolvedPids
         self.isBackground = isBackground
         self.windowCount = windowCount
         self.memoryBytes = memoryBytes

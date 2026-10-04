@@ -100,7 +100,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
             case "Low to High Memory", "memoryAsc": self = .memoryAsc
             case "A-Z Alphabetical", "name", "alphaAsc": self = .name
             case "Z-A Alphabetical", "nameDesc", "alphaDesc": self = .nameDesc
-            default: self = .cpuDesc
+            default: self = .name
             }
         }
     }

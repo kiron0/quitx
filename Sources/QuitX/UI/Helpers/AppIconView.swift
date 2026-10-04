@@ -1,8 +1,13 @@
 import SwiftUI
 import AppKit
 
+@MainActor
 enum AppIconCache {
-    private static let cache = NSCache<NSString, NSImage>()
+    private static let cache: NSCache<NSString, NSImage> = {
+        let c = NSCache<NSString, NSImage>()
+        c.countLimit = 150
+        return c
+    }()
 
     private static func cacheKey(bundleId: String?, pid: pid_t?, url: URL?) -> String {
         if let bundleId = bundleId, !bundleId.isEmpty {

@@ -34,8 +34,9 @@ final class AppListService {
                 isBackground: app.activationPolicy == .accessory
             )
         }
+        let windowCounts = Self.visibleWindowCounts()
         let scanTask = Task.detached(priority: .userInitiated) {
-            Self.buildApps(from: running, config: config)
+            Self.buildApps(from: running, windowCounts: windowCounts, config: config)
         }
         return await withTaskCancellationHandler {
             await scanTask.value
@@ -44,8 +45,7 @@ final class AppListService {
         }
     }
 
-    private static func buildApps(from running: [RunningAppSnapshot], config: QuitXConfig) -> [AppInfo] {
-        let windowCounts = visibleWindowCounts()
+    private static func buildApps(from running: [RunningAppSnapshot], windowCounts: [pid_t: Int], config: QuitXConfig) -> [AppInfo] {
         let cpuUsages = fetchCpuUsages()
         let excluded = Set(config.exclude.map { $0.lowercased() })
         let protectedMusicApps = config.musicApps.map { $0.lowercased() }
@@ -157,7 +157,42 @@ final class AppListService {
             }
         }
 
-        switch config.sortBy {
+        return sortApps(results, sortBy: config.sortBy)
+    }
+
+    func fetchLiveStats(currentApps: [AppInfo], config: QuitXConfig) async -> [AppInfo] {
+        let scanTask = Task.detached(priority: .userInitiated) {
+            let cpuUsages = Self.fetchCpuUsages()
+            let updated = currentApps.map { app -> AppInfo in
+                if app.pids.isEmpty { return app }
+                var totalMem: UInt64 = 0
+                var totalCpu: Double = 0.0
+                for pid in app.pids {
+                    totalMem += Self.memoryUsage(pid: pid)
+                    totalCpu += cpuUsages[pid, default: 0.0]
+                }
+                return AppInfo(
+                    name: app.name,
+                    bundleId: app.bundleId,
+                    pid: app.pid,
+                    pids: app.pids,
+                    isBackground: app.isBackground,
+                    windowCount: app.windowCount,
+                    memoryBytes: totalMem,
+                    cpuUsage: totalCpu
+                )
+            }
+            return Self.sortApps(updated, sortBy: config.sortBy)
+        }
+        return await withTaskCancellationHandler {
+            await scanTask.value
+        } onCancel: {
+            scanTask.cancel()
+        }
+    }
+
+    static func sortApps(_ results: [AppInfo], sortBy: QuitXConfig.SortBy) -> [AppInfo] {
+        switch sortBy {
         case .cpuDesc:
             return results.sorted {
                 if $0.cpuUsage != $1.cpuUsage { return $0.cpuUsage > $1.cpuUsage }
@@ -191,19 +226,32 @@ final class AppListService {
         }
     }
 
+    private static var cachedCpuUsages: [pid_t: Double] = [:]
+    private static var lastCpuFetchTime: Date = .distantPast
+    private static let cpuCacheLock = NSLock()
+
     private static func fetchCpuUsages() -> [pid_t: Double] {
+        cpuCacheLock.lock()
+        if Date().timeIntervalSince(lastCpuFetchTime) < 1.0, !cachedCpuUsages.isEmpty {
+            let cached = cachedCpuUsages
+            cpuCacheLock.unlock()
+            return cached
+        }
+        cpuCacheLock.unlock()
+
         let pipe = Pipe()
         let proc = Process()
         proc.executableURL = URL(fileURLWithPath: "/bin/ps")
         proc.arguments = ["-c", "-A", "-o", "pid,%cpu"]
         proc.standardOutput = pipe
+        proc.standardError = FileHandle.nullDevice
         do {
             try proc.run()
         } catch {
             return [:]
         }
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
         proc.waitUntilExit()
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
         guard let output = String(data: data, encoding: .utf8) else { return [:] }
         var result: [pid_t: Double] = [:]
         for line in output.split(separator: "\n").dropFirst() {
@@ -215,17 +263,37 @@ final class AppListService {
                 result[pid] = cpu
             }
         }
+        cpuCacheLock.lock()
+        cachedCpuUsages = result
+        lastCpuFetchTime = Date()
+        cpuCacheLock.unlock()
         return result
     }
 
+    private static var cachedMemoryUsages: [pid_t: (bytes: UInt64, timestamp: Date)] = [:]
+    private static let memoryCacheLock = NSLock()
+
     private static func memoryUsage(pid: pid_t) -> UInt64 {
+        memoryCacheLock.lock()
+        if let cached = cachedMemoryUsages[pid], Date().timeIntervalSince(cached.timestamp) < 1.5 {
+            memoryCacheLock.unlock()
+            return cached.bytes
+        }
+        memoryCacheLock.unlock()
+
         var info = proc_taskinfo()
         let size = MemoryLayout<proc_taskinfo>.size
         let result = proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &info, Int32(size))
         guard result == size else { return 0 }
-        return info.pti_resident_size
+        let bytes = info.pti_resident_size
+
+        memoryCacheLock.lock()
+        cachedMemoryUsages[pid] = (bytes, Date())
+        memoryCacheLock.unlock()
+        return bytes
     }
 
+    @MainActor
     private static func visibleWindowCounts() -> [pid_t: Int] {
         autoreleasepool {
             guard let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else {

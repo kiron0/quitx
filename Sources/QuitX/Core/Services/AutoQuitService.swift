@@ -30,9 +30,34 @@ final class AutoQuitService {
         }
     }
 
+    func stopTracking() {
+        timer?.invalidate()
+        timer = nil
+        NSWorkspace.shared.notificationCenter.removeObserver(
+            self,
+            name: NSWorkspace.didActivateApplicationNotification,
+            object: nil
+        )
+        lastActiveTimestamps.removeAll()
+    }
+
+    deinit {
+        timer?.invalidate()
+    }
+
     @objc private func appDidActivate(_ notification: Notification) {
         guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else { return }
         lastActiveTimestamps[app.processIdentifier] = Date()
+    }
+
+    private var cachedExcludeList: [String] = []
+    private var cachedExcludeSet: Set<String> = []
+
+    private func getExcludedSet(from list: [String]) -> Set<String> {
+        if list == cachedExcludeList { return cachedExcludeSet }
+        cachedExcludeList = list
+        cachedExcludeSet = Set(list.map { $0.lowercased() })
+        return cachedExcludeSet
     }
 
     private func checkInactiveApps() {
@@ -44,7 +69,7 @@ final class AutoQuitService {
         let running = NSWorkspace.shared.runningApplications
         let runningPids = Set(running.map(\.processIdentifier))
         lastActiveTimestamps = lastActiveTimestamps.filter { runningPids.contains($0.key) }
-        let excluded = Set(config.exclude.map { $0.lowercased() })
+        let excluded = getExcludedSet(from: config.exclude)
         let protectedMusicApps = config.musicApps.map { $0.lowercased() }
         let frontmostPid = NSWorkspace.shared.frontmostApplication?.processIdentifier
 

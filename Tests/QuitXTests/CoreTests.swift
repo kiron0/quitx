@@ -312,7 +312,7 @@ struct QuitXConfigTests {
     func testSortByDecodeFallback() throws {
         let json = "\"RandomUnknownOrder\"".data(using: .utf8)!
         let val = try JSONDecoder().decode(QuitXConfig.SortBy.self, from: json)
-        #expect(val == .cpuDesc)
+        #expect(val == .name)
     }
 
     @Test("SortBy allCases contains 6 cases")

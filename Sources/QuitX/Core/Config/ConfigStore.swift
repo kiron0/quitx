@@ -17,9 +17,24 @@ final class ConfigStore: ObservableObject {
         config = decoded
     }
 
-    func save(refreshAppList: Bool = false) {
-        guard let json = try? JSONEncoder().encode(config) else { return }
-        UserDefaults.standard.set(json, forKey: Self.userDefaultsKey)
+    private var saveWorkItem: DispatchWorkItem?
+
+    func save(refreshAppList: Bool = false, immediate: Bool = false) {
+        saveWorkItem?.cancel()
+        let writeBlock = { [weak self] in
+            guard let self = self else { return }
+            guard let json = try? JSONEncoder().encode(self.config) else { return }
+            UserDefaults.standard.set(json, forKey: Self.userDefaultsKey)
+        }
+
+        if immediate {
+            writeBlock()
+        } else {
+            let item = DispatchWorkItem(block: writeBlock)
+            saveWorkItem = item
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15, execute: item)
+        }
+
         guard refreshAppList else { return }
         Task { @MainActor in
             await AppListViewModel.shared.refresh()

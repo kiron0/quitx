@@ -2,7 +2,7 @@ import AppKit
 import Foundation
 
 enum SystemAppProtection {
-    private static let groupedSuffixRegex = try! NSRegularExpression(pattern: #"\s*\([^)]*\)$"#)
+    private static let groupedSuffixRegex = try? NSRegularExpression(pattern: #"\s*\([^)]*\)$"#)
 
     static func cleanAppName(_ rawName: String) -> String {
         let filtered = rawName.unicodeScalars.filter { scalar in
@@ -17,8 +17,9 @@ enum SystemAppProtection {
     }
 
     static func cleanGroupedName(_ name: String) -> String {
+        guard let regex = groupedSuffixRegex else { return name }
         let range = NSRange(name.startIndex..<name.endIndex, in: name)
-        let stripped = groupedSuffixRegex.stringByReplacingMatches(
+        let stripped = regex.stringByReplacingMatches(
             in: name,
             options: [],
             range: range,
