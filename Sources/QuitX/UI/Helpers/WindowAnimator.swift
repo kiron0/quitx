@@ -9,11 +9,13 @@ enum WindowAnimator {
         duration: TimeInterval = 0.25
     ) {
         let isFullSize = window.styleMask.contains(.fullSizeContentView) && window.toolbar == nil
+        let hasToolbar = window.toolbar != nil
+
         if isFullSize {
             window.isOpaque = false
             window.backgroundColor = .clear
         } else {
-            window.isOpaque = false
+            window.isOpaque = true
             window.backgroundColor = QuitXTheme.windowBackgroundNSColor
         }
 
@@ -27,7 +29,14 @@ enum WindowAnimator {
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
 
-        guard let view = window.contentView?.superview ?? window.contentView else {
+        let animTarget: NSView?
+        if hasToolbar {
+            animTarget = window.contentView
+        } else {
+            animTarget = window.contentView?.superview ?? window.contentView
+        }
+
+        guard let view = animTarget else {
             window.alphaValue = 1.0
             return
         }
@@ -45,7 +54,7 @@ enum WindowAnimator {
 
         var t = CATransform3DIdentity
         t = CATransform3DTranslate(t, bounds.midX, bounds.midY, 0)
-        t = CATransform3DScale(t, 0.92, 0.92, 1.0)
+        t = CATransform3DScale(t, 0.94, 0.94, 1.0)
         t = CATransform3DTranslate(t, -bounds.midX, -bounds.midY, 0)
 
         let scaleAnim = CABasicAnimation(keyPath: "transform")
