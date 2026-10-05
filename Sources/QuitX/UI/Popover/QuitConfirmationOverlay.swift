@@ -106,6 +106,7 @@ struct QuitConfirmationOverlay: View {
                             )
                     }
                     .buttonStyle(.plain)
+                    .keyboardShortcut(.escape, modifiers: [])
                     .onHover { state.isCancelHovered = $0 }
 
                     Button(action: onConfirm) {
@@ -129,6 +130,7 @@ struct QuitConfirmationOverlay: View {
                             )
                     }
                     .buttonStyle(.plain)
+                    .keyboardShortcut(.defaultAction)
                     .onHover { state.isConfirmHovered = $0 }
                 }
                 .padding(.top, 2)

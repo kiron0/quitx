@@ -44,10 +44,13 @@ private enum MenuButtonImageCache {
         let baseNormal = normalSource ?? NSImage(size: size)
         let baseHovered = hoveredSource ?? baseNormal
 
-        let normalizedHovered = normalizeAlpha(baseHovered)
+        let normal = normalizeAlpha(baseNormal)
+        let hovered = normalizeAlpha(baseHovered)
 
-        let normal = tint(image: baseNormal, with: NSColor.secondaryLabelColor, size: size)
-        let hovered = tint(image: normalizedHovered, with: QuitXTheme.accentNSColor, size: size)
+        normal.size = size
+        hovered.size = size
+        normal.isTemplate = true
+        hovered.isTemplate = true
 
         let result = (normal, hovered)
         cache[key] = result
@@ -55,10 +58,18 @@ private enum MenuButtonImageCache {
     }
 
     private static func normalizeAlpha(_ image: NSImage) -> NSImage {
-        guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return image }
+        guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            let copy = image.copy() as? NSImage ?? image
+            copy.isTemplate = true
+            return copy
+        }
         let width = cgImage.width
         let height = cgImage.height
-        guard width > 0, height > 0 else { return image }
+        guard width > 0, height > 0 else {
+            let copy = image.copy() as? NSImage ?? image
+            copy.isTemplate = true
+            return copy
+        }
 
         let colorSpace = CGColorSpaceCreateDeviceRGB()
         let bytesPerRow = 4 * width
@@ -71,7 +82,11 @@ private enum MenuButtonImageCache {
             bytesPerRow: bytesPerRow,
             space: colorSpace,
             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue
-        ) else { return image }
+        ) else {
+            let copy = image.copy() as? NSImage ?? image
+            copy.isTemplate = true
+            return copy
+        }
 
         context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
 
@@ -86,31 +101,31 @@ private enum MenuButtonImageCache {
                 let a = Double(rawData[i + 3])
                 if a > 0 {
                     let newA = min(255, UInt8(round(a * factor)))
-                    let r = min(255, UInt8(round(Double(rawData[i]) * factor)))
-                    let g = min(255, UInt8(round(Double(rawData[i + 1]) * factor)))
-                    let b = min(255, UInt8(round(Double(rawData[i + 2]) * factor)))
-                    rawData[i] = r
-                    rawData[i + 1] = g
-                    rawData[i + 2] = b
+                    rawData[i] = newA
+                    rawData[i + 1] = newA
+                    rawData[i + 2] = newA
                     rawData[i + 3] = newA
+                }
+            }
+        } else {
+            for i in stride(from: 0, to: rawData.count, by: 4) {
+                let a = rawData[i + 3]
+                if a > 0 {
+                    rawData[i] = a
+                    rawData[i + 1] = a
+                    rawData[i + 2] = a
                 }
             }
         }
 
-        guard let newCgImage = context.makeImage() else { return image }
-        return NSImage(cgImage: newCgImage, size: image.size)
-    }
-
-    private static func tint(image: NSImage, with color: NSColor, size: NSSize) -> NSImage {
-        let tinted = NSImage(size: size)
-        tinted.lockFocus()
-        let rect = NSRect(origin: .zero, size: size)
-        image.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1.0)
-        color.set()
-        rect.fill(using: .sourceIn)
-        tinted.unlockFocus()
-        tinted.isTemplate = false
-        return tinted
+        guard let newCgImage = context.makeImage() else {
+            let copy = image.copy() as? NSImage ?? image
+            copy.isTemplate = true
+            return copy
+        }
+        let result = NSImage(cgImage: newCgImage, size: image.size)
+        result.isTemplate = true
+        return result
     }
 }
 
@@ -182,7 +197,11 @@ struct QuitXMenuButton: View {
             state.imagePair = images
             return images
         }()
-        return Image(nsImage: isActive ? pair.hovered : pair.normal)
+        let img = isActive ? pair.hovered : pair.normal
+        return Image(nsImage: img)
+            .resizable()
+            .renderingMode(.template)
+            .foregroundStyle(isActive ? QuitXTheme.accent : Color.secondary)
     }
 
     private func showMenu() {
