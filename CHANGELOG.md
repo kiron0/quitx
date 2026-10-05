@@ -35,7 +35,7 @@ All notable changes to QuitX macOS App will be documented in this file.
 - Debounced Carbon hotkey re-registration in `ShortcutManager` by 50ms to prevent registration thrashing during rapid settings toggles.
 - Fixed hardcoded vertical `+4` pixel offset in `StatusItemController` context menu positioning.
 - Fixed temporary directory and mount point leaks during failed DMG extractions in `UpdateDownloadService` by reordering `defer` cleanup.
-- Fixed pre-release suffix comparison in `VersionComparator` to ensure pre-release builds rank lower than final releases.
+- Fixed `VersionComparator` prefix and suffix handling to accurately parse version strings during version preference checks.
 - Fixed race condition in `RestartService.restart` by polling process termination state with a 2-second deadline instead of a static 500ms sleep.
 - Removed embedded API secret key from source code; moved key to `Support/Info.plist` with environment variable fallback support.
 
