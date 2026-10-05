@@ -1,31 +1,30 @@
 import AppKit
 
 enum SoundService {
-    private static var currentSound: NSSound?
+    private static let singleSound: NSSound? = loadSound(named: "quit-single")
+    private static let allSound: NSSound? = loadSound(named: "quit-all")
 
     static func playQuitSingle() {
         guard ConfigStore.shared.config.playSounds else { return }
-        playSound(named: "quit-single")
+        singleSound?.stop()
+        singleSound?.play()
     }
 
     static func playQuitAll() {
         guard ConfigStore.shared.config.playSounds else { return }
-        playSound(named: "quit-all")
+        allSound?.stop()
+        allSound?.play()
     }
 
-    private static func playSound(named name: String) {
-        if let url = Bundle.main.url(forResource: name, withExtension: "aiff"),
-           let sound = NSSound(contentsOf: url, byReference: true) {
-            currentSound = sound
-            sound.play()
-            return
+    private static func loadSound(named name: String) -> NSSound? {
+        if let url = Bundle.main.url(forResource: name, withExtension: "aiff") {
+            return NSSound(contentsOf: url, byReference: true)
         }
 
         let localPath = "Support/Sounds/\(name).aiff"
-        if FileManager.default.fileExists(atPath: localPath),
-           let sound = NSSound(contentsOfFile: localPath, byReference: true) {
-            currentSound = sound
-            sound.play()
+        if FileManager.default.fileExists(atPath: localPath) {
+            return NSSound(contentsOfFile: localPath, byReference: true)
         }
+        return nil
     }
 }

@@ -29,14 +29,30 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
     let symbol: String
     let summary: String
     let sections: [QuitXHelpSection]
+    let searchableContent: String
+
+    init(
+        id: String,
+        category: QuitXHelpCategory,
+        title: String,
+        symbol: String,
+        summary: String,
+        sections: [QuitXHelpSection]
+    ) {
+        self.id = id
+        self.category = category
+        self.title = title
+        self.symbol = symbol
+        self.summary = summary
+        self.sections = sections
+        self.searchableContent = ([title, summary] + sections.flatMap { [$0.title, $0.body] + $0.bullets })
+            .joined(separator: " ")
+    }
 
     func matches(_ query: String) -> Bool {
-        let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return true }
-
-        let content = ([title, summary] + sections.flatMap { [$0.title, $0.body] + $0.bullets })
-            .joined(separator: " ")
-        return content.localizedCaseInsensitiveContains(query)
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return true }
+        return searchableContent.localizedCaseInsensitiveContains(trimmed)
     }
 
     static let all: [QuitXHelpTopic] = [
@@ -309,16 +325,31 @@ struct HelpView: View {
     private var topicList: some View {
         ScrollView(.vertical, showsIndicators: true) {
             LazyVStack(alignment: .leading, spacing: 14) {
-                ForEach(QuitXHelpTopic.byCategory, id: \.category) { section in
+                let trimmedQuery = state.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmedQuery.isEmpty {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(section.category.rawValue.uppercased())
+                        Text("SEARCH RESULTS (\(filteredTopics.count))")
                             .font(.system(size: 10, weight: .bold))
                             .foregroundStyle(Color.secondary)
                             .padding(.horizontal, 10)
                             .padding(.bottom, 2)
 
-                        ForEach(section.topics) { topic in
+                        ForEach(filteredTopics) { topic in
                             topicRow(topic)
+                        }
+                    }
+                } else {
+                    ForEach(QuitXHelpTopic.byCategory, id: \.category) { section in
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(section.category.rawValue.uppercased())
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(Color.secondary)
+                                .padding(.horizontal, 10)
+                                .padding(.bottom, 2)
+
+                            ForEach(section.topics) { topic in
+                                topicRow(topic)
+                            }
                         }
                     }
                 }

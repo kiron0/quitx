@@ -9,9 +9,9 @@
 	<key>CFBundleName</key>
 	<string>QuitX</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.6</string>
+	<string>1.0.7</string>
 	<key>CFBundleVersion</key>
-	<string>7</string>
+	<string>8</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>14.0</string>
 	<key>LSUIElement</key>
@@ -22,5 +22,7 @@
 	<string>QuitX uses Apple Events to quit applications.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>QUITX_UPDATE_SECRET_KEY</key>
+	<string>qx_live_9a7d83f2e104cb5a</string>
 </dict>
 </plist>

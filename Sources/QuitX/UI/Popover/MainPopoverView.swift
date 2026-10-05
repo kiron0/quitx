@@ -3,6 +3,8 @@ import AppKit
 
 private final class PopoverUIState: ObservableObject {
     @Published var isQuitAllHovered = false
+    var cachedOptionsMenu: NSMenu? = nil
+    var cachedMenuBgState: Bool? = nil
 }
 
 struct MainPopoverView: View {
@@ -303,7 +305,7 @@ struct MainPopoverView: View {
                 size: NSSize(width: 17, height: 17),
                 toolTip: "Options",
                 menu: {
-                    buildOptionsMenu()
+                    optionsMenu()
                 }
             )
             .frame(width: 22, height: 22)
@@ -386,5 +388,16 @@ struct MainPopoverView: View {
 
         return menu
     }
+
+    private func optionsMenu() -> NSMenu {
+        if let menu = uiState.cachedOptionsMenu, uiState.cachedMenuBgState == vm.showBackgroundApps {
+            return menu
+        }
+        let menu = buildOptionsMenu()
+        uiState.cachedOptionsMenu = menu
+        uiState.cachedMenuBgState = vm.showBackgroundApps
+        return menu
+    }
 }
+
 

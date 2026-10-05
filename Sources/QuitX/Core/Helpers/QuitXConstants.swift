@@ -22,8 +22,7 @@ enum QuitXConstants {
         if let envKey = ProcessInfo.processInfo.environment["QUITX_UPDATE_SECRET_KEY"], !envKey.isEmpty {
             return envKey
         }
-        let parts = ["qx", "live", "9a7d83f2e104cb5a"]
-        return parts.joined(separator: "_")
+        return ""
     }
 
     static var currentYear: Int {
@@ -35,11 +34,11 @@ enum QuitXConstants {
     }
 
     static var appVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.6"
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.7"
     }
 
     static var buildNumber: String {
-        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "7"
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "8"
     }
 
     static func sayHiURL() -> URL? {

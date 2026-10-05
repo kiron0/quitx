@@ -13,12 +13,6 @@ final class SingleInstanceService {
 
     private init() {}
 
-    deinit {
-        if let launchObserver {
-            NSWorkspace.shared.notificationCenter.removeObserver(launchObserver)
-        }
-    }
-
     func prepareForLaunch() async -> Bool {
         let current = NSRunningApplication.current
         let candidates = matchingApplications()

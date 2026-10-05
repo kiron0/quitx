@@ -34,8 +34,8 @@ struct AppInfo: Identifiable, Hashable, Sendable {
         let resolvedPids = pids.isEmpty ? (pid.map { [$0] } ?? []) : pids
         if let p = pid {
             self.id = "\(p)-\(bundleId ?? name)"
-        } else if !resolvedPids.isEmpty {
-            self.id = "pids-\(resolvedPids.sorted().map(String.init).joined(separator: ","))-\(bundleId ?? name)"
+        } else if let firstPid = resolvedPids.first {
+            self.id = "pids-\(firstPid)-\(resolvedPids.count)-\(bundleId ?? name)"
         } else if isBackground && bundleId == nil {
             self.id = "bg-\(name)"
         } else {

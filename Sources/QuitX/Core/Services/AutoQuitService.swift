@@ -43,6 +43,7 @@ final class AutoQuitService {
 
     deinit {
         timer?.invalidate()
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
     }
 
     @objc private func appDidActivate(_ notification: Notification) {

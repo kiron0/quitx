@@ -2,6 +2,43 @@
 
 All notable changes to QuitX macOS App will be documented in this file.
 
+## 1.0.7
+
+### Added
+
+- Added event barrier overlay in `QuitConfirmationOverlay` to disable all underlying item clicks, hover effects, and row interactions while confirmation prompts are presented.
+- Responsive popover height expansion for confirmation modals: automatically scales popover to at least 220pt when confirmation prompts are active to prevent dialog cutoff.
+- Added `cardBackground` theme token to `QuitXTheme`, synchronizing light mode settings toolbar, tab headers, excluded app picker, and help navigation backgrounds with dark mode contrast standards.
+
+### Changed
+
+- Replaced lock contention in `AppListService` memory metric lookups with `OSAllocatedUnfairLock` and added a 1.5s per-PID cache to minimize kernel task queries.
+- Throttled `/bin/ps` subprocess execution via `cpuCache` with `OSAllocatedUnfairLock` to at most once per second.
+- Cached selection flags (`isAllSelected`, `isPartiallySelected`, `selectedVisibleCount`) in `AppListViewModel` `@Published` properties, removing O(n) calculations from the hot SwiftUI render path.
+- Cached `appIdSet` in `AppListViewModel` to eliminate repeated `Set(apps.map(\.id))` allocations during live process stats updates.
+- Maintained a normalized exclusion set in `ConfigStore` for O(1) membership validation and lookups.
+- Precomputed `searchableContent` in `QuitXHelpTopic` at initialization to eliminate repetitive string joins on search keystrokes.
+- Flattened help topic category sections into a unified "SEARCH RESULTS" list when an active search query is entered in `HelpView`.
+- Statically cached `ByteCountFormatter` instances in `UpdateDownloadService` to eliminate high-frequency formatter allocations during downloads.
+- Consolidated DMG temporary file handling in `UpdateDownloadService` into a single atomic move directly to the target staging directory.
+- Cached the options `NSMenu` in `PopoverUIState` to avoid rebuilding menus on repeated gear button interactions.
+- Preloaded `SoundService` audio instances (`singleSound`, `allSound`) with explicit stop/play sequencing to prevent audio cut-off on rapid actions.
+
+### Fixed
+
+- Added a 1.5-second watchdog termination timer to `/bin/ps` executions in `AppListService` to prevent indefinite thread blockage.
+- Fixed potential data loss in `ConfigStore.save()` during rapid application exit by capturing configuration snapshots by value and flushing work items in `deinit`.
+- Fixed cancellation handling in `QuitService.quitOne` wait loop to immediately abort when parent task is cancelled.
+- Fixed `NSWorkspace` observer memory leak in `AutoQuitService` by deregistering the observer inside `deinit`.
+- Hardened `SingleInstanceService` lifecycle with `@MainActor` isolation and explicit `stopMonitoring()`, eliminating off-main deallocation issues.
+- Optimized `AppInfo.id` generation for grouped background apps from O(n log n) sorting down to O(1).
+- Debounced Carbon hotkey re-registration in `ShortcutManager` by 50ms to prevent registration thrashing during rapid settings toggles.
+- Fixed hardcoded vertical `+4` pixel offset in `StatusItemController` context menu positioning.
+- Fixed temporary directory and mount point leaks during failed DMG extractions in `UpdateDownloadService` by reordering `defer` cleanup.
+- Fixed pre-release suffix comparison in `VersionComparator` to ensure pre-release builds rank lower than final releases.
+- Fixed race condition in `RestartService.restart` by polling process termination state with a 2-second deadline instead of a static 500ms sleep.
+- Removed embedded API secret key from source code; moved key to `Support/Info.plist` with environment variable fallback support.
+
 ## 1.0.6
 
 ### Added

@@ -117,6 +117,19 @@ final class UpdateDownloadService: NSObject, ObservableObject {
             .appendingPathComponent("QuitXStaged-\(UUID().uuidString)")
         let stagedAppURL = stagingDir.appendingPathComponent("QuitX.app")
 
+        var isMounted = false
+        defer {
+            if isMounted {
+                let detachProcess = Process()
+                detachProcess.executableURL = URL(fileURLWithPath: "/usr/bin/hdiutil")
+                detachProcess.arguments = ["detach", mountPoint.path, "-force", "-quiet"]
+                try? detachProcess.run()
+                detachProcess.waitUntilExit()
+            }
+            try? FileManager.default.removeItem(at: mountPoint)
+            try? FileManager.default.removeItem(at: dmgURL.deletingLastPathComponent())
+        }
+
         try FileManager.default.createDirectory(at: mountPoint, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: stagingDir, withIntermediateDirectories: true)
 
@@ -135,20 +148,10 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         try attachProcess.run()
         attachProcess.waitUntilExit()
         guard attachProcess.terminationStatus == 0 else {
-            try? FileManager.default.removeItem(at: mountPoint)
             try? FileManager.default.removeItem(at: stagingDir)
             throw UpdateError.mountFailed
         }
-
-        defer {
-            let detachProcess = Process()
-            detachProcess.executableURL = URL(fileURLWithPath: "/usr/bin/hdiutil")
-            detachProcess.arguments = ["detach", mountPoint.path, "-force", "-quiet"]
-            try? detachProcess.run()
-            detachProcess.waitUntilExit()
-            try? FileManager.default.removeItem(at: mountPoint)
-            try? FileManager.default.removeItem(at: dmgURL.deletingLastPathComponent())
-        }
+        isMounted = true
 
         let sourceAppURL: URL
         let defaultAppURL = mountPoint.appendingPathComponent("QuitX.app")
@@ -274,19 +277,27 @@ final class UpdateDownloadService: NSObject, ObservableObject {
     }
 
 
-    nonisolated static func formatBytes(_ bytes: Int64) -> String {
+    private static let bytesFormatter: ByteCountFormatter = {
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useMB, .useKB, .useBytes]
         formatter.countStyle = .file
-        return formatter.string(fromByteCount: bytes)
-    }
+        return formatter
+    }()
 
-    nonisolated static func formatSpeed(bytesPerSecond: Double) -> String {
-        guard bytesPerSecond > 0 else { return "" }
+    private static let speedFormatter: ByteCountFormatter = {
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useMB, .useKB]
         formatter.countStyle = .file
-        return "\(formatter.string(fromByteCount: Int64(bytesPerSecond)))/s"
+        return formatter
+    }()
+
+    static func formatBytes(_ bytes: Int64) -> String {
+        bytesFormatter.string(fromByteCount: bytes)
+    }
+
+    static func formatSpeed(bytesPerSecond: Double) -> String {
+        guard bytesPerSecond > 0 else { return "" }
+        return "\(speedFormatter.string(fromByteCount: Int64(bytesPerSecond)))/s"
     }
 
     fileprivate func handleProgress(bytesWritten: Int64, totalWritten: Int64, expectedToWrite: Int64) {
@@ -325,17 +336,9 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         )
     }
 
-    fileprivate func handleDownloadFinished(tempLocation: URL) async {
-        let updateDir = URL(fileURLWithPath: NSTemporaryDirectory())
-            .appendingPathComponent("QuitXUpdate-\(UUID().uuidString)")
-        let persistentDMG = updateDir.appendingPathComponent("QuitX.dmg")
-
+    fileprivate func handleDownloadFinished(persistentDMG: URL) async {
         do {
-            try FileManager.default.createDirectory(at: updateDir, withIntermediateDirectories: true)
-            try FileManager.default.moveItem(at: tempLocation, to: persistentDMG)
-
             state = .extracting
-
             let stagedURL = try await extractAppFromDMG(dmgURL: persistentDMG)
             state = .ready(stagedURL: stagedURL, version: targetVersion)
         } catch {
@@ -375,16 +378,16 @@ extension UpdateDownloadService: URLSessionDownloadDelegate {
         downloadTask: URLSessionDownloadTask,
         didFinishDownloadingTo location: URL
     ) {
-        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
-            .appendingPathComponent("QuitXDownload-\(UUID().uuidString)")
-        let savedTempFile = tempDir.appendingPathComponent("QuitX.dmg")
+        let updateDir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("QuitXUpdate-\(UUID().uuidString)")
+        let persistentDMG = updateDir.appendingPathComponent("QuitX.dmg")
 
         do {
-            try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
-            try FileManager.default.moveItem(at: location, to: savedTempFile)
+            try FileManager.default.createDirectory(at: updateDir, withIntermediateDirectories: true)
+            try FileManager.default.moveItem(at: location, to: persistentDMG)
 
             Task { @MainActor in
-                await self.handleDownloadFinished(tempLocation: savedTempFile)
+                await self.handleDownloadFinished(persistentDMG: persistentDMG)
             }
         } catch {
             Task { @MainActor in

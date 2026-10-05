@@ -5,10 +5,17 @@ import AppKit
 final class AppListViewModel: ObservableObject {
     static let shared = AppListViewModel()
 
+    private var appIdSet: Set<String> = []
+
     @Published var apps: [AppInfo] = [] {
-        didSet { updateFilteredApps() }
+        didSet {
+            appIdSet = Set(apps.map(\.id))
+            updateFilteredApps()
+        }
     }
-    @Published var selected: Set<String> = []
+    @Published var selected: Set<String> = [] {
+        didSet { updateSelectionCache() }
+    }
     @Published var searchQuery: String = "" {
         didSet { updateFilteredApps() }
     }
@@ -26,6 +33,9 @@ final class AppListViewModel: ObservableObject {
     }
     @Published private(set) var filteredApps: [AppInfo] = []
     private(set) var visibleIds: Set<String> = []
+    @Published private(set) var isAllSelected: Bool = false
+    @Published private(set) var isPartiallySelected: Bool = false
+    @Published private(set) var selectedVisibleCount: Int = 0
     @Published var isOptionKeyPressed: Bool = false
     @Published var isLoading: Bool = false
     @Published var lastQuitCount: Int = 0
@@ -136,32 +146,30 @@ final class AppListViewModel: ObservableObject {
     }
 
     private func updateFilteredApps() {
-        var list = apps
-        if !showBackgroundApps {
-            list = list.filter { !$0.isBackground }
-        }
         let normalizedQuery = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        if !normalizedQuery.isEmpty {
-            list = list.filter { $0.name.lowercased().contains(normalizedQuery) }
+        let hasQuery = !normalizedQuery.isEmpty
+        let list: [AppInfo]
+        if !showBackgroundApps || hasQuery {
+            list = apps.filter { app in
+                if !showBackgroundApps && app.isBackground { return false }
+                if hasQuery && !app.name.lowercased().contains(normalizedQuery) { return false }
+                return true
+            }
+        } else {
+            list = apps
         }
         if filteredApps != list {
             filteredApps = list
             visibleIds = Set(list.map(\.id))
         }
+        updateSelectionCache()
     }
 
-    var isAllSelected: Bool {
-        !visibleIds.isEmpty && visibleIds.isSubset(of: selected)
-    }
-
-    var isPartiallySelected: Bool {
-        guard !visibleIds.isEmpty else { return false }
-        let count = selected.intersection(visibleIds).count
-        return count > 0 && count < visibleIds.count
-    }
-
-    var selectedVisibleCount: Int {
-        selected.intersection(visibleIds).count
+    private func updateSelectionCache() {
+        let intersectionCount = selected.intersection(visibleIds).count
+        selectedVisibleCount = intersectionCount
+        isAllSelected = !visibleIds.isEmpty && intersectionCount == visibleIds.count
+        isPartiallySelected = !visibleIds.isEmpty && intersectionCount > 0 && intersectionCount < visibleIds.count
     }
 
     var hasPendingOperations: Bool {
@@ -231,7 +239,7 @@ final class AppListViewModel: ObservableObject {
         } else if selectedAllBeforeRefresh {
             newSelection = visibleIds
         } else {
-            newSelection = selected.intersection(Set(apps.map(\.id)))
+            newSelection = selected.intersection(appIdSet)
         }
         if selected != newSelection {
             selected = newSelection
@@ -251,7 +259,7 @@ final class AppListViewModel: ObservableObject {
         }
         let newSelection = selectedAllBeforeRefresh
             ? visibleIds
-            : selected.intersection(Set(apps.map(\.id)))
+            : selected.intersection(appIdSet)
         if selected != newSelection {
             selected = newSelection
         }

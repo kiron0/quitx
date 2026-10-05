@@ -69,7 +69,7 @@ final class QuitService {
             }
 
             let attempts = force ? 20 : 50
-            for _ in 0..<attempts where !running.isTerminated {
+            for _ in 0..<attempts where !running.isTerminated && !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 100_000_000)
             }
             if !running.isTerminated {

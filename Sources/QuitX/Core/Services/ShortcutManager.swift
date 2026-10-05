@@ -5,25 +5,36 @@ import Carbon
 final class ShortcutManager: ObservableObject {
     static let shared = ShortcutManager()
 
+    private var restartWorkItem: DispatchWorkItem?
+
+    func scheduleRestartMonitoring() {
+        restartWorkItem?.cancel()
+        let item = DispatchWorkItem { [weak self] in
+            self?.restartMonitoring()
+        }
+        restartWorkItem = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: item)
+    }
+
     @Published var activateMenuEnabled: Bool {
-        didSet { UserDefaults.standard.set(activateMenuEnabled, forKey: "sc_activate_enabled"); restartMonitoring() }
+        didSet { UserDefaults.standard.set(activateMenuEnabled, forKey: "sc_activate_enabled"); scheduleRestartMonitoring() }
     }
     @Published var activateMenuKeys: [String] {
-        didSet { UserDefaults.standard.set(activateMenuKeys, forKey: "sc_activate_keys"); restartMonitoring() }
+        didSet { UserDefaults.standard.set(activateMenuKeys, forKey: "sc_activate_keys"); scheduleRestartMonitoring() }
     }
 
     @Published var quitAllEnabled: Bool {
-        didSet { UserDefaults.standard.set(quitAllEnabled, forKey: "sc_quit_enabled"); restartMonitoring() }
+        didSet { UserDefaults.standard.set(quitAllEnabled, forKey: "sc_quit_enabled"); scheduleRestartMonitoring() }
     }
     @Published var quitAllKeys: [String] {
-        didSet { UserDefaults.standard.set(quitAllKeys, forKey: "sc_quit_keys"); restartMonitoring() }
+        didSet { UserDefaults.standard.set(quitAllKeys, forKey: "sc_quit_keys"); scheduleRestartMonitoring() }
     }
 
     @Published var forceQuitAllEnabled: Bool {
-        didSet { UserDefaults.standard.set(forceQuitAllEnabled, forKey: "sc_force_enabled"); restartMonitoring() }
+        didSet { UserDefaults.standard.set(forceQuitAllEnabled, forKey: "sc_force_enabled"); scheduleRestartMonitoring() }
     }
     @Published var forceQuitAllKeys: [String] {
-        didSet { UserDefaults.standard.set(forceQuitAllKeys, forKey: "sc_force_keys"); restartMonitoring() }
+        didSet { UserDefaults.standard.set(forceQuitAllKeys, forKey: "sc_force_keys"); scheduleRestartMonitoring() }
     }
 
     private var localMonitor: Any?

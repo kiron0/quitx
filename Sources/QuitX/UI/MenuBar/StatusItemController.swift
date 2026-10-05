@@ -296,8 +296,14 @@ final class StatusItemController: NSObject {
             while let self = self, self.isShown {
                 try? await Task.sleep(nanoseconds: 2_000_000_000)
                 guard !Task.isCancelled, self.isShown else { break }
+                let prevCount = AppListViewModel.shared.filteredApps.count
+                let prevConfirming = AppListViewModel.shared.showConfirmQuitAll || AppListViewModel.shared.pendingIndividualAction != nil
                 await AppListViewModel.shared.updateLiveStats()
-                self.updatePopoverSize()
+                let newCount = AppListViewModel.shared.filteredApps.count
+                let newConfirming = AppListViewModel.shared.showConfirmQuitAll || AppListViewModel.shared.pendingIndividualAction != nil
+                if prevCount != newCount || prevConfirming != newConfirming {
+                    self.updatePopoverSize()
+                }
             }
         }
     }
@@ -367,7 +373,7 @@ final class StatusItemController: NSObject {
         ))
 
         if let button = statusItem.button {
-            menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.height + 4), in: button)
+            menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.height), in: button)
         }
     }
 

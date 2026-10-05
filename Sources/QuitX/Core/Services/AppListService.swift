@@ -1,4 +1,5 @@
 import AppKit
+import os
 
 final class AppListService {
     static let shared = AppListService()
@@ -226,18 +227,23 @@ final class AppListService {
         }
     }
 
-    private static var cachedCpuUsages: [pid_t: Double] = [:]
-    private static var lastCpuFetchTime: Date = .distantPast
-    private static let cpuCacheLock = NSLock()
+    private struct CpuCacheState {
+        var usages: [pid_t: Double] = [:]
+        var lastFetchTime: Date = .distantPast
+    }
+
+    private static let cpuCache = OSAllocatedUnfairLock(initialState: CpuCacheState())
 
     private static func fetchCpuUsages() -> [pid_t: Double] {
-        cpuCacheLock.lock()
-        if Date().timeIntervalSince(lastCpuFetchTime) < 1.0, !cachedCpuUsages.isEmpty {
-            let cached = cachedCpuUsages
-            cpuCacheLock.unlock()
-            return cached
+        let shouldFetch: Bool = cpuCache.withLock { state in
+            if Date().timeIntervalSince(state.lastFetchTime) < 1.0, !state.usages.isEmpty {
+                return false
+            }
+            return true
         }
-        cpuCacheLock.unlock()
+        if !shouldFetch {
+            return cpuCache.withLock { $0.usages }
+        }
 
         let pipe = Pipe()
         let proc = Process()
@@ -245,14 +251,28 @@ final class AppListService {
         proc.arguments = ["-c", "-A", "-o", "pid,%cpu"]
         proc.standardOutput = pipe
         proc.standardError = FileHandle.nullDevice
+
+        let watchdog = DispatchWorkItem { [weak proc] in
+            if let p = proc, p.isRunning {
+                p.terminate()
+            }
+        }
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 1.5, execute: watchdog)
+
         do {
             try proc.run()
         } catch {
-            return [:]
+            watchdog.cancel()
+            return cpuCache.withLock { $0.usages }
         }
+
         proc.waitUntilExit()
+        watchdog.cancel()
+
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        guard let output = String(data: data, encoding: .utf8) else { return [:] }
+        guard let output = String(data: data, encoding: .utf8) else {
+            return cpuCache.withLock { $0.usages }
+        }
         var result: [pid_t: Double] = [:]
         for line in output.split(separator: "\n").dropFirst() {
             let trimmed = line.drop(while: { $0.isWhitespace })
@@ -263,23 +283,21 @@ final class AppListService {
                 result[pid] = cpu
             }
         }
-        cpuCacheLock.lock()
-        cachedCpuUsages = result
-        lastCpuFetchTime = Date()
-        cpuCacheLock.unlock()
-        return result
+
+        let finalUsages = result
+        cpuCache.withLock { state in
+            state.usages = finalUsages
+            state.lastFetchTime = Date()
+        }
+        return finalUsages
     }
 
-    private static var cachedMemoryUsages: [pid_t: (bytes: UInt64, timestamp: Date)] = [:]
-    private static let memoryCacheLock = NSLock()
+    private static let memoryCache = OSAllocatedUnfairLock(initialState: [pid_t: (bytes: UInt64, timestamp: Date)]())
 
     private static func memoryUsage(pid: pid_t) -> UInt64 {
-        memoryCacheLock.lock()
-        if let cached = cachedMemoryUsages[pid], Date().timeIntervalSince(cached.timestamp) < 1.5 {
-            memoryCacheLock.unlock()
+        if let cached = memoryCache.withLock({ $0[pid] }), Date().timeIntervalSince(cached.timestamp) < 1.5 {
             return cached.bytes
         }
-        memoryCacheLock.unlock()
 
         var info = proc_taskinfo()
         let size = MemoryLayout<proc_taskinfo>.size
@@ -287,9 +305,7 @@ final class AppListService {
         guard result == size else { return 0 }
         let bytes = info.pti_resident_size
 
-        memoryCacheLock.lock()
-        cachedMemoryUsages[pid] = (bytes, Date())
-        memoryCacheLock.unlock()
+        memoryCache.withLock { $0[pid] = (bytes, Date()) }
         return bytes
     }
 
