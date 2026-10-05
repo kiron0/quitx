@@ -34,10 +34,7 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         let rootView = WelcomeView(
             onDismiss: { [weak self] in
                 self?.close()
-            },
-            onOpenSettings: { [weak self] in
-                self?.close()
-                SettingsWindowController.shared.show()
+                StatusItemController.shared?.showPopover()
             }
         ).environmentObject(ConfigStore.shared)
 

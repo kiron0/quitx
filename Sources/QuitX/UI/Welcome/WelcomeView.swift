@@ -3,7 +3,6 @@ import AppKit
 
 struct WelcomeView: View {
     var onDismiss: () -> Void
-    var onOpenSettings: () -> Void
 
     @EnvironmentObject private var configStore: ConfigStore
     @ObservedObject private var launchService = LaunchAtLoginService.shared
@@ -20,17 +19,10 @@ struct WelcomeView: View {
             quickSetup
                 .padding(.horizontal, 20)
 
-            HStack(spacing: 10) {
-                Button("Settings") {
-                    onOpenSettings()
-                }
-                .buttonStyle(WelcomeSecondaryButtonStyle())
-
-                Button("Get Started") {
-                    onDismiss()
-                }
-                .buttonStyle(WelcomePrimaryButtonStyle(color: gold))
+            Button("Get Started") {
+                onDismiss()
             }
+            .buttonStyle(WelcomePrimaryButtonStyle(color: gold))
             .padding(.horizontal, 20)
             .padding(.top, 12)
             .padding(.bottom, 16)
@@ -164,14 +156,3 @@ private struct WelcomePrimaryButtonStyle: ButtonStyle {
     }
 }
 
-private struct WelcomeSecondaryButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 12, weight: .medium))
-            .foregroundStyle(Color.primary.opacity(configuration.isPressed ? 0.55 : 0.82))
-            .frame(maxWidth: .infinity)
-            .frame(height: 30)
-            .background(Color.primary.opacity(configuration.isPressed ? 0.04 : 0.07))
-            .clipShape(RoundedRectangle(cornerRadius: 7))
-    }
-}
