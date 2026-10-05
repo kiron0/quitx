@@ -5,13 +5,43 @@ enum QuitXConstants {
     static let appName = "QuitX"
     static let author = "Toufiq Hasan Kiron"
     static let primaryBundleId = "io.coreify.quitx"
-    static let firstLaunchSeenKey = "quitx_first_launch_seen_v1"
+    static let firstLaunchSeenKey = UserDefaultsKeys.firstLaunchSeen
     static let supportedBundleIdentifiers: Set<String> = [
         "io.coreify.quitx",
         "com.coreify.quitx",
         "com.kiron.quitx",
         "com.quitx.QuitX"
     ]
+
+    enum Notifications {
+        static let showSettings = Notification.Name("io.coreify.quitx.showSettings")
+        static let showPreferences = Notification.Name("io.coreify.quitx.showPreferences")
+        static let showPopover = Notification.Name("io.coreify.quitx.showPopover")
+    }
+
+    enum UserDefaultsKeys {
+        static let config = "QuitXConfig"
+        static let firstLaunchSeen = "quitx_first_launch_seen_v1"
+        static let launchAtLogin = "quitx_launch_at_login"
+        static let activateMenuEnabled = "sc_activate_enabled"
+        static let activateMenuKeys = "sc_activate_keys"
+        static let quitAllEnabled = "sc_quit_enabled"
+        static let quitAllKeys = "sc_quit_keys"
+        static let forceQuitAllEnabled = "sc_force_enabled"
+        static let forceQuitAllKeys = "sc_force_keys"
+    }
+
+    enum HotKeys {
+        static let signature: OSType = 1380993096 // 'QXHK'
+        static let activateMenuId: UInt32 = 1
+        static let quitAllId: UInt32 = 2
+        static let forceQuitAllId: UInt32 = 3
+    }
+
+    enum SystemBundleIds {
+        static let finder = "com.apple.finder"
+        static let trash = "com.apple.trash"
+    }
 
     static let supportEmail = "hello@kiron.dev"
     static let updateWorkerURL = URL(string: "https://quitx-update-gatekeeper.kiron.workers.dev/latest")!

@@ -23,7 +23,7 @@ final class QuitService {
             return QuitResult(app: app, success: true, forced: false, error: nil)
         }
 
-        if app.name.lowercased() == "trash" || app.bundleId == "com.apple.trash" {
+        if app.name.lowercased() == "trash" || app.bundleId == QuitXConstants.SystemBundleIds.trash {
             let script = """
             ignoring application responses
                 tell application "Finder"
@@ -37,7 +37,7 @@ final class QuitService {
             return await Self.runAppleScript(script, app: app, label: "Trash")
         }
 
-        if app.bundleId == "com.apple.finder" || app.name.lowercased() == "finder" {
+        if app.bundleId == QuitXConstants.SystemBundleIds.finder || app.name.lowercased() == "finder" {
             let script = """
             with timeout of 2 seconds
                 tell application "Finder"

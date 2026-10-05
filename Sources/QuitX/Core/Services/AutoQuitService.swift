@@ -110,7 +110,7 @@ final class AutoQuitService {
             let name = app.localizedName?.lowercased()
             if let bundleId, excluded.contains(bundleId) { continue }
             if let name, excluded.contains(name) { continue }
-            if app.bundleIdentifier == "com.apple.finder" { continue }
+            if app.bundleIdentifier == QuitXConstants.SystemBundleIds.finder { continue }
 
             if config.neverQuitMusic && protectedMusicApps.contains(where: {
                 name?.contains($0) == true || bundleId?.contains($0) == true

@@ -17,24 +17,24 @@ final class ShortcutManager: ObservableObject {
     }
 
     @Published var activateMenuEnabled: Bool {
-        didSet { UserDefaults.standard.set(activateMenuEnabled, forKey: "sc_activate_enabled"); scheduleRestartMonitoring() }
+        didSet { UserDefaults.standard.set(activateMenuEnabled, forKey: QuitXConstants.UserDefaultsKeys.activateMenuEnabled); scheduleRestartMonitoring() }
     }
     @Published var activateMenuKeys: [String] {
-        didSet { UserDefaults.standard.set(activateMenuKeys, forKey: "sc_activate_keys"); scheduleRestartMonitoring() }
+        didSet { UserDefaults.standard.set(activateMenuKeys, forKey: QuitXConstants.UserDefaultsKeys.activateMenuKeys); scheduleRestartMonitoring() }
     }
 
     @Published var quitAllEnabled: Bool {
-        didSet { UserDefaults.standard.set(quitAllEnabled, forKey: "sc_quit_enabled"); scheduleRestartMonitoring() }
+        didSet { UserDefaults.standard.set(quitAllEnabled, forKey: QuitXConstants.UserDefaultsKeys.quitAllEnabled); scheduleRestartMonitoring() }
     }
     @Published var quitAllKeys: [String] {
-        didSet { UserDefaults.standard.set(quitAllKeys, forKey: "sc_quit_keys"); scheduleRestartMonitoring() }
+        didSet { UserDefaults.standard.set(quitAllKeys, forKey: QuitXConstants.UserDefaultsKeys.quitAllKeys); scheduleRestartMonitoring() }
     }
 
     @Published var forceQuitAllEnabled: Bool {
-        didSet { UserDefaults.standard.set(forceQuitAllEnabled, forKey: "sc_force_enabled"); scheduleRestartMonitoring() }
+        didSet { UserDefaults.standard.set(forceQuitAllEnabled, forKey: QuitXConstants.UserDefaultsKeys.forceQuitAllEnabled); scheduleRestartMonitoring() }
     }
     @Published var forceQuitAllKeys: [String] {
-        didSet { UserDefaults.standard.set(forceQuitAllKeys, forKey: "sc_force_keys"); scheduleRestartMonitoring() }
+        didSet { UserDefaults.standard.set(forceQuitAllKeys, forKey: QuitXConstants.UserDefaultsKeys.forceQuitAllKeys); scheduleRestartMonitoring() }
     }
 
     private var localMonitor: Any?
@@ -43,14 +43,14 @@ final class ShortcutManager: ObservableObject {
     private var eventHandlerRef: EventHandlerRef?
 
     init() {
-        self.activateMenuEnabled = UserDefaults.standard.object(forKey: "sc_activate_enabled") as? Bool ?? true
-        self.activateMenuKeys = UserDefaults.standard.stringArray(forKey: "sc_activate_keys") ?? ["^", "⌥", "A"]
+        self.activateMenuEnabled = UserDefaults.standard.object(forKey: QuitXConstants.UserDefaultsKeys.activateMenuEnabled) as? Bool ?? true
+        self.activateMenuKeys = UserDefaults.standard.stringArray(forKey: QuitXConstants.UserDefaultsKeys.activateMenuKeys) ?? ["^", "⌥", "A"]
 
-        self.quitAllEnabled = UserDefaults.standard.object(forKey: "sc_quit_enabled") as? Bool ?? false
-        self.quitAllKeys = UserDefaults.standard.stringArray(forKey: "sc_quit_keys") ?? ["^", "⌥", "Q"]
+        self.quitAllEnabled = UserDefaults.standard.object(forKey: QuitXConstants.UserDefaultsKeys.quitAllEnabled) as? Bool ?? false
+        self.quitAllKeys = UserDefaults.standard.stringArray(forKey: QuitXConstants.UserDefaultsKeys.quitAllKeys) ?? ["^", "⌥", "Q"]
 
-        self.forceQuitAllEnabled = UserDefaults.standard.object(forKey: "sc_force_enabled") as? Bool ?? false
-        self.forceQuitAllKeys = UserDefaults.standard.stringArray(forKey: "sc_force_keys") ?? ["^", "⌥", "⌘", "Q"]
+        self.forceQuitAllEnabled = UserDefaults.standard.object(forKey: QuitXConstants.UserDefaultsKeys.forceQuitAllEnabled) as? Bool ?? false
+        self.forceQuitAllKeys = UserDefaults.standard.stringArray(forKey: QuitXConstants.UserDefaultsKeys.forceQuitAllKeys) ?? ["^", "⌥", "⌘", "Q"]
 
         installCarbonHandlerIfNeeded()
         restartMonitoring()
@@ -101,7 +101,7 @@ final class ShortcutManager: ObservableObject {
 
         if activateMenuEnabled, let (keyCode, modifiers) = Self.keysToCarbon(keys: activateMenuKeys) {
             var ref: EventHotKeyRef?
-            let hotKeyID = EventHotKeyID(signature: OSType(1380993096), id: 1)
+            let hotKeyID = EventHotKeyID(signature: QuitXConstants.HotKeys.signature, id: QuitXConstants.HotKeys.activateMenuId)
             if RegisterEventHotKey(keyCode, modifiers, hotKeyID, GetEventDispatcherTarget(), 0, &ref) == noErr, let ref = ref {
                 registeredHotKeys.append(ref)
             }
@@ -109,7 +109,7 @@ final class ShortcutManager: ObservableObject {
 
         if quitAllEnabled, let (keyCode, modifiers) = Self.keysToCarbon(keys: quitAllKeys) {
             var ref: EventHotKeyRef?
-            let hotKeyID = EventHotKeyID(signature: OSType(1380993096), id: 2)
+            let hotKeyID = EventHotKeyID(signature: QuitXConstants.HotKeys.signature, id: QuitXConstants.HotKeys.quitAllId)
             if RegisterEventHotKey(keyCode, modifiers, hotKeyID, GetEventDispatcherTarget(), 0, &ref) == noErr, let ref = ref {
                 registeredHotKeys.append(ref)
             }
@@ -117,7 +117,7 @@ final class ShortcutManager: ObservableObject {
 
         if forceQuitAllEnabled, let (keyCode, modifiers) = Self.keysToCarbon(keys: forceQuitAllKeys) {
             var ref: EventHotKeyRef?
-            let hotKeyID = EventHotKeyID(signature: OSType(1380993096), id: 3)
+            let hotKeyID = EventHotKeyID(signature: QuitXConstants.HotKeys.signature, id: QuitXConstants.HotKeys.forceQuitAllId)
             if RegisterEventHotKey(keyCode, modifiers, hotKeyID, GetEventDispatcherTarget(), 0, &ref) == noErr, let ref = ref {
                 registeredHotKeys.append(ref)
             }
@@ -133,13 +133,13 @@ final class ShortcutManager: ObservableObject {
 
     func handleHotKeyId(_ id: UInt32) {
         switch id {
-        case 1:
+        case QuitXConstants.HotKeys.activateMenuId:
             guard activateMenuEnabled else { return }
             StatusItemController.shared?.togglePopover()
-        case 2:
+        case QuitXConstants.HotKeys.quitAllId:
             guard quitAllEnabled else { return }
             Task { await AppListViewModel.shared.quitAllFromShortcut(force: false) }
-        case 3:
+        case QuitXConstants.HotKeys.forceQuitAllId:
             guard forceQuitAllEnabled else { return }
             Task { await AppListViewModel.shared.quitAllFromShortcut(force: true) }
         default:

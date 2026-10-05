@@ -15,7 +15,7 @@ final class LaunchAtLoginService: ObservableObject {
                 isRevertingChange = false
                 return
             }
-            UserDefaults.standard.set(isEnabled, forKey: "quitx_launch_at_login")
+            UserDefaults.standard.set(isEnabled, forKey: QuitXConstants.UserDefaultsKeys.launchAtLogin)
         }
     }
 
@@ -23,9 +23,9 @@ final class LaunchAtLoginService: ObservableObject {
         if #available(macOS 13.0, *) {
             let status = SMAppService.mainApp.status
             self.isEnabled = status == .enabled || status == .requiresApproval
-            UserDefaults.standard.set(self.isEnabled, forKey: "quitx_launch_at_login")
+            UserDefaults.standard.set(self.isEnabled, forKey: QuitXConstants.UserDefaultsKeys.launchAtLogin)
         } else {
-            self.isEnabled = UserDefaults.standard.bool(forKey: "quitx_launch_at_login")
+            self.isEnabled = UserDefaults.standard.bool(forKey: QuitXConstants.UserDefaultsKeys.launchAtLogin)
         }
     }
 

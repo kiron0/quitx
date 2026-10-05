@@ -87,7 +87,7 @@ final class AppListService {
                 continue
             }
 
-            if !config.includeFinder && (bundleId == "com.apple.finder" || lowerName == "finder") { continue }
+            if !config.includeFinder && (bundleId == QuitXConstants.SystemBundleIds.finder || lowerName == "finder") { continue }
 
             let memory = memoryUsage(pid: pid)
             let cpu = cpuUsages[pid, default: 0.0]
@@ -144,10 +144,10 @@ final class AppListService {
         }
 
         if config.includeTrash {
-            if !excluded.contains("trash") && !excluded.contains("com.apple.trash") {
+            if !excluded.contains("trash") && !excluded.contains(QuitXConstants.SystemBundleIds.trash) {
                 results.append(AppInfo(
                     name: "Trash",
-                    bundleId: "com.apple.trash",
+                    bundleId: QuitXConstants.SystemBundleIds.trash,
                     pid: nil,
                     pids: [],
                     isBackground: false,

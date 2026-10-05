@@ -136,7 +136,7 @@ final class SingleInstanceService {
 
     private func notifyAndActivate(_ application: NSRunningApplication) {
         DistributedNotificationCenter.default().postNotificationName(
-            Notification.Name("io.coreify.quitx.showPopover"),
+            QuitXConstants.Notifications.showPopover,
             object: nil,
             userInfo: nil,
             deliverImmediately: true

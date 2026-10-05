@@ -11,7 +11,7 @@ final class ConfigStore: ObservableObject {
     }
 
     private var normalizedExcludedSet: Set<String> = []
-    private static let userDefaultsKey = "QuitXConfig"
+    private static let userDefaultsKey = QuitXConstants.UserDefaultsKeys.config
 
     private init() { load() }
 

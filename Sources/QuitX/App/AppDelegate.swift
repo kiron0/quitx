@@ -38,20 +38,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         let obs1 = DistributedNotificationCenter.default().addObserver(
-            forName: NSNotification.Name("io.coreify.quitx.showSettings"),
+            forName: QuitXConstants.Notifications.showSettings,
             object: nil,
             queue: .main,
             using: handleShowSettings
         )
         let obs2 = DistributedNotificationCenter.default().addObserver(
-            forName: NSNotification.Name("io.coreify.quitx.showPreferences"),
+            forName: QuitXConstants.Notifications.showPreferences,
             object: nil,
             queue: .main,
             using: handleShowSettings
         )
 
         let obs3 = DistributedNotificationCenter.default().addObserver(
-            forName: NSNotification.Name("io.coreify.quitx.showPopover"),
+            forName: QuitXConstants.Notifications.showPopover,
             object: nil,
             queue: .main
         ) { [weak self] _ in
