@@ -11,6 +11,7 @@ struct QuitConfirmationOverlay: View {
     let confirmTitle: String
     let systemImage: String
     let isForced: Bool
+    let cardWidth: CGFloat
     let onConfirm: () -> Void
     let onCancel: () -> Void
 
@@ -22,6 +23,7 @@ struct QuitConfirmationOverlay: View {
         confirmTitle: String,
         systemImage: String,
         isForced: Bool,
+        cardWidth: CGFloat = 236,
         onConfirm: @escaping () -> Void,
         onCancel: @escaping () -> Void
     ) {
@@ -30,6 +32,7 @@ struct QuitConfirmationOverlay: View {
         self.confirmTitle = confirmTitle
         self.systemImage = systemImage
         self.isForced = isForced
+        self.cardWidth = cardWidth
         self.onConfirm = onConfirm
         self.onCancel = onCancel
     }
@@ -134,7 +137,7 @@ struct QuitConfirmationOverlay: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
-            .frame(width: 236)
+            .frame(width: cardWidth)
             .background(
                 RoundedRectangle(cornerRadius: 10)
                     .fill(Color(NSColor.windowBackgroundColor))

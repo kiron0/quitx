@@ -232,17 +232,32 @@ struct ExcludeTabView: View {
         .padding(.vertical, 16)
         .frame(width: 400, height: 300, alignment: .topLeading)
         .background(QuitXTheme.windowBackground)
-        .alert(item: $state.pendingRemoval) { request in
-            Alert(
-                title: Text(request.title),
-                message: Text(request.message),
-                primaryButton: .destructive(Text(request.removesAll ? "Remove All" : "Remove")) {
-                    configStore.removeExcludedApps(Set(request.identifiers))
-                    state.selectedIdentifiers.removeAll()
-                },
-                secondaryButton: .cancel()
-            )
+        .overlay {
+            if let request = state.pendingRemoval {
+                QuitConfirmationOverlay(
+                    title: request.title,
+                    subtitle: request.message,
+                    confirmTitle: request.removesAll ? "Remove All" : "Remove",
+                    systemImage: "trash.fill",
+                    isForced: true,
+                    cardWidth: 260,
+                    onConfirm: {
+                        configStore.removeExcludedApps(Set(request.identifiers))
+                        state.selectedIdentifiers.removeAll()
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            state.pendingRemoval = nil
+                        }
+                    },
+                    onCancel: {
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            state.pendingRemoval = nil
+                        }
+                    }
+                )
+                .transition(.opacity.combined(with: .scale(scale: 0.95)))
+            }
         }
+        .animation(.easeInOut(duration: 0.18), value: state.pendingRemoval != nil)
     }
 
     private var removeButtonTitle: String {
