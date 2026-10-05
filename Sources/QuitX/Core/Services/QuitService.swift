@@ -96,25 +96,27 @@ final class QuitService {
         let gracefulAttempts = force ? 20 : 50
         let forceAttempts    = 20
 
-        for entry in pendingApps {
-            if Task.isCancelled { break }
-            let running = entry.app
+        for _ in 0..<gracefulAttempts where !Task.isCancelled {
+            if pendingApps.allSatisfy({ $0.app.isTerminated }) { break }
+            try? await Task.sleep(nanoseconds: pollNs)
+        }
 
-            for _ in 0..<gracefulAttempts where !running.isTerminated && !Task.isCancelled {
+        var forceEntries: [(app: NSRunningApplication, isHelper: Bool)] = []
+        for entry in pendingApps where !entry.app.isTerminated && !entry.wasForced {
+            _ = entry.app.forceTerminate()
+            forceEntries.append((entry.app, entry.isHelper))
+        }
+
+        if !forceEntries.isEmpty {
+            for _ in 0..<forceAttempts where !Task.isCancelled {
+                if forceEntries.allSatisfy({ $0.app.isTerminated }) { break }
                 try? await Task.sleep(nanoseconds: pollNs)
             }
+        }
 
-            if !running.isTerminated && !entry.wasForced {
-                _ = running.forceTerminate()
-                for _ in 0..<forceAttempts where !running.isTerminated && !Task.isCancelled {
-                    try? await Task.sleep(nanoseconds: pollNs)
-                }
-            }
-
-            if !running.isTerminated && !entry.isHelper {
-                allSucceeded = false
-                firstError = firstError ?? "App did not terminate"
-            }
+        for entry in pendingApps where !entry.app.isTerminated && !entry.isHelper {
+            allSucceeded = false
+            firstError = firstError ?? "App did not terminate"
         }
 
         return QuitResult(
