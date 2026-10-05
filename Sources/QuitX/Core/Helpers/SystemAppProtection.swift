@@ -28,6 +28,17 @@ enum SystemAppProtection {
         return stripped.isEmpty ? name : stripped
     }
 
+    private static let criticalAppleBundleIds: Set<String> = [
+        "com.apple.dock",
+        "com.apple.Spotlight",
+        "com.apple.SystemUIServer",
+        "com.apple.WindowManager",
+        "com.apple.controlcenter",
+        "com.apple.notificationcenterui",
+        "com.apple.loginwindow",
+        "com.apple.ScreenSaver.Engine"
+    ]
+
     static func isSystemProtected(
         bundleIdentifier: String?,
         isBackground: Bool,
@@ -35,6 +46,10 @@ enum SystemAppProtection {
     ) -> Bool {
         let bid = bundleIdentifier ?? ""
         if !bid.isEmpty && QuitXIdentity.supportedBundleIdentifiers.contains(bid) {
+            return true
+        }
+
+        if !bid.isEmpty && criticalAppleBundleIds.contains(bid) {
             return true
         }
 

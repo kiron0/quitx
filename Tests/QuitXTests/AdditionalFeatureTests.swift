@@ -292,6 +292,7 @@ struct AssetImagesTests {
 }
 
 @Suite("ConfigStore & Persistence Tests")
+@MainActor
 struct ConfigStoreTests {
     @Test("Shared instance exists")
     func testConfigStoreShared() {

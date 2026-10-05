@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 final class ConfigStore: ObservableObject {
     static let shared = ConfigStore()
 

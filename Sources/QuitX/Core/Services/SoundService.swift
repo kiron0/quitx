@@ -1,5 +1,6 @@
 import AppKit
 
+@MainActor
 enum SoundService {
     private static let singleSound: NSSound? = loadSound(named: "quit-single")
     private static let allSound: NSSound? = loadSound(named: "quit-all")

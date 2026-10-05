@@ -53,7 +53,8 @@ final class SingleInstanceService {
 
     private func handleNewInstance(_ application: NSRunningApplication) async {
         let current = NSRunningApplication.current
-        guard application.processIdentifier != current.processIdentifier,
+        guard !application.isTerminated,
+              application.processIdentifier != current.processIdentifier,
               Self.isQuitX(application) else { return }
 
         if preferred(application, over: current) {
@@ -65,12 +66,18 @@ final class SingleInstanceService {
     }
 
     private func matchingApplications() -> [NSRunningApplication] {
-        NSWorkspace.shared.runningApplications.filter(Self.isQuitX)
+        NSWorkspace.shared.runningApplications.filter { !$0.isTerminated && Self.isQuitX($0) }
     }
 
     private static func isQuitX(_ application: NSRunningApplication) -> Bool {
-        guard let bundleIdentifier = application.bundleIdentifier else { return false }
-        return QuitXIdentity.supportedBundleIdentifiers.contains(bundleIdentifier)
+        if application.processIdentifier == ProcessInfo.processInfo.processIdentifier { return true }
+        guard !application.isTerminated else { return false }
+        if let bundleIdentifier = application.bundleIdentifier,
+           QuitXIdentity.supportedBundleIdentifiers.contains(bundleIdentifier) {
+            return true
+        }
+        let execName = application.executableURL?.lastPathComponent ?? application.localizedName
+        return execName == "QuitX"
     }
 
     private func preferred(_ lhs: NSRunningApplication, over rhs: NSRunningApplication) -> Bool {
@@ -128,10 +135,16 @@ final class SingleInstanceService {
     }
 
     private func notifyAndActivate(_ application: NSRunningApplication) {
-        DistributedNotificationCenter.default().post(
-            name: Notification.Name("io.coreify.quitx.showPopover"),
-            object: nil
+        DistributedNotificationCenter.default().postNotificationName(
+            Notification.Name("io.coreify.quitx.showPopover"),
+            object: nil,
+            userInfo: nil,
+            deliverImmediately: true
         )
-        application.activate(options: [])
+        if #available(macOS 14.0, *) {
+            application.activate()
+        } else {
+            application.activate(options: [])
+        }
     }
 }

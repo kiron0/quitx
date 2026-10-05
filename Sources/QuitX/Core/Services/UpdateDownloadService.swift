@@ -267,8 +267,12 @@ final class UpdateDownloadService: NSObject, ObservableObject {
 
             let process = Process()
             process.executableURL = URL(fileURLWithPath: "/bin/bash")
-            process.arguments = [scriptURL.path]
+            process.arguments = ["-c", "nohup \"$1\" >/dev/null 2>&1 &", "updater", scriptURL.path]
+            process.standardInput = FileHandle.nullDevice
+            process.standardOutput = FileHandle.nullDevice
+            process.standardError = FileHandle.nullDevice
             try process.run()
+            process.waitUntilExit()
 
             NSApp.terminate(nil)
         } catch {
