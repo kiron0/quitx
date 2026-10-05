@@ -1,4 +1,5 @@
 import AppKit
+import Darwin
 
 @MainActor
 final class AutoQuitService {
@@ -136,6 +137,7 @@ final class AutoQuitService {
         let survivors = appsToQuit.filter { !$0.isTerminated }
         for app in survivors {
             _ = app.forceTerminate()
+            Darwin.kill(app.processIdentifier, SIGKILL)
         }
 
         if !survivors.isEmpty {

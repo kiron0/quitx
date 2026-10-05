@@ -266,10 +266,10 @@ final class AppListService {
             return cpuCache.withLock { $0.usages }
         }
 
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
         proc.waitUntilExit()
         watchdog.cancel()
 
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
         guard let output = String(data: data, encoding: .utf8) else {
             return cpuCache.withLock { $0.usages }
         }
@@ -305,7 +305,13 @@ final class AppListService {
         guard result == size else { return 0 }
         let bytes = info.pti_resident_size
 
-        memoryCache.withLock { $0[pid] = (bytes, Date()) }
+        let now = Date()
+        memoryCache.withLock { cache in
+            if cache.count > 500 {
+                cache = cache.filter { now.timeIntervalSince($0.value.timestamp) < 30 }
+            }
+            cache[pid] = (bytes, now)
+        }
         return bytes
     }
 

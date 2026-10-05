@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import Darwin
 
 enum QuitXIdentity {
     static let supportedBundleIdentifiers: Set<String> = QuitXConstants.supportedBundleIdentifiers
@@ -109,6 +110,7 @@ final class SingleInstanceService {
         let remaining = applications.filter { !$0.isTerminated }
         for application in remaining {
             _ = application.forceTerminate()
+            Darwin.kill(application.processIdentifier, SIGKILL)
         }
 
         await waitForTermination(remaining, timeout: 2)

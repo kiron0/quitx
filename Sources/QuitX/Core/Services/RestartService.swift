@@ -18,8 +18,9 @@ final class RestartService {
             while !runningApp.isTerminated, Date() < deadline, !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 50_000_000)
             }
+            guard runningApp.isTerminated else { return false }
         } else {
-            try? await Task.sleep(nanoseconds: 300_000_000)
+            try? await Task.sleep(nanoseconds: 200_000_000)
         }
 
         let config = NSWorkspace.OpenConfiguration()

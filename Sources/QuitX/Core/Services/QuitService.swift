@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import Darwin
 
 final class QuitService {
     static let shared = QuitService()
@@ -38,9 +39,11 @@ final class QuitService {
 
         if app.bundleId == "com.apple.finder" || app.name.lowercased() == "finder" {
             let script = """
-            tell application "Finder"
-                close every window
-            end tell
+            with timeout of 2 seconds
+                tell application "Finder"
+                    close every window
+                end tell
+            end timeout
             """
             return await Self.runAppleScript(script, app: app, label: "Finder")
         }
@@ -69,23 +72,36 @@ final class QuitService {
         var firstError: String?
 
         var pendingApps: [(app: NSRunningApplication, wasForced: Bool, isHelper: Bool)] = []
+        var pendingRawPids: [(pid: pid_t, wasForced: Bool, isHelper: Bool)] = []
 
         func terminatePid(_ pid: pid_t, isHelper: Bool) {
-            guard let running = NSRunningApplication(processIdentifier: pid) else { return }
-            if !isHelper {
-                guard Self.matches(running: running, app: app) else {
-                    allSucceeded = false
-                    firstError = firstError ?? "Process identity changed"
-                    return
+            if let running = NSRunningApplication(processIdentifier: pid) {
+                if !isHelper {
+                    guard Self.matches(running: running, app: app) else {
+                        allSucceeded = false
+                        firstError = firstError ?? "Process identity changed"
+                        return
+                    }
                 }
-            }
-            guard !running.isTerminated else { return }
-            let accepted = force ? running.forceTerminate() : running.terminate()
-            if accepted {
-                pendingApps.append((running, force, isHelper))
-            } else if !isHelper {
-                allSucceeded = false
-                firstError = firstError ?? (force ? "forceTerminate failed" : "terminate failed")
+                guard !running.isTerminated else { return }
+                let accepted = force ? running.forceTerminate() : running.terminate()
+                if accepted {
+                    pendingApps.append((running, force, isHelper))
+                } else {
+                    if force {
+                        Darwin.kill(pid, SIGKILL)
+                    } else {
+                        Darwin.kill(pid, SIGTERM)
+                    }
+                    pendingRawPids.append((pid, force, isHelper))
+                }
+            } else if Darwin.kill(pid, 0) == 0 {
+                if force {
+                    Darwin.kill(pid, SIGKILL)
+                } else {
+                    Darwin.kill(pid, SIGTERM)
+                }
+                pendingRawPids.append((pid, force, isHelper))
             }
         }
 
@@ -97,26 +113,47 @@ final class QuitService {
         let forceAttempts    = 20
 
         for _ in 0..<gracefulAttempts where !Task.isCancelled {
-            if pendingApps.allSatisfy({ $0.app.isTerminated }) { break }
+            let appsDone = pendingApps.allSatisfy { $0.app.isTerminated }
+            let pidsDone = pendingRawPids.allSatisfy { Darwin.kill($0.pid, 0) != 0 }
+            if appsDone && pidsDone { break }
             try? await Task.sleep(nanoseconds: pollNs)
         }
 
-        var forceEntries: [(app: NSRunningApplication, isHelper: Bool)] = []
-        for entry in pendingApps where !entry.app.isTerminated && !entry.wasForced {
+        var forceApps: [(app: NSRunningApplication, isHelper: Bool)] = []
+        for entry in pendingApps where !entry.app.isTerminated {
             _ = entry.app.forceTerminate()
-            forceEntries.append((entry.app, entry.isHelper))
+            Darwin.kill(entry.app.processIdentifier, SIGKILL)
+            forceApps.append((entry.app, entry.isHelper))
         }
 
-        if !forceEntries.isEmpty {
+        var forceRawPids: [(pid: pid_t, isHelper: Bool)] = []
+        for entry in pendingRawPids where Darwin.kill(entry.pid, 0) == 0 {
+            Darwin.kill(entry.pid, SIGKILL)
+            forceRawPids.append((entry.pid, entry.isHelper))
+        }
+
+        if !forceApps.isEmpty || !forceRawPids.isEmpty {
             for _ in 0..<forceAttempts where !Task.isCancelled {
-                if forceEntries.allSatisfy({ $0.app.isTerminated }) { break }
+                let appsDone = forceApps.allSatisfy { $0.app.isTerminated }
+                let pidsDone = forceRawPids.allSatisfy { Darwin.kill($0.pid, 0) != 0 }
+                if appsDone && pidsDone { break }
                 try? await Task.sleep(nanoseconds: pollNs)
             }
         }
 
-        for entry in pendingApps where !entry.app.isTerminated && !entry.isHelper {
-            allSucceeded = false
-            firstError = firstError ?? "App did not terminate"
+        for entry in pendingApps where !entry.app.isTerminated {
+            Darwin.kill(entry.app.processIdentifier, SIGKILL)
+            if !entry.isHelper && !entry.app.isTerminated && Darwin.kill(entry.app.processIdentifier, 0) == 0 {
+                allSucceeded = false
+                firstError = firstError ?? "App did not terminate"
+            }
+        }
+
+        for entry in pendingRawPids where Darwin.kill(entry.pid, 0) == 0 {
+            if !entry.isHelper {
+                allSucceeded = false
+                firstError = firstError ?? "Process did not terminate"
+            }
         }
 
         return QuitResult(
@@ -139,14 +176,25 @@ final class QuitService {
     }
 
     static func matches(running: NSRunningApplication, app: AppInfo) -> Bool {
-        if let expectedBundleId = app.bundleId {
-            return running.bundleIdentifier == expectedBundleId
+        if app.isBackground && app.pids.contains(running.processIdentifier) {
+            return true
         }
+
+        if let expectedBundleId = app.bundleId {
+            if running.bundleIdentifier == expectedBundleId {
+                return true
+            }
+            if let runningBid = running.bundleIdentifier, runningBid.hasPrefix(expectedBundleId + ".") {
+                return true
+            }
+        }
+
         let runningName = running.localizedName
             ?? running.bundleURL?.deletingPathExtension().lastPathComponent
             ?? running.executableURL?.lastPathComponent
         guard let runningName else { return false }
-        let cleanRunningName = SystemAppProtection.cleanAppName(runningName)
-        return cleanRunningName.caseInsensitiveCompare(app.name) == .orderedSame
+        let cleanRunningName = SystemAppProtection.cleanGroupedName(SystemAppProtection.cleanAppName(runningName))
+        let cleanAppName = SystemAppProtection.cleanGroupedName(SystemAppProtection.cleanAppName(app.name))
+        return cleanRunningName.caseInsensitiveCompare(cleanAppName) == .orderedSame
     }
 }
