@@ -114,32 +114,6 @@ struct WelcomeView: View {
                 .foregroundStyle(Color.secondary)
         }
     }
-
-    private func guideRow(icon: String, title: String, detail: String) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(gold)
-                .frame(width: 28, height: 28)
-                .background(gold.opacity(0.12), in: RoundedRectangle(cornerRadius: 7))
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Color.primary)
-                Text(detail)
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color.secondary)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 9)
-        .padding(.vertical, 6)
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
-    }
 }
 
 private struct WelcomePrimaryButtonStyle: ButtonStyle {

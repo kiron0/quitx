@@ -351,6 +351,8 @@ final class StatusItemController: NSObject {
             systemSymbolName: "info.circle"
         ))
 
+        menu.addItem(.separator())
+
         menu.addItem(MenuHelper.makeItem(
             title: "Quit",
             action: #selector(quitApp),
@@ -429,6 +431,29 @@ final class StatusItemController: NSObject {
                     }
                     if AppListViewModel.shared.showConfirmQuitAll {
                         AppListViewModel.shared.confirmQuitAllAction()
+                        return nil
+                    }
+                }
+
+                if event.modifierFlags.contains(.command) {
+                    let chars = event.charactersIgnoringModifiers?.lowercased() ?? ""
+                    if chars == "a" {
+                        let isEditingText = self.window?.firstResponder is NSText
+                        if !isEditingText {
+                            AppListViewModel.shared.toggleSelectAll()
+                            return nil
+                        }
+                    } else if chars == "," {
+                        self.closePopover()
+                        SettingsWindowController.shared.show()
+                        return nil
+                    } else if chars == "?" || (chars == "/" && event.modifierFlags.contains(.shift)) {
+                        self.closePopover()
+                        HelpWindowController.shared.show()
+                        return nil
+                    } else if chars == "i" {
+                        self.closePopover()
+                        SettingsWindowController.shared.show(tab: .about)
                         return nil
                     }
                 }

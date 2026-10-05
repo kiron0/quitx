@@ -356,6 +356,19 @@ struct MainPopoverView: View {
         ))
 
         menu.addItem(MenuHelper.makeItem(
+            title: "About",
+            keyEquivalent: "i",
+            assetName: "preferences-about",
+            systemSymbolName: "info.circle",
+            action: {
+                StatusItemController.shared?.closePopover()
+                SettingsWindowController.shared.show(tab: .about)
+            }
+        ))
+
+        menu.addItem(.separator())
+
+        menu.addItem(MenuHelper.makeItem(
             title: "Quit",
             keyEquivalent: "q",
             assetName: "settings-quit",
