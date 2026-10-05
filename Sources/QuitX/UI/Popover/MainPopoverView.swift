@@ -17,7 +17,7 @@ struct MainPopoverView: View {
         endPoint: .bottom
     )
     var body: some View {
-        let containerShape = PopoverContainerShape(arrowX: vm.arrowX, cornerRadius: 10)
+        let containerShape = PopoverContainerShape(arrowX: vm.arrowX, cornerRadius: 14)
         VStack(spacing: 0) {
             Color.clear
                 .frame(height: 12)

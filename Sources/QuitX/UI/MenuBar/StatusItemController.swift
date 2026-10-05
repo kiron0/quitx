@@ -200,7 +200,7 @@ final class StatusItemController: NSObject {
             let originY = buttonScreenRect.minY - totalHeight - 2
             frame.origin = NSPoint(x: originX, y: originY)
 
-            let arrowX = max(18, min(buttonScreenRect.midX - originX, newSize.width - 18))
+            let arrowX = max(30, min(buttonScreenRect.midX - originX, newSize.width - 30))
             if abs(AppListViewModel.shared.arrowX - arrowX) > 0.5 {
                 AppListViewModel.shared.arrowX = arrowX
             }

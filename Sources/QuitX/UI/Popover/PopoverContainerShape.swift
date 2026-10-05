@@ -4,7 +4,7 @@ struct PopoverContainerShape: Shape {
     var arrowX: CGFloat = 135
     var arrowWidth: CGFloat = 32
     var arrowHeight: CGFloat = 12
-    var cornerRadius: CGFloat = 10
+    var cornerRadius: CGFloat = 14
 
     func path(in rect: CGRect) -> Path {
         var path = Path()
