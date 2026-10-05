@@ -45,36 +45,75 @@ final class QuitService {
             return await Self.runAppleScript(script, app: app, label: "Finder")
         }
 
-        let pidsToKill = app.pids.isEmpty ? (app.pid.map { [$0] } ?? []) : app.pids
-        guard !pidsToKill.isEmpty else {
+        let knownPids: Set<pid_t> = Set(app.pids.isEmpty ? (app.pid.map { [$0] } ?? []) : app.pids)
+
+        var helperPids: Set<pid_t> = []
+        if let bundleId = app.bundleId {
+            let prefix = bundleId + "."
+            for running in NSWorkspace.shared.runningApplications {
+                guard !running.isTerminated else { continue }
+                guard let bid = running.bundleIdentifier else { continue }
+                let pid = running.processIdentifier
+                guard !knownPids.contains(pid) else { continue }
+                if bid == bundleId || bid.hasPrefix(prefix) {
+                    helperPids.insert(pid)
+                }
+            }
+        }
+
+        guard !knownPids.isEmpty || !helperPids.isEmpty else {
             return QuitResult(app: app, success: false, forced: false, error: "App not found")
         }
 
         var allSucceeded = true
         var firstError: String?
-        for pid in pidsToKill {
-            guard let running = NSRunningApplication(processIdentifier: pid) else { continue }
 
-            guard Self.matches(running: running, app: app) else {
-                allSucceeded = false
-                firstError = firstError ?? "Process identity changed"
-                continue
+        var pendingApps: [(app: NSRunningApplication, wasForced: Bool, isHelper: Bool)] = []
+
+        func terminatePid(_ pid: pid_t, isHelper: Bool) {
+            guard let running = NSRunningApplication(processIdentifier: pid) else { return }
+            if !isHelper {
+                guard Self.matches(running: running, app: app) else {
+                    allSucceeded = false
+                    firstError = firstError ?? "Process identity changed"
+                    return
+                }
             }
-
+            guard !running.isTerminated else { return }
             let accepted = force ? running.forceTerminate() : running.terminate()
-            guard accepted else {
+            if accepted {
+                pendingApps.append((running, force, isHelper))
+            } else if !isHelper {
                 allSucceeded = false
                 firstError = firstError ?? (force ? "forceTerminate failed" : "terminate failed")
-                continue
+            }
+        }
+
+        for pid in knownPids { terminatePid(pid, isHelper: false) }
+        for pid in helperPids { terminatePid(pid, isHelper: true) }
+
+        let pollNs: UInt64 = 100_000_000
+        let gracefulAttempts = force ? 20 : 50
+        let forceAttempts    = 20
+
+        for entry in pendingApps {
+            if Task.isCancelled { break }
+            let running = entry.app
+
+            for _ in 0..<gracefulAttempts where !running.isTerminated && !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: pollNs)
             }
 
-            let attempts = force ? 20 : 50
-            for _ in 0..<attempts where !running.isTerminated && !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 100_000_000)
+            if !running.isTerminated && !entry.wasForced {
+                _ = running.forceTerminate()
+                for _ in 0..<forceAttempts where !running.isTerminated && !Task.isCancelled {
+                    try? await Task.sleep(nanoseconds: pollNs)
+                }
             }
-            if !running.isTerminated {
+
+            if !running.isTerminated && !entry.isHelper {
                 allSucceeded = false
-                firstError = firstError ?? (force ? "App did not terminate after force quit" : "App did not terminate")
+                firstError = firstError ?? "App did not terminate"
             }
         }
 
