@@ -71,6 +71,8 @@ struct QuitConfirmationOverlay: View {
                 .ignoresSafeArea()
                 .contentShape(Rectangle())
                 .onTapGesture {}
+                .onHover { _ in }
+                .allowsHitTesting(true)
 
             VStack(spacing: 10) {
                 Image(systemName: systemImage)
@@ -148,5 +150,7 @@ struct QuitConfirmationOverlay: View {
                     .stroke(Color.primary.opacity(0.12), lineWidth: 0.8)
             )
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .allowsHitTesting(true)
     }
 }

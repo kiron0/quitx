@@ -129,6 +129,12 @@ struct MainPopoverView: View {
         .onChange(of: vm.filteredApps.count) {
             StatusItemController.shared?.updatePopoverSize()
         }
+        .onChange(of: vm.showConfirmQuitAll) {
+            StatusItemController.shared?.updatePopoverSize()
+        }
+        .onChange(of: vm.pendingIndividualAction == nil) {
+            StatusItemController.shared?.updatePopoverSize()
+        }
     }
 
     private var quitAllButton: some View {

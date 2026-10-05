@@ -158,7 +158,9 @@ final class StatusItemController: NSObject {
 
     @MainActor
     func updatePopoverSize() {
-        let count = AppListViewModel.shared.filteredApps.count
+        let vm = AppListViewModel.shared
+        let count = vm.filteredApps.count
+        let isConfirming = vm.showConfirmQuitAll || vm.pendingIndividualAction != nil
 
         let calculated: CGFloat
         if count == 0 {
@@ -169,11 +171,13 @@ final class StatusItemController: NSObject {
             calculated = baseHeight + (CGFloat(count) * rowHeight)
         }
 
+        let confirmMinHeight: CGFloat = 220
+        let effectiveCalculated = isConfirming ? max(calculated, confirmMinHeight) : calculated
         let arrowHeight: CGFloat = 12
         let screen = statusItem.button?.window?.screen ?? NSScreen.main
         let screenHeight = screen?.visibleFrame.height ?? 800
         let maximumHeight = max(100, screenHeight - 48)
-        let targetHeight = min(maximumHeight, calculated)
+        let targetHeight = min(maximumHeight, effectiveCalculated)
         let needsScrolling = calculated > maximumHeight
         if AppListViewModel.shared.listNeedsScrolling != needsScrolling {
             AppListViewModel.shared.listNeedsScrolling = needsScrolling
