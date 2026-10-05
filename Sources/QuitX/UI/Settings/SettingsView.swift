@@ -183,15 +183,19 @@ struct ExcludeTabView: View {
                             LazyVStack(spacing: 2) {
                                 ForEach(Array(configStore.config.exclude.enumerated()), id: \.offset) { _, identifier in
                                     let normalized = identifier.lowercased()
-                                    Button {
-                                        state.toggle(normalized)
-                                    } label: {
-                                        ExcludedAppRow(
-                                            identifier: identifier,
-                                            isSelected: state.selectedIdentifiers.contains(normalized)
-                                        )
-                                    }
-                                    .buttonStyle(.plain)
+                                    ExcludedAppRow(
+                                        identifier: identifier,
+                                        isSelected: state.selectedIdentifiers.contains(normalized),
+                                        onToggle: {
+                                            state.toggle(normalized)
+                                        },
+                                        onRemove: {
+                                            state.pendingRemoval = ExcludeRemovalRequest(
+                                                identifiers: [identifier],
+                                                totalCount: configStore.config.exclude.count
+                                            )
+                                        }
+                                    )
                                 }
                             }
                             .padding(.vertical, 2)
@@ -310,11 +314,28 @@ struct ExcludeRemovalRequest: Identifiable {
 
     var id: String { identifiers.map { $0.lowercased() }.sorted().joined(separator: "|") }
 
+    static func appDisplayName(for identifier: String) -> String {
+        guard let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: identifier),
+              let bundle = Bundle(url: appURL),
+              let name = bundle.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
+                ?? bundle.object(forInfoDictionaryKey: "CFBundleName") as? String else {
+            if let last = identifier.split(separator: ".").last, !last.isEmpty {
+                return String(last)
+            }
+            return identifier
+        }
+        return name
+    }
+
     var title: String {
         if removesAll {
             return "Remove all excluded apps?"
         }
-        return identifiers.count == 1 ? "Remove excluded app?" : "Remove selected apps?"
+        if identifiers.count == 1 {
+            let name = Self.appDisplayName(for: identifiers[0])
+            return "Remove \(name)?"
+        }
+        return "Remove \(identifiers.count) excluded apps?"
     }
 
     var message: String {
@@ -322,10 +343,10 @@ struct ExcludeRemovalRequest: Identifiable {
             return "All apps will no longer be protected from quit actions and Auto Quit."
         }
         if identifiers.count == 1 {
-            return "This app will no longer be protected from quit actions and Auto Quit."
-        } else {
-            return "These \(identifiers.count) apps will no longer be protected from quit actions and Auto Quit."
+            let name = Self.appDisplayName(for: identifiers[0])
+            return "\(name) will no longer be protected from quit actions and Auto Quit."
         }
+        return "These \(identifiers.count) apps will no longer be protected from quit actions and Auto Quit."
     }
 
     init(identifiers: [String], totalCount: Int) {
@@ -337,6 +358,8 @@ struct ExcludeRemovalRequest: Identifiable {
 private struct ExcludedAppRow: View {
     let identifier: String
     let isSelected: Bool
+    let onToggle: () -> Void
+    let onRemove: () -> Void
     @StateObject private var state = ExcludedAppRowState()
 
     private var appURL: URL? {
@@ -344,44 +367,60 @@ private struct ExcludedAppRow: View {
     }
 
     private var displayName: String {
-        guard let appURL,
-              let bundle = Bundle(url: appURL),
-              let name = bundle.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
-                ?? bundle.object(forInfoDictionaryKey: "CFBundleName") as? String else {
-            return identifier
-        }
-        return name
+        ExcludeRemovalRequest.appDisplayName(for: identifier)
     }
 
     var body: some View {
         HStack(spacing: 9) {
-            QuitXSelectionCheckbox(isSelected: isSelected)
-
-            Group {
-                if let appURL {
-                    Image(nsImage: NSWorkspace.shared.icon(forFile: appURL.path))
-                        .resizable()
-                        .scaledToFit()
-                } else {
-                    Image(systemName: "app.dashed")
-                        .resizable()
-                        .scaledToFit()
-                        .foregroundStyle(Color.secondary)
-                        .padding(3)
-                }
+            Button(action: onToggle) {
+                QuitXSelectionCheckbox(isSelected: isSelected)
             }
-            .frame(width: 18, height: 18)
+            .buttonStyle(.plain)
 
-            Text(displayName)
-                .font(.system(size: 12.5))
-                .foregroundStyle(Color.primary)
-                .lineLimit(1)
+            HStack(spacing: 9) {
+                Group {
+                    if let appURL {
+                        Image(nsImage: NSWorkspace.shared.icon(forFile: appURL.path))
+                            .resizable()
+                            .scaledToFit()
+                    } else {
+                        Image(systemName: "app.dashed")
+                            .resizable()
+                            .scaledToFit()
+                            .foregroundStyle(Color.secondary)
+                            .padding(3)
+                    }
+                }
+                .frame(width: 18, height: 18)
 
-            Spacer(minLength: 6)
+                Text(displayName)
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(Color.primary)
+                    .lineLimit(1)
+
+                Spacer(minLength: 6)
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                onToggle()
+            }
+
+            Button(action: onRemove) {
+                Image(systemName: "trash")
+                    .font(.system(size: 11, weight: .regular))
+                    .foregroundStyle(state.isRemoveHovered ? Color.red : Color.secondary.opacity(state.isHovered ? 0.75 : 0.35))
+                    .frame(width: 20, height: 20)
+                    .background(
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(state.isRemoveHovered ? Color.red.opacity(0.12) : Color.clear)
+                    )
+            }
+            .buttonStyle(.plain)
+            .help("Remove \(displayName) from exclusions")
+            .onHover { state.isRemoveHovered = $0 }
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 3.5)
-        .contentShape(Rectangle())
         .background(
             RoundedRectangle(cornerRadius: 3.5)
                 .fill(state.isHovered ? Color.primary.opacity(0.07) : Color.clear)
@@ -392,6 +431,7 @@ private struct ExcludedAppRow: View {
 
 private final class ExcludedAppRowState: ObservableObject {
     @Published var isHovered = false
+    @Published var isRemoveHovered = false
 }
 
 final class GeneralTabState: ObservableObject {
