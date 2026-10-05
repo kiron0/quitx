@@ -9,9 +9,12 @@ All notable changes to QuitX macOS App will be documented in this file.
 - Added event barrier overlay in `QuitConfirmationOverlay` to disable all underlying item clicks, hover effects, and row interactions while confirmation prompts are presented.
 - Responsive popover height expansion for confirmation modals: automatically scales popover to at least 220pt when confirmation prompts are active to prevent dialog cutoff.
 - Added `cardBackground` theme token to `QuitXTheme`, synchronizing light mode settings toolbar, tab headers, excluded app picker, and help navigation backgrounds with dark mode contrast standards.
+- Helper and background process discovery in `QuitService`: automatically resolves all related background tasks sharing an application's bundle identifier prefix to ensure clean termination without orphaned processes.
 
 ### Changed
 
+- Enforced fixed 220pt minimum height in `MainPopoverView` and pinned header and footer positions, allocating all intermediate vertical space to the scrollable app list without layout compression.
+- Standardized confirmation prompt logic across all batch actions (`Quit All`, `Quit Selected`) to consistently adhere to the user's `confirmQuitAll` preference.
 - Replaced lock contention in `AppListService` memory metric lookups with `OSAllocatedUnfairLock` and added a 1.5s per-PID cache to minimize kernel task queries.
 - Throttled `/bin/ps` subprocess execution via `cpuCache` with `OSAllocatedUnfairLock` to at most once per second.
 - Cached selection flags (`isAllSelected`, `isPartiallySelected`, `selectedVisibleCount`) in `AppListViewModel` `@Published` properties, removing O(n) calculations from the hot SwiftUI render path.
@@ -26,6 +29,7 @@ All notable changes to QuitX macOS App will be documented in this file.
 
 ### Fixed
 
+- Fixed batch-quit failures on multi-process applications (e.g., MongoDB Compass) by terminating all related helper processes and adding automatic `forceTerminate` fallback when graceful quit exceeds the timeout deadline.
 - Added a 1.5-second watchdog termination timer to `/bin/ps` executions in `AppListService` to prevent indefinite thread blockage.
 - Fixed potential data loss in `ConfigStore.save()` during rapid application exit by capturing configuration snapshots by value and flushing work items in `deinit`.
 - Fixed cancellation handling in `QuitService.quitOne` wait loop to immediately abort when parent task is cancelled.
