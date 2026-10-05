@@ -70,9 +70,7 @@ struct QuitConfirmationOverlay: View {
             Color.black.opacity(0.45)
                 .ignoresSafeArea()
                 .contentShape(Rectangle())
-                .onTapGesture {
-                    onCancel()
-                }
+                .onTapGesture {}
 
             VStack(spacing: 10) {
                 Image(systemName: systemImage)
