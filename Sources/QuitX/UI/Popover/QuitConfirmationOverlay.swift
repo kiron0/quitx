@@ -139,13 +139,13 @@ struct QuitConfirmationOverlay: View {
             .padding(.vertical, 12)
             .frame(width: cardWidth)
             .background(
-                VisualEffectBlur(material: .popover, blendingMode: .withinWindow)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .shadow(color: Color.black.opacity(0.45), radius: 10, y: 3)
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(NSColor.windowBackgroundColor))
+                    .shadow(color: Color.black.opacity(0.4), radius: 8, y: 3)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color.primary.opacity(0.14), lineWidth: 0.8)
+                    .stroke(Color.primary.opacity(0.12), lineWidth: 0.8)
             )
         }
     }
