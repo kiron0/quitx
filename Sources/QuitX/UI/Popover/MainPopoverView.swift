@@ -43,9 +43,13 @@ struct MainPopoverView: View {
                 .frame(maxHeight: .infinity)
             } else if vm.filteredApps.isEmpty {
                 emptyAppsView
+                    .frame(maxHeight: .infinity)
             } else {
                 AppListView(vm: vm)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
+
+            Spacer(minLength: 0)
 
             footerRow
                 .padding(.horizontal, 10)
@@ -53,6 +57,7 @@ struct MainPopoverView: View {
                 .padding(.bottom, 6)
         }
         .frame(width: 270)
+        .frame(minHeight: 220)
         .frame(maxHeight: .infinity)
         .background(
             QuitXTheme.popoverBackground

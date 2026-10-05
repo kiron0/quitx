@@ -140,6 +140,7 @@ struct QuitConfirmationOverlay: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
             .frame(width: cardWidth)
+            .frame(minHeight: 132)
             .background(
                 RoundedRectangle(cornerRadius: 10)
                     .fill(Color(NSColor.windowBackgroundColor))

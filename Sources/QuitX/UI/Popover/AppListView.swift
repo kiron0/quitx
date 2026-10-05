@@ -11,7 +11,7 @@ struct AppListView: View {
             }
         } else {
             rows
-                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
     }
 
