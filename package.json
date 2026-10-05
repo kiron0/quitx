@@ -11,6 +11,7 @@
     "open": "open \"$HOME/Applications/QuitX.app\"",
     "ship": "./Scripts/ship.sh",
     "bump": "./Scripts/bump-version.sh",
-    "start": "npm run ship"
+    "start": "npm run ship",
+    "fresh-install": "defaults delete io.coreify.quitx quitx_first_launch_seen_v1 && npm run ship"
   }
 }
