@@ -303,7 +303,7 @@ struct HelpView: View {
             .padding(.bottom, 12)
             .frame(width: 220)
             .frame(maxHeight: .infinity)
-            .background(Color.primary.opacity(0.02))
+            .background(QuitXTheme.cardBackground)
     }
 
     private var topicList: some View {
@@ -449,7 +449,7 @@ struct HelpView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(14)
-            .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 8))
+            .background(QuitXTheme.cardBackground, in: RoundedRectangle(cornerRadius: 8))
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(Color.primary.opacity(0.09), lineWidth: 0.5)

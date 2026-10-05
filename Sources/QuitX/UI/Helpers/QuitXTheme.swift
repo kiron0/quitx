@@ -6,8 +6,20 @@ enum QuitXTheme {
     static let accentNSColor = NSColor(srgbRed: 254/255, green: 188/255, blue: 51/255, alpha: 1.0)
     static let windowBackgroundColor = Color(NSColor.windowBackgroundColor)
     static let windowBackgroundNSColor = NSColor.windowBackgroundColor
-    static let toolbarBackground = Color(NSColor.windowBackgroundColor)
-    static let toolbarBackgroundNSColor = NSColor.windowBackgroundColor
+    static let cardBackground = Color.primary.opacity(0.035)
+    static let cardBackgroundNSColor: NSColor = {
+        NSColor(name: nil) { appearance in
+            let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            var baseColor: NSColor = .windowBackgroundColor
+            appearance.performAsCurrentDrawingAppearance {
+                baseColor = NSColor.windowBackgroundColor.usingColorSpace(.deviceRGB) ?? .windowBackgroundColor
+            }
+            let tintColor: NSColor = isDark ? .white : .black
+            return baseColor.blended(withFraction: 0.035, of: tintColor) ?? baseColor
+        }
+    }()
+    static let toolbarBackground = cardBackground
+    static let toolbarBackgroundNSColor = cardBackgroundNSColor
 
     static var popoverBackground: some View {
         ZStack {

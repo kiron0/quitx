@@ -204,7 +204,7 @@ struct ExcludeTabView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 7))
+            .background(QuitXTheme.cardBackground, in: RoundedRectangle(cornerRadius: 7))
             .overlay(
                 RoundedRectangle(cornerRadius: 7)
                     .stroke(Color.primary.opacity(0.09), lineWidth: 0.5)

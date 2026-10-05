@@ -48,7 +48,9 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         )
         win.title = targetTab.rawValue
         win.isOpaque = true
-        win.backgroundColor = QuitXTheme.windowBackgroundNSColor
+        win.backgroundColor = QuitXTheme.toolbarBackgroundNSColor
+        win.titlebarAppearsTransparent = true
+        win.titlebarSeparatorStyle = .line
         win.isMovableByWindowBackground = false
         win.hidesOnDeactivate = false
         win.isReleasedWhenClosed = false
