@@ -431,3 +431,32 @@ struct ExcludeAppPickerSelectionTests {
         #expect(vm.selectedIdentifiers.isEmpty)
     }
 }
+
+@Suite("Welcome Guide Launch Tests")
+@MainActor
+struct WelcomeGuideLaunchTests {
+    @Test("Welcome guide strictly marks first launch seen once")
+    func testFirstLaunchStrictlyOnce() {
+        let suiteName = "io.coreify.quitx.tests.welcome.\(UUID().uuidString)"
+        guard let testDefaults = UserDefaults(suiteName: suiteName) else {
+            return
+        }
+        defer {
+            testDefaults.removePersistentDomain(forName: suiteName)
+            WelcomeWindowController.shared.close()
+        }
+
+        #expect(!testDefaults.bool(forKey: WelcomeWindowController.firstLaunchSeenKey))
+
+        WelcomeWindowController.shared.showIfFirstLaunch(defaults: testDefaults)
+        #expect(testDefaults.bool(forKey: WelcomeWindowController.firstLaunchSeenKey))
+        #expect(WelcomeWindowController.shared.isOpen)
+
+        WelcomeWindowController.shared.close()
+        #expect(!WelcomeWindowController.shared.isOpen)
+
+        WelcomeWindowController.shared.showIfFirstLaunch(defaults: testDefaults)
+        #expect(!WelcomeWindowController.shared.isOpen)
+    }
+}
+

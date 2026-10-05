@@ -462,9 +462,6 @@ struct HelpView: View {
         HStack(spacing: 8) {
             switch topic.id {
             case "quick-start":
-                Button("Welcome Guide") {
-                    WelcomeWindowController.shared.show()
-                }
                 Button("Open Settings") {
                     SettingsWindowController.shared.show(tab: .general)
                 }

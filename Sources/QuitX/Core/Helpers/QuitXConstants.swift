@@ -5,6 +5,7 @@ enum QuitXConstants {
     static let appName = "QuitX"
     static let author = "Toufiq Hasan Kiron"
     static let primaryBundleId = "io.coreify.quitx"
+    static let firstLaunchSeenKey = "quitx_first_launch_seen_v1"
     static let supportedBundleIdentifiers: Set<String> = [
         "io.coreify.quitx",
         "com.coreify.quitx",

@@ -326,18 +326,11 @@ final class StatusItemController: NSObject {
         ))
 
         menu.addItem(MenuHelper.makeItem(
-            title: "Welcome Guide",
-            action: #selector(openWelcomeGuide),
-            target: self,
-            keyEquivalent: "w",
-            systemSymbolName: "book.pages"
-        ))
-
-        menu.addItem(MenuHelper.makeItem(
             title: "Help",
             action: #selector(openHelp),
             target: self,
             keyEquivalent: "?",
+            assetName: "settings-help",
             systemSymbolName: "questionmark.circle"
         ))
 
@@ -384,10 +377,6 @@ final class StatusItemController: NSObject {
         Task {
             await UpdateChecker.shared.checkForUpdates(isUserInitiated: true)
         }
-    }
-
-    @objc private func openWelcomeGuide() {
-        WelcomeWindowController.shared.show()
     }
 
     @objc private func openHelp() {

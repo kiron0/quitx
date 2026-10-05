@@ -7,17 +7,20 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
     private let windowWidth: CGFloat = 390
     private var window: NSWindow?
 
+    static var firstLaunchSeenKey: String {
+        QuitXConstants.firstLaunchSeenKey
+    }
+
     var isOpen: Bool { window != nil }
 
-    func showIfFirstLaunch() {
-        let key = "quitx_first_launch_seen_v1"
-        if !UserDefaults.standard.bool(forKey: key) {
-            UserDefaults.standard.set(true, forKey: key)
+    func showIfFirstLaunch(defaults: UserDefaults = .standard) {
+        if !defaults.bool(forKey: Self.firstLaunchSeenKey) {
+            defaults.set(true, forKey: Self.firstLaunchSeenKey)
             show()
         }
     }
 
-    func show() {
+    private func show() {
         StatusItemController.shared?.closePopover()
 
         if let win = window {
@@ -52,6 +55,7 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         win.isOpaque = false
         win.backgroundColor = .clear
         win.isMovableByWindowBackground = true
+        win.hidesOnDeactivate = false
         win.standardWindowButton(.closeButton)?.isEnabled = true
         win.standardWindowButton(.closeButton)?.isHidden = false
         win.hasShadow = true
@@ -60,6 +64,7 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         win.delegate = self
         self.window = win
         WindowActivationCoordinator.update()
+        win.orderFrontRegardless()
 
         let targetFrame: NSRect
         if let screen = WindowPositioner.targetScreen {
