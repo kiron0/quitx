@@ -90,7 +90,11 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "More actions",
-                    body: "Open the three-dot menu beside the quit button to quit, force quit, restart, exclude, or reveal an app in Finder."
+                    body: "Open the three-dot menu beside the quit button to quit, force quit, restart, exclude, or reveal an app in Finder. Quit Other Apps quits everything except that app. Quit In quits the app after 15, 30, or 60 minutes."
+                ),
+                QuitXHelpSection(
+                    title: "Unresponsive and hogging apps",
+                    body: "A red triangle marks apps that ignored a previous graceful quit request; force quit them from the row menu. A flame marks apps holding sustained high CPU; enable hog warnings in Settings > General for a notification."
                 ),
                 QuitXHelpSection(
                     title: "Background apps",
@@ -158,6 +162,18 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 QuitXHelpSection(
                     title: "Configure Auto Quit",
                     body: "Open Settings > General, enable Quit Inactive Apps After, then choose minutes, hours, or days. Set it off to disable automatic quitting."
+                ),
+                QuitXHelpSection(
+                    title: "Per-app rules",
+                    body: "Open the three-dot menu on any app row, choose Auto-quit, then pick a timeout or Never. A per-app rule overrides the global interval. Use Default returns the app to the global setting. Excluded apps stay protected regardless of rules."
+                ),
+                QuitXHelpSection(
+                    title: "Quit timers",
+                    body: "Open the three-dot menu on any app row, choose Quit In, then pick 15 minutes, 30 minutes, or 1 hour. The app quits gracefully when the timer fires. Timers survive restarts. Cancel from the same menu."
+                ),
+                QuitXHelpSection(
+                    title: "Sleep, lock, battery, and memory",
+                    body: "Settings > General adds unattended quitting: on Mac sleep, on screen lock, halved timeouts plus slower refresh on battery, and graceful quit of apps over 1 GB under memory pressure. All paths skip excluded, music, and protected apps and never force quit."
                 )
             ]
         ),
@@ -178,7 +194,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Enable extras",
-                    body: "Open Settings > General and enable the Finder or Trash options. Each item then appears with normal app selections."
+                    body: "Open Settings > Advanced and enable the Finder or Trash options. Each item then appears with normal app selections."
                 )
             ]
         ),
@@ -212,7 +228,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "General settings",
-                    body: "Settings > General controls launch at login, sounds, background processes, default selection, list sorting, quit mode, Finder, Trash, and Auto Quit."
+                    body: "Settings > General controls launch at login, sounds, sleep and lock quitting, menu and battery options, health warnings, list sorting, quit mode, and Auto Quit. Settings > Advanced controls background processes, default selection, quit tips, confirmations, Finder, and Trash."
                 ),
                 QuitXHelpSection(
                     title: "Updates",

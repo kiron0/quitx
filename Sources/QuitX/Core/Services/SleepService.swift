@@ -1,0 +1,82 @@
+import AppKit
+import Foundation
+
+/// Silent quit target selection for sleep and screen-lock triggers.
+///
+/// Unlike interactive quit, this never asks for confirmation: it only
+/// targets apps that are safe to quit unattended — skipping excluded apps,
+/// music apps, pseudo items (Finder windows, Trash), and QuitX itself.
+enum SleepQuitTargets {
+    static func select(apps: [AppInfo], config: QuitXConfig) -> [AppInfo] {
+        let excluded = Set(config.exclude.map { $0.lowercased() })
+        let musicNames = config.musicApps.map { $0.lowercased() }
+        return apps.filter { app in
+            guard !app.isBackground else { return false }
+            if let bid = app.bundleId,
+               QuitXIdentity.supportedBundleIdentifiers.contains(bid) { return false }
+            if app.bundleId == QuitXConstants.SystemBundleIds.finder { return false }
+            if app.bundleId == QuitXConstants.SystemBundleIds.trash { return false }
+            let lowerBid = app.bundleId?.lowercased()
+            let lowerName = app.name.lowercased()
+            if let lowerBid, excluded.contains(lowerBid) { return false }
+            if excluded.contains(lowerName) { return false }
+            if config.neverQuitMusic && musicNames.contains(where: {
+                lowerName.contains($0) || lowerBid?.contains($0) == true
+            }) { return false }
+            return true
+        }
+    }
+}
+
+@MainActor
+final class SleepService {
+    static let shared = SleepService()
+
+    private var sleepObserver: NSObjectProtocol?
+    private var lockObserver: NSObjectProtocol?
+
+    private init() {}
+
+    func start() {
+        stop()
+        sleepObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.willSleepNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                await self?.handleTrigger(enabled: ConfigStore.shared.config.quitOnSleep)
+            }
+        }
+        lockObserver = DistributedNotificationCenter.default().addObserver(
+            forName: NSNotification.Name("com.apple.screenIsLocked"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                await self?.handleTrigger(enabled: ConfigStore.shared.config.quitOnScreenLock)
+            }
+        }
+    }
+
+    func stop() {
+        if let sleepObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(sleepObserver)
+            self.sleepObserver = nil
+        }
+        if let lockObserver {
+            DistributedNotificationCenter.default().removeObserver(lockObserver)
+            self.lockObserver = nil
+        }
+    }
+
+    private func handleTrigger(enabled: Bool) async {
+        guard enabled else { return }
+        await AppListViewModel.shared.refresh()
+        let targets = SleepQuitTargets.select(
+            apps: AppListViewModel.shared.apps,
+            config: ConfigStore.shared.config
+        )
+        await AppListViewModel.shared.quitSilently(targets: targets, force: false)
+    }
+}

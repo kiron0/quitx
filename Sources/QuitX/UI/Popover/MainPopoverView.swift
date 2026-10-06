@@ -5,6 +5,7 @@ private final class PopoverUIState: ObservableObject {
     @Published var isQuitAllHovered = false
     var cachedOptionsMenu: NSMenu? = nil
     var cachedMenuBgState: Bool? = nil
+    var cachedMenuRecentKey: String? = nil
 }
 
 struct MainPopoverView: View {
@@ -377,6 +378,32 @@ struct MainPopoverView: View {
             }
         ))
 
+        let recentEntries = RecentlyQuitService.shared.entries
+        if !recentEntries.isEmpty {
+            let reopenItem = MenuHelper.makeSubmenuItem(title: "Reopen Recently Quit", systemSymbolName: "arrow.uturn.backward")
+            let reopenMenu = reopenItem.submenu ?? NSMenu()
+            for entry in recentEntries.prefix(10) {
+                let canReopen = entry.bundleId != nil
+                reopenMenu.addItem(MenuHelper.makeItem(
+                    title: entry.name,
+                    isEnabled: canReopen,
+                    action: {
+                        StatusItemController.shared?.closePopover()
+                        RecentlyQuitService.shared.reopen(entry)
+                    }
+                ))
+            }
+            reopenMenu.addItem(.separator())
+            reopenMenu.addItem(MenuHelper.makeItem(
+                title: "Clear List",
+                action: {
+                    RecentlyQuitService.shared.clear()
+                }
+            ))
+            reopenItem.submenu = reopenMenu
+            menu.addItem(reopenItem)
+        }
+
         menu.addItem(.separator())
 
         menu.addItem(MenuHelper.makeItem(
@@ -393,12 +420,16 @@ struct MainPopoverView: View {
     }
 
     private func optionsMenu() -> NSMenu {
-        if let menu = uiState.cachedOptionsMenu, uiState.cachedMenuBgState == vm.showBackgroundApps {
+        let recentKey = RecentlyQuitService.shared.menuKey
+        if let menu = uiState.cachedOptionsMenu,
+           uiState.cachedMenuBgState == vm.showBackgroundApps,
+           uiState.cachedMenuRecentKey == recentKey {
             return menu
         }
         let menu = buildOptionsMenu()
         uiState.cachedOptionsMenu = menu
         uiState.cachedMenuBgState = vm.showBackgroundApps
+        uiState.cachedMenuRecentKey = recentKey
         return menu
     }
 }

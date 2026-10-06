@@ -154,4 +154,39 @@ enum MenuHelper {
 
         return item
     }
+
+    /// Parent item for a submenu. Caller fills `item.submenu`.
+    static func makeSubmenuItem(
+        title: String,
+        assetName: String? = nil,
+        systemSymbolName: String? = nil
+    ) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+        item.submenu = NSMenu()
+
+        var image: NSImage?
+        if let assetName = assetName, let loaded = AssetImages.load(assetName) {
+            let copy = loaded.copy() as? NSImage ?? loaded
+            copy.size = NSSize(width: 15, height: 15)
+            copy.isTemplate = true
+            image = copy
+        } else if let systemSymbolName = systemSymbolName,
+                  let sym = NSImage(systemSymbolName: systemSymbolName, accessibilityDescription: title) {
+            let config = NSImage.SymbolConfiguration(pointSize: 12.5, weight: .regular)
+            let configured = sym.withSymbolConfiguration(config) ?? sym
+            let copy = configured.copy() as? NSImage ?? configured
+            copy.size = NSSize(width: 15, height: 15)
+            copy.isTemplate = true
+            image = copy
+        }
+
+        if let image = image {
+            item.image = image
+            if item.responds(to: Selector(("setPreferredImageVisibility:"))) {
+                item.setValue(1, forKey: "preferredImageVisibility")
+            }
+        }
+
+        return item
+    }
 }

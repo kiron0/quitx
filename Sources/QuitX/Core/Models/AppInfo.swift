@@ -10,6 +10,8 @@ struct AppInfo: Identifiable, Hashable, Sendable {
     let windowCount: Int
     let memoryBytes: UInt64
     let cpuUsage: Double
+    let isUnresponsive: Bool
+    let isCpuHog: Bool
 
     var isWindowless: Bool { windowCount == 0 && !isBackground }
 
@@ -30,7 +32,9 @@ struct AppInfo: Identifiable, Hashable, Sendable {
         isBackground: Bool = false,
         windowCount: Int = 0,
         memoryBytes: UInt64 = 0,
-        cpuUsage: Double = 0.0
+        cpuUsage: Double = 0.0,
+        isUnresponsive: Bool = false,
+        isCpuHog: Bool = false
     ) {
         let resolvedPids = pids.isEmpty ? (pid.map { [$0] } ?? []) : pids
         if let id {
@@ -52,6 +56,26 @@ struct AppInfo: Identifiable, Hashable, Sendable {
         self.windowCount = windowCount
         self.memoryBytes = memoryBytes
         self.cpuUsage = cpuUsage
+        self.isUnresponsive = isUnresponsive
+        self.isCpuHog = isCpuHog
+    }
+
+    /// Copy with the unresponsive flag replaced. Used for the badge that
+    /// marks apps which ignored a previous graceful quit request.
+    func settingUnresponsive(_ value: Bool) -> AppInfo {
+        AppInfo(
+            id: id,
+            name: name,
+            bundleId: bundleId,
+            pid: pid,
+            pids: pids,
+            isBackground: isBackground,
+            windowCount: windowCount,
+            memoryBytes: memoryBytes,
+            cpuUsage: cpuUsage,
+            isUnresponsive: value,
+            isCpuHog: isCpuHog
+        )
     }
 }
 

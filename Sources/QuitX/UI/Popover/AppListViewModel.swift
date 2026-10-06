@@ -37,6 +37,26 @@ final class AppListViewModel: ObservableObject {
     @Published private(set) var isPartiallySelected: Bool = false
     @Published private(set) var selectedVisibleCount: Int = 0
     @Published var isOptionKeyPressed: Bool = false
+    private var resistantKeys = Set<String>()
+
+    /// Marks apps that ignored a graceful quit so rows can badge them.
+    private func applyResistantFlags(_ list: [AppInfo]) -> [AppInfo] {
+        guard !resistantKeys.isEmpty else { return list }
+        return list.map { app in
+            let key = PerAppQuitRule.ruleKey(bundleId: app.bundleId, name: app.name)
+            guard !app.isUnresponsive, resistantKeys.contains(key) else { return app }
+            return app.settingUnresponsive(true)
+        }
+    }
+
+    private func noteQuitResistance(app: AppInfo, succeeded: Bool) {
+        let key = PerAppQuitRule.ruleKey(bundleId: app.bundleId, name: app.name)
+        if succeeded {
+            resistantKeys.remove(key)
+        } else {
+            resistantKeys.insert(key)
+        }
+    }
     @Published var isLoading: Bool = false
     @Published var lastQuitCount: Int = 0
     @Published var showToast: Bool = false
@@ -246,8 +266,9 @@ final class AppListViewModel: ObservableObject {
         let cfg = activeScanConfig
         let fetched = await AppListService.shared.fetchApps(config: cfg)
         guard !Task.isCancelled, generation == scanGeneration else { return }
-        if apps != fetched {
-            apps = fetched
+        let flagged = applyResistantFlags(fetched)
+        if apps != flagged {
+            apps = flagged
         }
 
         let configSettingChanged = (lastConfigDefaultSelectAll != nil && lastConfigDefaultSelectAll != cfg.defaultSelectAll)
@@ -273,10 +294,22 @@ final class AppListViewModel: ObservableObject {
         defer { isUpdatingLiveStats = false }
         let selectedAllBeforeRefresh = isAllSelected
         let cfg = activeScanConfig
-        let updated = await AppListService.shared.fetchLiveStats(currentApps: apps, config: cfg)
+        let hogPids: Set<pid_t>
+        if cfg.hogAlertEnabled {
+            hogPids = HogMonitor.shared.noteLiveApps(
+                apps,
+                threshold: cfg.hogCpuThreshold,
+                sustainMinutes: cfg.hogSustainMinutes
+            )
+        } else {
+            HogMonitor.shared.reset()
+            hogPids = []
+        }
+        let updated = await AppListService.shared.fetchLiveStats(currentApps: apps, config: cfg, hogPids: hogPids)
         guard !Task.isCancelled, !isLoading else { return }
-        if apps != updated {
-            apps = updated
+        let flagged = applyResistantFlags(updated)
+        if apps != flagged {
+            apps = flagged
         }
         let newSelection = selectedAllBeforeRefresh
             ? visibleIds
@@ -310,7 +343,9 @@ final class AppListViewModel: ObservableObject {
         SoundService.playQuitSingle()
         let results = await QuitService.shared.quit(apps: [app], force: force)
         let succeeded = results.first?.success == true
+        noteQuitResistance(app: app, succeeded: succeeded)
         if succeeded {
+            RecentlyQuitService.shared.record(app: app)
             selected.remove(app.id)
         }
         lastQuitCount = succeeded ? 1 : 0
@@ -330,6 +365,25 @@ final class AppListViewModel: ObservableObject {
         await performQuit(targets: targets, force: force)
     }
 
+    /// All apps except `keeping`, for the "Quit Other Apps" row action.
+    static func othersTargets(keepingId: String, apps: [AppInfo]) -> [AppInfo] {
+        apps.filter { $0.id != keepingId }
+    }
+
+    func quitOthers(keeping: AppInfo, force: Bool) async {
+        guard !hasPendingOperations else { return }
+        let targets = Self.othersTargets(keepingId: keeping.id, apps: apps)
+        guard !targets.isEmpty else { return }
+
+        await performQuit(targets: targets, force: force)
+    }
+
+    /// Unattended quit path for sleep, lock, and memory pressure.
+    /// Never confirms; callers pre-filter targets to safe apps.
+    func quitSilently(targets: [AppInfo], force: Bool) async {
+        await performQuit(targets: targets, force: force)
+    }
+
     private func performQuit(targets: [AppInfo], force: Bool) async {
         guard !hasPendingOperations else { return }
         guard !targets.isEmpty else { return }
@@ -345,6 +399,10 @@ final class AppListViewModel: ObservableObject {
         SoundService.playQuitAll()
         let results = await QuitService.shared.quit(apps: targets, force: force)
         let successfulIds = Set(results.filter(\.success).map { $0.app.id })
+        for result in results {
+            noteQuitResistance(app: result.app, succeeded: result.success)
+        }
+        RecentlyQuitService.shared.record(apps: targets.filter { successfulIds.contains($0.id) })
         let failureCount = targets.count - successfulIds.count
         lastQuitCount = successfulIds.count
         selected.subtract(successfulIds)

@@ -17,11 +17,26 @@ struct QuitXConfig: Codable, Equatable, Sendable {
     var quitInactiveAfterMinutes: Int = 0
     var disableQuitTips: Bool = false
     var sortBy: SortBy = .name
+    var perAppQuitRules: [String: Int] = [:]
+    var quitOnSleep: Bool = false
+    var quitOnScreenLock: Bool = false
+    var showMenuBarStats: Bool = false
+    var hogAlertEnabled: Bool = false
+    var hogCpuThreshold: Double = 80
+    var hogSustainMinutes: Int = 5
+    var memoryPressureQuitEnabled: Bool = false
+    var memoryPressureThresholdMB: Int = 1024
+    var batterySaverEnabled: Bool = false
+    var quitTimers: [String: Double] = [:]
 
     private enum CodingKeys: String, CodingKey {
         case exclude, force, includeFinder, includeTrash, includeBackground, groupBackground
         case defaultSelectAll, neverQuitMusic, musicApps, autoUpdate, confirmQuitAll, confirmIndividualAction, playSounds
-        case quitInactiveAfterMinutes, disableQuitTips, sortBy
+        case quitInactiveAfterMinutes, disableQuitTips, sortBy, perAppQuitRules
+        case quitOnSleep, quitOnScreenLock, showMenuBarStats
+        case hogAlertEnabled, hogCpuThreshold, hogSustainMinutes
+        case memoryPressureQuitEnabled, memoryPressureThresholdMB, batterySaverEnabled
+        case quitTimers
     }
 
     init(
@@ -40,7 +55,18 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         playSounds: Bool = true,
         quitInactiveAfterMinutes: Int = 0,
         disableQuitTips: Bool = false,
-        sortBy: SortBy = .name
+        sortBy: SortBy = .name,
+        perAppQuitRules: [String: Int] = [:],
+        quitOnSleep: Bool = false,
+        quitOnScreenLock: Bool = false,
+        showMenuBarStats: Bool = false,
+        hogAlertEnabled: Bool = false,
+        hogCpuThreshold: Double = 80,
+        hogSustainMinutes: Int = 5,
+        memoryPressureQuitEnabled: Bool = false,
+        memoryPressureThresholdMB: Int = 1024,
+        batterySaverEnabled: Bool = false,
+        quitTimers: [String: Double] = [:]
     ) {
         self.exclude = exclude
         self.force = force
@@ -58,6 +84,17 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         self.quitInactiveAfterMinutes = quitInactiveAfterMinutes
         self.disableQuitTips = disableQuitTips
         self.sortBy = sortBy
+        self.perAppQuitRules = perAppQuitRules
+        self.quitOnSleep = quitOnSleep
+        self.quitOnScreenLock = quitOnScreenLock
+        self.showMenuBarStats = showMenuBarStats
+        self.hogAlertEnabled = hogAlertEnabled
+        self.hogCpuThreshold = hogCpuThreshold
+        self.hogSustainMinutes = hogSustainMinutes
+        self.memoryPressureQuitEnabled = memoryPressureQuitEnabled
+        self.memoryPressureThresholdMB = memoryPressureThresholdMB
+        self.batterySaverEnabled = batterySaverEnabled
+        self.quitTimers = quitTimers
     }
 
     init(from decoder: Decoder) throws {
@@ -79,6 +116,17 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         quitInactiveAfterMinutes = try container.decodeIfPresent(Int.self, forKey: .quitInactiveAfterMinutes) ?? defaults.quitInactiveAfterMinutes
         disableQuitTips = try container.decodeIfPresent(Bool.self, forKey: .disableQuitTips) ?? defaults.disableQuitTips
         sortBy = try container.decodeIfPresent(SortBy.self, forKey: .sortBy) ?? defaults.sortBy
+        perAppQuitRules = try container.decodeIfPresent([String: Int].self, forKey: .perAppQuitRules) ?? defaults.perAppQuitRules
+        quitOnSleep = try container.decodeIfPresent(Bool.self, forKey: .quitOnSleep) ?? defaults.quitOnSleep
+        quitOnScreenLock = try container.decodeIfPresent(Bool.self, forKey: .quitOnScreenLock) ?? defaults.quitOnScreenLock
+        showMenuBarStats = try container.decodeIfPresent(Bool.self, forKey: .showMenuBarStats) ?? defaults.showMenuBarStats
+        hogAlertEnabled = try container.decodeIfPresent(Bool.self, forKey: .hogAlertEnabled) ?? defaults.hogAlertEnabled
+        hogCpuThreshold = try container.decodeIfPresent(Double.self, forKey: .hogCpuThreshold) ?? defaults.hogCpuThreshold
+        hogSustainMinutes = try container.decodeIfPresent(Int.self, forKey: .hogSustainMinutes) ?? defaults.hogSustainMinutes
+        memoryPressureQuitEnabled = try container.decodeIfPresent(Bool.self, forKey: .memoryPressureQuitEnabled) ?? defaults.memoryPressureQuitEnabled
+        memoryPressureThresholdMB = try container.decodeIfPresent(Int.self, forKey: .memoryPressureThresholdMB) ?? defaults.memoryPressureThresholdMB
+        batterySaverEnabled = try container.decodeIfPresent(Bool.self, forKey: .batterySaverEnabled) ?? defaults.batterySaverEnabled
+        quitTimers = try container.decodeIfPresent([String: Double].self, forKey: .quitTimers) ?? defaults.quitTimers
     }
 
     enum ForceMode: String, Codable, Equatable, Sendable { case normal, force }

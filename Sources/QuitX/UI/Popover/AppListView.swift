@@ -35,6 +35,11 @@ struct AppListView: View {
                     onExclude: {
                         let identifier = app.bundleId ?? app.name
                         ConfigStore.shared.addExcludedApps([identifier])
+                    },
+                    onQuitOthers: { force in
+                        Task {
+                            await vm.quitOthers(keeping: app, force: force)
+                        }
                     }
                 )
             }

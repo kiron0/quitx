@@ -43,6 +43,8 @@ final class StatusItemController: NSObject {
     private var lastCloseTimestamp: Date = .distantPast
     private var workspaceObservers: [NSObjectProtocol] = []
     private var backgroundRefreshTask: Task<Void, Never>?
+    private var liveTickCount = 0
+    private var menuStatsTask: Task<Void, Never>?
 
     var isShown: Bool {
         window?.isVisible ?? false
@@ -63,6 +65,7 @@ final class StatusItemController: NSObject {
         refreshTask?.cancel()
         liveMonitoringTask?.cancel()
         backgroundRefreshTask?.cancel()
+        menuStatsTask?.cancel()
         let center = NSWorkspace.shared.notificationCenter
         workspaceObservers.forEach { center.removeObserver($0) }
         if let g = globalEventMonitor { NSEvent.removeMonitor(g) }
@@ -297,9 +300,16 @@ final class StatusItemController: NSObject {
             while let self = self, self.isShown {
                 try? await Task.sleep(nanoseconds: 2_000_000_000)
                 guard !Task.isCancelled, self.isShown else { break }
+                self.liveTickCount += 1
+                let throttled = ConfigStore.shared.config.batterySaverEnabled
+                    && BatterySaver.isOnBattery(descriptions: BatterySaver.currentDescriptions())
+                    && self.liveTickCount % 5 != 0
                 let prevCount = AppListViewModel.shared.filteredApps.count
                 let prevConfirming = AppListViewModel.shared.showConfirmQuitAll || AppListViewModel.shared.pendingIndividualAction != nil
-                await AppListViewModel.shared.updateLiveStats()
+                if !throttled {
+                    await AppListViewModel.shared.updateLiveStats()
+                }
+                self.updateMenuBarStats()
                 let newCount = AppListViewModel.shared.filteredApps.count
                 let newConfirming = AppListViewModel.shared.showConfirmQuitAll || AppListViewModel.shared.pendingIndividualAction != nil
                 if prevCount != newCount || prevConfirming != newConfirming {
@@ -309,6 +319,35 @@ final class StatusItemController: NSObject {
         }
     }
 
+    private func updateMenuBarStats() {
+        guard let button = statusItem.button else { return }
+        let totalCPU = AppListViewModel.shared.apps.reduce(0.0) { $0 + $1.cpuUsage }
+        if let text = BatterySaver.menuBarText(totalCPU: totalCPU, enabled: ConfigStore.shared.config.showMenuBarStats) {
+            button.imagePosition = .imageLeading
+            button.title = text
+            button.toolTip = "QuitX — \(text) CPU"
+        } else {
+            button.imagePosition = .imageOnly
+            button.title = ""
+            button.toolTip = "QuitX"
+        }
+    }
+
+    /// Keeps the optional menu-bar CPU readout fresh, even with the
+    /// popover closed. Idle cost when disabled is one 5s sleep loop.
+    func startMenuBarStats() {
+        menuStatsTask?.cancel()
+        menuStatsTask = Task { @MainActor [weak self] in
+            while let self = self {
+                try? await Task.sleep(nanoseconds: 5_000_000_000)
+                guard !Task.isCancelled else { break }
+                if ConfigStore.shared.config.showMenuBarStats {
+                    await AppListViewModel.shared.updateLiveStats()
+                }
+                self.updateMenuBarStats()
+            }
+        }
+    }
     private func stopLiveMonitoring() {
         liveMonitoringTask?.cancel()
         liveMonitoringTask = nil

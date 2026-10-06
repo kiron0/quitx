@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+@preconcurrency import UserNotifications
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -19,8 +20,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func finishLaunching() {
         statusItemController = StatusItemController()
+        UNUserNotificationCenter.current().delegate = HogNotificationDelegate.shared
         SingleInstanceService.shared.startMonitoring()
         AutoQuitService.shared.startTracking()
+        SleepService.shared.start()
+        MemoryPressureService.shared.start()
+        QuitTimerService.shared.start()
+        statusItemController?.startMenuBarStats()
         _ = ShortcutManager.shared
         WelcomeWindowController.shared.showIfFirstLaunch()
 
@@ -70,6 +76,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         distributedNotificationObservers.removeAll()
         AutoQuitService.shared.stopTracking()
+        SleepService.shared.stop()
+        MemoryPressureService.shared.stop()
+        QuitTimerService.shared.stop()
         SingleInstanceService.shared.stopMonitoring()
         statusItemController = nil
     }

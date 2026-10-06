@@ -101,7 +101,8 @@ final class AppListService {
                 isBackground: isBackground,
                 windowCount: windows,
                 memoryBytes: memory,
-                cpuUsage: cpu
+                cpuUsage: cpu,
+                isUnresponsive: false
             ))
         }
 
@@ -138,7 +139,8 @@ final class AppListService {
                     isBackground: true,
                     windowCount: group.windows,
                     memoryBytes: group.mem,
-                    cpuUsage: group.cpu
+                    cpuUsage: group.cpu,
+                    isUnresponsive: first.isUnresponsive
                 ))
             }
             results = groupedResults
@@ -162,7 +164,7 @@ final class AppListService {
         return sortApps(results, sortBy: config.sortBy)
     }
 
-    func fetchLiveStats(currentApps: [AppInfo], config: QuitXConfig) async -> [AppInfo] {
+    func fetchLiveStats(currentApps: [AppInfo], config: QuitXConfig, hogPids: Set<pid_t> = []) async -> [AppInfo] {
         let scanTask = Task.detached(priority: .userInitiated) {
             let cpuUsages = Self.fetchCpuUsages()
             let updated = currentApps.map { app -> AppInfo in
@@ -182,7 +184,9 @@ final class AppListService {
                     isBackground: app.isBackground,
                     windowCount: app.windowCount,
                     memoryBytes: totalMem,
-                    cpuUsage: totalCpu
+                    cpuUsage: totalCpu,
+                    isUnresponsive: false,
+                    isCpuHog: !Set(app.pids).isDisjoint(with: hogPids)
                 )
             }
             return Self.sortApps(updated, sortBy: config.sortBy)

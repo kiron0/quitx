@@ -2,6 +2,22 @@
 
 All notable changes to QuitX macOS App will be documented in this file.
 
+## 1.0.9
+
+### Added
+
+- Per-app auto-quit rules: open the three-dot menu on any app row, choose Auto-quit, then pick 15/30 minutes, 1/2/4 hours, or Never. A per-app rule overrides the global inactivity interval; Use Default returns the app to the global setting. Works even when the global timer is off. Documented in Help > Auto Quit.
+- Quit Other Apps row action: quits everything except that app with no confirmation.
+- Settings split into short General and Advanced tabs; Support tab merged into About with matching Contact button.
+- Quit timers: row menu Quit In quits an app gracefully after 15, 30, or 60 minutes. Timers persist across restarts; expired ones are dropped on launch. Cancel from the same menu with remaining time shown.
+- Unresponsive badge: a red triangle marks apps that ignored a previous graceful quit request, pointing at Force Quit.
+- CPU hog warnings: a flame badge marks apps holding 80%+ CPU for 5+ minutes, plus one notification per offender that opens QuitX on click. Toggle in Settings > General.
+- Memory pressure cleaning: optional graceful quit of regular apps over 1 GB when macOS reports memory pressure. Excluded, music, and Never-ruled apps stay safe. Toggle in Settings > General.
+- Battery saver: on battery, auto-quit timeouts halve and live stats slow to every 10 seconds. Toggle in Settings > General.
+- Recently quit menu: gear menu Reopen submenu relaunches recently quit apps (up to 20, deduplicated). Clearable.
+- Unattended quitting on Mac sleep and screen lock: optional graceful quit of safe apps only, never forced, never confirmed. Toggles in Settings > General.
+- Optional menu-bar CPU readout: total CPU percent beside the QuitX icon, refreshed every 5 seconds even with the popover closed. Toggle in Settings > General.
+
 ## 1.0.8
 
 ### Security

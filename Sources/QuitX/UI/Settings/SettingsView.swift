@@ -3,9 +3,9 @@ import AppKit
 
 enum SettingsTab: String, CaseIterable {
     case general = "General"
+    case advanced = "Advanced"
     case exclude = "Exclude"
     case shortcuts = "Shortcuts"
-    case support = "Support"
     case about = "About"
 
     var toolbarItemIdentifier: NSToolbarItem.Identifier {
@@ -15,9 +15,9 @@ enum SettingsTab: String, CaseIterable {
     var iconName: String {
         switch self {
         case .general:   return "preferences-general"
+        case .advanced:  return "preferences-advanced"
         case .exclude:   return "preferences-exclude"
         case .shortcuts: return "preferences-shortcuts"
-        case .support:   return "preferences-support"
         case .about:     return "preferences-about"
         }
     }
@@ -25,9 +25,9 @@ enum SettingsTab: String, CaseIterable {
     var fallbackSymbolName: String {
         switch self {
         case .general:   return "gearshape"
+        case .advanced:  return "slider.horizontal.3"
         case .exclude:   return "nosign"
         case .shortcuts: return "command"
-        case .support:   return "bubble.left.and.bubble.right"
         case .about:     return "bolt.fill"
         }
     }
@@ -48,11 +48,11 @@ enum SettingsTab: String, CaseIterable {
 
     var contentHeight: CGFloat {
         switch self {
-        case .general:   return 505
-        case .exclude:   return 300
-        case .shortcuts: return 215
-        case .support:   return 139
-        case .about:     return 130
+        case .general:   return 421
+        case .advanced:  return 271
+        case .exclude:   return 306
+        case .shortcuts: return 221
+        case .about:     return 124
         }
     }
 }
@@ -105,13 +105,14 @@ struct SettingsContainerView: View {
             case .general:
                 GeneralTabCloneView()
                     .environmentObject(configStore)
+            case .advanced:
+                AdvancedTabCloneView()
+                    .environmentObject(configStore)
             case .exclude:
                 ExcludeTabView()
                     .environmentObject(configStore)
             case .shortcuts:
                 ShortcutsTabCloneView()
-            case .support:
-                SupportTabCloneView()
             case .about:
                 AboutTabCloneView()
             }

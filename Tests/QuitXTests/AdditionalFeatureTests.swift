@@ -169,46 +169,46 @@ struct SettingsTabTests {
         let all = SettingsTab.allCases
         #expect(all.count == 5)
         #expect(all.contains(.general))
+        #expect(all.contains(.advanced))
         #expect(all.contains(.exclude))
         #expect(all.contains(.shortcuts))
-        #expect(all.contains(.support))
         #expect(all.contains(.about))
     }
 
     @Test("SettingsTab toolbar item identifiers")
     func testSettingsTabToolbarItemIdentifier() {
         #expect(SettingsTab.general.toolbarItemIdentifier.rawValue == "General")
+        #expect(SettingsTab.advanced.toolbarItemIdentifier.rawValue == "Advanced")
         #expect(SettingsTab.exclude.toolbarItemIdentifier.rawValue == "Exclude")
         #expect(SettingsTab.shortcuts.toolbarItemIdentifier.rawValue == "Shortcuts")
-        #expect(SettingsTab.support.toolbarItemIdentifier.rawValue == "Support")
         #expect(SettingsTab.about.toolbarItemIdentifier.rawValue == "About")
     }
 
     @Test("SettingsTab icon names")
     func testSettingsTabIconNames() {
         #expect(SettingsTab.general.iconName == "preferences-general")
+        #expect(SettingsTab.advanced.iconName == "preferences-advanced")
         #expect(SettingsTab.exclude.iconName == "preferences-exclude")
         #expect(SettingsTab.shortcuts.iconName == "preferences-shortcuts")
-        #expect(SettingsTab.support.iconName == "preferences-support")
         #expect(SettingsTab.about.iconName == "preferences-about")
     }
 
     @Test("SettingsTab fallback symbol names")
     func testSettingsTabFallbackSymbols() {
         #expect(SettingsTab.general.fallbackSymbolName == "gearshape")
+        #expect(SettingsTab.advanced.fallbackSymbolName == "slider.horizontal.3")
         #expect(SettingsTab.exclude.fallbackSymbolName == "nosign")
         #expect(SettingsTab.shortcuts.fallbackSymbolName == "command")
-        #expect(SettingsTab.support.fallbackSymbolName == "bubble.left.and.bubble.right")
         #expect(SettingsTab.about.fallbackSymbolName == "bolt.fill")
     }
 
     @Test("SettingsTab content heights")
     func testSettingsTabContentHeights() {
-        #expect(SettingsTab.general.contentHeight == 505)
-        #expect(SettingsTab.exclude.contentHeight == 300)
-        #expect(SettingsTab.shortcuts.contentHeight == 215)
-        #expect(SettingsTab.support.contentHeight == 139)
-        #expect(SettingsTab.about.contentHeight == 130)
+        #expect(SettingsTab.general.contentHeight == 421)
+        #expect(SettingsTab.advanced.contentHeight == 271)
+        #expect(SettingsTab.exclude.contentHeight == 306)
+        #expect(SettingsTab.shortcuts.contentHeight == 221)
+        #expect(SettingsTab.about.contentHeight == 124)
     }
 
     @Test("SettingsTab toolbar images generated and template")

@@ -104,4 +104,38 @@ final class ConfigStore: ObservableObject {
         config = .default
         save(refreshAppList: true, immediate: true)
     }
+
+    /// Stored per-app rule in minutes, or `nil` when the app follows the default.
+    func perAppQuitMinutes(bundleId: String?, name: String) -> Int? {
+        PerAppQuitRule.storedMinutes(bundleId: bundleId, name: name, rules: config.perAppQuitRules)
+    }
+
+    /// Effective auto-quit timeout in minutes. Returns `0` for Never.
+    func effectiveQuitTimeoutMinutes(bundleId: String?, name: String) -> Int {
+        PerAppQuitRule.timeoutMinutes(
+            bundleId: bundleId,
+            name: name,
+            rules: config.perAppQuitRules,
+            globalMinutes: config.quitInactiveAfterMinutes
+        )
+    }
+
+    /// Stores a per-app rule. Minutes `<= 0` means Never.
+    func setPerAppQuitRule(identifier: String, minutes: Int) {
+        let key = identifier.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !key.isEmpty else { return }
+        var rules = config.perAppQuitRules
+        rules[key] = max(0, minutes)
+        config.perAppQuitRules = rules
+        save()
+    }
+
+    func removePerAppQuitRule(identifier: String) {
+        let key = identifier.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !key.isEmpty, config.perAppQuitRules[key] != nil else { return }
+        var rules = config.perAppQuitRules
+        rules.removeValue(forKey: key)
+        config.perAppQuitRules = rules
+        save()
+    }
 }

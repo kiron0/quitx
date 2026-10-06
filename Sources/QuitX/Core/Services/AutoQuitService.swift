@@ -66,10 +66,11 @@ final class AutoQuitService {
 
     private func checkInactiveApps() async {
         let config = ConfigStore.shared.config
-        guard config.quitInactiveAfterMinutes > 0 else { return }
+        let globalTimeout = config.quitInactiveAfterMinutes
+        guard globalTimeout > 0 || !config.perAppQuitRules.isEmpty else { return }
+        let saverActive = BatterySaver.isSaverActive(config: config)
 
         let now = Date()
-        let threshold = now.addingTimeInterval(-Double(config.quitInactiveAfterMinutes) * 60)
         let running = NSWorkspace.shared.runningApplications
         let runningPids = Set(running.map(\.processIdentifier))
         lastActiveTimestamps = lastActiveTimestamps.filter { runningPids.contains($0.key) }
@@ -104,10 +105,22 @@ final class AutoQuitService {
                 lastActiveTimestamps[pid] = now
                 continue
             }
-            guard lastActive < threshold else { continue }
 
             let bundleId = app.bundleIdentifier?.lowercased()
             let name = app.localizedName?.lowercased()
+            let timeoutMinutes = BatterySaver.effectiveTimeout(
+                minutes: PerAppQuitRule.timeoutMinutes(
+                    bundleId: app.bundleIdentifier,
+                    name: app.localizedName ?? "",
+                    rules: config.perAppQuitRules,
+                    globalMinutes: globalTimeout
+                ),
+                saverActive: saverActive
+            )
+            guard timeoutMinutes > 0 else { continue }
+            let threshold = now.addingTimeInterval(-Double(timeoutMinutes) * 60)
+            guard lastActive < threshold else { continue }
+
             if let bundleId, excluded.contains(bundleId) { continue }
             if let name, excluded.contains(name) { continue }
             if app.bundleIdentifier == QuitXConstants.SystemBundleIds.finder { continue }
