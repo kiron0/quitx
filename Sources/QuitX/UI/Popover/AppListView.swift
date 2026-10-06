@@ -16,7 +16,7 @@ struct AppListView: View {
     }
 
     private var rows: some View {
-        VStack(spacing: 2) {
+        LazyVStack(spacing: 2) {
             ForEach(vm.filteredApps) { app in
                 AppRowView(
                     app: app,

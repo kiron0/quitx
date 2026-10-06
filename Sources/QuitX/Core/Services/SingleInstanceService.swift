@@ -72,12 +72,8 @@ final class SingleInstanceService {
     private static func isQuitX(_ application: NSRunningApplication) -> Bool {
         if application.processIdentifier == ProcessInfo.processInfo.processIdentifier { return true }
         guard !application.isTerminated else { return false }
-        if let bundleIdentifier = application.bundleIdentifier,
-           QuitXIdentity.supportedBundleIdentifiers.contains(bundleIdentifier) {
-            return true
-        }
-        let execName = application.executableURL?.lastPathComponent ?? application.localizedName
-        return execName == "QuitX"
+        guard let bundleIdentifier = application.bundleIdentifier else { return false }
+        return QuitXIdentity.supportedBundleIdentifiers.contains(bundleIdentifier)
     }
 
     private func preferred(_ lhs: NSRunningApplication, over rhs: NSRunningApplication) -> Bool {

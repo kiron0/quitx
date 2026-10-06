@@ -134,23 +134,14 @@ final class AutoQuitService {
             try? await Task.sleep(nanoseconds: pollNs)
         }
 
-        let survivors = appsToQuit.filter { !$0.isTerminated }
-        for app in survivors {
-            _ = app.forceTerminate()
-            Darwin.kill(app.processIdentifier, SIGKILL)
-        }
-
-        if !survivors.isEmpty {
-            for _ in 0..<20 {
-                if survivors.allSatisfy(\.isTerminated) { break }
-                try? await Task.sleep(nanoseconds: pollNs)
-            }
-        }
+        let afterQuit = Date()
 
         for app in appsToQuit {
             let pid = app.processIdentifier
             if app.isTerminated {
                 lastActiveTimestamps.removeValue(forKey: pid)
+            } else {
+                lastActiveTimestamps[pid] = afterQuit
             }
             quittingPids.remove(pid)
         }

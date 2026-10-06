@@ -53,6 +53,7 @@ final class AppListViewModel: ObservableObject {
         }
     }
     @Published var isConfirmQuitAllForced: Bool = false
+    private var pendingQuitAllTargets: [AppInfo]?
     @Published var pendingIndividualAction: IndividualAction? = nil {
         didSet {
             StatusItemController.shared?.updatePopoverSize()
@@ -68,14 +69,23 @@ final class AppListViewModel: ObservableObject {
         showConfirmQuitAll = false
         let force = isConfirmQuitAllForced
         isConfirmQuitAllForced = false
+        let targets = pendingQuitAllTargets ?? filteredApps.filter { selected.contains($0.id) }
+        pendingQuitAllTargets = nil
         Task {
-            await quitAll(force: force)
+            await performQuit(targets: targets, force: force)
         }
     }
 
     func cancelConfirmQuitAll() {
         showConfirmQuitAll = false
         isConfirmQuitAllForced = false
+        pendingQuitAllTargets = nil
+    }
+
+    func requestConfirmQuitAll(targets: [AppInfo], force: Bool) {
+        pendingQuitAllTargets = targets
+        isConfirmQuitAllForced = force
+        showConfirmQuitAll = true
     }
 
     func requestQuitSingle(app: AppInfo, force: Bool) {
@@ -276,7 +286,18 @@ final class AppListViewModel: ObservableObject {
     func quitAllFromShortcut(force: Bool) async {
         guard !hasPendingOperations else { return }
         await refresh()
-        await quitAll(force: force)
+
+        let targets = apps
+        guard !targets.isEmpty else { return }
+
+        if configStore.config.confirmQuitAll {
+            selected = Set(targets.map(\.id))
+            requestConfirmQuitAll(targets: targets, force: force)
+            StatusItemController.shared?.showPopover()
+            return
+        }
+
+        await performQuit(targets: targets, force: force)
     }
 
     func quitSingle(app: AppInfo, force: Bool) async {
@@ -301,8 +322,13 @@ final class AppListViewModel: ObservableObject {
     }
 
     func quitAll(force: Bool) async {
-        guard !hasPendingOperations else { return }
         let targets = filteredApps.filter { selected.contains($0.id) }
+        guard !targets.isEmpty else { return }
+        await performQuit(targets: targets, force: force)
+    }
+
+    private func performQuit(targets: [AppInfo], force: Bool) async {
+        guard !hasPendingOperations else { return }
         guard !targets.isEmpty else { return }
 
         isBatchQuitting = true

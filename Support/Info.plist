@@ -22,7 +22,5 @@
 	<string>QuitX uses Apple Events to quit applications.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
-	<key>QUITX_UPDATE_SECRET_KEY</key>
-	<string>qx_live_9a7d83f2e104cb5a</string>
 </dict>
 </plist>

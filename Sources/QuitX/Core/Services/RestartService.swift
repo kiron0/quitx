@@ -6,8 +6,8 @@ final class RestartService {
     private init() {}
 
     func restart(app: AppInfo, force: Bool = false) async -> Bool {
-        let candidateUrl = (app.bundleId.flatMap { NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) })
-            ?? (app.pid.flatMap { NSRunningApplication(processIdentifier: $0)?.bundleURL })
+        let candidateUrl = app.pid.flatMap { NSRunningApplication(processIdentifier: $0)?.bundleURL }
+            ?? (app.bundleId.flatMap { NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) })
         guard let url = candidateUrl else { return false }
 
         let results = await QuitService.shared.quit(apps: [app], force: force)

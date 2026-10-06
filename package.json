@@ -5,7 +5,7 @@
   "description": "Build, install, and launch the native QuitX macOS app.",
   "scripts": {
     "build": "./Scripts/build.sh",
-    "test": "swift test --build-system native 2>&1 | sed -E '/warning:.*build-system native.*deprecated/d'",
+    "test": "set -o pipefail && swift test --build-system native 2>&1 | sed -E '/warning:.*build-system native.*deprecated/d'",
     "clean": "swift package clean && rm -rf .build/QuitX.app .build/*.dmg",
     "install": "npm run build && mkdir -p \"$HOME/Applications\" && ditto .build/QuitX.app \"$HOME/Applications/QuitX.app\"",
     "open": "open \"$HOME/Applications/QuitX.app\"",

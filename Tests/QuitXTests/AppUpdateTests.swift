@@ -34,22 +34,23 @@ struct AppUpdateTests {
 
     @Test("Relaunch Script Generation Syntax and Safety")
     func testRelaunchScriptGeneration() {
-        let pid: Int32 = 12345
-        let src = "/tmp/staged/QuitX.app"
-        let dest = "/Applications/QuitX.app"
+        let script = UpdateDownloadService.generateRelaunchScript()
 
-        let script = UpdateDownloadService.generateRelaunchScript(targetPID: pid, srcAppPath: src, destAppPath: dest)
-
-        #expect(script.contains("#!/bin/bash"))
-        #expect(script.contains("TARGET_PID=12345"))
-        #expect(script.contains("SRC_APP=\"/tmp/staged/QuitX.app\""))
-        #expect(script.contains("DEST_APP=\"/Applications/QuitX.app\""))
+        #expect(script.hasPrefix("#!/bin/bash"))
+        #expect(script.contains("set -euo pipefail"))
+        #expect(script.contains("TARGET_PID=\"$1\""))
+        #expect(script.contains("SRC_APP=\"$2\""))
+        #expect(script.contains("DEST_APP=\"$3\""))
         #expect(script.contains("while kill -0 \"$TARGET_PID\" 2>/dev/null; do"))
-        #expect(script.contains("rm -rf \"$DEST_APP\""))
-        #expect(script.contains("ditto \"$SRC_APP\" \"$DEST_APP\""))
+        #expect(script.contains("ditto \"$SRC_APP\" \"$NEW_APP\""))
+        #expect(script.contains("mv \"$DEST_APP\" \"$OLD_APP\""))
+        #expect(script.contains("mv \"$NEW_APP\" \"$DEST_APP\""))
         #expect(script.contains("xattr -rd com.apple.quarantine \"$DEST_APP\""))
         #expect(script.contains("open \"$DEST_APP\""))
         #expect(script.contains("rm -- \"$0\""))
+        #expect(!script.contains("kill -9"))
+        #expect(!script.contains("/tmp/staged"))
+        #expect(!script.contains("/Applications/QuitX.app"))
     }
 
     @Test("Byte Formatting and Speed Calculations")
@@ -102,7 +103,10 @@ struct AppUpdateTests {
             .appNotFoundInDMG,
             .invalidBundle,
             .destinationNotWritable("/Applications"),
-            .scriptExecutionFailed("permission denied")
+            .scriptExecutionFailed("permission denied"),
+            .invalidChecksum,
+            .invalidSignature,
+            .versionMismatch
         ]
 
         for err in errors {
@@ -171,6 +175,10 @@ struct AppUpdateTests {
         let bundle = try #require(Bundle(url: extractedApp))
         #expect(bundle.bundleIdentifier == "io.coreify.quitx")
 
+        #expect(throws: UpdateError.invalidSignature) {
+            try UpdateDownloadService.validateUpdateBundle(at: extractedApp, expectedVersion: "9.9.9")
+        }
+
         try? FileManager.default.removeItem(at: extractedApp.deletingLastPathComponent())
     }
 
@@ -200,5 +208,87 @@ struct AppUpdateTests {
         #expect(restoredConfig.sortBy == .name)
         #expect(testDefaults.stringArray(forKey: "sc_quit_keys") == ["^", "⌥", "Q"])
         #expect(testDefaults.bool(forKey: "quitx_first_launch_seen_v1") == true)
+    }
+
+    @Test("Digest Verification Rejects Mismatched Payloads")
+    func testDigestVerification() throws {
+        let fileURL = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("quitx-digest-\(UUID().uuidString).bin")
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+
+        try Data("quitx-payload".utf8).write(to: fileURL)
+
+        let actual = try UpdateDownloadService.sha256(of: fileURL)
+        #expect(actual.count == 64)
+
+        try UpdateDownloadService.verifyDigest(of: fileURL, expectedDigest: actual)
+        try UpdateDownloadService.verifyDigest(of: fileURL, expectedDigest: "sha256:\(actual.uppercased())")
+        try UpdateDownloadService.verifyDigest(of: fileURL, expectedDigest: "")
+
+        #expect(throws: UpdateError.invalidChecksum) {
+            try UpdateDownloadService.verifyDigest(
+                of: fileURL,
+                expectedDigest: String(repeating: "0", count: 64)
+            )
+        }
+    }
+
+    @Test("Update Digest Normalization")
+    func testDigestNormalization() {
+        #expect(UpdateDownloadService.normalizedDigest("sha256:ABC123") == "abc123")
+        #expect(UpdateDownloadService.normalizedDigest("  abc123\n") == "abc123")
+    }
+
+    @Test("Unsigned Update Bundle Is Rejected")
+    func testUnsignedBundleRejected() throws {
+        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("quitx-unsigned-\(UUID().uuidString).app")
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        try FileManager.default.createDirectory(
+            at: tempDir.appendingPathComponent("Contents"),
+            withIntermediateDirectories: true
+        )
+
+        #expect(throws: UpdateError.invalidSignature) {
+            try UpdateDownloadService.validateSignature(of: tempDir, expectedTeamIdentifier: nil)
+        }
+    }
+
+    @Test("Update Bundle Version And Identifier Validation")
+    func testValidateUpdateBundleChecksVersionAndIdentifier() throws {
+        let tempRoot = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("quitx-bundle-\(UUID().uuidString)")
+        let appDir = tempRoot.appendingPathComponent("QuitX.app")
+        let contentsDir = appDir.appendingPathComponent("Contents")
+        defer { try? FileManager.default.removeItem(at: tempRoot) }
+
+        try FileManager.default.createDirectory(at: contentsDir, withIntermediateDirectories: true)
+
+        let plistContent = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleIdentifier</key>
+            <string>io.coreify.quitx</string>
+            <key>CFBundleShortVersionString</key>
+            <string>9.9.9</string>
+        </dict>
+        </plist>
+        """
+        try plistContent.write(
+            to: contentsDir.appendingPathComponent("Info.plist"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        #expect(throws: UpdateError.versionMismatch) {
+            try UpdateDownloadService.validateUpdateBundle(at: appDir, expectedVersion: "1.0.0")
+        }
+
+        #expect(throws: UpdateError.invalidSignature) {
+            try UpdateDownloadService.validateUpdateBundle(at: appDir, expectedVersion: "9.9.9")
+        }
     }
 }

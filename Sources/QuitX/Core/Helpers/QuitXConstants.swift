@@ -45,6 +45,11 @@ enum QuitXConstants {
 
     static let supportEmail = "hello@kiron.dev"
     static let updateWorkerURL = URL(string: "https://quitx-update-gatekeeper.kiron.workers.dev/latest")!
+    // Shared client access key. Every shipped copy of QuitX holds this value, so treat it
+    // as public: rotate APP_SECRET_KEY on the worker when it leaks. It grants no write
+    // access; real update trust comes from the SHA-256 digest and code-signature checks.
+    static let compiledUpdateSecretKey = "qx_live_9a7d83f2e104cb5a"
+
     static var updateSecretKey: String {
         if let key = Bundle.main.infoDictionary?["QUITX_UPDATE_SECRET_KEY"] as? String, !key.isEmpty {
             return key
@@ -52,7 +57,7 @@ enum QuitXConstants {
         if let envKey = ProcessInfo.processInfo.environment["QUITX_UPDATE_SECRET_KEY"], !envKey.isEmpty {
             return envKey
         }
-        return ""
+        return compiledUpdateSecretKey
     }
 
     static var currentYear: Int {
@@ -64,11 +69,11 @@ enum QuitXConstants {
     }
 
     static var appVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.7"
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0-dev"
     }
 
     static var buildNumber: String {
-        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "8"
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "0"
     }
 
     static func sayHiURL() -> URL? {

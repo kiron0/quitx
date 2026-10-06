@@ -12,11 +12,14 @@ struct InstalledApplication: Identifiable, Hashable, Sendable {
 
 enum InstalledApplicationScanner {
     private static var cached: [InstalledApplication]?
+    private static var cachedAt = Date.distantPast
+    private static let cacheLifetime: TimeInterval = 60
     private static let lock = NSLock()
 
     static func scan(forceRefresh: Bool = false) -> [InstalledApplication] {
         lock.lock()
-        if !forceRefresh, let cached = cached {
+        let cacheIsFresh = Date().timeIntervalSince(cachedAt) < cacheLifetime
+        if !forceRefresh, cacheIsFresh, let cached {
             lock.unlock()
             return cached
         }
@@ -98,6 +101,7 @@ enum InstalledApplicationScanner {
 
         lock.lock()
         cached = sorted
+        cachedAt = Date()
         lock.unlock()
 
         return sorted

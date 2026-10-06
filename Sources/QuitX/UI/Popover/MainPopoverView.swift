@@ -160,11 +160,9 @@ struct MainPopoverView: View {
         return Button {
             let shouldConfirm: Bool
             if count == 1 {
-                shouldConfirm = configStore.config.confirmIndividualAction || (isForced && configStore.config.confirmQuitAll)
-            } else if count >= 4 {
-                shouldConfirm = configStore.config.confirmQuitAll
+                shouldConfirm = configStore.config.confirmIndividualAction
             } else {
-                shouldConfirm = isForced && configStore.config.confirmQuitAll
+                shouldConfirm = configStore.config.confirmQuitAll
             }
 
             if shouldConfirm {

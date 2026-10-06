@@ -93,4 +93,9 @@ final class ConfigStore: ObservableObject {
         normalizedExcludedSet.removeAll()
         save(refreshAppList: true)
     }
+
+    func reset() {
+        config = .default
+        save(refreshAppList: true, immediate: true)
+    }
 }

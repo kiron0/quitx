@@ -15,7 +15,7 @@ struct GatekeeperRelease: Decodable, Equatable {
 enum UpdateCheckState: Equatable {
     case idle
     case checking
-    case available(version: String, downloadURL: URL?)
+    case available(version: String, downloadURL: URL?, digest: String?)
     case upToDate(version: String)
     case failed(message: String)
 }
@@ -77,7 +77,12 @@ final class UpdateChecker: ObservableObject {
             let downloadURL = URL(string: release.downloadUrl)
 
             if isVersion(latestVersionRaw, greaterThan: currentVersion) {
-                handleUpdateAvailable(latestVersion: latestVersionRaw, downloadURL: downloadURL, isUserInitiated: isUserInitiated)
+                handleUpdateAvailable(
+                    latestVersion: latestVersionRaw,
+                    downloadURL: downloadURL,
+                    digest: release.digest,
+                    isUserInitiated: isUserInitiated
+                )
             } else {
                 handleUpToDate(isUserInitiated: isUserInitiated)
             }
@@ -90,8 +95,8 @@ final class UpdateChecker: ObservableObject {
         VersionComparator.isGreaterThan(v1, v2)
     }
 
-    private func handleUpdateAvailable(latestVersion: String, downloadURL: URL?, isUserInitiated: Bool) {
-        checkState = .available(version: latestVersion, downloadURL: downloadURL)
+    private func handleUpdateAvailable(latestVersion: String, downloadURL: URL?, digest: String?, isUserInitiated: Bool) {
+        checkState = .available(version: latestVersion, downloadURL: downloadURL, digest: digest)
         if !isUserInitiated {
             AppUpdateWindowController.shared.showCheckWindow()
         }

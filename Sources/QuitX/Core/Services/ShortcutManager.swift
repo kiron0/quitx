@@ -5,6 +5,12 @@ import Carbon
 final class ShortcutManager: ObservableObject {
     static let shared = ShortcutManager()
 
+    enum Slot {
+        case activateMenu
+        case quitAll
+        case forceQuitAll
+    }
+
     private var restartWorkItem: DispatchWorkItem?
 
     func scheduleRestartMonitoring() {
@@ -37,23 +43,43 @@ final class ShortcutManager: ObservableObject {
         didSet { UserDefaults.standard.set(forceQuitAllKeys, forKey: QuitXConstants.UserDefaultsKeys.forceQuitAllKeys); scheduleRestartMonitoring() }
     }
 
+    @Published private(set) var shortcutError: String?
+    @Published private(set) var registrationError: String?
+
     private var localMonitor: Any?
     private var registeredHotKeys: [EventHotKeyRef] = []
     private var carbonHandlerInstalled = false
     private var eventHandlerRef: EventHandlerRef?
 
     init() {
-        self.activateMenuEnabled = UserDefaults.standard.object(forKey: QuitXConstants.UserDefaultsKeys.activateMenuEnabled) as? Bool ?? true
-        self.activateMenuKeys = UserDefaults.standard.stringArray(forKey: QuitXConstants.UserDefaultsKeys.activateMenuKeys) ?? ["^", "⌥", "A"]
+        self.activateMenuEnabled = UserDefaults.standard.object(forKey: QuitXConstants.UserDefaultsKeys.activateMenuEnabled) as? Bool ?? Self.defaultActivateMenuEnabled
+        self.activateMenuKeys = UserDefaults.standard.stringArray(forKey: QuitXConstants.UserDefaultsKeys.activateMenuKeys) ?? Self.defaultActivateMenuKeys
 
-        self.quitAllEnabled = UserDefaults.standard.object(forKey: QuitXConstants.UserDefaultsKeys.quitAllEnabled) as? Bool ?? false
-        self.quitAllKeys = UserDefaults.standard.stringArray(forKey: QuitXConstants.UserDefaultsKeys.quitAllKeys) ?? ["^", "⌥", "Q"]
+        self.quitAllEnabled = UserDefaults.standard.object(forKey: QuitXConstants.UserDefaultsKeys.quitAllEnabled) as? Bool ?? Self.defaultQuitAllEnabled
+        self.quitAllKeys = UserDefaults.standard.stringArray(forKey: QuitXConstants.UserDefaultsKeys.quitAllKeys) ?? Self.defaultQuitAllKeys
 
-        self.forceQuitAllEnabled = UserDefaults.standard.object(forKey: QuitXConstants.UserDefaultsKeys.forceQuitAllEnabled) as? Bool ?? false
-        self.forceQuitAllKeys = UserDefaults.standard.stringArray(forKey: QuitXConstants.UserDefaultsKeys.forceQuitAllKeys) ?? ["^", "⌥", "⌘", "Q"]
+        self.forceQuitAllEnabled = UserDefaults.standard.object(forKey: QuitXConstants.UserDefaultsKeys.forceQuitAllEnabled) as? Bool ?? Self.defaultForceQuitAllEnabled
+        self.forceQuitAllKeys = UserDefaults.standard.stringArray(forKey: QuitXConstants.UserDefaultsKeys.forceQuitAllKeys) ?? Self.defaultForceQuitAllKeys
 
         installCarbonHandlerIfNeeded()
         restartMonitoring()
+    }
+
+    static let defaultActivateMenuEnabled = true
+    static let defaultActivateMenuKeys: [String] = ["^", "⌥", "A"]
+    static let defaultQuitAllEnabled = false
+    static let defaultQuitAllKeys: [String] = ["^", "⌥", "Q"]
+    static let defaultForceQuitAllEnabled = false
+    static let defaultForceQuitAllKeys: [String] = ["^", "⌥", "⌘", "Q"]
+
+    func resetToDefaults() {
+        activateMenuEnabled = Self.defaultActivateMenuEnabled
+        activateMenuKeys = Self.defaultActivateMenuKeys
+        quitAllEnabled = Self.defaultQuitAllEnabled
+        quitAllKeys = Self.defaultQuitAllKeys
+        forceQuitAllEnabled = Self.defaultForceQuitAllEnabled
+        forceQuitAllKeys = Self.defaultForceQuitAllKeys
+        shortcutError = nil
     }
 
     private func installCarbonHandlerIfNeeded() {
@@ -94,34 +120,50 @@ final class ShortcutManager: ObservableObject {
             UnregisterEventHotKey(ref)
         }
         registeredHotKeys.removeAll()
+        registrationError = nil
 
         if let l = localMonitor { NSEvent.removeMonitor(l); localMonitor = nil }
 
         guard activateMenuEnabled || quitAllEnabled || forceQuitAllEnabled else { return }
 
+        var failures: [String] = []
+
         if activateMenuEnabled, let (keyCode, modifiers) = Self.keysToCarbon(keys: activateMenuKeys) {
             var ref: EventHotKeyRef?
             let hotKeyID = EventHotKeyID(signature: QuitXConstants.HotKeys.signature, id: QuitXConstants.HotKeys.activateMenuId)
-            if RegisterEventHotKey(keyCode, modifiers, hotKeyID, GetEventDispatcherTarget(), 0, &ref) == noErr, let ref = ref {
+            let status = RegisterEventHotKey(keyCode, modifiers, hotKeyID, GetEventDispatcherTarget(), 0, &ref)
+            if status == noErr, let ref = ref {
                 registeredHotKeys.append(ref)
+            } else {
+                failures.append("Activate menu (OSStatus \(status))")
             }
         }
 
         if quitAllEnabled, let (keyCode, modifiers) = Self.keysToCarbon(keys: quitAllKeys) {
             var ref: EventHotKeyRef?
             let hotKeyID = EventHotKeyID(signature: QuitXConstants.HotKeys.signature, id: QuitXConstants.HotKeys.quitAllId)
-            if RegisterEventHotKey(keyCode, modifiers, hotKeyID, GetEventDispatcherTarget(), 0, &ref) == noErr, let ref = ref {
+            let status = RegisterEventHotKey(keyCode, modifiers, hotKeyID, GetEventDispatcherTarget(), 0, &ref)
+            if status == noErr, let ref = ref {
                 registeredHotKeys.append(ref)
+            } else {
+                failures.append("Quit all (OSStatus \(status))")
             }
         }
 
         if forceQuitAllEnabled, let (keyCode, modifiers) = Self.keysToCarbon(keys: forceQuitAllKeys) {
             var ref: EventHotKeyRef?
             let hotKeyID = EventHotKeyID(signature: QuitXConstants.HotKeys.signature, id: QuitXConstants.HotKeys.forceQuitAllId)
-            if RegisterEventHotKey(keyCode, modifiers, hotKeyID, GetEventDispatcherTarget(), 0, &ref) == noErr, let ref = ref {
+            let status = RegisterEventHotKey(keyCode, modifiers, hotKeyID, GetEventDispatcherTarget(), 0, &ref)
+            if status == noErr, let ref = ref {
                 registeredHotKeys.append(ref)
+            } else {
+                failures.append("Force quit all (OSStatus \(status))")
             }
         }
+
+        registrationError = failures.isEmpty
+            ? nil
+            : "Could not register shortcut:\n" + failures.joined(separator: "\n")
 
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             if self?.handleKeyEvent(event) == true {
@@ -129,6 +171,45 @@ final class ShortcutManager: ObservableObject {
             }
             return event
         }
+    }
+
+    func keys(for slot: Slot) -> [String] {
+        switch slot {
+        case .activateMenu: return activateMenuKeys
+        case .quitAll: return quitAllKeys
+        case .forceQuitAll: return forceQuitAllKeys
+        }
+    }
+
+    func isEnabled(_ slot: Slot) -> Bool {
+        switch slot {
+        case .activateMenu: return activateMenuEnabled
+        case .quitAll: return quitAllEnabled
+        case .forceQuitAll: return forceQuitAllEnabled
+        }
+    }
+
+    func conflicts(keys: [String], excluding slot: Slot) -> Bool {
+        guard !keys.isEmpty else { return false }
+        let others: [Slot] = [.activateMenu, .quitAll, .forceQuitAll].filter { $0 != slot }
+        return others.contains { other in
+            isEnabled(other) && self.keys(for: other) == keys
+        }
+    }
+
+    @discardableResult
+    func setKeys(_ newKeys: [String], for slot: Slot) -> Bool {
+        guard conflicts(keys: newKeys, excluding: slot) else {
+            shortcutError = nil
+            switch slot {
+            case .activateMenu: activateMenuKeys = newKeys
+            case .quitAll: quitAllKeys = newKeys
+            case .forceQuitAll: forceQuitAllKeys = newKeys
+            }
+            return true
+        }
+        shortcutError = "This shortcut is already assigned to another action."
+        return false
     }
 
     func handleHotKeyId(_ id: UInt32) {

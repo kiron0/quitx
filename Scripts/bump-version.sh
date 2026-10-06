@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 PACKAGE_JSON="$APP_DIR/package.json"
 PLIST_FILE="$APP_DIR/Support/Info.plist"
-CONSTANTS_FILE="$APP_DIR/Sources/QuitX/Core/Helpers/QuitXConstants.swift"
 CHANGELOG_FILE="$APP_DIR/CHANGELOG.md"
 
-if [ ! -f "$PACKAGE_JSON" ] || [ ! -f "$PLIST_FILE" ] || [ ! -f "$CONSTANTS_FILE" ]; then
+if [ ! -f "$PACKAGE_JSON" ] || [ ! -f "$PLIST_FILE" ]; then
     echo "Error: Required files not found in $APP_DIR" >&2
     exit 1
 fi
@@ -27,8 +26,8 @@ SUGGESTED_MINOR="$MAJOR.$((MINOR + 1)).0"
 SUGGESTED_MAJOR="$((MAJOR + 1)).0.0"
 SUGGESTED_BUILD=$((CURRENT_BUILD + 1))
 
-INPUT_VERSION="$1"
-INPUT_BUILD="$2"
+INPUT_VERSION="${1:-}"
+INPUT_BUILD="${2:-}"
 
 if [ -z "$INPUT_VERSION" ]; then
     echo "Current version: $CURRENT_VERSION (build $CURRENT_BUILD)"
@@ -82,7 +81,7 @@ echo "  Version: $CURRENT_VERSION -> $TARGET_VERSION"
 echo "  Build:   $CURRENT_BUILD -> $TARGET_BUILD"
 echo ""
 
-if [ -z "$1" ]; then
+if [ -z "${1:-}" ]; then
     read -r -p "Apply changes? [Y/n]: " CONFIRM
     CONFIRM="${CONFIRM:-Y}"
     if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
@@ -97,10 +96,6 @@ echo "  ✓ Updated $PACKAGE_JSON"
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $TARGET_VERSION" "$PLIST_FILE"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $TARGET_BUILD" "$PLIST_FILE"
 echo "  ✓ Updated $PLIST_FILE"
-
-sed -i '' -E 's/(\["CFBundleShortVersionString"\] as\? String \?\? ")[^"]+(")/\1'"$TARGET_VERSION"'\2/' "$CONSTANTS_FILE"
-sed -i '' -E 's/(\["CFBundleVersion"\] as\? String \?\? ")[^"]+(")/\1'"$TARGET_BUILD"'\2/' "$CONSTANTS_FILE"
-echo "  ✓ Updated $CONSTANTS_FILE"
 
 if [ -f "$CHANGELOG_FILE" ]; then
     if ! grep -q "## $TARGET_VERSION" "$CHANGELOG_FILE"; then

@@ -159,8 +159,8 @@ struct AppRowView: View {
             action: { onExclude() }
         ))
 
-        let appUrl = (app.bundleId.flatMap { NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) })
-            ?? (app.pid.flatMap { NSRunningApplication(processIdentifier: $0)?.bundleURL })
+        let appUrl = (app.pid.flatMap { NSRunningApplication(processIdentifier: $0)?.bundleURL })
+            ?? (app.bundleId.flatMap { NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) })
         if let url = appUrl {
             menu.addItem(MenuHelper.makeItem(
                 title: "Reveal in Finder",

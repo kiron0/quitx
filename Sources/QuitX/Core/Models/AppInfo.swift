@@ -22,6 +22,7 @@ struct AppInfo: Identifiable, Hashable, Sendable {
     }
 
     init(
+        id: String? = nil,
         name: String,
         bundleId: String? = nil,
         pid: pid_t? = nil,
@@ -32,7 +33,9 @@ struct AppInfo: Identifiable, Hashable, Sendable {
         cpuUsage: Double = 0.0
     ) {
         let resolvedPids = pids.isEmpty ? (pid.map { [$0] } ?? []) : pids
-        if let p = pid {
+        if let id {
+            self.id = id
+        } else if let p = pid {
             self.id = "\(p)-\(bundleId ?? name)"
         } else if let firstPid = resolvedPids.first {
             self.id = "pids-\(firstPid)-\(resolvedPids.count)-\(bundleId ?? name)"

@@ -23,10 +23,10 @@ final class AppUpdateWindowController: NSObject, NSWindowDelegate {
         buildAndPresentWindow()
     }
 
-    func showUpdateWindow(targetVersion: String, downloadURL: URL, releaseWebURL: URL? = nil) {
+    func showUpdateWindow(targetVersion: String, downloadURL: URL, releaseWebURL: URL? = nil, digest: String? = nil) {
         StatusItemController.shared?.closePopover()
 
-        UpdateChecker.shared.checkState = .available(version: targetVersion, downloadURL: downloadURL)
+        UpdateChecker.shared.checkState = .available(version: targetVersion, downloadURL: downloadURL, digest: digest)
 
         if let win = window {
             if let screen = WindowPositioner.targetScreen {
@@ -36,7 +36,8 @@ final class AppUpdateWindowController: NSObject, NSWindowDelegate {
             UpdateDownloadService.shared.startDownload(
                 from: downloadURL,
                 version: targetVersion,
-                releaseWebURL: releaseWebURL
+                releaseWebURL: releaseWebURL,
+                digest: digest
             )
             return
         }
@@ -46,7 +47,8 @@ final class AppUpdateWindowController: NSObject, NSWindowDelegate {
         UpdateDownloadService.shared.startDownload(
             from: downloadURL,
             version: targetVersion,
-            releaseWebURL: releaseWebURL
+            releaseWebURL: releaseWebURL,
+            digest: digest
         )
     }
 

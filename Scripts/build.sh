@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build and package QuitX .app bundle
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -28,10 +28,16 @@ cp "$ROOT_DIR"/Support/Sounds/*.aiff "$RESOURCES_DIR"/ 2>/dev/null || true
 cp "$ROOT_DIR/Support/Assets.car" "$RESOURCES_DIR"/ 2>/dev/null || true
 /usr/libexec/PlistBuddy -c "Set :CFBundleIconFile AppIcon" "$CONTENTS/Info.plist" 2>/dev/null || true
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$CONTENTS/Info.plist" 2>/dev/null || true
-codesign --force --deep --sign - "$APP_DIR"
+if [[ -n "${DEVELOPER_ID_APPLICATION:-}" ]]; then
+    echo "▶ Signing with Developer ID: $DEVELOPER_ID_APPLICATION"
+    codesign --force --deep --options runtime --sign "$DEVELOPER_ID_APPLICATION" "$APP_DIR"
+else
+    echo "▶ Signing ad-hoc (set DEVELOPER_ID_APPLICATION for release signing)"
+    codesign --force --deep --sign - "$APP_DIR"
+fi
 echo "✅ $APP_NAME.app ready: $APP_DIR"
 
-if [[ "$1" == "--run" ]]; then
+if [[ "${1:-}" == "--run" ]]; then
     echo "▶ Launching $APP_NAME..."
     open "$APP_DIR"
 fi

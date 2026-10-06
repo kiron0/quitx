@@ -51,16 +51,17 @@ final class QuitService {
         let knownPids: Set<pid_t> = Set(app.pids.isEmpty ? (app.pid.map { [$0] } ?? []) : app.pids)
 
         var helperPids: Set<pid_t> = []
-        if let bundleId = app.bundleId {
+        if let bundleId = app.bundleId, let rootURL = Self.rootBundleURL(for: app) {
             let prefix = bundleId + "."
             for running in NSWorkspace.shared.runningApplications {
                 guard !running.isTerminated else { continue }
                 guard let bid = running.bundleIdentifier else { continue }
+                guard bid == bundleId || bid.hasPrefix(prefix) else { continue }
+                guard let url = running.bundleURL?.standardizedFileURL else { continue }
+                guard url.path.hasPrefix(rootURL.path + "/Contents/") else { continue }
                 let pid = running.processIdentifier
                 guard !knownPids.contains(pid) else { continue }
-                if bid == bundleId || bid.hasPrefix(prefix) {
-                    helperPids.insert(pid)
-                }
+                helperPids.insert(pid)
             }
         }
 
@@ -110,13 +111,36 @@ final class QuitService {
 
         let pollNs: UInt64 = 100_000_000
         let gracefulAttempts = force ? 20 : 50
-        let forceAttempts    = 20
 
-        for _ in 0..<gracefulAttempts where !Task.isCancelled {
+        for _ in 0..<gracefulAttempts {
+            if Task.isCancelled {
+                return QuitResult(app: app, success: false, forced: false, error: "Cancelled")
+            }
             let appsDone = pendingApps.allSatisfy { $0.app.isTerminated }
             let pidsDone = pendingRawPids.allSatisfy { Darwin.kill($0.pid, 0) != 0 }
             if appsDone && pidsDone { break }
             try? await Task.sleep(nanoseconds: pollNs)
+        }
+
+        if Task.isCancelled {
+            return QuitResult(app: app, success: false, forced: false, error: "Cancelled")
+        }
+
+        if !force {
+            for entry in pendingApps where !entry.app.isTerminated && !entry.isHelper {
+                allSucceeded = false
+                firstError = firstError ?? "App did not quit gracefully"
+            }
+            for entry in pendingRawPids where Darwin.kill(entry.pid, 0) == 0 && !entry.isHelper {
+                allSucceeded = false
+                firstError = firstError ?? "Process did not quit gracefully"
+            }
+            return QuitResult(
+                app: app,
+                success: allSucceeded,
+                forced: false,
+                error: firstError
+            )
         }
 
         var forceApps: [(app: NSRunningApplication, isHelper: Bool)] = []
@@ -133,7 +157,7 @@ final class QuitService {
         }
 
         if !forceApps.isEmpty || !forceRawPids.isEmpty {
-            for _ in 0..<forceAttempts where !Task.isCancelled {
+            for _ in 0..<20 where !Task.isCancelled {
                 let appsDone = forceApps.allSatisfy { $0.app.isTerminated }
                 let pidsDone = forceRawPids.allSatisfy { Darwin.kill($0.pid, 0) != 0 }
                 if appsDone && pidsDone { break }
@@ -162,6 +186,16 @@ final class QuitService {
             forced: force,
             error: firstError
         )
+    }
+
+    private static func rootBundleURL(for app: AppInfo) -> URL? {
+        let pids = app.pids.isEmpty ? (app.pid.map { [$0] } ?? []) : app.pids
+        for pid in pids {
+            if let url = NSRunningApplication(processIdentifier: pid)?.bundleURL {
+                return url.standardizedFileURL
+            }
+        }
+        return nil
     }
 
     private static func runAppleScript(_ source: String, app: AppInfo, label: String) async -> QuitResult {

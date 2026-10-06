@@ -1,5 +1,7 @@
 import AppKit
 import Foundation
+import CryptoKit
+import Security
 
 enum UpdateState: Equatable {
     case idle
@@ -16,6 +18,9 @@ enum UpdateError: LocalizedError, Equatable {
     case copyFailed
     case appNotFoundInDMG
     case invalidBundle
+    case invalidChecksum
+    case invalidSignature
+    case versionMismatch
     case destinationNotWritable(String)
     case scriptExecutionFailed(String)
 
@@ -33,6 +38,12 @@ enum UpdateError: LocalizedError, Equatable {
             return "QuitX.app not found inside update disk image."
         case .invalidBundle:
             return "Invalid application bundle signature or identifier."
+        case .invalidChecksum:
+            return "Update download checksum does not match the expected value."
+        case .invalidSignature:
+            return "Update application code signature is missing or invalid."
+        case .versionMismatch:
+            return "Update application version does not match the expected version."
         case .destinationNotWritable(let path):
             return "Cannot write to destination: \(path)"
         case .scriptExecutionFailed(let reason):
@@ -58,16 +69,18 @@ final class UpdateDownloadService: NSObject, ObservableObject {
     private var lastSpeedBytes: Int64 = 0
     private(set) var currentDownloadURL: URL?
     private(set) var currentReleaseWebURL: URL?
+    private(set) var currentDigest: String?
 
     override init() {
         super.init()
     }
 
-    func startDownload(from url: URL, version: String, releaseWebURL: URL? = nil) {
+    func startDownload(from url: URL, version: String, releaseWebURL: URL? = nil, digest: String? = nil) {
         cancelDownload()
 
         currentDownloadURL = url
         currentReleaseWebURL = releaseWebURL
+        currentDigest = digest
         targetVersion = version
         downloadProgress = 0.0
         bytesDownloaded = 0
@@ -88,7 +101,12 @@ final class UpdateDownloadService: NSObject, ObservableObject {
 
     func retryLastDownload() {
         guard let url = currentDownloadURL, !targetVersion.isEmpty else { return }
-        startDownload(from: url, version: targetVersion, releaseWebURL: currentReleaseWebURL)
+        startDownload(
+            from: url,
+            version: targetVersion,
+            releaseWebURL: currentReleaseWebURL,
+            digest: currentDigest
+        )
     }
 
     func cancelDownload() {
@@ -108,6 +126,7 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         targetVersion = ""
         currentDownloadURL = nil
         currentReleaseWebURL = nil
+        currentDigest = nil
     }
 
     nonisolated func extractAppFromDMG(dmgURL: URL) async throws -> URL {
@@ -193,6 +212,112 @@ final class UpdateDownloadService: NSObject, ObservableObject {
     }
 
 
+    nonisolated static func sha256(of url: URL) throws -> String {
+        let file = try FileHandle(forReadingFrom: url)
+        defer { try? file.close() }
+
+        var hasher = SHA256()
+
+        while let data = try file.read(upToCount: 1024 * 1024), !data.isEmpty {
+            hasher.update(data: data)
+        }
+
+        return hasher.finalize()
+            .map { String(format: "%02x", $0) }
+            .joined()
+    }
+
+    nonisolated static func normalizedDigest(_ digest: String) -> String {
+        digest
+            .replacingOccurrences(of: "sha256:", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+    }
+
+    nonisolated static func verifyDigest(of url: URL, expectedDigest: String) throws {
+        let expected = normalizedDigest(expectedDigest)
+        guard !expected.isEmpty else { return }
+        let actual = try sha256(of: url)
+        guard actual == expected else {
+            throw UpdateError.invalidChecksum
+        }
+    }
+
+    nonisolated static func currentTeamIdentifier() -> String? {
+        let bundleURL = Bundle.main.bundleURL
+        var code: SecStaticCode?
+        guard SecStaticCodeCreateWithPath(bundleURL as CFURL, [], &code) == errSecSuccess,
+              let code
+        else { return nil }
+
+        var info: CFDictionary?
+        guard SecCodeCopySigningInformation(code, SecCSFlags(rawValue: kSecCSSigningInformation), &info) == errSecSuccess,
+              let info = info as? [String: Any]
+        else { return nil }
+
+        return info[kSecCodeInfoTeamIdentifier as String] as? String
+    }
+
+    nonisolated static func validateSignature(of appURL: URL, expectedTeamIdentifier: String?) throws {
+        var code: SecStaticCode?
+        guard SecStaticCodeCreateWithPath(appURL as CFURL, [], &code) == errSecSuccess,
+              let code
+        else {
+            throw UpdateError.invalidSignature
+        }
+
+        let flags = SecCSFlags(
+            rawValue: kSecCSCheckAllArchitectures | kSecCSStrictValidate | kSecCSCheckNestedCode
+        )
+
+        let unsignedStatus = SecStaticCodeCheckValidity(code, flags, nil)
+        guard unsignedStatus == errSecSuccess else {
+            throw UpdateError.invalidSignature
+        }
+
+        guard let expectedTeamIdentifier, !expectedTeamIdentifier.isEmpty else { return }
+
+        guard let bundleId = Bundle(url: appURL)?.bundleIdentifier else {
+            throw UpdateError.invalidSignature
+        }
+
+        let requirementText = """
+        anchor apple generic and
+        identifier "\(bundleId)" and
+        certificate leaf[subject.OU] = "\(expectedTeamIdentifier)"
+        """
+
+        var requirement: SecRequirement?
+        guard SecRequirementCreateWithString(requirementText as CFString, [], &requirement) == errSecSuccess,
+              let requirement
+        else {
+            throw UpdateError.invalidSignature
+        }
+
+        let status = SecStaticCodeCheckValidity(code, flags, requirement)
+        guard status == errSecSuccess else {
+            throw UpdateError.invalidSignature
+        }
+    }
+
+    nonisolated static func validateUpdateBundle(at appURL: URL, expectedVersion: String) throws {
+        guard let bundle = Bundle(url: appURL),
+              let bundleId = bundle.bundleIdentifier,
+              QuitXConstants.supportedBundleIdentifiers.contains(bundleId)
+        else {
+            throw UpdateError.invalidBundle
+        }
+
+        if !expectedVersion.isEmpty {
+            let bundleVersion = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+            guard bundleVersion == expectedVersion else {
+                throw UpdateError.versionMismatch
+            }
+        }
+
+        try validateSignature(of: appURL, expectedTeamIdentifier: currentTeamIdentifier())
+    }
+
     nonisolated static func resolveDestinationAppURL() -> URL {
         let mainBundle = Bundle.main.bundleURL
         if mainBundle.pathExtension == "app" {
@@ -213,25 +338,47 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         return systemApp
     }
 
-    nonisolated static func generateRelaunchScript(targetPID: Int32, srcAppPath: String, destAppPath: String) -> String {
+    nonisolated static func generateRelaunchScript() -> String {
         return """
         #!/bin/bash
-        TARGET_PID=\(targetPID)
-        SRC_APP="\(srcAppPath)"
-        DEST_APP="\(destAppPath)"
+        set -euo pipefail
+
+        TARGET_PID="$1"
+        SRC_APP="$2"
+        DEST_APP="$3"
 
         COUNT=0
         while kill -0 "$TARGET_PID" 2>/dev/null; do
             sleep 0.1
             COUNT=$((COUNT + 1))
-            if [ $COUNT -ge 50 ]; then
-                kill -9 "$TARGET_PID" 2>/dev/null || true
+            if [ "$COUNT" -ge 50 ]; then
                 break
             fi
         done
 
-        rm -rf "$DEST_APP"
-        ditto "$SRC_APP" "$DEST_APP"
+        DEST_DIR="$(dirname "$DEST_APP")"
+        NEW_APP="$DEST_DIR/.QuitX.new.$$"
+        OLD_APP="$DEST_DIR/.QuitX.old.$$"
+
+        rm -rf "$NEW_APP" "$OLD_APP"
+
+        ditto "$SRC_APP" "$NEW_APP"
+
+        if [ -e "$DEST_APP" ]; then
+            mv "$DEST_APP" "$OLD_APP"
+        fi
+
+        if mv "$NEW_APP" "$DEST_APP"; then
+            rm -rf "$OLD_APP"
+        else
+            rm -rf "$NEW_APP"
+
+            if [ -e "$OLD_APP" ]; then
+                mv "$OLD_APP" "$DEST_APP"
+            fi
+
+            exit 1
+        fi
 
         xattr -rd com.apple.quarantine "$DEST_APP" 2>/dev/null || true
         rm -rf "$(dirname "$SRC_APP")"
@@ -252,22 +399,24 @@ final class UpdateDownloadService: NSObject, ObservableObject {
             destURL = userApps.appendingPathComponent("QuitX.app")
         }
 
-        let scriptContent = Self.generateRelaunchScript(
-            targetPID: ProcessInfo.processInfo.processIdentifier,
-            srcAppPath: stagedURL.path,
-            destAppPath: destURL.path
-        )
-
         let scriptURL = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("quitx_relaunch_\(UUID().uuidString).sh")
 
         do {
-            try scriptContent.write(to: scriptURL, atomically: true, encoding: .utf8)
+            try Self.generateRelaunchScript().write(to: scriptURL, atomically: true, encoding: .utf8)
             try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: scriptURL.path)
 
             let process = Process()
             process.executableURL = URL(fileURLWithPath: "/bin/bash")
-            process.arguments = ["-c", "nohup \"$1\" >/dev/null 2>&1 &", "updater", scriptURL.path]
+            process.arguments = [
+                "-c",
+                "nohup \"$@\" >/dev/null 2>&1 &",
+                "updater",
+                scriptURL.path,
+                String(ProcessInfo.processInfo.processIdentifier),
+                stagedURL.path,
+                destURL.path
+            ]
             process.standardInput = FileHandle.nullDevice
             process.standardOutput = FileHandle.nullDevice
             process.standardError = FileHandle.nullDevice
@@ -342,8 +491,13 @@ final class UpdateDownloadService: NSObject, ObservableObject {
 
     fileprivate func handleDownloadFinished(persistentDMG: URL) async {
         do {
+            if let digest = currentDigest {
+                try Self.verifyDigest(of: persistentDMG, expectedDigest: digest)
+            }
+
             state = .extracting
             let stagedURL = try await extractAppFromDMG(dmgURL: persistentDMG)
+            try Self.validateUpdateBundle(at: stagedURL, expectedVersion: targetVersion)
             state = .ready(stagedURL: stagedURL, version: targetVersion)
         } catch {
             state = .failed(message: error.localizedDescription)

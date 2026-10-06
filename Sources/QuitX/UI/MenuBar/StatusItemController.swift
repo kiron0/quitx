@@ -228,6 +228,7 @@ final class StatusItemController: NSObject {
     }
 
     private func scheduleBackgroundRefresh() {
+        guard isShown else { return }
         backgroundRefreshTask?.cancel()
         backgroundRefreshTask = Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: 400_000_000)
@@ -256,6 +257,7 @@ final class StatusItemController: NSObject {
         AppListViewModel.shared.cancelIndividualAction()
         lastCloseTimestamp = Date()
         stopLiveMonitoring()
+        removeOutsideClickMonitor()
         window?.orderOut(nil)
     }
 
@@ -284,6 +286,7 @@ final class StatusItemController: NSObject {
             win.makeFirstResponder(nil)
             win.invalidateShadow()
             refreshVisibleApps()
+            installOutsideClickMonitor()
             startLiveMonitoring()
         }
     }
@@ -398,22 +401,6 @@ final class StatusItemController: NSObject {
     }
 
     private func startEventMonitor() {
-        globalEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
-            guard let self = self, self.isShown else { return }
-
-            if let button = self.statusItem.button, let buttonWindow = button.window {
-                let mouseLoc = NSEvent.mouseLocation
-                let buttonScreenFrame = buttonWindow.convertToScreen(button.bounds)
-                if buttonScreenFrame.contains(mouseLoc) {
-                    return
-                }
-            }
-
-            Task { @MainActor in
-                self.closePopover()
-            }
-        }
-
         localEventMonitor = NSEvent.addLocalMonitorForEvents(
             matching: [.leftMouseDown, .rightMouseDown, .keyDown]
         ) { [weak self] event in
@@ -473,6 +460,34 @@ final class StatusItemController: NSObject {
                 self.closePopover()
             }
             return event
+        }
+    }
+
+    private func installOutsideClickMonitor() {
+        guard globalEventMonitor == nil else { return }
+        globalEventMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown]
+        ) { [weak self] _ in
+            guard let self, self.isShown else { return }
+
+            if let button = self.statusItem.button, let buttonWindow = button.window {
+                let mouseLoc = NSEvent.mouseLocation
+                let buttonScreenFrame = buttonWindow.convertToScreen(button.bounds)
+                if buttonScreenFrame.contains(mouseLoc) {
+                    return
+                }
+            }
+
+            Task { @MainActor in
+                self.closePopover()
+            }
+        }
+    }
+
+    private func removeOutsideClickMonitor() {
+        if let monitor = globalEventMonitor {
+            NSEvent.removeMonitor(monitor)
+            globalEventMonitor = nil
         }
     }
 }

@@ -127,9 +127,10 @@ final class AppListService {
                 }
             }
 
-            for (_, group) in bgGroups {
+            for (key, group) in bgGroups {
                 let first = group.app
                 groupedResults.append(AppInfo(
+                    id: "background:\(key)",
                     name: group.cleanName,
                     bundleId: first.bundleId,
                     pid: group.pids.first,
@@ -173,6 +174,7 @@ final class AppListService {
                     totalCpu += cpuUsages[pid, default: 0.0]
                 }
                 return AppInfo(
+                    id: app.id,
                     name: app.name,
                     bundleId: app.bundleId,
                     pid: app.pid,
@@ -230,19 +232,29 @@ final class AppListService {
     private struct CpuCacheState {
         var usages: [pid_t: Double] = [:]
         var lastFetchTime: Date = .distantPast
+        var isFetching: Bool = false
     }
 
     private static let cpuCache = OSAllocatedUnfairLock(initialState: CpuCacheState())
 
     private static func fetchCpuUsages() -> [pid_t: Double] {
-        let shouldFetch: Bool = cpuCache.withLock { state in
-            if Date().timeIntervalSince(state.lastFetchTime) < 1.0, !state.usages.isEmpty {
-                return false
-            }
-            return true
+        let cached: [pid_t: Double]? = cpuCache.withLock { state in
+            let fresh = Date().timeIntervalSince(state.lastFetchTime) < 1.0 && !state.usages.isEmpty
+            if fresh || state.isFetching { return state.usages }
+            state.isFetching = true
+            return nil
         }
-        if !shouldFetch {
-            return cpuCache.withLock { $0.usages }
+        if let cached { return cached }
+
+        func finishFetch(with usages: [pid_t: Double]?) -> [pid_t: Double] {
+            cpuCache.withLock { state in
+                if let usages {
+                    state.usages = usages
+                    state.lastFetchTime = Date()
+                }
+                state.isFetching = false
+                return state.usages
+            }
         }
 
         let pipe = Pipe()
@@ -263,7 +275,7 @@ final class AppListService {
             try proc.run()
         } catch {
             watchdog.cancel()
-            return cpuCache.withLock { $0.usages }
+            return finishFetch(with: nil)
         }
 
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
@@ -271,7 +283,7 @@ final class AppListService {
         watchdog.cancel()
 
         guard let output = String(data: data, encoding: .utf8) else {
-            return cpuCache.withLock { $0.usages }
+            return finishFetch(with: nil)
         }
         var result: [pid_t: Double] = [:]
         for line in output.split(separator: "\n").dropFirst() {
@@ -284,12 +296,7 @@ final class AppListService {
             }
         }
 
-        let finalUsages = result
-        cpuCache.withLock { state in
-            state.usages = finalUsages
-            state.lastFetchTime = Date()
-        }
-        return finalUsages
+        return finishFetch(with: result)
     }
 
     private static let memoryCache = OSAllocatedUnfairLock(initialState: [pid_t: (bytes: UInt64, timestamp: Date)]())
