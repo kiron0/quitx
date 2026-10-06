@@ -2,6 +2,57 @@
 
 All notable changes to QuitX macOS App will be documented in this file.
 
+## 1.0.8
+
+### Security
+
+- Signed update pipeline with Ed25519: every release DMG is signed in CI (`Scripts/sign-update.sh`) and the app verifies the signature against a pinned public key before install. Missing or invalid signatures refuse the update.
+- SHA-256 digest of the downloaded DMG is verified before mounting. Digest mismatch refuses the update.
+- Extracted update bundle must pass anchored code-signature validation (`SecStaticCodeCheckValidity` with Team ID requirement), plus bundle ID and version checks.
+- Update checker refuses releases with missing digest or signature metadata at check time, before any download starts.
+- Rotated the gatekeeper access key. The app ships the new key; the worker accepts the old key during a grace period (`APP_SECRET_KEY_PREVIOUS`), then it can be revoked.
+- Gatekeeper worker now rate-limits per IP (`/latest` 10/min, `/download` 5/min) and prefers signed `updates.json` metadata over raw GitHub digest fields.
+- Tests now prove unsigned fake QuitX bundles are rejected (`.invalidSignature`); the old accept-unsigned expectation is removed.
+
+### Fixed
+
+- Normal Quit never escalates to `SIGKILL`. Only explicit Force Quit force-terminates after timeout.
+- Cancelling a quit returns before any forced-termination logic; cancellation can no longer make quitting more destructive.
+- Auto Quit only terminates gracefully and never force-kills; refused apps are rescheduled instead of killed.
+- "Quit All" global shortcut quits all listed apps, not just the current selection, and honors the `confirmQuitAll` preference by opening confirmation in the popover.
+- 2- and 3-app batches now honor `confirmQuitAll`; single-app quit uses `confirmIndividualAction`.
+- Restart and Reveal in Finder resolve the running PID first, falling back to LaunchServices only if needed, so the correct copy of an app relaunches.
+- Single-instance detection is bundle-identifier authoritative; an unrelated executable named `QuitX` can no longer be treated as another instance.
+- Helper-process detection is scoped to helpers inside the selected app bundle (`Contents/`), not just bundle ID prefix matches.
+- Update install is atomic: copy-first to `.QuitX.new`, swap with `.QuitX.old` backup, automatic rollback on failure. The running app is never deleted before the replacement succeeds.
+- Relaunch script is static (paths passed as arguments); no Swift path interpolation, no shell-injection risk.
+- Update temp directories (`QuitXUpdate-*`, `QuitXStaged-*`) and relaunch scripts are cleaned up on failure, cancellation, and window close; URLSession is invalidated when a download finishes.
+- Cancel-during-verification can no longer leave orphan staged copies or flip state back to ready.
+- Update verification (digest, signature, bundle validation) runs off the main thread; the UI no longer freezes while a downloaded DMG is checked.
+- `NSAppleScript` (Finder/Trash actions) now runs on the main thread, where it is supported.
+- User-initiated update checks open the update window even when a background check is already in flight.
+- Option-key detection no longer republishes on every unrelated flags event (Caps Lock, Fn, etc.).
+- Bundled app icon loading is async: cache-hit lookup only in view bodies, `LaunchServices` resolution on a background queue.
+- Exclude list rows resolve app URL, name, and icon once per row instead of on every render.
+- Exclude app picker reuses the cached normalized exclusion set instead of rebuilding it per body evaluation.
+- `addExcludedApps` applies a whole batch in one assignment: single `@Published` fire, single set rebuild.
+- Help copy no longer claims QuitX retries failed quits with force quit; it documents the real graceful behavior.
+- `CONTRIBUTING.md` clone path fixed (`cd quitx`).
+
+### Changed
+
+- `SettingsView` (1000+ lines) split into `Settings/SettingsTabs/` per-tab views.
+- Release workflow now ships both `.dmg` and `.zip` (via `ditto --sequesterRsrc`) plus signed `updates.json`; release upload fails if any asset is missing.
+- Manual releases no longer pre-push a tag: the release action creates the tag from the built commit, so a failed build leaves no orphan tag.
+- `Reset all` now resets everything via `SettingsResetService`: config, shortcuts, and launch-at-login.
+- Version truth is `Info.plist` (`CFBundleShortVersionString`); `bump-version.sh` no longer rewrites Swift source.
+- Build scripts use `set -euo pipefail` (`--build-system native` kept for this environment).
+- `Package.swift` applies CLT-only test search paths conditionally by detection.
+- Shortcut conflicts are rejected in Settings with an error, and failed hotkey registrations surface the real `OSStatus`.
+- Installed-app picker cache uses a 60s TTL so newly installed apps appear without restarting QuitX.
+- App list uses `LazyVStack`; app refreshes and the outside-click monitor only run while the popover is visible; popover resize is skipped when the frame is unchanged; CPU sampling is single-flight.
+- Docs: new `worker/README.md` (routes, auth, rate limits, metadata, rotation, deploy), new "Secure Updates" section in `app/README.md`, refreshed local `.dev.vars`, audit O1 note corrected to match the rotated key design.
+
 ## 1.0.7
 
 ### Added
