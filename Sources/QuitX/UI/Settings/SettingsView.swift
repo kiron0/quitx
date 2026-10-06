@@ -52,7 +52,7 @@ enum SettingsTab: String, CaseIterable {
         case .advanced:  return 271
         case .exclude:   return 306
         case .shortcuts: return 221
-        case .about:     return 124
+        case .about:     return 170
         }
     }
 }

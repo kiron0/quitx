@@ -208,7 +208,7 @@ struct SettingsTabTests {
         #expect(SettingsTab.advanced.contentHeight == 271)
         #expect(SettingsTab.exclude.contentHeight == 306)
         #expect(SettingsTab.shortcuts.contentHeight == 221)
-        #expect(SettingsTab.about.contentHeight == 124)
+        #expect(SettingsTab.about.contentHeight == 170)
     }
 
     @Test("SettingsTab toolbar images generated and template")
