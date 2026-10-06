@@ -86,19 +86,44 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "Resource values",
-                    body: "Each row shows CPU or memory usage. The displayed value follows the current Sort setting. Values refresh while the popover is open."
+                    body: "Each row shows live CPU or memory usage. The displayed value follows the current Sort setting. Values refresh continuously while the popover is open."
                 ),
                 QuitXHelpSection(
-                    title: "More actions",
-                    body: "Open the three-dot menu beside the quit button to quit, force quit, restart, exclude, or reveal an app in Finder. Quit Other Apps quits everything except that app. Quit In quits the app after 15, 30, or 60 minutes."
+                    title: "Row actions",
+                    body: "Open the three-dot menu beside the quit button to quit, force quit, restart, exclude, or reveal an app in Finder."
                 ),
                 QuitXHelpSection(
-                    title: "Unresponsive and hogging apps",
-                    body: "A red triangle marks apps that ignored a previous graceful quit request; force quit them from the row menu. A flame marks apps holding sustained high CPU; enable hog warnings in Settings > General for a notification."
+                    title: "Quit Other Apps",
+                    body: "Choose Quit Other Apps in any app row's menu to terminate all running apps except that specific app. Honoring your quit-all confirmation preference."
+                ),
+                QuitXHelpSection(
+                    title: "Quit timers",
+                    body: "Choose Quit In from the row menu to schedule graceful termination after 15, 30, or 60 minutes. Timers persist across app restarts and can be cancelled anytime from the same menu."
                 ),
                 QuitXHelpSection(
                     title: "Background apps",
-                    body: "Show background apps temporarily from the popover menu or persistently from Settings. Some system helpers restart automatically after termination. Group Background Instances combines related processes into one row."
+                    body: "Show background apps temporarily from the popover gear menu or persistently from Settings > Advanced. Group Background Instances combines related helper processes into one line."
+                )
+            ]
+        ),
+        QuitXHelpTopic(
+            id: "recently-quit",
+            category: .essentials,
+            title: "Recently Quit and Reopen",
+            symbol: "arrow.clockwise.circle",
+            summary: "Quickly relaunch apps you previously closed from the Reopen menu.",
+            sections: [
+                QuitXHelpSection(
+                    title: "Relaunch recent apps",
+                    body: "Click the gear menu in the bottom-right corner and hover over Reopen to view recently quit apps (up to 20). Click any app to launch it immediately."
+                ),
+                QuitXHelpSection(
+                    title: "Automatic history",
+                    body: "QuitX automatically records apps closed through single quits, batch quits, auto-quit, timers, or sleep actions. The list stays deduplicated with the freshest apps at the top."
+                ),
+                QuitXHelpSection(
+                    title: "Clear history",
+                    body: "Choose Clear Recent Apps at the bottom of the Reopen menu whenever you want to wipe the recent history."
                 )
             ]
         ),
@@ -111,15 +136,19 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "Normal quit",
-                    body: "Normal quit asks the app to terminate and waits for it to close. QuitX never forces the quit on its own."
+                    body: "Normal quit asks the app to terminate and waits for it to close gracefully. QuitX never forces termination on its own."
                 ),
                 QuitXHelpSection(
                     title: "Force quit",
-                    body: "Hold Option while using a quit action to force quit immediately. You can also make Force Quit the default in Settings."
+                    body: "Hold Option while clicking any quit button to force quit immediately. You can also make Force Quit the default in Settings > General."
+                ),
+                QuitXHelpSection(
+                    title: "Safety net confirmations",
+                    body: "Enable Confirm batch quit or Confirm single app quit & restart in Settings to display an 'Are you sure?' confirmation dialog before closing apps."
                 ),
                 QuitXHelpSection(
                     title: "Protect your work",
-                    body: "Force quit can discard unsaved changes. Save work before quitting apps. Confirmation for larger batch quits can be enabled in Settings."
+                    body: "Force quit can discard unsaved changes. Always save your active files and documents before terminating apps."
                 )
             ]
         ),
@@ -141,6 +170,10 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 QuitXHelpSection(
                     title: "Background apps",
                     body: "Enable Show Background Apps inside the picker when needed. This picker option is temporary and does not change the main Background Apps setting."
+                ),
+                QuitXHelpSection(
+                    title: "System protections",
+                    body: "QuitX, Finder, and configured music apps are protected automatically. Excluded apps never appear in batch quit selections or auto-quit operations."
                 )
             ]
         ),
@@ -152,28 +185,66 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             summary: "Quit regular apps after they remain inactive for your chosen interval.",
             sections: [
                 QuitXHelpSection(
-                    title: "How inactivity works",
+                    title: "Inactivity detection",
                     body: "QuitX records when each regular app was last active and checks once per minute. The frontmost app is never treated as inactive."
                 ),
                 QuitXHelpSection(
-                    title: "Protected apps",
-                    body: "Excluded apps and Finder stay protected. Never Quit Music Apps also protects configured music apps from automatic and manual batch actions."
-                ),
-                QuitXHelpSection(
-                    title: "Configure Auto Quit",
-                    body: "Open Settings > General, enable Quit Inactive Apps After, then choose minutes, hours, or days. Set it off to disable automatic quitting."
+                    title: "Configure global interval",
+                    body: "Open Settings > General, enable Quit Inactive Apps After, then choose minutes, hours, or days. Turn it off to disable automatic quitting."
                 ),
                 QuitXHelpSection(
                     title: "Per-app rules",
-                    body: "Open the three-dot menu on any app row, choose Auto-quit, then pick a timeout or Never. A per-app rule overrides the global interval. Use Default returns the app to the global setting. Excluded apps stay protected regardless of rules."
+                    body: "Open the three-dot menu on any app row, choose Auto-quit, then pick a timeout or Never. A per-app rule overrides the global interval. Use Default returns the app to the global setting."
                 ),
                 QuitXHelpSection(
-                    title: "Quit timers",
-                    body: "Open the three-dot menu on any app row, choose Quit In, then pick 15 minutes, 30 minutes, or 1 hour. The app quits gracefully when the timer fires. Timers survive restarts. Cancel from the same menu."
+                    title: "Sleep and screen lock",
+                    body: "Settings > General offers unattended quitting: automatically and gracefully terminate safe apps when your Mac sleeps or when you lock the screen."
+                )
+            ]
+        ),
+        QuitXHelpTopic(
+            id: "menu-battery",
+            category: .automation,
+            title: "Menu Bar CPU and Battery Saver",
+            symbol: "battery.100.bolt",
+            summary: "Monitor live system CPU load in the menu bar and conserve battery power.",
+            sections: [
+                QuitXHelpSection(
+                    title: "Menu bar CPU readout",
+                    body: "Enable Show CPU in menu bar in Settings > General to see total CPU percent right next to the QuitX icon. The readout updates every 2 seconds in sync with your app list."
                 ),
                 QuitXHelpSection(
-                    title: "Sleep, lock, battery, and memory",
-                    body: "Settings > General adds unattended quitting: on Mac sleep, on screen lock, halved timeouts plus slower refresh on battery, and graceful quit of apps over 1 GB under memory pressure. All paths skip excluded, music, and protected apps and never force quit."
+                    title: "Battery saver mode",
+                    body: "Enable Save power on battery to reduce power consumption when unplugged. Inactivity auto-quit timeouts automatically halve (e.g. 60m to 30m), and live stats refresh slows from 2 seconds to 10 seconds."
+                ),
+                QuitXHelpSection(
+                    title: "Automatic AC restore",
+                    body: "Connecting back to AC charger power immediately restores normal 2-second stats refresh and full-length auto-quit intervals."
+                )
+            ]
+        ),
+        QuitXHelpTopic(
+            id: "system-health",
+            category: .automation,
+            title: "Resource Hogs and Memory Pressure",
+            symbol: "flame.fill",
+            summary: "Identify runaway processes, receive CPU hog alerts, and manage memory pressure.",
+            sections: [
+                QuitXHelpSection(
+                    title: "CPU hog warnings",
+                    body: "Enable Warn about CPU hogs in Settings > General. Apps sustaining 80%+ CPU for 5+ minutes display a flame badge in the list, plus a one-time notification per offender."
+                ),
+                QuitXHelpSection(
+                    title: "Memory pressure cleaning",
+                    body: "Enable Quit memory hogs under pressure in Settings > General. When macOS reports high memory pressure, QuitX gracefully terminates regular apps consuming over 1 GB."
+                ),
+                QuitXHelpSection(
+                    title: "Unresponsive app badges",
+                    body: "A red warning triangle marks apps that resisted or ignored a previous graceful quit request, signaling that Force Quit is needed."
+                ),
+                QuitXHelpSection(
+                    title: "Safety guards",
+                    body: "Excluded apps, music apps, system helpers, and apps marked with 'Never' rule are never closed by automated resource managers."
                 )
             ]
         ),
@@ -186,7 +257,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "Finder windows",
-                    body: "The Finder item closes open Finder windows. It does not terminate Finder."
+                    body: "The Finder item closes open Finder windows in one click. It does not terminate Finder itself."
                 ),
                 QuitXHelpSection(
                     title: "Empty Trash",
@@ -194,7 +265,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Enable extras",
-                    body: "Open Settings > Advanced and enable the Finder or Trash options. Each item then appears with normal app selections."
+                    body: "Open Settings > Advanced and toggle Include Finder Windows in list or Include Empty Trash in list."
                 )
             ]
         ),
@@ -206,16 +277,16 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             summary: "Configure global shortcuts for opening QuitX and quitting selected apps.",
             sections: [
                 QuitXHelpSection(
-                    title: "Available actions",
-                    body: "Settings > Shortcuts provides Open QuitX, Quit All, and Force Quit All. Enable only the actions you want and record a unique key combination."
+                    title: "Available global shortcuts",
+                    body: "Settings > Shortcuts provides customizable global hotkeys for Open QuitX, Quit All, and Force Quit All. Record any unique key combination."
+                ),
+                QuitXHelpSection(
+                    title: "In-app key commands",
+                    body: "While QuitX is open: use Cmd-A to toggle select all, Cmd-, for Settings, Cmd-? for Help, Cmd-I for About, Esc to cancel confirmation or close, and Return to confirm."
                 ),
                 QuitXHelpSection(
                     title: "Shortcut conflicts",
-                    body: "Avoid combinations already used by macOS or another app. If a shortcut does not respond, change it and check System Settings > Privacy & Security > Input Monitoring."
-                ),
-                QuitXHelpSection(
-                    title: "Menu commands",
-                    body: "Use Command-comma for Settings and Command-question-mark for Help while QuitX is active."
+                    body: "Avoid hotkeys already registered by macOS. If a shortcut does not trigger, check System Settings > Privacy & Security > Input Monitoring."
                 )
             ]
         ),
@@ -224,19 +295,23 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             category: .preferences,
             title: "Settings and Updates",
             symbol: "gearshape",
-            summary: "Control startup, sounds, sorting, safety prompts, and updates.",
+            summary: "Explore all Settings tabs, app configuration, and verified in-app updates.",
             sections: [
                 QuitXHelpSection(
-                    title: "General settings",
-                    body: "Settings > General controls launch at login, sounds, sleep and lock quitting, menu and battery options, health warnings, list sorting, quit mode, and Auto Quit. Settings > Advanced controls background processes, default selection, quit tips, confirmations, Finder, and Trash."
+                    title: "General & Advanced tabs",
+                    body: "Settings > General controls startup, sounds, sleep/lock actions, menu CPU, battery saver, health warnings, sort order, and Auto Quit. Settings > Advanced manages background apps, music protection, default selection, tips, confirmations, and Finder/Trash."
                 ),
                 QuitXHelpSection(
-                    title: "Updates",
-                    body: "QuitX automatically checks for updates securely. You can also click Check Updates in Settings > About. When an update is found, QuitX downloads and verifies the package in-app, then restarts to install."
+                    title: "Exclude & Shortcuts tabs",
+                    body: "Settings > Exclude manages your protected apps list. Settings > Shortcuts allows recording global hotkeys with conflict checks."
                 ),
                 QuitXHelpSection(
-                    title: "Reset",
-                    body: "Reset All restores QuitX configuration defaults. Shortcut values are managed separately in the Shortcuts tab."
+                    title: "About & Updates",
+                    body: "Settings > About shows current app version, links to contact developer support, and includes Check for Updates. Updates download, verify checksums and signatures, and install automatically."
+                ),
+                QuitXHelpSection(
+                    title: "Reset defaults",
+                    body: "Click Reset All in Settings > General to restore QuitX configuration defaults to their initial clean state."
                 )
             ]
         ),
@@ -249,15 +324,19 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "App is missing",
-                    body: "Clear Search. Check whether the app is excluded. Enable background apps if the process has no regular window. Reopen the QuitX popover to refresh the list."
+                    body: "Clear the Search box. Verify the app is not in Excluded apps. Enable View background apps in Settings > Advanced if the process has no regular window."
                 ),
                 QuitXHelpSection(
                     title: "App returns after quitting",
-                    body: "Login items, launch agents, or parent apps can restart helper processes. Disable the owning app's background or login-item setting when appropriate."
+                    body: "Login items, launch agents, or parent apps can automatically restart background helpers. Check System Settings > General > Login Items."
+                ),
+                QuitXHelpSection(
+                    title: "Badges and indicators",
+                    body: "A flame badge indicates sustained 80%+ CPU. A red triangle indicates an app that resisted normal quit — hold Option to force quit it."
                 ),
                 QuitXHelpSection(
                     title: "Quit or shortcut fails",
-                    body: "Save work and try Force Quit. Confirm QuitX has required macOS permissions. Restart QuitX after permission changes. Contact support with reproducible steps if the issue continues."
+                    body: "Check macOS permissions under System Settings > Privacy & Security > Accessibility and Input Monitoring. Restart QuitX after granting permissions."
                 )
             ]
         ),
@@ -269,16 +348,16 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             summary: "Learn what stays local and how to request help.",
             sections: [
                 QuitXHelpSection(
-                    title: "Local operation",
-                    body: "App discovery, resource monitoring, exclusions, and quit actions run on your Mac. Settings are stored locally."
+                    title: "100% local operation",
+                    body: "App discovery, resource monitoring, exclusions, rules, and quit actions run entirely locally on your Mac. No usage tracking or telemetry is collected."
                 ),
                 QuitXHelpSection(
                     title: "Network access",
-                    body: "QuitX connects to network only for secure update checks and downloading verified update packages. Contact Support opens your default mail app with version and macOS details for review before sending."
+                    body: "QuitX only connects to the internet to check for software updates from official GitHub releases and download cryptographically verified packages."
                 ),
                 QuitXHelpSection(
-                    title: "Get support",
-                    body: "Include QuitX version, macOS version, affected app, expected behavior, actual behavior, and repeatable steps. Never include passwords or private documents."
+                    title: "Contact support",
+                    body: "Click Contact in Settings > About or open Help to get assistance. Emails open in your default mail app with your app version and macOS version prefilled."
                 )
             ]
         )

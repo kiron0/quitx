@@ -244,7 +244,7 @@ struct HelpContentTests {
     @Test("Help topics have unique identifiers and complete content")
     func testHelpTopicsAreComplete() {
         let topics = QuitXHelpTopic.all
-        #expect(topics.count == 10)
+        #expect(topics.count == 13)
         #expect(Set(topics.map(\.id)).count == topics.count)
         #expect(Set(topics.map(\.category)) == Set(QuitXHelpCategory.allCases))
         #expect(topics.allSatisfy { !$0.title.isEmpty && !$0.summary.isEmpty && !$0.sections.isEmpty })
@@ -254,6 +254,8 @@ struct HelpContentTests {
     func testHelpSearch() {
         #expect(QuitXHelpTopic.all.first { $0.id == "exclude" }?.matches("background apps") == true)
         #expect(QuitXHelpTopic.all.first { $0.id == "finder-trash" }?.matches("permanently empties") == true)
+        #expect(QuitXHelpTopic.all.first { $0.id == "recently-quit" }?.matches("reopen") == true)
+        #expect(QuitXHelpTopic.all.first { $0.id == "menu-battery" }?.matches("battery saver") == true)
         #expect(QuitXHelpTopic.all.allSatisfy { $0.matches("   ") })
     }
 }
