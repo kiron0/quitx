@@ -115,7 +115,7 @@ struct GeneralTabCloneView: View {
                     set: { configStore.config.quitOnSleep = $0; configStore.save() }
                 ))
             } help: {
-                HelpPopoverButton(text: "Tidy up before nap time. Gracefully quits safe apps on sleep, skipping excluded, music, and protected apps. No confirmation shown.")
+                HelpPopoverButton(text: "Tidy up before nap time! Tucks your Mac into bed by gently closing safe apps when it nods off. 😴🌙")
             }
 
             row(label: "") {
@@ -124,7 +124,7 @@ struct GeneralTabCloneView: View {
                     set: { configStore.config.quitOnScreenLock = $0; configStore.save() }
                 ))
             } help: {
-                HelpPopoverButton(text: "Lock and leave: same safe-app quit runs when the screen locks. 🔒")
+                HelpPopoverButton(text: "Lock and roll: walk away knowing stray apps get quietly dismissed behind you. Safe and sound. 🔒💨")
             }
 
             row(label: "Menu & Power:") {
@@ -137,7 +137,7 @@ struct GeneralTabCloneView: View {
                     }
                 ))
             } help: {
-                HelpPopoverButton(text: "Glanceable load: total CPU percent lives next to the QuitX icon, refreshed every 2 seconds (slowed to 10 seconds on battery saver).")
+                HelpPopoverButton(text: "Live pulse of your machine: glanceable CPU load beside the QuitX icon, synced every 2 seconds. 🏎️💨")
             }
 
             row(label: "") {
@@ -146,7 +146,7 @@ struct GeneralTabCloneView: View {
                     set: { configStore.config.batterySaverEnabled = $0; configStore.save() }
                 ))
             } help: {
-                HelpPopoverButton(text: "On battery: auto-quit timeouts halve and live stats refresh every 10 seconds instead of 2. 🔋")
+                HelpPopoverButton(text: "Sip power like fine wine! Auto-quit timers cut in half and CPU checks slow to 10s to spare your battery. 🔋🍷")
             }
 
             row(label: "Health:") {
@@ -155,7 +155,7 @@ struct GeneralTabCloneView: View {
                     set: { configStore.config.hogAlertEnabled = $0; configStore.save() }
                 ))
             } help: {
-                HelpPopoverButton(text: "Flags apps holding 80%+ CPU for 5+ minutes with a flame badge plus one notification per offender. 🔥")
+                HelpPopoverButton(text: "Catch runaway apps roasting your lap! Slaps a spicy flame badge on anything hogging 80%+ CPU. 🔥🍳")
             }
 
             row(label: "") {
@@ -164,7 +164,7 @@ struct GeneralTabCloneView: View {
                     set: { configStore.config.memoryPressureQuitEnabled = $0; configStore.save() }
                 ))
             } help: {
-                HelpPopoverButton(text: "When macOS reports memory pressure, gracefully quits regular apps using over 1 GB. Excluded, music, and Never-ruled apps stay safe. 🧠")
+                HelpPopoverButton(text: "When RAM runs dry, QuitX gently escorts 1 GB+ memory monsters out the door to let macOS breathe. 🧠🚪")
             }
 
             let isAutoQuitEnabled = configStore.config.quitInactiveAfterMinutes > 0
@@ -320,7 +320,7 @@ struct AdvancedTabCloneView: View {
                     }
                 ))
             } help: {
-                HelpPopoverButton(text: "Some like the whole app list selected, some like ‘em all deselected. Now you get to choose. 🙌")
+                HelpPopoverButton(text: "Some like 'em all checked, some like a clean slate. You do you — pick your starting flavor! 🍦🙌")
             }
 
             row(label: "") {
@@ -338,7 +338,7 @@ struct AdvancedTabCloneView: View {
                     set: { configStore.config.confirmIndividualAction = $0; configStore.save() }
                 ))
             } help: {
-                HelpPopoverButton(text: "Look before you leap. Adds an 'Are you sure?' safety net before kicking out individual apps. 🛡️")
+                HelpPopoverButton(text: "Look before you leap! Adds a friendly 'Are you sure?' safety net before kicking out individual apps. 🛡️🦺")
             }
 
             row(label: "Extras:") {
