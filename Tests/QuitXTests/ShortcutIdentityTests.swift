@@ -25,8 +25,13 @@ struct ShortcutIdentityTests {
         #expect(sm.shortcutError == nil)
         #expect(sm.quitAllKeys.isEmpty)
 
+        #expect(sm.setKeys(activateKeys, for: .quitAll) == false)
+        #expect(sm.shortcutError != nil)
+
+        #expect(sm.setKeys([], for: .activateMenu) == true)
         #expect(sm.setKeys(activateKeys, for: .quitAll) == true)
         #expect(sm.shortcutError == nil)
+        #expect(sm.quitAllKeys == activateKeys)
         sm.resetToDefaults()
     }
 
