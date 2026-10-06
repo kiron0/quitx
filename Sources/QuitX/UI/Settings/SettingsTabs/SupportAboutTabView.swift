@@ -11,7 +11,6 @@ struct AboutTabCloneView: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            // Top App Info Row (reverted to original layout & buttons)
             HStack(alignment: .center, spacing: 20) {
                 QuitXAppIconView(size: 70, cornerRadius: 14)
 
@@ -53,10 +52,9 @@ struct AboutTabCloneView: View {
             }
             .padding(.horizontal, 30)
 
-            // Separate Full-Width Modernized Contact Section
-            HStack(spacing: 10) {
+            HStack(spacing: 11) {
                 Image(systemName: "envelope.badge.fill")
-                    .font(.system(size: 13))
+                    .font(.system(size: 14))
                     .foregroundStyle(QuitXTheme.accent)
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -67,6 +65,7 @@ struct AboutTabCloneView: View {
                     Text("We'd love to hear from you. Get in touch with us.")
                         .font(.system(size: 10.5))
                         .foregroundStyle(Color.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Spacer(minLength: 8)
@@ -98,7 +97,7 @@ struct AboutTabCloneView: View {
                 .onHover { state.isContactHovered = $0 }
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 9)
+            .padding(.vertical, 10)
             .background(QuitXTheme.cardBackground, in: RoundedRectangle(cornerRadius: 8))
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
@@ -106,9 +105,9 @@ struct AboutTabCloneView: View {
             )
             .padding(.horizontal, 20)
         }
-        .padding(.top, 15)
-        .padding(.bottom, 12)
-        .frame(width: 400, height: 170, alignment: .topLeading)
+        .padding(.top, 16)
+        .padding(.bottom, 14)
+        .frame(width: 400, height: 186, alignment: .topLeading)
         .background(QuitXTheme.windowBackground)
     }
 }
