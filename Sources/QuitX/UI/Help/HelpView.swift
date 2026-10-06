@@ -409,12 +409,66 @@ struct HelpView: View {
     }
 
     private var sidebar: some View {
-        topicList
-            .padding(.top, 48)
-            .padding(.bottom, 12)
-            .frame(width: 220)
-            .frame(maxHeight: .infinity)
-            .background(QuitXTheme.cardBackground)
+        VStack(spacing: 0) {
+            stickySearchHeader
+
+            topicList
+                .padding(.top, 6)
+                .padding(.bottom, 12)
+        }
+        .frame(width: 220)
+        .frame(maxHeight: .infinity)
+        .background(QuitXTheme.cardBackground)
+    }
+
+    private var stickySearchHeader: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(state.searchText.isEmpty ? Color.secondary.opacity(0.85) : QuitXTheme.accent)
+
+                TextField("Search help…", text: $state.searchText)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.primary)
+                    .disableInitialFocus()
+
+                if !state.searchText.isEmpty {
+                    Button {
+                        state.searchText = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(Color.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .transition(.opacity)
+                }
+            }
+            .padding(.horizontal, 8)
+            .frame(height: 28)
+            .background(
+                RoundedRectangle(cornerRadius: 7)
+                    .fill(Color(NSColor.textBackgroundColor).opacity(0.65))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 7)
+                    .strokeBorder(
+                        state.searchText.isEmpty
+                            ? Color.primary.opacity(0.09)
+                            : QuitXTheme.accent.opacity(0.55),
+                        lineWidth: 0.8
+                    )
+            )
+            .padding(.horizontal, 10)
+            .padding(.top, 38)
+            .padding(.bottom, 8)
+
+            Divider()
+                .opacity(0.35)
+        }
+        .background(QuitXTheme.cardBackground)
     }
 
     private var topicList: some View {
@@ -429,8 +483,21 @@ struct HelpView: View {
                             .padding(.horizontal, 10)
                             .padding(.bottom, 2)
 
-                        ForEach(filteredTopics) { topic in
-                            topicRow(topic)
+                        if filteredTopics.isEmpty {
+                            VStack(spacing: 6) {
+                                Image(systemName: "magnifyingglass")
+                                    .font(.system(size: 18))
+                                    .foregroundStyle(Color.secondary.opacity(0.5))
+                                Text("No matching topics")
+                                    .font(.system(size: 11.5, weight: .medium))
+                                    .foregroundStyle(Color.secondary)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 24)
+                        } else {
+                            ForEach(filteredTopics) { topic in
+                                topicRow(topic)
+                            }
                         }
                     }
                 } else {
