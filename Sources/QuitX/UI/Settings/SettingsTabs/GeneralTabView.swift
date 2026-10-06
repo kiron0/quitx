@@ -130,10 +130,14 @@ struct GeneralTabCloneView: View {
             row(label: "Menu & Power:") {
                 toggle("Show CPU in menu bar", isOn: Binding(
                     get: { configStore.config.showMenuBarStats },
-                    set: { configStore.config.showMenuBarStats = $0; configStore.save() }
+                    set: {
+                        configStore.config.showMenuBarStats = $0
+                        configStore.save()
+                        StatusItemController.shared?.updateMenuBarStats()
+                    }
                 ))
             } help: {
-                HelpPopoverButton(text: "Glanceable load: total CPU percent lives next to the QuitX icon, refreshed every second (slowed to 5 seconds on battery saver).")
+                HelpPopoverButton(text: "Glanceable load: total CPU percent lives next to the QuitX icon, refreshed every 2 seconds (slowed to 10 seconds on battery saver).")
             }
 
             row(label: "") {

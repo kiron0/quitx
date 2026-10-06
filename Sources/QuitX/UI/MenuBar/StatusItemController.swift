@@ -295,6 +295,16 @@ final class StatusItemController: NSObject {
         }
     }
 
+    private func refreshVisibleApps() {
+        refreshTask?.cancel()
+        refreshTask = Task { @MainActor [weak self] in
+            await AppListViewModel.shared.refresh()
+            guard !Task.isCancelled, let self else { return }
+            self.updateMenuBarStats()
+            self.updatePopoverSize()
+        }
+    }
+
     private func startLiveMonitoring() {
         liveMonitoringTask?.cancel()
         liveMonitoringTask = Task { @MainActor [weak self] in
@@ -313,8 +323,8 @@ final class StatusItemController: NSObject {
                 let prevConfirming = AppListViewModel.shared.showConfirmQuitAll || AppListViewModel.shared.pendingIndividualAction != nil
                 if !skip {
                     await AppListViewModel.shared.updateLiveStats()
+                    self.updateMenuBarStats()
                 }
-                self.updateMenuBarStats()
                 let newCount = AppListViewModel.shared.filteredApps.count
                 let newConfirming = AppListViewModel.shared.showConfirmQuitAll || AppListViewModel.shared.pendingIndividualAction != nil
                 if prevCount != newCount || prevConfirming != newConfirming {
@@ -324,7 +334,7 @@ final class StatusItemController: NSObject {
         }
     }
 
-    private func updateMenuBarStats() {
+    func updateMenuBarStats() {
         guard let button = statusItem.button else { return }
         let totalCPU = AppListViewModel.shared.apps.reduce(0.0) { $0 + $1.cpuUsage }
         if let text = BatterySaver.menuBarText(totalCPU: totalCPU, enabled: ConfigStore.shared.config.showMenuBarStats) {
@@ -345,28 +355,21 @@ final class StatusItemController: NSObject {
                 let cfg = ConfigStore.shared.config
                 let onBattery = cfg.batterySaverEnabled
                     && BatterySaver.isOnBattery(descriptions: BatterySaver.currentDescriptions())
-                let fast = cfg.showMenuBarStats && !onBattery
-                try? await Task.sleep(nanoseconds: fast ? 1_000_000_000 : 5_000_000_000)
+                let interval: UInt64 = onBattery ? 10_000_000_000 : 2_000_000_000
+                try? await Task.sleep(nanoseconds: interval)
                 guard !Task.isCancelled else { break }
-                if ConfigStore.shared.config.showMenuBarStats {
+                guard !self.isShown else { continue }
+                if cfg.showMenuBarStats {
                     await AppListViewModel.shared.updateLiveStats()
                 }
                 self.updateMenuBarStats()
             }
         }
     }
+
     private func stopLiveMonitoring() {
         liveMonitoringTask?.cancel()
         liveMonitoringTask = nil
-    }
-
-    private func refreshVisibleApps() {
-        refreshTask?.cancel()
-        refreshTask = Task { @MainActor [weak self] in
-            await AppListViewModel.shared.refresh()
-            guard !Task.isCancelled else { return }
-            self?.updatePopoverSize()
-        }
     }
 
     private func showContextMenu() {
