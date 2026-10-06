@@ -232,7 +232,6 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         return stagedAppURL
     }
 
-
     nonisolated static func sha256(of url: URL) throws -> String {
         let file = try FileHandle(forReadingFrom: url)
         defer { try? file.close() }
@@ -429,8 +428,7 @@ final class UpdateDownloadService: NSObject, ObservableObject {
     }
 
     func installAndRelaunch(stagedURL: URL) {
-        // The relaunch script owns the staged directory from here on and
-        // removes it itself; never let cancel cleanup delete it mid-install.
+
         stagedDirURL = nil
 
         var destURL = Self.resolveDestinationAppURL()
@@ -472,7 +470,6 @@ final class UpdateDownloadService: NSObject, ObservableObject {
             state = .failed(message: "Failed to launch updater: \(error.localizedDescription)")
         }
     }
-
 
     private static let bytesFormatter: ByteCountFormatter = {
         let formatter = ByteCountFormatter()
@@ -592,7 +589,6 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         state = .failed(message: error.localizedDescription)
     }
 }
-
 
 extension UpdateDownloadService: URLSessionDownloadDelegate {
     nonisolated func urlSession(

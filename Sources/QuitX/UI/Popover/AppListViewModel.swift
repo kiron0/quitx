@@ -176,7 +176,8 @@ final class AppListViewModel: ObservableObject {
     private var flagsMonitor: Any?
     private var toastTask: Task<Void, Never>?
     private var scanGeneration = 0
-    private var isUpdatingLiveStats = false
+    private var liveStatsGeneration = 0
+    private(set) var lastRefreshDate: Date = .distantPast
 
     init() {
         showBackgroundApps = ConfigStore.shared.config.includeBackground
@@ -289,6 +290,7 @@ final class AppListViewModel: ObservableObject {
         if apps != flagged {
             apps = flagged
         }
+        lastRefreshDate = Date()
 
         let configSettingChanged = (lastConfigDefaultSelectAll != nil && lastConfigDefaultSelectAll != cfg.defaultSelectAll)
         lastConfigDefaultSelectAll = cfg.defaultSelectAll
@@ -308,9 +310,9 @@ final class AppListViewModel: ObservableObject {
     }
 
     func updateLiveStats() async {
-        guard !isLoading, !isUpdatingLiveStats else { return }
-        isUpdatingLiveStats = true
-        defer { isUpdatingLiveStats = false }
+        guard !isLoading else { return }
+        liveStatsGeneration += 1
+        let generation = liveStatsGeneration
         let selectedAllBeforeRefresh = isAllSelected
         let cfg = activeScanConfig
         let hogPids: Set<pid_t>
@@ -325,7 +327,7 @@ final class AppListViewModel: ObservableObject {
             hogPids = []
         }
         let updated = await AppListService.shared.fetchLiveStats(currentApps: apps, config: cfg, hogPids: hogPids)
-        guard !Task.isCancelled, !isLoading else { return }
+        guard !Task.isCancelled, !isLoading, generation == liveStatsGeneration else { return }
         let flagged = applyResistantFlags(updated)
         if apps != flagged {
             apps = flagged
@@ -384,7 +386,6 @@ final class AppListViewModel: ObservableObject {
         await performQuit(targets: targets, force: force)
     }
 
-    /// All apps except `keeping`, for the "Quit Other Apps" row action.
     static func othersTargets(keepingId: String, apps: [AppInfo]) -> [AppInfo] {
         apps.filter { $0.id != keepingId }
     }
@@ -404,8 +405,6 @@ final class AppListViewModel: ObservableObject {
         await performQuit(targets: targets, force: force)
     }
 
-    /// Unattended quit path for sleep, lock, and memory pressure.
-    /// Never confirms; callers pre-filter targets to safe apps.
     func quitSilently(targets: [AppInfo], force: Bool) async {
         await performQuit(targets: targets, force: force)
     }

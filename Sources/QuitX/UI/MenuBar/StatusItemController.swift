@@ -44,6 +44,7 @@ final class StatusItemController: NSObject {
     private var workspaceObservers: [NSObjectProtocol] = []
     private var backgroundRefreshTask: Task<Void, Never>?
     private var liveTickCount = 0
+    private var lastThrottled = false
     private var menuStatsTask: Task<Void, Never>?
 
     var isShown: Bool {
@@ -300,13 +301,17 @@ final class StatusItemController: NSObject {
             while let self = self, self.isShown {
                 try? await Task.sleep(nanoseconds: 2_000_000_000)
                 guard !Task.isCancelled, self.isShown else { break }
-                self.liveTickCount += 1
                 let throttled = ConfigStore.shared.config.batterySaverEnabled
                     && BatterySaver.isOnBattery(descriptions: BatterySaver.currentDescriptions())
-                    && self.liveTickCount % 5 != 0
+                if throttled != self.lastThrottled {
+                    self.liveTickCount = 0
+                    self.lastThrottled = throttled
+                }
+                self.liveTickCount += 1
+                let skip = throttled && self.liveTickCount % 5 != 0
                 let prevCount = AppListViewModel.shared.filteredApps.count
                 let prevConfirming = AppListViewModel.shared.showConfirmQuitAll || AppListViewModel.shared.pendingIndividualAction != nil
-                if !throttled {
+                if !skip {
                     await AppListViewModel.shared.updateLiveStats()
                 }
                 self.updateMenuBarStats()
@@ -333,13 +338,15 @@ final class StatusItemController: NSObject {
         }
     }
 
-    /// Keeps the optional menu-bar CPU readout fresh, even with the
-    /// popover closed. Idle cost when disabled is one 5s sleep loop.
     func startMenuBarStats() {
         menuStatsTask?.cancel()
         menuStatsTask = Task { @MainActor [weak self] in
             while let self = self {
-                try? await Task.sleep(nanoseconds: 5_000_000_000)
+                let cfg = ConfigStore.shared.config
+                let onBattery = cfg.batterySaverEnabled
+                    && BatterySaver.isOnBattery(descriptions: BatterySaver.currentDescriptions())
+                let fast = cfg.showMenuBarStats && !onBattery
+                try? await Task.sleep(nanoseconds: fast ? 1_000_000_000 : 5_000_000_000)
                 guard !Task.isCancelled else { break }
                 if ConfigStore.shared.config.showMenuBarStats {
                     await AppListViewModel.shared.updateLiveStats()

@@ -1,11 +1,6 @@
 import AppKit
 import Foundation
 
-/// Silent quit target selection for sleep and screen-lock triggers.
-///
-/// Unlike interactive quit, this never asks for confirmation: it only
-/// targets apps that are safe to quit unattended — skipping excluded apps,
-/// music apps, pseudo items (Finder windows, Trash), and QuitX itself.
 enum SleepQuitTargets {
     static func select(apps: [AppInfo], config: QuitXConfig) -> [AppInfo] {
         let excluded = Set(config.exclude.map { $0.lowercased() })
@@ -72,11 +67,14 @@ final class SleepService {
 
     private func handleTrigger(enabled: Bool) async {
         guard enabled else { return }
-        await AppListViewModel.shared.refresh()
+        let vm = AppListViewModel.shared
+        if Date().timeIntervalSince(vm.lastRefreshDate) > 2.0 {
+            await vm.refresh()
+        }
         let targets = SleepQuitTargets.select(
-            apps: AppListViewModel.shared.apps,
+            apps: vm.apps,
             config: ConfigStore.shared.config
         )
-        await AppListViewModel.shared.quitSilently(targets: targets, force: false)
+        await vm.quitSilently(targets: targets, force: false)
     }
 }

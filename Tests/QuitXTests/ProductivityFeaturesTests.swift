@@ -94,7 +94,6 @@ struct ProductivityFeaturesTests {
         #expect(targets.map(\.name) == ["Slack"])
     }
 
-
     @Test("Pressure targets need threshold bytes and allow rules")
     func testPressureTargets() {
         var config = baseConfig
@@ -109,7 +108,6 @@ struct ProductivityFeaturesTests {
         let targets = MemoryPressureTargets.select(apps: apps, config: config)
         #expect(targets.map(\.name) == ["Slack"])
     }
-
 
     @Test("Battery detection parses power descriptions")
     func testBatteryDetection() {
@@ -136,7 +134,6 @@ struct ProductivityFeaturesTests {
         #expect(BatterySaver.menuBarText(totalCPU: 12.6, enabled: true) == "13%")
         #expect(BatterySaver.menuBarText(totalCPU: 12.6, enabled: false) == nil)
     }
-
 
     @Test("Due keys split past from future")
     func testTimerDue() {

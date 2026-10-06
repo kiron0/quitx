@@ -155,7 +155,6 @@ enum MenuHelper {
         return item
     }
 
-    /// Parent item for a submenu. Caller fills `item.submenu`.
     static func makeSubmenuItem(
         title: String,
         assetName: String? = nil,

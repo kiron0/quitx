@@ -2,9 +2,22 @@ import SwiftUI
 import AppKit
 import CoreGraphics
 
+private final class ImagePair: NSObject {
+    let normal: NSImage
+    let hovered: NSImage
+
+    init(normal: NSImage, hovered: NSImage) {
+        self.normal = normal
+        self.hovered = hovered
+    }
+}
+
 private enum MenuButtonImageCache {
-    private static var cache: [String: (normal: NSImage, hovered: NSImage)] = [:]
-    private static let lock = NSLock()
+    private static let cache: NSCache<NSString, ImagePair> = {
+        let c = NSCache<NSString, ImagePair>()
+        c.countLimit = 64
+        return c
+    }()
 
     static func images(
         assetName: String?,
@@ -14,11 +27,9 @@ private enum MenuButtonImageCache {
         symbolWeight: NSFont.Weight,
         size: NSSize
     ) -> (normal: NSImage, hovered: NSImage) {
-        let key = "\(assetName ?? "")|\(selectedAssetName ?? "")|\(systemSymbolName ?? "")|\(symbolPointSize)|\(symbolWeight.rawValue)|\(size.width)x\(size.height)"
-        lock.lock()
-        defer { lock.unlock() }
-        if let cached = cache[key] {
-            return cached
+        let key = "\(assetName ?? "")|\(selectedAssetName ?? "")|\(systemSymbolName ?? "")|\(symbolPointSize)|\(symbolWeight.rawValue)|\(size.width)x\(size.height)" as NSString
+        if let cached = cache.object(forKey: key) {
+            return (cached.normal, cached.hovered)
         }
 
         var normalSource: NSImage?
@@ -52,9 +63,9 @@ private enum MenuButtonImageCache {
         normal.isTemplate = true
         hovered.isTemplate = true
 
-        let result = (normal, hovered)
-        cache[key] = result
-        return result
+        let pair = ImagePair(normal: normal, hovered: hovered)
+        cache.setObject(pair, forKey: key)
+        return (normal, hovered)
     }
 
     private static func normalizeAlpha(_ image: NSImage) -> NSImage {

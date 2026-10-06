@@ -49,7 +49,6 @@ final class HogMonitor {
         notifiedPids.removeAll()
     }
 
-    /// Feeds current CPU readings, returns PIDs that are sustained hogs.
     func noteLiveApps(
         _ apps: [AppInfo],
         threshold: Double,

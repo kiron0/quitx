@@ -15,7 +15,6 @@ struct WelcomeView: View {
                 .padding(.top, 16)
                 .padding(.bottom, 16)
 
-
             quickSetup
                 .padding(.horizontal, 20)
 

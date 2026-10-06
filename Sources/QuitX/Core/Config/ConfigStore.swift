@@ -33,6 +33,7 @@ final class ConfigStore: ObservableObject {
     }
 
     private var saveWorkItem: DispatchWorkItem?
+    private var refreshWorkItem: DispatchWorkItem?
 
     func save(refreshAppList: Bool = false, immediate: Bool = false) {
         saveWorkItem?.cancel()
@@ -51,10 +52,16 @@ final class ConfigStore: ObservableObject {
         }
 
         guard refreshAppList else { return }
-        Task { @MainActor in
-            await AppListViewModel.shared.refresh()
-            StatusItemController.shared?.updatePopoverSize()
+        refreshWorkItem?.cancel()
+        let item = DispatchWorkItem { [weak self] in
+            guard self != nil else { return }
+            Task { @MainActor in
+                await AppListViewModel.shared.refresh()
+                StatusItemController.shared?.updatePopoverSize()
+            }
         }
+        refreshWorkItem = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: item)
     }
 
     @discardableResult
@@ -105,12 +112,10 @@ final class ConfigStore: ObservableObject {
         save(refreshAppList: true, immediate: true)
     }
 
-    /// Stored per-app rule in minutes, or `nil` when the app follows the default.
     func perAppQuitMinutes(bundleId: String?, name: String) -> Int? {
         PerAppQuitRule.storedMinutes(bundleId: bundleId, name: name, rules: config.perAppQuitRules)
     }
 
-    /// Effective auto-quit timeout in minutes. Returns `0` for Never.
     func effectiveQuitTimeoutMinutes(bundleId: String?, name: String) -> Int {
         PerAppQuitRule.timeoutMinutes(
             bundleId: bundleId,
@@ -120,7 +125,6 @@ final class ConfigStore: ObservableObject {
         )
     }
 
-    /// Stores a per-app rule. Minutes `<= 0` means Never.
     func setPerAppQuitRule(identifier: String, minutes: Int) {
         let key = identifier.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !key.isEmpty else { return }

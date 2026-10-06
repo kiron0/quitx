@@ -60,8 +60,6 @@ struct AppInfo: Identifiable, Hashable, Sendable {
         self.isCpuHog = isCpuHog
     }
 
-    /// Copy with the unresponsive flag replaced. Used for the badge that
-    /// marks apps which ignored a previous graceful quit request.
     func settingUnresponsive(_ value: Bool) -> AppInfo {
         AppInfo(
             id: id,

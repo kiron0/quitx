@@ -1,19 +1,12 @@
 import AppKit
 import Foundation
 
-/// Persistent per-app quit timers.
-///
-/// Timers survive app restarts: fire dates are stored in config as Unix
-/// timestamps. Expired entries are dropped on launch. When a timer fires,
-/// the matching running app is asked to quit gracefully (never forced).
 enum QuitTimerDue {
-    /// Keys whose fire date passed as of `now`.
     static func dueKeys(timers: [String: Double], now: Date) -> [String] {
         let epoch = now.timeIntervalSince1970
         return timers.filter { $0.value <= epoch }.map(\.key).sorted()
     }
 
-    /// Drops expired entries, returning the timers still in the future.
     static func pruneExpired(timers: [String: Double], now: Date) -> [String: Double] {
         let epoch = now.timeIntervalSince1970
         return timers.filter { $0.value > epoch }
@@ -38,7 +31,6 @@ final class QuitTimerService {
         timer = nil
     }
 
-    /// Remaining whole minutes for an app rule key, or `nil` when no timer.
     func remainingMinutes(identifier: String) -> Int? {
         let key = identifier.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard let fireDate = ConfigStore.shared.config.quitTimers[key] else { return nil }
@@ -102,18 +94,11 @@ final class QuitTimerService {
         ConfigStore.shared.save()
         ensureTimer()
 
-        let running = NSWorkspace.shared.runningApplications
-        var appsToQuit: [NSRunningApplication] = []
-        for key in due {
-            if let match = running.first(where: {
-                $0.activationPolicy == .regular &&
-                    PerAppQuitRule.ruleKey(bundleId: $0.bundleIdentifier, name: $0.localizedName ?? "") == key
-            }) {
-                appsToQuit.append(match)
-            }
+        let vm = AppListViewModel.shared
+        let targets = vm.apps.filter { app in
+            let key = PerAppQuitRule.ruleKey(bundleId: app.bundleId, name: app.name)
+            return due.contains(key)
         }
-        for app in appsToQuit {
-            app.terminate()
-        }
+        await vm.quitSilently(targets: targets, force: false)
     }
 }

@@ -16,13 +16,17 @@ struct AppListView: View {
     }
 
     private var rows: some View {
-        LazyVStack(spacing: 2) {
+        let sortBy = ConfigStore.shared.config.sortBy
+        let forceMode = ConfigStore.shared.config.force
+        return LazyVStack(spacing: 2) {
             ForEach(vm.filteredApps) { app in
                 AppRowView(
                     app: app,
                     isSelected: vm.selected.contains(app.id),
                     isOptionKeyPressed: vm.isOptionKeyPressed,
                     isPending: vm.pendingAppIds.contains(app.id),
+                    sortBy: sortBy,
+                    forceMode: forceMode,
                     onToggle: {
                         vm.toggleSelection(for: app)
                     },

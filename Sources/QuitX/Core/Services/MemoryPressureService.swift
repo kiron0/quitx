@@ -1,11 +1,6 @@
 import AppKit
 import Foundation
 
-/// Selects regular apps to terminate gracefully on memory pressure.
-///
-/// Conservative by design: background processes are never touched here,
-/// and excluded, music-protected, per-app Never, Finder, Trash, and QuitX
-/// itself are always skipped. Termination is graceful only, never forced.
 enum MemoryPressureTargets {
     static func select(apps: [AppInfo], config: QuitXConfig) -> [AppInfo] {
         let thresholdBytes = UInt64(max(1, config.memoryPressureThresholdMB)) * 1024 * 1024
@@ -67,12 +62,15 @@ final class MemoryPressureService {
     private func handlePressure() async {
         let config = ConfigStore.shared.config
         guard config.memoryPressureQuitEnabled else { return }
-        await AppListViewModel.shared.refresh()
+        let vm = AppListViewModel.shared
+        if Date().timeIntervalSince(vm.lastRefreshDate) > 2.0 {
+            await vm.refresh()
+        }
         let targets = MemoryPressureTargets.select(
-            apps: AppListViewModel.shared.apps,
+            apps: vm.apps,
             config: config
         )
         guard !targets.isEmpty else { return }
-        await AppListViewModel.shared.quitSilently(targets: targets, force: false)
+        await vm.quitSilently(targets: targets, force: false)
     }
 }

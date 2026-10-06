@@ -133,7 +133,7 @@ struct GeneralTabCloneView: View {
                     set: { configStore.config.showMenuBarStats = $0; configStore.save() }
                 ))
             } help: {
-                HelpPopoverButton(text: "Glanceable load: total CPU percent lives next to the QuitX icon, refreshed every 5 seconds.")
+                HelpPopoverButton(text: "Glanceable load: total CPU percent lives next to the QuitX icon, refreshed every second (slowed to 5 seconds on battery saver).")
             }
 
             row(label: "") {

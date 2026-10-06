@@ -11,6 +11,8 @@ struct AppRowView: View {
     let isSelected: Bool
     let isOptionKeyPressed: Bool
     let isPending: Bool
+    let sortBy: QuitXConfig.SortBy
+    let forceMode: QuitXConfig.ForceMode
     let onToggle: () -> Void
     let onQuit: (_ force: Bool) -> Void
     let onRestart: () -> Void
@@ -18,7 +20,6 @@ struct AppRowView: View {
     let onQuitOthers: (_ force: Bool) -> Void
 
     @StateObject private var state = RowState()
-    @ObservedObject private var configStore = ConfigStore.shared
 
     private let goldColor = QuitXTheme.accent
     private let forceColor = Color(red: 240/255, green: 70/255, blue: 50/255)
@@ -71,7 +72,7 @@ struct AppRowView: View {
             )
             .frame(width: 16, height: 16)
 
-            let isForced = isOptionKeyPressed ? (configStore.config.force != .force) : (configStore.config.force == .force)
+            let isForced = isOptionKeyPressed ? (forceMode != .force) : (forceMode == .force)
 
             Button {
                 onQuit(isForced)
@@ -102,7 +103,7 @@ struct AppRowView: View {
     }
 
     private var usageText: String {
-        switch configStore.config.sortBy {
+        switch sortBy {
         case .memoryDesc, .memoryAsc:
             return app.memoryFormatted
         case .cpuDesc, .cpuAsc, .name, .nameDesc:
@@ -205,13 +206,13 @@ struct AppRowView: View {
         let item = MenuHelper.makeSubmenuItem(title: "Auto-quit", systemSymbolName: "timer")
         let submenu = item.submenu ?? NSMenu()
         let key = PerAppQuitRule.ruleKey(bundleId: app.bundleId, name: app.name)
-        let stored = configStore.perAppQuitMinutes(bundleId: app.bundleId, name: app.name)
-        let globalMinutes = configStore.config.quitInactiveAfterMinutes
+        let stored = ConfigStore.shared.perAppQuitMinutes(bundleId: app.bundleId, name: app.name)
+        let globalMinutes = ConfigStore.shared.config.quitInactiveAfterMinutes
         let defaultTitle = globalMinutes > 0 ? "Use Default (\(globalMinutes) min)" : "Use Default (Off)"
 
         let defaultItem = MenuHelper.makeItem(
             title: defaultTitle,
-            action: { [weak configStore] in configStore?.removePerAppQuitRule(identifier: key) }
+            action: { ConfigStore.shared.removePerAppQuitRule(identifier: key) }
         )
         defaultItem.state = stored == nil ? .on : .off
         submenu.addItem(defaultItem)
@@ -221,7 +222,7 @@ struct AppRowView: View {
             guard let minutes = preset.minutes else { continue }
             let presetItem = MenuHelper.makeItem(
                 title: preset.title,
-                action: { [weak configStore] in configStore?.setPerAppQuitRule(identifier: key, minutes: minutes) }
+                action: { ConfigStore.shared.setPerAppQuitRule(identifier: key, minutes: minutes) }
             )
             presetItem.state = stored == minutes ? .on : .off
             submenu.addItem(presetItem)

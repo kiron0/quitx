@@ -314,7 +314,6 @@ struct AppUpdateTests {
             publicKeyBase64: publicKeyBase64
         )
 
-        // Tampered payload must fail
         try Data("tampered payload".utf8).write(to: fileURL)
         #expect(throws: UpdateError.invalidSignature) {
             try UpdateDownloadService.verifyEdSignature(
@@ -324,7 +323,6 @@ struct AppUpdateTests {
             )
         }
 
-        // Signature by a different key must fail
         try payload.write(to: fileURL)
         let otherKey = Curve25519.Signing.PrivateKey()
         let otherSignature = try otherKey.signature(for: payload).base64EncodedString()
@@ -336,7 +334,6 @@ struct AppUpdateTests {
             )
         }
 
-        // Malformed signature must fail
         #expect(throws: UpdateError.invalidSignature) {
             try UpdateDownloadService.verifyEdSignature(
                 of: fileURL,

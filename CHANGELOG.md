@@ -16,7 +16,25 @@ All notable changes to QuitX macOS App will be documented in this file.
 - Battery saver: on battery, auto-quit timeouts halve and live stats slow to every 10 seconds. Toggle in Settings > General.
 - Recently quit menu: gear menu Reopen submenu relaunches recently quit apps (up to 20, deduplicated). Clearable.
 - Unattended quitting on Mac sleep and screen lock: optional graceful quit of safe apps only, never forced, never confirmed. Toggles in Settings > General.
-- Optional menu-bar CPU readout: total CPU percent beside the QuitX icon, refreshed every 5 seconds even with the popover closed. Toggle in Settings > General.
+- Optional menu-bar CPU readout: total CPU percent beside the QuitX icon, refreshed every second even with the popover closed (5 seconds under battery saver). Toggle in Settings > General.
+
+### Fixed
+
+- Live stats no longer skip ticks when a refresh overlaps: generation counter replaces the boolean guard so the latest update always wins.
+- CPU sample cache matches the 1-second menu-bar refresh, so the readout never shows stale percent; single-flight flag still prevents duplicate `ps` spawns.
+- Batch quit records recently-quit apps with one `UserDefaults` write instead of one per app.
+- Settings saves with `refreshAppList` debounce 0.3s, coalescing rapid toggles into one app-list refresh.
+- App rows no longer observe `ConfigStore`: sort and quit mode passed as plain values, so config changes no longer re-render every row.
+- Menu button image cache bounded to 64 entries via `NSCache` instead of an unbounded dictionary.
+- Quit timers route through `quitSilently`: sound, recently-quit record, and resistance tracking now apply.
+- Sleep, screen-lock, and memory-pressure quits reuse the app list when refreshed within 2s instead of forcing a full scan.
+- Battery-saver throttle counter resets when power state changes, preventing drift in the 5-tick skip pattern.
+- Update gatekeeper caches `updates.json` for 60s, removing a GitHub API fetch on every `/latest` call.
+- Unresponsive badge tracks the exact process id: relaunching an app clears a stale flag instead of inheriting it, and entries for dead processes are pruned on every refresh.
+
+### Changed
+
+- Menu bar CPU readout interval cut from 5 seconds to 1 second; battery saver restores 5 seconds while on battery power.
 
 ## 1.0.8
 
@@ -32,7 +50,6 @@ All notable changes to QuitX macOS App will be documented in this file.
 
 ### Fixed
 
-- Unresponsive badge tracks the exact process id: relaunching an app clears a stale flag instead of inheriting it, and entries for dead processes are pruned on every refresh.
 - Normal Quit never escalates to `SIGKILL`. Only explicit Force Quit force-terminates after timeout.
 - Cancelling a quit returns before any forced-termination logic; cancellation can no longer make quitting more destructive.
 - Auto Quit only terminates gracefully and never force-kills; refused apps are rescheduled instead of killed.

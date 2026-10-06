@@ -33,7 +33,7 @@ enum QuitXConstants {
     }
 
     enum HotKeys {
-        static let signature: OSType = 1380993096 // 'QXHK'
+        static let signature: OSType = 1380993096
         static let activateMenuId: UInt32 = 1
         static let quitAllId: UInt32 = 2
         static let forceQuitAllId: UInt32 = 3
@@ -99,11 +99,10 @@ enum QuitXConstants {
         [Please describe your issue, feedback, or suggestion here]
 
         Steps to reproduce (if bug):
-        1. 
-        2. 
+        1.
+        2.
 
         Expected behavior:
-
 
         System Info:
         - QuitX Version: v\(appVersion) (\(buildNumber))

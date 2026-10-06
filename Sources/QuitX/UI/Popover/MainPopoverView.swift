@@ -434,4 +434,3 @@ struct MainPopoverView: View {
     }
 }
 
-

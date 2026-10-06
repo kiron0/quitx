@@ -7,13 +7,9 @@ struct RecentlyQuitEntry: Codable, Equatable, Sendable {
     let quitAt: Date
 }
 
-/// Bounded, deduplicated record of successfully quit apps for quick reopen.
 enum RecentlyQuitStore {
     static let maxCount = 20
 
-    /// Prepends `entry`, moving any existing same-app record to the front.
-    /// Apps match by bundle ID, falling back to case-insensitive name.
-    /// Records without a bundle ID are kept but cannot be reopened.
     static func inserting(_ entries: [RecentlyQuitEntry], entry: RecentlyQuitEntry) -> [RecentlyQuitEntry] {
         var rest = entries.filter { !isSameApp($0, entry) }
         rest.insert(entry, at: 0)
@@ -46,7 +42,14 @@ final class RecentlyQuitService {
     }
 
     func record(apps: [AppInfo]) {
-        for app in apps { record(app: app) }
+        guard !apps.isEmpty else { return }
+        var current = entries
+        for app in apps {
+            let entry = RecentlyQuitEntry(name: app.name, bundleId: app.bundleId, quitAt: Date())
+            current = RecentlyQuitStore.inserting(current, entry: entry)
+        }
+        entries = current
+        save()
     }
 
     func clear() {
@@ -54,7 +57,6 @@ final class RecentlyQuitService {
         save()
     }
 
-    /// Cache key for the options menu: changes whenever the list changes.
     var menuKey: String {
         entries.map { "\($0.bundleId ?? $0.name)@\($0.quitAt.timeIntervalSince1970)" }.joined(separator: "|")
     }
