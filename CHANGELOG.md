@@ -7,7 +7,7 @@ All notable changes to QuitX macOS App will be documented in this file.
 ### Added
 
 - Per-app auto-quit rules: open the three-dot menu on any app row, choose Auto-quit, then pick 15/30 minutes, 1/2/4 hours, or Never. A per-app rule overrides the global inactivity interval; Use Default returns the app to the global setting. Works even when the global timer is off. Documented in Help > Auto Quit.
-- Quit Other Apps row action: quits everything except that app with no confirmation.
+- Quit Other Apps row action: quits everything except that app, honoring the quit-all confirmation preference.
 - Settings split into short General and Advanced tabs; Support tab merged into About with matching Contact button.
 - Quit timers: row menu Quit In quits an app gracefully after 15, 30, or 60 minutes. Timers persist across restarts; expired ones are dropped on launch. Cancel from the same menu with remaining time shown.
 - Unresponsive badge: a red triangle marks apps that ignored a previous graceful quit request, pointing at Force Quit.
@@ -32,6 +32,7 @@ All notable changes to QuitX macOS App will be documented in this file.
 
 ### Fixed
 
+- Unresponsive badge tracks the exact process id: relaunching an app clears a stale flag instead of inheriting it, and entries for dead processes are pruned on every refresh.
 - Normal Quit never escalates to `SIGKILL`. Only explicit Force Quit force-terminates after timeout.
 - Cancelling a quit returns before any forced-termination logic; cancellation can no longer make quitting more destructive.
 - Auto Quit only terminates gracefully and never force-kills; refused apps are rescheduled instead of killed.

@@ -34,8 +34,6 @@ struct ProductivityFeaturesTests {
         return config
     }
 
-    // MARK: - HogTracker
-
     @Test("Hog requires sustained threshold breach")
     func testHogSustain() {
         var tracker = HogTracker()
@@ -58,8 +56,6 @@ struct ProductivityFeaturesTests {
         _ = tracker.sustainedPids(cpuByPid: [:], threshold: 80, sustainSeconds: 300, now: restarted)
         #expect(tracker.sustainedPids(cpuByPid: [101: 90], threshold: 80, sustainSeconds: 300, now: restarted).isEmpty)
     }
-
-    // MARK: - RecentlyQuitStore
 
     @Test("Recent list dedups, prepends, and caps")
     func testRecentInsert() {
@@ -84,8 +80,6 @@ struct ProductivityFeaturesTests {
         #expect(big.first?.name == "App29")
     }
 
-    // MARK: - SleepQuitTargets
-
     @Test("Sleep targets skip protected apps")
     func testSleepTargets() {
         let apps = [
@@ -100,7 +94,6 @@ struct ProductivityFeaturesTests {
         #expect(targets.map(\.name) == ["Slack"])
     }
 
-    // MARK: - MemoryPressureTargets
 
     @Test("Pressure targets need threshold bytes and allow rules")
     func testPressureTargets() {
@@ -117,7 +110,6 @@ struct ProductivityFeaturesTests {
         #expect(targets.map(\.name) == ["Slack"])
     }
 
-    // MARK: - BatterySaver
 
     @Test("Battery detection parses power descriptions")
     func testBatteryDetection() {
@@ -145,7 +137,6 @@ struct ProductivityFeaturesTests {
         #expect(BatterySaver.menuBarText(totalCPU: 12.6, enabled: false) == nil)
     }
 
-    // MARK: - QuitTimerDue
 
     @Test("Due keys split past from future")
     func testTimerDue() {
@@ -156,7 +147,32 @@ struct ProductivityFeaturesTests {
         #expect(QuitTimerDue.dueKeys(timers: [:], now: now).isEmpty)
     }
 
-    // MARK: - Quit Others
+    @Test("Resistant badge flags only the exact pid that resisted")
+    func testResistantFlagExactPid() {
+        let app = AppInfo(name: "Slow", bundleId: "com.example.slow", pid: 100)
+        let key = PerAppQuitRule.ruleKey(bundleId: "com.example.slow", name: "Slow")
+        let result = AppListViewModel.flagResistantApps([app], resistantPids: [key: 100])
+        #expect(result.apps.first?.isUnresponsive == true)
+        #expect(result.live[key] == 100)
+    }
+
+    @Test("Relaunched app with new pid is not flagged and entry pruned")
+    func testResistantFlagRelaunchCleared() {
+        let fresh = AppInfo(name: "Slow", bundleId: "com.example.slow", pid: 200)
+        let key = PerAppQuitRule.ruleKey(bundleId: "com.example.slow", name: "Slow")
+        let result = AppListViewModel.flagResistantApps([fresh], resistantPids: [key: 100])
+        #expect(result.apps.first?.isUnresponsive == false)
+        #expect(result.live.isEmpty)
+    }
+
+    @Test("Quit process gone from list prunes entry without flagging others")
+    func testResistantFlagProcessGone() {
+        let other = AppInfo(name: "Other", bundleId: "com.example.other", pid: 300)
+        let key = PerAppQuitRule.ruleKey(bundleId: "com.example.slow", name: "Slow")
+        let result = AppListViewModel.flagResistantApps([other], resistantPids: [key: 100])
+        #expect(result.apps.first?.isUnresponsive == false)
+        #expect(result.live.isEmpty)
+    }
 
     @Test("Quit Others keeps one app")
     func testOthersTargets() {

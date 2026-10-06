@@ -37,24 +37,43 @@ final class AppListViewModel: ObservableObject {
     @Published private(set) var isPartiallySelected: Bool = false
     @Published private(set) var selectedVisibleCount: Int = 0
     @Published var isOptionKeyPressed: Bool = false
-    private var resistantKeys = Set<String>()
+    private var resistantPids = [String: pid_t]()
 
-    /// Marks apps that ignored a graceful quit so rows can badge them.
-    private func applyResistantFlags(_ list: [AppInfo]) -> [AppInfo] {
-        guard !resistantKeys.isEmpty else { return list }
-        return list.map { app in
+    static func flagResistantApps(
+        _ list: [AppInfo],
+        resistantPids: [String: pid_t]
+    ) -> (apps: [AppInfo], live: [String: pid_t]) {
+        guard !resistantPids.isEmpty else { return (list, resistantPids) }
+        var running = Set<String>()
+        for app in list {
             let key = PerAppQuitRule.ruleKey(bundleId: app.bundleId, name: app.name)
-            guard !app.isUnresponsive, resistantKeys.contains(key) else { return app }
+            for pid in app.pids {
+                running.insert("\(key)#\(pid)")
+            }
+        }
+        let live = resistantPids.filter { running.contains("\($0.key)#\($0.value)") }
+        let flagged = list.map { app -> AppInfo in
+            let key = PerAppQuitRule.ruleKey(bundleId: app.bundleId, name: app.name)
+            guard !app.isUnresponsive,
+                  let pid = live[key],
+                  app.pids.contains(pid) else { return app }
             return app.settingUnresponsive(true)
         }
+        return (flagged, live)
+    }
+
+    private func applyResistantFlags(_ list: [AppInfo]) -> [AppInfo] {
+        let result = Self.flagResistantApps(list, resistantPids: resistantPids)
+        resistantPids = result.live
+        return result.apps
     }
 
     private func noteQuitResistance(app: AppInfo, succeeded: Bool) {
         let key = PerAppQuitRule.ruleKey(bundleId: app.bundleId, name: app.name)
         if succeeded {
-            resistantKeys.remove(key)
-        } else {
-            resistantKeys.insert(key)
+            resistantPids.removeValue(forKey: key)
+        } else if let pid = app.pid ?? app.pids.first {
+            resistantPids[key] = pid
         }
     }
     @Published var isLoading: Bool = false
@@ -374,6 +393,13 @@ final class AppListViewModel: ObservableObject {
         guard !hasPendingOperations else { return }
         let targets = Self.othersTargets(keepingId: keeping.id, apps: apps)
         guard !targets.isEmpty else { return }
+
+        if configStore.config.confirmQuitAll {
+            selected = Set(targets.map(\.id))
+            requestConfirmQuitAll(targets: targets, force: force)
+            StatusItemController.shared?.showPopover()
+            return
+        }
 
         await performQuit(targets: targets, force: force)
     }
