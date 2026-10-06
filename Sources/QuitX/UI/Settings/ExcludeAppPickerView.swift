@@ -311,7 +311,7 @@ struct ExcludeAppPickerView: View {
     let onClose: () -> Void
 
     private var visibleApplications: [InstalledApplication] {
-        let excluded = Set(configStore.config.exclude.map { $0.lowercased() })
+        let excluded = configStore.excludedNormalized
         let query = viewModel.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
         return viewModel.applications.filter { application in
             guard !excluded.contains(application.id) else { return false }

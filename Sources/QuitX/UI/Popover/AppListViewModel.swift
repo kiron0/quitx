@@ -154,7 +154,10 @@ final class AppListViewModel: ObservableObject {
 
     private func startModifierMonitor() {
         flagsMonitor = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
-            self?.isOptionKeyPressed = event.modifierFlags.contains(.option)
+            let optionPressed = event.modifierFlags.contains(.option)
+            if let self, optionPressed != self.isOptionKeyPressed {
+                self.isOptionKeyPressed = optionPressed
+            }
             return event
         }
     }

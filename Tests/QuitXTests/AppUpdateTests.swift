@@ -1,5 +1,6 @@
 import Testing
 import AppKit
+import CryptoKit
 import Foundation
 @testable import QuitX
 
@@ -18,7 +19,8 @@ struct AppUpdateTests {
             "downloadUrl": "https://updates.example.com/download/12345?key=secret",
             "sizeBytes": 4384565,
             "fileName": "QuitX-v1.0.4.dmg",
-            "digest": "sha256:0e358a884c81bd1eb7f0ba654ea0193e4289e4253fa2e22918ad1b389b0f40ca"
+            "digest": "sha256:0e358a884c81bd1eb7f0ba654ea0193e4289e4253fa2e22918ad1b389b0f40ca",
+            "edSignature": "9jIudgPRP0VpRrpXscyEo7rEiJigKHIDNgzwuEh65yDSM/u0IUOgpeBi1sJ/ah399Purw26UGBk3A55E3Kn/BQ=="
         }
         """
 
@@ -30,6 +32,7 @@ struct AppUpdateTests {
         #expect(release.sizeBytes == 4384565)
         #expect(release.downloadUrl.contains("/download/12345"))
         #expect(release.digest?.contains("sha256") == true)
+        #expect(release.edSignature?.isEmpty == false)
     }
 
     @Test("Relaunch Script Generation Syntax and Safety")
@@ -289,6 +292,57 @@ struct AppUpdateTests {
 
         #expect(throws: UpdateError.invalidSignature) {
             try UpdateDownloadService.validateUpdateBundle(at: appDir, expectedVersion: "9.9.9")
+        }
+    }
+
+    @Test("Ed25519 Publisher Signature Verification")
+    func testEdSignatureVerification() throws {
+        let privateKey = Curve25519.Signing.PrivateKey()
+        let publicKeyBase64 = privateKey.publicKey.rawRepresentation.base64EncodedString()
+
+        let fileURL = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("quitx-ed25519-\(UUID().uuidString).dmg")
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+
+        let payload = Data("quitx update payload".utf8)
+        try payload.write(to: fileURL)
+
+        let signature = try privateKey.signature(for: payload).base64EncodedString()
+        try UpdateDownloadService.verifyEdSignature(
+            of: fileURL,
+            signatureBase64: signature,
+            publicKeyBase64: publicKeyBase64
+        )
+
+        // Tampered payload must fail
+        try Data("tampered payload".utf8).write(to: fileURL)
+        #expect(throws: UpdateError.invalidSignature) {
+            try UpdateDownloadService.verifyEdSignature(
+                of: fileURL,
+                signatureBase64: signature,
+                publicKeyBase64: publicKeyBase64
+            )
+        }
+
+        // Signature by a different key must fail
+        try payload.write(to: fileURL)
+        let otherKey = Curve25519.Signing.PrivateKey()
+        let otherSignature = try otherKey.signature(for: payload).base64EncodedString()
+        #expect(throws: UpdateError.invalidSignature) {
+            try UpdateDownloadService.verifyEdSignature(
+                of: fileURL,
+                signatureBase64: otherSignature,
+                publicKeyBase64: publicKeyBase64
+            )
+        }
+
+        // Malformed signature must fail
+        #expect(throws: UpdateError.invalidSignature) {
+            try UpdateDownloadService.verifyEdSignature(
+                of: fileURL,
+                signatureBase64: "not-base64-signature",
+                publicKeyBase64: publicKeyBase64
+            )
         }
     }
 }

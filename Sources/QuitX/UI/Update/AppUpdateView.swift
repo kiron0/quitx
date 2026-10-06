@@ -142,7 +142,7 @@ struct AppUpdateView: View {
                     Text("You're Up to Date!")
                         .font(.system(size: 14, weight: .bold))
                         .foregroundStyle(Color.primary)
-                case .available(let version, _, _):
+                case .available(let version, _, _, _):
                     Text("QuitX v\(version) Available")
                         .font(.system(size: 14, weight: .bold))
                         .foregroundStyle(Color.primary)
@@ -238,7 +238,7 @@ struct AppUpdateView: View {
                 }
                 .padding(.top, 4)
 
-            case .available(let version, _, _):
+            case .available(let version, _, _, _):
                 VStack(alignment: .leading, spacing: 4) {
                     Text("QuitX v\(version) is available. You currently have v\(checker.currentVersion).")
                         .font(.system(size: 11.5))
@@ -310,7 +310,7 @@ struct AppUpdateView: View {
                     }
                     .buttonStyle(UpdatePrimaryButtonStyle(color: QuitXTheme.accent))
 
-                case .available(let version, let downloadURL, let digest):
+                case .available(let version, let downloadURL, let digest, let edSignature):
                     Button("Later") {
                         onDismiss()
                     }
@@ -321,7 +321,8 @@ struct AppUpdateView: View {
                             service.startDownload(
                                 from: downloadURL,
                                 version: version,
-                                digest: digest
+                                digest: digest,
+                                edSignature: edSignature
                             )
                         }
                     }

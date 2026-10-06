@@ -10,12 +10,13 @@ struct GatekeeperRelease: Decodable, Equatable {
     let sizeBytes: Int64?
     let fileName: String?
     let digest: String?
+    let edSignature: String?
 }
 
 enum UpdateCheckState: Equatable {
     case idle
     case checking
-    case available(version: String, downloadURL: URL?, digest: String?)
+    case available(version: String, downloadURL: URL?, digest: String?, edSignature: String?)
     case upToDate(version: String)
     case failed(message: String)
 }
@@ -40,14 +41,13 @@ final class UpdateChecker: ObservableObject {
     }
 
     func checkForUpdates(isUserInitiated: Bool = true) async {
+        if isUserInitiated {
+            AppUpdateWindowController.shared.showCheckWindow()
+        }
         guard !isChecking else { return }
         isChecking = true
         checkState = .checking
         defer { isChecking = false }
-
-        if isUserInitiated {
-            AppUpdateWindowController.shared.showCheckWindow()
-        }
 
         var request = URLRequest(url: updateWorkerURL)
         request.setValue(QuitXConstants.updateSecretKey, forHTTPHeaderField: "X-QuitX-Key")
@@ -77,10 +77,25 @@ final class UpdateChecker: ObservableObject {
             let downloadURL = URL(string: release.downloadUrl)
 
             if isVersion(latestVersionRaw, greaterThan: currentVersion) {
+                guard let digest = release.digest, !digest.isEmpty else {
+                    handleError(
+                        message: "Update metadata is missing its checksum digest.",
+                        isUserInitiated: isUserInitiated
+                    )
+                    return
+                }
+                guard let edSignature = release.edSignature, !edSignature.isEmpty else {
+                    handleError(
+                        message: "Update metadata is missing its publisher signature.",
+                        isUserInitiated: isUserInitiated
+                    )
+                    return
+                }
                 handleUpdateAvailable(
                     latestVersion: latestVersionRaw,
                     downloadURL: downloadURL,
-                    digest: release.digest,
+                    digest: digest,
+                    edSignature: edSignature,
                     isUserInitiated: isUserInitiated
                 )
             } else {
@@ -95,8 +110,8 @@ final class UpdateChecker: ObservableObject {
         VersionComparator.isGreaterThan(v1, v2)
     }
 
-    private func handleUpdateAvailable(latestVersion: String, downloadURL: URL?, digest: String?, isUserInitiated: Bool) {
-        checkState = .available(version: latestVersion, downloadURL: downloadURL, digest: digest)
+    private func handleUpdateAvailable(latestVersion: String, downloadURL: URL?, digest: String?, edSignature: String?, isUserInitiated: Bool) {
+        checkState = .available(version: latestVersion, downloadURL: downloadURL, digest: digest, edSignature: edSignature)
         if !isUserInitiated {
             AppUpdateWindowController.shared.showCheckWindow()
         }

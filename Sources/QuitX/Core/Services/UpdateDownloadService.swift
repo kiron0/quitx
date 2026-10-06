@@ -20,6 +20,8 @@ enum UpdateError: LocalizedError, Equatable {
     case invalidBundle
     case invalidChecksum
     case invalidSignature
+    case missingDigest
+    case missingSignature
     case versionMismatch
     case destinationNotWritable(String)
     case scriptExecutionFailed(String)
@@ -42,6 +44,10 @@ enum UpdateError: LocalizedError, Equatable {
             return "Update download checksum does not match the expected value."
         case .invalidSignature:
             return "Update application code signature is missing or invalid."
+        case .missingDigest:
+            return "Update metadata is missing its checksum digest."
+        case .missingSignature:
+            return "Update metadata is missing its publisher signature."
         case .versionMismatch:
             return "Update application version does not match the expected version."
         case .destinationNotWritable(let path):
@@ -67,20 +73,21 @@ final class UpdateDownloadService: NSObject, ObservableObject {
     private var downloadTask: URLSessionDownloadTask?
     private var lastSpeedTime: Date?
     private var lastSpeedBytes: Int64 = 0
+    private var stagedDirURL: URL?
     private(set) var currentDownloadURL: URL?
-    private(set) var currentReleaseWebURL: URL?
     private(set) var currentDigest: String?
+    private(set) var currentEdSignature: String?
 
     override init() {
         super.init()
     }
 
-    func startDownload(from url: URL, version: String, releaseWebURL: URL? = nil, digest: String? = nil) {
+    func startDownload(from url: URL, version: String, digest: String? = nil, edSignature: String? = nil) {
         cancelDownload()
 
         currentDownloadURL = url
-        currentReleaseWebURL = releaseWebURL
         currentDigest = digest
+        currentEdSignature = edSignature
         targetVersion = version
         downloadProgress = 0.0
         bytesDownloaded = 0
@@ -104,8 +111,8 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         startDownload(
             from: url,
             version: targetVersion,
-            releaseWebURL: currentReleaseWebURL,
-            digest: currentDigest
+            digest: currentDigest,
+            edSignature: currentEdSignature
         )
     }
 
@@ -114,6 +121,7 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         downloadTask = nil
         session?.invalidateAndCancel()
         session = nil
+        clearStagedDirectory()
         state = .idle
         downloadProgress = 0.0
         bytesDownloaded = 0
@@ -125,8 +133,21 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         cancelDownload()
         targetVersion = ""
         currentDownloadURL = nil
-        currentReleaseWebURL = nil
         currentDigest = nil
+        currentEdSignature = nil
+    }
+
+    private func finishSession() {
+        session?.finishTasksAndInvalidate()
+        session = nil
+        downloadTask = nil
+    }
+
+    private func clearStagedDirectory() {
+        if let stagedDirURL {
+            try? FileManager.default.removeItem(at: stagedDirURL)
+            self.stagedDirURL = nil
+        }
     }
 
     nonisolated func extractAppFromDMG(dmgURL: URL) async throws -> URL {
@@ -240,6 +261,24 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         let actual = try sha256(of: url)
         guard actual == expected else {
             throw UpdateError.invalidChecksum
+        }
+    }
+
+    nonisolated static func verifyEdSignature(
+        of url: URL,
+        signatureBase64: String,
+        publicKeyBase64: String = QuitXConstants.compiledEdPublicKey
+    ) throws {
+        guard let signature = Data(base64Encoded: signatureBase64),
+              let publicKeyRaw = Data(base64Encoded: publicKeyBase64),
+              let publicKey = try? Curve25519.Signing.PublicKey(rawRepresentation: publicKeyRaw)
+        else {
+            throw UpdateError.invalidSignature
+        }
+
+        let payload = try Data(contentsOf: url)
+        guard publicKey.isValidSignature(signature, for: payload) else {
+            throw UpdateError.invalidSignature
         }
     }
 
@@ -390,6 +429,10 @@ final class UpdateDownloadService: NSObject, ObservableObject {
     }
 
     func installAndRelaunch(stagedURL: URL) {
+        // The relaunch script owns the staged directory from here on and
+        // removes it itself; never let cancel cleanup delete it mid-install.
+        stagedDirURL = nil
+
         var destURL = Self.resolveDestinationAppURL()
         let parentDir = destURL.deletingLastPathComponent()
 
@@ -425,6 +468,7 @@ final class UpdateDownloadService: NSObject, ObservableObject {
 
             NSApp.terminate(nil)
         } catch {
+            try? FileManager.default.removeItem(at: scriptURL)
             state = .failed(message: "Failed to launch updater: \(error.localizedDescription)")
         }
     }
@@ -490,21 +534,57 @@ final class UpdateDownloadService: NSObject, ObservableObject {
     }
 
     fileprivate func handleDownloadFinished(persistentDMG: URL) async {
+        let version = targetVersion
+        defer { finishSession() }
+
         do {
-            if let digest = currentDigest {
-                try Self.verifyDigest(of: persistentDMG, expectedDigest: digest)
+            guard let digest = currentDigest, !digest.isEmpty else {
+                throw UpdateError.missingDigest
+            }
+            guard let edSignature = currentEdSignature, !edSignature.isEmpty else {
+                throw UpdateError.missingSignature
+            }
+
+            let dmgURL = persistentDMG
+            try await Task.detached {
+                try Self.verifyDigest(of: dmgURL, expectedDigest: digest)
+                try Self.verifyEdSignature(of: dmgURL, signatureBase64: edSignature)
+            }.value
+
+            guard state != .idle else {
+                try? FileManager.default.removeItem(at: persistentDMG.deletingLastPathComponent())
+                return
             }
 
             state = .extracting
             let stagedURL = try await extractAppFromDMG(dmgURL: persistentDMG)
-            try Self.validateUpdateBundle(at: stagedURL, expectedVersion: targetVersion)
-            state = .ready(stagedURL: stagedURL, version: targetVersion)
+            stagedDirURL = stagedURL.deletingLastPathComponent()
+
+            guard state != .idle else {
+                clearStagedDirectory()
+                return
+            }
+
+            let expectedVersion = version
+            try await Task.detached {
+                try Self.validateUpdateBundle(at: stagedURL, expectedVersion: expectedVersion)
+            }.value
+
+            guard state != .idle else {
+                clearStagedDirectory()
+                return
+            }
+
+            state = .ready(stagedURL: stagedURL, version: version)
         } catch {
+            clearStagedDirectory()
+            try? FileManager.default.removeItem(at: persistentDMG.deletingLastPathComponent())
             state = .failed(message: error.localizedDescription)
         }
     }
 
     fileprivate func handleDownloadFailed(error: Error) {
+        finishSession()
         if let urlError = error as? URLError, urlError.code == .cancelled {
             state = .idle
             return

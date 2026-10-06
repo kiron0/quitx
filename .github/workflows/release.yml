@@ -76,15 +76,24 @@ jobs:
           ln -s /Applications "$DMG_STAGE/Applications"
           hdiutil create -volname "QuitX" -srcfolder "$DMG_STAGE" -ov -format UDZO ".build/QuitX-${TAG}.dmg"
 
-      - name: Create Tag for Manual Release
-        if: github.event_name == 'workflow_dispatch'
-        shell: bash
+      - name: Create ZIP Archive
         run: |
           TAG="${{ steps.meta.outputs.tag }}"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag "$TAG"
-          git push origin "refs/tags/$TAG"
+          echo "Packaging QuitX-${TAG}.zip..."
+          ditto -c -k --sequesterRsrc --keepParent .build/QuitX.app ".build/QuitX-${TAG}.zip"
+
+      - name: Sign Update Payload
+        shell: bash
+        env:
+          UPDATE_ED25519_PRIVATE_KEY: ${{ secrets.UPDATE_ED25519_PRIVATE_KEY }}
+        run: |
+          TAG="${{ steps.meta.outputs.tag }}"
+          VERSION="${{ steps.meta.outputs.version }}"
+          if [ -z "$UPDATE_ED25519_PRIVATE_KEY" ]; then
+            echo "UPDATE_ED25519_PRIVATE_KEY secret is not set" >&2
+            exit 1
+          fi
+          ./Scripts/sign-update.sh ".build/QuitX-${TAG}.dmg" "$VERSION" .build/updates.json
 
       - name: Write release notes
         shell: bash
@@ -111,8 +120,8 @@ jobs:
 
           ## Install
 
-          1. Download \`QuitX-${{ steps.meta.outputs.tag }}.dmg\` from Assets below.
-          2. Open the disk image and drag **QuitX** to your \`/Applications\` folder.
+          1. Download \`QuitX-${{ steps.meta.outputs.tag }}.dmg\` (or \`.zip\`) from Assets below.
+          2. Open the disk image and drag **QuitX** to your \`/Applications\` folder. The zip contains the same app if you prefer archives.
 
           **Full changelog:** https://github.com/${{ github.repository }}/commits/${{ steps.meta.outputs.tag }}
           EOF
@@ -121,8 +130,13 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.meta.outputs.tag }}
+          target_commitish: ${{ github.sha }}
           name: ${{ steps.meta.outputs.tag }}
           body_path: release-notes.md
-          files: .build/QuitX-*.dmg
+          files: |
+            .build/QuitX-*.dmg
+            .build/QuitX-*.zip
+            .build/updates.json
+          fail_on_unmatched_files: true
           draft: false
           prerelease: false

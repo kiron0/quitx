@@ -230,14 +230,14 @@ private struct ExcludedAppRow: View {
     let isSelected: Bool
     let onToggle: () -> Void
     let onRemove: () -> Void
-    @StateObject private var state = ExcludedAppRowState()
+    @StateObject private var state: ExcludedAppRowState
 
-    private var appURL: URL? {
-        NSWorkspace.shared.urlForApplication(withBundleIdentifier: identifier)
-    }
-
-    private var displayName: String {
-        ExcludeRemovalRequest.appDisplayName(for: identifier)
+    init(identifier: String, isSelected: Bool, onToggle: @escaping () -> Void, onRemove: @escaping () -> Void) {
+        self.identifier = identifier
+        self.isSelected = isSelected
+        self.onToggle = onToggle
+        self.onRemove = onRemove
+        _state = StateObject(wrappedValue: ExcludedAppRowState(identifier: identifier))
     }
 
     var body: some View {
@@ -249,8 +249,8 @@ private struct ExcludedAppRow: View {
 
             HStack(spacing: 9) {
                 Group {
-                    if let appURL {
-                        Image(nsImage: NSWorkspace.shared.icon(forFile: appURL.path))
+                    if let icon = state.icon {
+                        Image(nsImage: icon)
                             .resizable()
                             .scaledToFit()
                     } else {
@@ -263,7 +263,7 @@ private struct ExcludedAppRow: View {
                 }
                 .frame(width: 18, height: 18)
 
-                Text(displayName)
+                Text(state.displayName)
                     .font(.system(size: 12.5))
                     .foregroundStyle(Color.primary)
                     .lineLimit(1)
@@ -286,7 +286,7 @@ private struct ExcludedAppRow: View {
                     )
             }
             .buttonStyle(.plain)
-            .help("Remove \(displayName) from exclusions")
+            .help("Remove \(state.displayName) from exclusions")
             .onHover { state.isRemoveHovered = $0 }
         }
         .padding(.horizontal, 8)
@@ -302,5 +302,13 @@ private struct ExcludedAppRow: View {
 private final class ExcludedAppRowState: ObservableObject {
     @Published var isHovered = false
     @Published var isRemoveHovered = false
+    let displayName: String
+    let icon: NSImage?
+
+    init(identifier: String) {
+        displayName = ExcludeRemovalRequest.appDisplayName(for: identifier)
+        let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: identifier)
+        icon = appURL.map { NSWorkspace.shared.icon(forFile: $0.path) }
+    }
 }
 

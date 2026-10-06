@@ -107,7 +107,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "Normal quit",
-                    body: "Normal quit first asks the app to terminate. If the app does not terminate, QuitX automatically retries with force quit."
+                    body: "Normal quit asks the app to terminate and waits for it to close. QuitX never forces the quit on its own."
                 ),
                 QuitXHelpSection(
                     title: "Force quit",

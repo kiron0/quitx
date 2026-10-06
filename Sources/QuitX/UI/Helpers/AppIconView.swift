@@ -1,7 +1,6 @@
 import SwiftUI
 import AppKit
 
-@MainActor
 enum AppIconCache {
     private static let cache: NSCache<NSString, NSImage> = {
         let c = NSCache<NSString, NSImage>()
@@ -9,73 +8,70 @@ enum AppIconCache {
         return c
     }()
 
-    private static func cacheKey(bundleId: String?, pid: pid_t?, url: URL?) -> String {
-        if let bundleId = bundleId, !bundleId.isEmpty {
+    nonisolated private static func cacheKey(bundleId: String?, pid: pid_t?, url: URL?) -> String {
+        if let bundleId, !bundleId.isEmpty {
             return bundleId
         }
-        if let url = url {
+        if let url {
             return url.path
         }
-        if let pid = pid {
+        if let pid {
             return "pid-\(pid)"
         }
         return "fallback"
     }
 
-    static func icon(for bundleId: String?, pid: pid_t? = nil, url: URL? = nil) -> NSImage? {
+    nonisolated static func cachedIcon(for bundleId: String?, pid: pid_t? = nil, url: URL? = nil) -> NSImage? {
+        cache.object(forKey: cacheKey(bundleId: bundleId, pid: pid, url: url) as NSString)
+    }
+
+    nonisolated static func icon(for bundleId: String?, pid: pid_t? = nil, url: URL? = nil) -> NSImage? {
         let key = cacheKey(bundleId: bundleId, pid: pid, url: url) as NSString
         if let cached = cache.object(forKey: key) {
             return cached
         }
+        return resolveAndCache(bundleId: bundleId, pid: pid, url: url, key: key)
+    }
+
+    nonisolated private static func resolveAndCache(bundleId: String?, pid: pid_t?, url: URL?, key: NSString) -> NSImage {
+        if let existing = cache.object(forKey: key) {
+            return existing
+        }
+        let resolved: NSImage
         if bundleId == "com.apple.trash" {
             let img = NSImage(systemSymbolName: "trash", accessibilityDescription: "Trash")
             img?.isTemplate = true
-            if let img = img { cache.setObject(img, forKey: key) }
-            return img
-        }
-        if let url = url, FileManager.default.fileExists(atPath: url.path) {
-            let img = NSWorkspace.shared.icon(forFile: url.path)
-            cache.setObject(img, forKey: key)
-            return img
-        }
-        if let pid = pid, let running = NSRunningApplication(processIdentifier: pid), let icon = running.icon {
-            cache.setObject(icon, forKey: key)
-            return icon
-        }
-        if let bid = bundleId {
+            resolved = img ?? NSWorkspace.shared.icon(for: .applicationBundle)
+        } else if let url, FileManager.default.fileExists(atPath: url.path) {
+            resolved = NSWorkspace.shared.icon(forFile: url.path)
+        } else if let pid, let running = NSRunningApplication(processIdentifier: pid), let icon = running.icon {
+            resolved = icon
+        } else if let bid = bundleId {
             if let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid)?.path {
-                let img = NSWorkspace.shared.icon(forFile: path)
-                cache.setObject(img, forKey: key)
-                return img
+                resolved = NSWorkspace.shared.icon(forFile: path)
+            } else if let running = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == bid }),
+                      let icon = running.icon {
+                resolved = icon
+            } else {
+                resolved = NSWorkspace.shared.icon(for: .applicationBundle)
             }
-            if let running = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == bid }),
-               let icon = running.icon {
-                cache.setObject(icon, forKey: key)
-                return icon
-            }
+        } else {
+            resolved = NSWorkspace.shared.icon(for: .applicationBundle)
         }
-        let fallback = NSWorkspace.shared.icon(for: .applicationBundle)
-        cache.setObject(fallback, forKey: key)
-        return fallback
+        cache.setObject(resolved, forKey: key)
+        return resolved
     }
 
-    @MainActor
-    static func loadIcon(for bundleId: String?, pid: pid_t? = nil, url: URL? = nil, completion: @escaping @MainActor (NSImage?) -> Void) {
-        if let existing = icon(for: bundleId, pid: pid, url: url) {
-            completion(existing)
-            return
-        }
-        let key = cacheKey(bundleId: bundleId, pid: pid, url: url)
-        let fileUrl = url ?? (bundleId.flatMap { NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) })
-        guard let path = fileUrl?.path else {
-            let fallback = NSWorkspace.shared.icon(for: .applicationBundle)
-            completion(fallback)
+    nonisolated static func loadIcon(for bundleId: String?, pid: pid_t? = nil, url: URL? = nil, completion: @escaping @MainActor (NSImage?) -> Void) {
+        if let existing = cachedIcon(for: bundleId, pid: pid, url: url) {
+            Task { @MainActor in
+                completion(existing)
+            }
             return
         }
         DispatchQueue.global(qos: .userInitiated).async {
-            let img = NSWorkspace.shared.icon(forFile: path)
+            let img = icon(for: bundleId, pid: pid, url: url)
             DispatchQueue.main.async {
-                cache.setObject(img, forKey: key as NSString)
                 completion(img)
             }
         }
@@ -87,8 +83,8 @@ final class AppIconLoader: ObservableObject {
     @Published var icon: NSImage?
 
     func load(bundleId: String?, pid: pid_t? = nil, url: URL? = nil) {
-        if let immediate = AppIconCache.icon(for: bundleId, pid: pid, url: url) {
-            self.icon = immediate
+        if let cached = AppIconCache.cachedIcon(for: bundleId, pid: pid, url: url) {
+            self.icon = cached
             return
         }
         AppIconCache.loadIcon(for: bundleId, pid: pid, url: url) { [weak self] loaded in
@@ -108,7 +104,7 @@ struct AppIconView: View {
 
     var body: some View {
         Group {
-            if let icon = loader.icon ?? AppIconCache.icon(for: bundleId, pid: pid, url: url) {
+            if let icon = loader.icon ?? AppIconCache.cachedIcon(for: bundleId, pid: pid, url: url) {
                 Image(nsImage: icon)
                     .resizable()
                     .scaledToFit()

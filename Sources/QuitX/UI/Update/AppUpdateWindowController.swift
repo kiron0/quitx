@@ -23,35 +23,6 @@ final class AppUpdateWindowController: NSObject, NSWindowDelegate {
         buildAndPresentWindow()
     }
 
-    func showUpdateWindow(targetVersion: String, downloadURL: URL, releaseWebURL: URL? = nil, digest: String? = nil) {
-        StatusItemController.shared?.closePopover()
-
-        UpdateChecker.shared.checkState = .available(version: targetVersion, downloadURL: downloadURL, digest: digest)
-
-        if let win = window {
-            if let screen = WindowPositioner.targetScreen {
-                win.setFrameOrigin(WindowPositioner.topBiasedOrigin(for: win.frame.size, on: screen))
-            }
-            WindowAnimator.activateExisting(win)
-            UpdateDownloadService.shared.startDownload(
-                from: downloadURL,
-                version: targetVersion,
-                releaseWebURL: releaseWebURL,
-                digest: digest
-            )
-            return
-        }
-
-        buildAndPresentWindow()
-
-        UpdateDownloadService.shared.startDownload(
-            from: downloadURL,
-            version: targetVersion,
-            releaseWebURL: releaseWebURL,
-            digest: digest
-        )
-    }
-
     private func buildAndPresentWindow() {
         let contentView = AppUpdateView(
             service: UpdateDownloadService.shared,

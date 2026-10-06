@@ -11,6 +11,9 @@ final class ConfigStore: ObservableObject {
     }
 
     private var normalizedExcludedSet: Set<String> = []
+
+    var excludedNormalized: Set<String> { normalizedExcludedSet }
+
     private static let userDefaultsKey = QuitXConstants.UserDefaultsKeys.config
 
     private init() { load() }
@@ -57,16 +60,19 @@ final class ConfigStore: ObservableObject {
     @discardableResult
     func addExcludedApps(_ identifiers: [String]) -> Int {
         var added = 0
+        var exclude = config.exclude
 
         for rawIdentifier in identifiers {
             let identifier = rawIdentifier.trimmingCharacters(in: .whitespacesAndNewlines)
             let normalized = identifier.lowercased()
             guard !normalized.isEmpty, normalizedExcludedSet.insert(normalized).inserted else { continue }
-            config.exclude.append(identifier)
+            exclude.append(identifier)
             added += 1
         }
 
-        if added > 0 { save(refreshAppList: true) }
+        guard added > 0 else { return 0 }
+        config.exclude = exclude
+        save(refreshAppList: true)
         return added
     }
 
