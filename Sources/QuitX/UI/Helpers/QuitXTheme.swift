@@ -7,6 +7,7 @@ enum QuitXTheme {
     static let windowBackgroundColor = Color(NSColor.windowBackgroundColor)
     static let windowBackgroundNSColor = NSColor.windowBackgroundColor
     static let cardBackground = Color.primary.opacity(0.035)
+    static let cardBackgroundOpacity: CGFloat = 0.035
     static let cardBackgroundNSColor: NSColor = {
         NSColor(name: nil) { appearance in
             let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
