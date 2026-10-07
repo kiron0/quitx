@@ -8,6 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
+        registerDistributedObservers()
 
         Task { @MainActor [weak self] in
             guard await SingleInstanceService.shared.prepareForLaunch() else {
@@ -16,6 +17,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             self?.finishLaunching()
         }
+    }
+
+    private func registerDistributedObservers() {
+        let handleShowSettings: @Sendable (Notification) -> Void = { notification in
+            let rawTab = notification.userInfo?["tab"] as? String
+            Task { @MainActor in
+                let tab = rawTab.flatMap { SettingsTab(rawValue: $0) }
+                SettingsWindowController.shared.show(tab: tab)
+            }
+        }
+        let obs1 = DistributedNotificationCenter.default().addObserver(
+            forName: QuitXConstants.Notifications.showSettings,
+            object: nil,
+            queue: .main,
+            using: handleShowSettings
+        )
+        let obs2 = DistributedNotificationCenter.default().addObserver(
+            forName: QuitXConstants.Notifications.showPreferences,
+            object: nil,
+            queue: .main,
+            using: handleShowSettings
+        )
+        let obs3 = DistributedNotificationCenter.default().addObserver(
+            forName: QuitXConstants.Notifications.showPopover,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.statusItemController?.showPopover()
+            }
+        }
+        distributedNotificationObservers = [obs1, obs2, obs3]
     }
 
     private func finishLaunching() {
@@ -36,37 +69,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard ConfigStore.shared.config.autoUpdate else { return }
             await UpdateChecker.shared.checkForUpdates(isUserInitiated: false)
         }
-
-        let handleShowSettings: @Sendable (Notification) -> Void = { notification in
-            let rawTab = notification.userInfo?["tab"] as? String
-            Task { @MainActor in
-                let tab = rawTab.flatMap { SettingsTab(rawValue: $0) }
-                SettingsWindowController.shared.show(tab: tab)
-            }
-        }
-        let obs1 = DistributedNotificationCenter.default().addObserver(
-            forName: QuitXConstants.Notifications.showSettings,
-            object: nil,
-            queue: .main,
-            using: handleShowSettings
-        )
-        let obs2 = DistributedNotificationCenter.default().addObserver(
-            forName: QuitXConstants.Notifications.showPreferences,
-            object: nil,
-            queue: .main,
-            using: handleShowSettings
-        )
-
-        let obs3 = DistributedNotificationCenter.default().addObserver(
-            forName: QuitXConstants.Notifications.showPopover,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in
-                self?.statusItemController?.showPopover()
-            }
-        }
-        distributedNotificationObservers = [obs1, obs2, obs3]
     }
 
     private var distributedNotificationObservers: [NSObjectProtocol] = []
@@ -83,6 +85,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         HogMonitor.shared.stopBackgroundMonitoring()
         SingleInstanceService.shared.stopMonitoring()
         statusItemController = nil
+        ConfigStore.shared.flush()
     }
 
     @objc func showSettingsWindow(_ sender: Any?) {

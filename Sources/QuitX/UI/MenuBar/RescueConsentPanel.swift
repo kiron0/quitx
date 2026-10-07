@@ -115,12 +115,32 @@ final class RescueConsentController {
         lastPayload = (targets, reason)
         StatusItemController.shared?.closePopover()
 
+        var buttonRect: CGRect? = nil
+        var buttonScreen: NSScreen? = nil
+        if let button = StatusItemController.shared?.statusBarButton,
+           let buttonWindow = button.window {
+            buttonRect = buttonWindow.convertToScreen(button.bounds)
+            buttonScreen = buttonWindow.screen ?? NSScreen.main
+        }
+
+        var arrowX: CGFloat? = nil
+        if let buttonRect {
+            let width = StatusItemController.popoverWidth
+            var x = buttonRect.midX - width / 2
+            if let screen = buttonScreen {
+                x = max(screen.visibleFrame.minX + 4,
+                        min(x, screen.visibleFrame.maxX - width - 4))
+            }
+            arrowX = buttonRect.midX - x
+        }
+
         let hostView = NSHostingView(
             rootView: RescueConsentView(
                 reason: reason,
                 targets: targets,
                 onConfirm: { [weak self] in self?.confirm() },
-                onCancel: { [weak self] in self?.cancel() }
+                onCancel: { [weak self] in self?.cancel() },
+                arrowX: arrowX
             )
         )
 
@@ -131,24 +151,22 @@ final class RescueConsentController {
             win = ArrowPopoverWindow()
             window = win
         }
-        win.contentView = hostView
 
         let size = hostView.fittingSize
         win.setContentSize(size)
 
         var originX = (NSScreen.main?.visibleFrame.width ?? 800) / 2 - size.width / 2
         var originY = (NSScreen.main?.visibleFrame.maxY ?? 900) - size.height - 60
-        if let button = StatusItemController.shared?.statusBarButton,
-           let buttonWindow = button.window {
-            let buttonRect = buttonWindow.convertToScreen(button.bounds)
+        if let buttonRect {
             originX = buttonRect.midX - size.width / 2
             originY = buttonRect.minY - size.height - 2
-            if let screen = buttonWindow.screen ?? NSScreen.main {
+            if let screen = buttonScreen {
                 originX = max(screen.visibleFrame.minX + 4,
                               min(originX, screen.visibleFrame.maxX - size.width - 4))
             }
         }
         win.setFrame(NSRect(x: originX, y: originY, width: size.width, height: size.height), display: true)
+        win.contentView = hostView
 
         frontmostAtShow = NSWorkspace.shared.frontmostApplication
         NSApp.activate(ignoringOtherApps: true)
@@ -167,6 +185,7 @@ struct RescueConsentView: View {
     let targets: [AppInfo]
     let onConfirm: () -> Void
     let onCancel: () -> Void
+    var arrowX: CGFloat? = nil
 
     @StateObject private var hover = ConsentButtonHover()
 
@@ -235,7 +254,7 @@ struct RescueConsentView: View {
         }
         .padding(.bottom, 14)
         .frame(width: StatusItemController.popoverWidth)
-        .arrowPopoverChrome()
+        .arrowPopoverChrome(arrowX: arrowX)
     }
 
     private enum ButtonStyle {

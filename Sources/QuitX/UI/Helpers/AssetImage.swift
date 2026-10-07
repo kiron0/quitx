@@ -162,6 +162,7 @@ enum MenuHelper {
     ) -> NSMenuItem {
         let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
         item.submenu = NSMenu()
+        item.submenu?.autoenablesItems = false
 
         var image: NSImage?
         if let assetName = assetName, let loaded = AssetImages.load(assetName) {

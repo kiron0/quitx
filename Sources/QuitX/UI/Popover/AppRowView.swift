@@ -140,6 +140,7 @@ struct AppRowView: View {
 
     private func buildMenu() -> NSMenu {
         let menu = NSMenu()
+        menu.autoenablesItems = false
 
         menu.addItem(MenuHelper.makeItem(
             title: "Quit",

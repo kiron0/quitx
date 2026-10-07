@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import IOKit.pwr_mgt
 
 enum SleepQuitTargets {
     static func select(apps: [AppInfo], config: QuitXConfig) -> [AppInfo] {
@@ -98,6 +99,19 @@ final class SleepService {
             return
         }
         let vm = AppListViewModel.shared
+
+        var assertionID = IOPMAssertionID(0)
+        let assertionProps = [
+            kIOPMAssertionTypeKey: kIOPMAssertionTypePreventUserIdleSystemSleep,
+            kIOPMAssertionNameKey: "QuitX quitting apps on sleep or lock"
+        ] as CFDictionary
+        let assertOK = IOPMAssertionCreateWithProperties(assertionProps, &assertionID) == kIOReturnSuccess
+        defer {
+            if assertOK {
+                IOPMAssertionRelease(assertionID)
+            }
+        }
+
         if Date().timeIntervalSince(vm.lastRefreshDate) > 2.0 {
             await vm.refresh()
         }

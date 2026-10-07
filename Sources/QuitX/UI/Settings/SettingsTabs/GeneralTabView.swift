@@ -201,7 +201,7 @@ struct GeneralTabCloneView: View {
             row(label: "Sort:") {
                 Picker("", selection: Binding(
                     get: { configStore.config.sortBy },
-                    set: { configStore.config.sortBy = $0; configStore.save(refreshAppList: true) }
+                    set: { configStore.config.sortBy = $0; configStore.save() }
                 )) {
                     ForEach(QuitXConfig.SortBy.allCases, id: \.self) { sortOpt in
                         Text(sortOpt.rawValue).tag(sortOpt)
@@ -216,7 +216,7 @@ struct GeneralTabCloneView: View {
             row(label: "Default:") {
                 Picker("", selection: Binding(
                     get: { configStore.config.force == .force ? "Force quit" : "Normal quit" },
-                    set: { configStore.config.force = ($0 == "Force quit" ? .force : .normal); configStore.save(refreshAppList: true) }
+                    set: { configStore.config.force = ($0 == "Force quit" ? .force : .normal); configStore.save() }
                 )) {
                     Text("Normal quit").tag("Normal quit")
                     Text("Force quit").tag("Force quit")
@@ -480,15 +480,6 @@ struct AutomationTabCloneView: View {
         .background(QuitXTheme.paneBackground)
         .onAppear {
             state.syncFromMinutes(configStore.config.quitInactiveAfterMinutes)
-            if configStore.config.hogCpuThreshold < 80 {
-                configStore.config.hogCpuThreshold = 80
-                configStore.save()
-            }
-            let currentMemGB = (configStore.config.memoryPressureThresholdMB + 512) / 1024
-            if currentMemGB < minMemoryGB {
-                configStore.config.memoryPressureThresholdMB = minMemoryGB * 1024
-                configStore.save()
-            }
         }
         .onChange(of: state.autoQuitValue) {
             if configStore.config.quitInactiveAfterMinutes > 0 {
@@ -646,7 +637,7 @@ struct AdvancedTabCloneView: View {
                     get: { !configStore.config.defaultSelectAll },
                     set: {
                         configStore.config.defaultSelectAll = !$0
-                        configStore.save(refreshAppList: true)
+                        configStore.save()
                         AppListViewModel.shared.applyDefaultSelection()
                     }
                 ))
@@ -657,7 +648,7 @@ struct AdvancedTabCloneView: View {
             row(label: "") {
                 toggle("Disable quit tips", isOn: Binding(
                     get: { configStore.config.disableQuitTips },
-                    set: { configStore.config.disableQuitTips = $0; configStore.save(refreshAppList: true) }
+                    set: { configStore.config.disableQuitTips = $0; configStore.save() }
                 ))
             } help: {
                 HelpPopoverButton(text: "The rotating tips at the bottom of the QuitX dropdown will cease to show. It’s okay. We can still be friends. 🤗")
@@ -695,7 +686,7 @@ struct AdvancedTabCloneView: View {
         .padding(.horizontal, 20)
         .padding(.top, 14)
         .padding(.bottom, 10)
-        .frame(width: 480, height: 271, alignment: .topLeading)
+        .frame(width: 480, height: SettingsTab.advanced.contentHeight, alignment: .topLeading)
         .background(QuitXTheme.paneBackground)
     }
 }

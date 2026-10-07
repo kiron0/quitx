@@ -59,7 +59,7 @@ struct MainPopoverView: View {
         .frame(width: 270)
         .frame(minHeight: 220)
         .frame(maxHeight: .infinity)
-        .arrowPopoverChrome(classicBackground: AnyView(QuitXTheme.popoverBackground))
+        .arrowPopoverChrome(arrowX: vm.popoverArrowX, classicBackground: AnyView(QuitXTheme.popoverBackground))
         .overlay(alignment: .bottom) {
             if vm.showToast {
                 ToastView(message: vm.toastMessage, isError: vm.toastIsError)
@@ -125,14 +125,8 @@ struct MainPopoverView: View {
         }
         .animation(.easeInOut(duration: 0.18), value: vm.showConfirmQuitAll)
         .animation(.easeInOut(duration: 0.18), value: vm.pendingIndividualAction)
-        .clipShape(arrowPopoverShape)
+        .clipShape(popoverShape(arrowX: vm.popoverArrowX))
         .onChange(of: vm.filteredApps.count) {
-            StatusItemController.shared?.updatePopoverSize()
-        }
-        .onChange(of: vm.showConfirmQuitAll) {
-            StatusItemController.shared?.updatePopoverSize()
-        }
-        .onChange(of: vm.pendingIndividualAction == nil) {
             StatusItemController.shared?.updatePopoverSize()
         }
     }
@@ -309,7 +303,9 @@ struct MainPopoverView: View {
     }
 
     private func buildOptionsMenu() -> NSMenu {
+        let vm = AppListViewModel.shared
         let menu = NSMenu()
+        menu.autoenablesItems = false
 
         let bgTitle = vm.showBackgroundApps ? "Hide background apps" : "View background apps"
         let bgAsset = vm.showBackgroundApps ? "settings-background-apps-hide" : "settings-background-apps-show"

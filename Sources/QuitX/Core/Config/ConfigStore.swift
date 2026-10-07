@@ -23,17 +23,66 @@ final class ConfigStore: ObservableObject {
     }
 
     func load() {
-        guard let data = UserDefaults.standard.data(forKey: Self.userDefaultsKey),
-              let decoded = try? JSONDecoder().decode(QuitXConfig.self, from: data) else {
+        guard let data = UserDefaults.standard.data(forKey: Self.userDefaultsKey) else {
             normalizedExcludedSet = Set(config.exclude.map { $0.lowercased() })
+            normalizeThresholds()
             return
         }
-        config = decoded
-        normalizedExcludedSet = Set(decoded.exclude.map { $0.lowercased() })
+        do {
+            let decoded = try JSONDecoder().decode(QuitXConfig.self, from: data)
+            config = decoded
+            normalizedExcludedSet = Set(decoded.exclude.map { $0.lowercased() })
+        } catch {
+            UserDefaults.standard.set(data, forKey: Self.userDefaultsKey + ".backup")
+            NSLog("QuitX: config decode failed, raw blob backed up: \(error)")
+            normalizedExcludedSet = Set(config.exclude.map { $0.lowercased() })
+        }
+        normalizeThresholds()
+    }
+
+    private func normalizeThresholds() {
+        let systemMaxGB = max(1, Int(ProcessInfo.processInfo.physicalMemory / 1_073_741_824))
+        let minMemoryGB = max(1, min(systemMaxGB, Int((Double(systemMaxGB) * 0.8).rounded())))
+        var mutated = false
+        if config.hogCpuThreshold < 80 {
+            config.hogCpuThreshold = 80
+            mutated = true
+        }
+        if config.hogCpuThreshold > 100 {
+            config.hogCpuThreshold = 100
+            mutated = true
+        }
+        if (config.memoryPressureThresholdMB + 512) / 1024 < minMemoryGB {
+            config.memoryPressureThresholdMB = minMemoryGB * 1024
+            mutated = true
+        }
+        if config.memoryPressureThresholdMB > systemMaxGB * 1024 {
+            config.memoryPressureThresholdMB = systemMaxGB * 1024
+            mutated = true
+        }
+        var seen = Set<String>()
+        let deduped = config.exclude.filter { seen.insert($0.lowercased()).inserted }
+        if deduped.count != config.exclude.count {
+            config.exclude = deduped
+            mutated = true
+        }
+        if mutated {
+            flush()
+        }
     }
 
     private var saveWorkItem: DispatchWorkItem?
     private var refreshWorkItem: DispatchWorkItem?
+
+    func flush() {
+        saveWorkItem?.cancel()
+        saveWorkItem = nil
+        refreshWorkItem?.cancel()
+        refreshWorkItem = nil
+        if let json = try? JSONEncoder().encode(config) {
+            UserDefaults.standard.set(json, forKey: Self.userDefaultsKey)
+        }
+    }
 
     func save(refreshAppList: Bool = false, immediate: Bool = false) {
         saveWorkItem?.cancel()
@@ -109,6 +158,7 @@ final class ConfigStore: ObservableObject {
 
     func reset() {
         config = .default
+        normalizeThresholds()
         save(refreshAppList: true, immediate: true)
     }
 

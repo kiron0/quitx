@@ -10,6 +10,7 @@ final class StatsDetailModel: ObservableObject {
     @Published var cpu: Double = 0
     @Published var memoryUsed: UInt64 = 0
     @Published var memoryTotal: UInt64 = ProcessInfo.processInfo.physicalMemory
+    @Published var arrowX: CGFloat? = nil
 
     private var timer: Timer?
     private var sampleObserver: NSObjectProtocol?
@@ -49,7 +50,7 @@ final class StatsDetailModel: ObservableObject {
     }
 
     private func tick() {
-        cpu = SystemUsage.cpuPercent()
+        cpu = SystemUsage.cpuPercent(consumer: "statsPanel")
         memoryUsed = SystemUsage.memoryUsedBytes()
         memoryTotal = ProcessInfo.processInfo.physicalMemory
     }
@@ -109,7 +110,7 @@ struct StatsDetailView: View {
             .padding(16)
         }
         .frame(width: 230, alignment: .leading)
-        .arrowPopoverChrome()
+        .arrowPopoverChrome(arrowX: model.arrowX)
     }
 
     private func statRow(icon: Image, title: String, value: String, detail: String) -> some View {
@@ -190,6 +191,7 @@ final class StatsDetailController {
         }
 
         let originY = buttonScreenRect.minY - size.height - 2
+        model.arrowX = buttonScreenRect.midX - originX
         win.setFrame(NSRect(x: originX, y: originY, width: size.width, height: size.height), display: true)
         win.invalidateShadow()
 
@@ -216,6 +218,10 @@ final class StatsDetailController {
         window?.orderOut(nil)
         model?.stop()
         removeMonitors()
+        if let resignObserver {
+            NotificationCenter.default.removeObserver(resignObserver)
+            self.resignObserver = nil
+        }
         restoreFrontmost()
     }
 

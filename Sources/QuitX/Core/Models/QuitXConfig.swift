@@ -105,37 +105,41 @@ struct QuitXConfig: Codable, Equatable, Sendable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let defaults = Self.default
-        exclude = try container.decodeIfPresent([String].self, forKey: .exclude) ?? defaults.exclude
-        force = try container.decodeIfPresent(ForceMode.self, forKey: .force) ?? defaults.force
-        includeFinder = try container.decodeIfPresent(Bool.self, forKey: .includeFinder) ?? defaults.includeFinder
-        includeTrash = try container.decodeIfPresent(Bool.self, forKey: .includeTrash) ?? defaults.includeTrash
-        includeBackground = try container.decodeIfPresent(Bool.self, forKey: .includeBackground) ?? defaults.includeBackground
-        groupBackground = try container.decodeIfPresent(Bool.self, forKey: .groupBackground) ?? defaults.groupBackground
-        defaultSelectAll = try container.decodeIfPresent(Bool.self, forKey: .defaultSelectAll) ?? defaults.defaultSelectAll
-        neverQuitMusic = try container.decodeIfPresent(Bool.self, forKey: .neverQuitMusic) ?? defaults.neverQuitMusic
-        musicApps = try container.decodeIfPresent([String].self, forKey: .musicApps) ?? defaults.musicApps
-        autoUpdate = try container.decodeIfPresent(Bool.self, forKey: .autoUpdate) ?? defaults.autoUpdate
-        confirmQuitAll = try container.decodeIfPresent(Bool.self, forKey: .confirmQuitAll) ?? defaults.confirmQuitAll
-        confirmIndividualAction = try container.decodeIfPresent(Bool.self, forKey: .confirmIndividualAction) ?? defaults.confirmIndividualAction
-        playSounds = try container.decodeIfPresent(Bool.self, forKey: .playSounds) ?? defaults.playSounds
-        quitInactiveAfterMinutes = try container.decodeIfPresent(Int.self, forKey: .quitInactiveAfterMinutes) ?? defaults.quitInactiveAfterMinutes
-        disableQuitTips = try container.decodeIfPresent(Bool.self, forKey: .disableQuitTips) ?? defaults.disableQuitTips
-        sortBy = try container.decodeIfPresent(SortBy.self, forKey: .sortBy) ?? defaults.sortBy
-        perAppQuitRules = try container.decodeIfPresent([String: Int].self, forKey: .perAppQuitRules) ?? defaults.perAppQuitRules
-        quitOnSleep = try container.decodeIfPresent(Bool.self, forKey: .quitOnSleep) ?? defaults.quitOnSleep
-        quitOnScreenLock = try container.decodeIfPresent(Bool.self, forKey: .quitOnScreenLock) ?? defaults.quitOnScreenLock
-        sleepLockStartMinutes = try container.decodeIfPresent(Int.self, forKey: .sleepLockStartMinutes) ?? defaults.sleepLockStartMinutes
-        sleepLockEndMinutes = try container.decodeIfPresent(Int.self, forKey: .sleepLockEndMinutes) ?? defaults.sleepLockEndMinutes
-        sleepLockUse24Hour = try container.decodeIfPresent(Bool.self, forKey: .sleepLockUse24Hour) ?? defaults.sleepLockUse24Hour
-        showMenuBarStats = try container.decodeIfPresent(Bool.self, forKey: .showMenuBarStats) ?? defaults.showMenuBarStats
-        menuBarMemoryUnit = try container.decodeIfPresent(MenuBarMemoryUnit.self, forKey: .menuBarMemoryUnit) ?? defaults.menuBarMemoryUnit
-        hogAlertEnabled = try container.decodeIfPresent(Bool.self, forKey: .hogAlertEnabled) ?? defaults.hogAlertEnabled
-        hogCpuThreshold = try container.decodeIfPresent(Double.self, forKey: .hogCpuThreshold) ?? defaults.hogCpuThreshold
-        memoryPressureQuitEnabled = try container.decodeIfPresent(Bool.self, forKey: .memoryPressureQuitEnabled) ?? defaults.memoryPressureQuitEnabled
-        memoryPressureThresholdMB = try container.decodeIfPresent(Int.self, forKey: .memoryPressureThresholdMB) ?? defaults.memoryPressureThresholdMB
-        batterySaverEnabled = try container.decodeIfPresent(Bool.self, forKey: .batterySaverEnabled) ?? defaults.batterySaverEnabled
-        quitTimers = try container.decodeIfPresent([String: Double].self, forKey: .quitTimers) ?? defaults.quitTimers
-        liquidGlassEnabled = try container.decodeIfPresent(Bool.self, forKey: .liquidGlassEnabled) ?? defaults.liquidGlassEnabled
+        exclude = Self.dec(container, .exclude, defaults.exclude)
+        force = Self.dec(container, .force, defaults.force)
+        includeFinder = Self.dec(container, .includeFinder, defaults.includeFinder)
+        includeTrash = Self.dec(container, .includeTrash, defaults.includeTrash)
+        includeBackground = Self.dec(container, .includeBackground, defaults.includeBackground)
+        groupBackground = Self.dec(container, .groupBackground, defaults.groupBackground)
+        defaultSelectAll = Self.dec(container, .defaultSelectAll, defaults.defaultSelectAll)
+        neverQuitMusic = Self.dec(container, .neverQuitMusic, defaults.neverQuitMusic)
+        musicApps = Self.dec(container, .musicApps, defaults.musicApps)
+        autoUpdate = Self.dec(container, .autoUpdate, defaults.autoUpdate)
+        confirmQuitAll = Self.dec(container, .confirmQuitAll, defaults.confirmQuitAll)
+        confirmIndividualAction = Self.dec(container, .confirmIndividualAction, defaults.confirmIndividualAction)
+        playSounds = Self.dec(container, .playSounds, defaults.playSounds)
+        quitInactiveAfterMinutes = Self.dec(container, .quitInactiveAfterMinutes, defaults.quitInactiveAfterMinutes)
+        disableQuitTips = Self.dec(container, .disableQuitTips, defaults.disableQuitTips)
+        sortBy = Self.dec(container, .sortBy, defaults.sortBy)
+        perAppQuitRules = Self.dec(container, .perAppQuitRules, defaults.perAppQuitRules)
+        quitOnSleep = Self.dec(container, .quitOnSleep, defaults.quitOnSleep)
+        quitOnScreenLock = Self.dec(container, .quitOnScreenLock, defaults.quitOnScreenLock)
+        sleepLockStartMinutes = min(1439, max(0, Self.dec(container, .sleepLockStartMinutes, defaults.sleepLockStartMinutes)))
+        sleepLockEndMinutes = min(1439, max(0, Self.dec(container, .sleepLockEndMinutes, defaults.sleepLockEndMinutes)))
+        sleepLockUse24Hour = Self.dec(container, .sleepLockUse24Hour, defaults.sleepLockUse24Hour)
+        showMenuBarStats = Self.dec(container, .showMenuBarStats, defaults.showMenuBarStats)
+        menuBarMemoryUnit = Self.dec(container, .menuBarMemoryUnit, defaults.menuBarMemoryUnit)
+        hogAlertEnabled = Self.dec(container, .hogAlertEnabled, defaults.hogAlertEnabled)
+        hogCpuThreshold = Self.dec(container, .hogCpuThreshold, defaults.hogCpuThreshold)
+        memoryPressureQuitEnabled = Self.dec(container, .memoryPressureQuitEnabled, defaults.memoryPressureQuitEnabled)
+        memoryPressureThresholdMB = Self.dec(container, .memoryPressureThresholdMB, defaults.memoryPressureThresholdMB)
+        batterySaverEnabled = Self.dec(container, .batterySaverEnabled, defaults.batterySaverEnabled)
+        quitTimers = Self.dec(container, .quitTimers, defaults.quitTimers)
+        liquidGlassEnabled = Self.dec(container, .liquidGlassEnabled, defaults.liquidGlassEnabled)
+    }
+
+    private static func dec<T: Decodable>(_ container: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys, _ fallback: T) -> T {
+        ((try? container.decodeIfPresent(T.self, forKey: key)) ?? nil) ?? fallback
     }
 
     var effectiveHogCpuThreshold: Double {

@@ -167,24 +167,33 @@ final class StatusItemController: NSObject {
         guard let win = window else { return }
 
         var frame = win.frame
-        let oldHeight = frame.height
         frame.size = newSize
-        frame.origin.y += (oldHeight - totalHeight)
+
+        var originX = frame.origin.x
+        var originY = frame.origin.y
+        var arrowX: CGFloat? = nil
 
         if let button = statusItem.button, let btnWindow = button.window {
             let buttonScreenRect = btnWindow.convertToScreen(button.bounds)
-            var originX = buttonScreenRect.midX - (newSize.width / 2)
+            originX = buttonScreenRect.midX - (newSize.width / 2)
+            originY = buttonScreenRect.minY - totalHeight - 2
 
             if let scr = screen {
                 let screenMinX = scr.visibleFrame.minX
                 let screenMaxX = scr.visibleFrame.maxX
                 originX = max(screenMinX + 4, min(originX, screenMaxX - newSize.width - 4))
             }
-            let originY = buttonScreenRect.minY - totalHeight - 2
-            frame.origin = NSPoint(x: originX, y: originY)
+            arrowX = buttonScreenRect.midX - originX
+        } else if let scr = screen ?? NSScreen.main {
+            originX = scr.visibleFrame.midX - (newSize.width / 2)
+            originY = scr.visibleFrame.maxY - totalHeight - 2
         }
 
+        frame.origin = NSPoint(x: originX, y: originY)
         frame = frame.integral
+        if AppListViewModel.shared.popoverArrowX != arrowX {
+            AppListViewModel.shared.popoverArrowX = arrowX
+        }
         guard frame != win.frame else { return }
         win.setFrame(frame, display: win.isVisible, animate: false)
         win.invalidateShadow()
@@ -231,7 +240,9 @@ final class StatusItemController: NSObject {
     func closePopover() {
         AppListViewModel.shared.cancelConfirmQuitAll()
         AppListViewModel.shared.cancelIndividualAction()
-        lastCloseTimestamp = Date()
+        if isShown {
+            lastCloseTimestamp = Date()
+        }
         stopLiveMonitoring()
         removeOutsideClickMonitor()
         window?.orderOut(nil)
@@ -292,15 +303,9 @@ final class StatusItemController: NSObject {
                 }
                 self.liveTickCount += 1
                 let skip = throttled && self.liveTickCount % 5 != 0
-                let prevCount = AppListViewModel.shared.filteredApps.count
-                let prevConfirming = AppListViewModel.shared.showConfirmQuitAll || AppListViewModel.shared.pendingIndividualAction != nil
                 if !skip {
                     await AppListViewModel.shared.updateLiveStats()
                     self.updateMenuBarStats()
-                }
-                let newCount = AppListViewModel.shared.filteredApps.count
-                let newConfirming = AppListViewModel.shared.showConfirmQuitAll || AppListViewModel.shared.pendingIndividualAction != nil
-                if prevCount != newCount || prevConfirming != newConfirming {
                     self.updatePopoverSize()
                 }
             }
@@ -374,7 +379,7 @@ final class StatusItemController: NSObject {
             button.toolTip = "QuitX monitor — click for details"
         }
         button.imagePosition = .imageLeading
-        let cpu = SystemUsage.cpuPercent()
+        let cpu = SystemUsage.cpuPercent(consumer: "menuBar")
         let memoryUsed = SystemUsage.memoryUsedBytes()
         button.attributedTitle = Self.statsTitle(
             cpu: cpu,
@@ -430,6 +435,7 @@ final class StatusItemController: NSObject {
         closePopover()
         StatsDetailController.shared.close()
         let menu = NSMenu()
+        menu.autoenablesItems = false
 
         menu.addItem(MenuHelper.makeItem(
             title: "Settings",

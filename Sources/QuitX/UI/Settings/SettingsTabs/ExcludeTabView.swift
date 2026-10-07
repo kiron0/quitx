@@ -51,7 +51,7 @@ struct ExcludeTabView: View {
 
                         ScrollView(.vertical, showsIndicators: true) {
                             LazyVStack(spacing: 2) {
-                                ForEach(Array(configStore.config.exclude.enumerated()), id: \.offset) { _, identifier in
+                                ForEach(configStore.config.exclude, id: \.self) { identifier in
                                     let normalized = identifier.lowercased()
                                     ExcludedAppRow(
                                         identifier: identifier,
@@ -181,6 +181,7 @@ final class ExcludeTabState: ObservableObject {
 struct ExcludeRemovalRequest: Identifiable {
     let identifiers: [String]
     let removesAll: Bool
+    let displayName: String
 
     var id: String { identifiers.map { $0.lowercased() }.sorted().joined(separator: "|") }
 
@@ -202,8 +203,7 @@ struct ExcludeRemovalRequest: Identifiable {
             return "Remove all excluded apps?"
         }
         if identifiers.count == 1 {
-            let name = Self.appDisplayName(for: identifiers[0])
-            return "Remove \(name)?"
+            return "Remove \(displayName)?"
         }
         return "Remove \(identifiers.count) excluded apps?"
     }
@@ -213,8 +213,7 @@ struct ExcludeRemovalRequest: Identifiable {
             return "All apps will no longer be protected from quit actions and Auto Quit."
         }
         if identifiers.count == 1 {
-            let name = Self.appDisplayName(for: identifiers[0])
-            return "\(name) will no longer be protected from quit actions and Auto Quit."
+            return "\(displayName) will no longer be protected from quit actions and Auto Quit."
         }
         return "These \(identifiers.count) apps will no longer be protected from quit actions and Auto Quit."
     }
@@ -222,6 +221,11 @@ struct ExcludeRemovalRequest: Identifiable {
     init(identifiers: [String], totalCount: Int) {
         self.identifiers = identifiers
         self.removesAll = !identifiers.isEmpty && identifiers.count == totalCount
+        if identifiers.count == 1 {
+            self.displayName = Self.appDisplayName(for: identifiers[0])
+        } else {
+            self.displayName = ""
+        }
     }
 }
 
@@ -302,13 +306,14 @@ private struct ExcludedAppRow: View {
 private final class ExcludedAppRowState: ObservableObject {
     @Published var isHovered = false
     @Published var isRemoveHovered = false
+    @Published var icon: NSImage?
     let displayName: String
-    let icon: NSImage?
 
     init(identifier: String) {
         displayName = ExcludeRemovalRequest.appDisplayName(for: identifier)
-        let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: identifier)
-        icon = appURL.map { NSWorkspace.shared.icon(forFile: $0.path) }
+        AppIconCache.loadIcon(for: identifier) { [weak self] loaded in
+            self?.icon = loaded
+        }
     }
 }
 

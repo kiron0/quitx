@@ -21,6 +21,7 @@ final class AppListViewModel: ObservableObject {
     }
     @Published var showBackgroundApps: Bool {
         didSet {
+            guard oldValue != showBackgroundApps else { return }
             if configStore.config.includeBackground != showBackgroundApps {
                 configStore.config.includeBackground = showBackgroundApps
                 configStore.save()
@@ -85,6 +86,7 @@ final class AppListViewModel: ObservableObject {
     @Published private(set) var isBatchQuitting: Bool = false
     @Published var currentQuote: String = "Don't give up quitting ⚡"
     @Published var listNeedsScrolling: Bool = false
+    @Published var popoverArrowX: CGFloat? = nil
     @Published var showConfirmQuitAll: Bool = false {
         didSet {
             StatusItemController.shared?.updatePopoverSize()
@@ -315,22 +317,26 @@ final class AppListViewModel: ObservableObject {
         let generation = liveStatsGeneration
         let selectedAllBeforeRefresh = isAllSelected
         let cfg = activeScanConfig
+        let usages = await Task.detached(priority: .userInitiated) {
+            AppListService.fetchCpuUsages()
+        }.value
         let hogPids: Set<pid_t>
         if cfg.hogAlertEnabled {
             hogPids = HogMonitor.shared.noteLiveApps(
                 apps,
-                threshold: cfg.effectiveHogCpuThreshold
+                threshold: cfg.effectiveHogCpuThreshold,
+                usages: usages
             )
         } else {
             HogMonitor.shared.reset()
             hogPids = []
         }
-        let updated = await AppListService.shared.fetchLiveStats(currentApps: apps, config: cfg, hogPids: hogPids)
+        let updated = await AppListService.shared.fetchLiveStats(currentApps: apps, config: cfg, hogPids: hogPids, cpuUsages: usages)
         guard !Task.isCancelled, !isLoading, generation == liveStatsGeneration else { return }
         let flagged = applyResistantFlags(updated)
         if cfg.hogAlertEnabled {
-            let sysCpu = SystemUsage.cpuPercent()
-            if HogMonitor.shared.rescueEligible(
+            let sysCpu = SystemUsage.cpuPercent(consumer: "popover")
+            if HogMonitor.shared.popoverRescueEligible(
                 cpu: sysCpu,
                 threshold: cfg.effectiveHogCpuThreshold
             ),

@@ -23,38 +23,46 @@ final class ArrowPopoverWindow: NSPanel {
     override var canBecomeMain: Bool { false }
 }
 
-let arrowPopoverShape = PopoverContainerShape(centeredArrow: true, cornerRadius: 14)
+func popoverShape(arrowX: CGFloat?) -> PopoverContainerShape {
+    if let arrowX {
+        return PopoverContainerShape(arrowX: arrowX, centeredArrow: false, cornerRadius: 14)
+    }
+    return PopoverContainerShape(centeredArrow: true, cornerRadius: 14)
+}
 
 struct ArrowPopoverChrome: ViewModifier {
+    var arrowX: CGFloat? = nil
     var classicBackground: AnyView = AnyView(
         VisualEffectBlur(material: .popover, blendingMode: .behindWindow)
     )
 
     func body(content: Content) -> some View {
-        content
+        let shape = popoverShape(arrowX: arrowX)
+        return content
             .background {
                 if LiquidGlass.enabled {
-                    LiquidGlassFill(shape: arrowPopoverShape)
+                    LiquidGlassFill(shape: shape)
                 } else {
-                    classicBackground.clipShape(arrowPopoverShape)
+                    classicBackground.clipShape(shape)
                 }
             }
             .overlay {
                 if !LiquidGlass.enabled {
-                    arrowPopoverShape
+                    shape
                         .stroke(Color.primary.opacity(0.12), lineWidth: 0.5)
                 }
             }
-            .clipShape(arrowPopoverShape)
+            .clipShape(shape)
     }
 }
 
 extension View {
     func arrowPopoverChrome(
+        arrowX: CGFloat? = nil,
         classicBackground: AnyView = AnyView(
             VisualEffectBlur(material: .popover, blendingMode: .behindWindow)
         )
     ) -> some View {
-        modifier(ArrowPopoverChrome(classicBackground: classicBackground))
+        modifier(ArrowPopoverChrome(arrowX: arrowX, classicBackground: classicBackground))
     }
 }

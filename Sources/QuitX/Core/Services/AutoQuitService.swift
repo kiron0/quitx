@@ -25,11 +25,13 @@ final class AutoQuitService {
             object: nil
         )
 
-        timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
+        let newTimer = Timer(timeInterval: 60, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 await self?.checkInactiveApps()
             }
         }
+        RunLoop.main.add(newTimer, forMode: .common)
+        timer = newTimer
     }
 
     func stopTracking() {
@@ -66,15 +68,17 @@ final class AutoQuitService {
 
     private func checkInactiveApps() async {
         let config = ConfigStore.shared.config
+
+        let running = NSWorkspace.shared.runningApplications
+        let runningPids = Set(running.map(\.processIdentifier))
+        lastActiveTimestamps = lastActiveTimestamps.filter { runningPids.contains($0.key) }
+        quittingPids = quittingPids.intersection(runningPids)
+
         let globalTimeout = config.quitInactiveAfterMinutes
         guard globalTimeout > 0 || !config.perAppQuitRules.isEmpty else { return }
         let saverActive = BatterySaver.isSaverActive(config: config)
 
         let now = Date()
-        let running = NSWorkspace.shared.runningApplications
-        let runningPids = Set(running.map(\.processIdentifier))
-        lastActiveTimestamps = lastActiveTimestamps.filter { runningPids.contains($0.key) }
-        quittingPids = quittingPids.intersection(runningPids)
         let excluded = getExcludedSet(from: config.exclude)
         let protectedMusicApps = config.musicApps.map { $0.lowercased() }
         let frontmostPid = NSWorkspace.shared.frontmostApplication?.processIdentifier

@@ -10,6 +10,7 @@ final class ShortcutsViewState: ObservableObject {
         guard localMonitor == nil else { return }
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self, weak sm] event in
             guard let self = self, let row = self.recordingRow, let sm = sm else { return event }
+            guard event.window == NSApp.keyWindow else { return event }
             if self.processEvent(event, row: row, sm: sm) {
                 return nil
             }
@@ -21,6 +22,12 @@ final class ShortcutsViewState: ObservableObject {
         if let monitor = localMonitor {
             NSEvent.removeMonitor(monitor)
             localMonitor = nil
+        }
+    }
+
+    deinit {
+        if let monitor = localMonitor {
+            NSEvent.removeMonitor(monitor)
         }
     }
 

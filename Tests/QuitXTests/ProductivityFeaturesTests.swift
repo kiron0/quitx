@@ -380,4 +380,115 @@ struct ProductivityFeaturesTests {
         #expect(legacy.sleepLockStartMinutes == 0)
         #expect(legacy.sleepLockEndMinutes == 360)
     }
+
+    @Test("Config decode survives malformed key and clamps minutes")
+    func testConfigTolerantDecode() throws {
+        let json = Data(#"{"sleepLockStartMinutes":"bad","playSounds":true,"sortBy":"cpu"}"#.utf8)
+        let cfg = try JSONDecoder().decode(QuitXConfig.self, from: json)
+        #expect(cfg.playSounds)
+        #expect(cfg.sortBy == .cpuDesc)
+        #expect(cfg.sleepLockStartMinutes == 0)
+
+        let outOfRange = Data(#"{"sleepLockStartMinutes":99999,"sleepLockEndMinutes":-5}"#.utf8)
+        let clamped = try JSONDecoder().decode(QuitXConfig.self, from: outOfRange)
+        #expect(clamped.sleepLockStartMinutes == 1439)
+        #expect(clamped.sleepLockEndMinutes == 0)
+    }
+
+    @Test("Full config field round trip preserves every value")
+    func testConfigFullRoundTrip() throws {
+        var cfg = QuitXConfig.default
+        cfg.exclude = ["com.example.one", "com.example.two"]
+        cfg.force = .force
+        cfg.includeFinder = true
+        cfg.includeTrash = true
+        cfg.includeBackground = true
+        cfg.groupBackground = false
+        cfg.defaultSelectAll = false
+        cfg.neverQuitMusic = true
+        cfg.musicApps = ["Spotify"]
+        cfg.autoUpdate = false
+        cfg.confirmQuitAll = false
+        cfg.confirmIndividualAction = true
+        cfg.playSounds = false
+        cfg.quitInactiveAfterMinutes = 45
+        cfg.disableQuitTips = true
+        cfg.sortBy = .cpuDesc
+        cfg.perAppQuitRules = ["com.example.app": 120]
+        cfg.quitOnSleep = true
+        cfg.quitOnScreenLock = true
+        cfg.sleepLockStartMinutes = 1320
+        cfg.sleepLockEndMinutes = 420
+        cfg.sleepLockUse24Hour = false
+        cfg.showMenuBarStats = true
+        cfg.menuBarMemoryUnit = .percentage
+        cfg.hogAlertEnabled = true
+        cfg.hogCpuThreshold = 95
+        cfg.memoryPressureQuitEnabled = true
+        cfg.memoryPressureThresholdMB = 4096
+        cfg.batterySaverEnabled = true
+        cfg.quitTimers = ["com.example.timer": 3600]
+        cfg.liquidGlassEnabled = false
+
+        let data = try JSONEncoder().encode(cfg)
+        let decoded = try JSONDecoder().decode(QuitXConfig.self, from: data)
+
+        #expect(decoded.exclude == cfg.exclude)
+        #expect(decoded.force == cfg.force)
+        #expect(decoded.includeFinder == cfg.includeFinder)
+        #expect(decoded.includeTrash == cfg.includeTrash)
+        #expect(decoded.includeBackground == cfg.includeBackground)
+        #expect(decoded.groupBackground == cfg.groupBackground)
+        #expect(decoded.defaultSelectAll == cfg.defaultSelectAll)
+        #expect(decoded.neverQuitMusic == cfg.neverQuitMusic)
+        #expect(decoded.musicApps == cfg.musicApps)
+        #expect(decoded.autoUpdate == cfg.autoUpdate)
+        #expect(decoded.confirmQuitAll == cfg.confirmQuitAll)
+        #expect(decoded.confirmIndividualAction == cfg.confirmIndividualAction)
+        #expect(decoded.playSounds == cfg.playSounds)
+        #expect(decoded.quitInactiveAfterMinutes == cfg.quitInactiveAfterMinutes)
+        #expect(decoded.disableQuitTips == cfg.disableQuitTips)
+        #expect(decoded.sortBy == cfg.sortBy)
+        #expect(decoded.perAppQuitRules == cfg.perAppQuitRules)
+        #expect(decoded.quitOnSleep == cfg.quitOnSleep)
+        #expect(decoded.quitOnScreenLock == cfg.quitOnScreenLock)
+        #expect(decoded.sleepLockStartMinutes == cfg.sleepLockStartMinutes)
+        #expect(decoded.sleepLockEndMinutes == cfg.sleepLockEndMinutes)
+        #expect(decoded.sleepLockUse24Hour == cfg.sleepLockUse24Hour)
+        #expect(decoded.showMenuBarStats == cfg.showMenuBarStats)
+        #expect(decoded.menuBarMemoryUnit == cfg.menuBarMemoryUnit)
+        #expect(decoded.hogAlertEnabled == cfg.hogAlertEnabled)
+        #expect(decoded.hogCpuThreshold == cfg.hogCpuThreshold)
+        #expect(decoded.memoryPressureQuitEnabled == cfg.memoryPressureQuitEnabled)
+        #expect(decoded.memoryPressureThresholdMB == cfg.memoryPressureThresholdMB)
+        #expect(decoded.batterySaverEnabled == cfg.batterySaverEnabled)
+        #expect(decoded.quitTimers == cfg.quitTimers)
+        #expect(decoded.liquidGlassEnabled == cfg.liquidGlassEnabled)
+    }
+
+    @Test("Sleep lock range calendar overload matches minute math")
+    func testSleepLockRangeCalendarOverload() throws {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = try #require(TimeZone(secondsFromGMT: 0))
+        func date(_ hour: Int, _ minute: Int) -> Date {
+            var c = DateComponents()
+            c.year = 2026
+            c.month = 1
+            c.day = 10
+            c.hour = hour
+            c.minute = minute
+            return cal.date(from: c)!
+        }
+
+        #expect(SleepLockRange.active(now: date(9, 30), startMinutes: 540, endMinutes: 1020, calendar: cal))
+        #expect(SleepLockRange.active(now: date(9, 0), startMinutes: 540, endMinutes: 1020, calendar: cal))
+        #expect(!SleepLockRange.active(now: date(5, 0), startMinutes: 540, endMinutes: 1020, calendar: cal))
+        #expect(!SleepLockRange.active(now: date(17, 0), startMinutes: 540, endMinutes: 1020, calendar: cal))
+
+        #expect(SleepLockRange.active(now: date(23, 0), startMinutes: 1320, endMinutes: 420, calendar: cal))
+        #expect(SleepLockRange.active(now: date(2, 0), startMinutes: 1320, endMinutes: 420, calendar: cal))
+        #expect(!SleepLockRange.active(now: date(12, 0), startMinutes: 1320, endMinutes: 420, calendar: cal))
+
+        #expect(SleepLockRange.active(now: date(12, 0), startMinutes: 999, endMinutes: 999, calendar: cal))
+    }
 }

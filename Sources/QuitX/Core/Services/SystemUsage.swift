@@ -9,17 +9,19 @@ enum SystemUsage {
         var lastPercent: Double = 0
     }
 
-    private static let cpuLock = OSAllocatedUnfairLock(initialState: CpuState())
+    private static let cpuLock = OSAllocatedUnfairLock(initialState: [String: CpuState]())
 
     static func prime() {
-        _ = cpuPercent()
+        _ = cpuPercent(consumer: "prime")
     }
 
-    static func cpuPercent() -> Double {
+    static func cpuPercent(consumer: String = "default") -> Double {
         guard let (busy, total) = readCpuTicks() else {
-            return cpuLock.withLock { $0.lastPercent }
+            return cpuLock.withLock { $0[consumer]?.lastPercent ?? 0 }
         }
-        return cpuLock.withLock { state -> Double in
+        return cpuLock.withLock { states -> Double in
+            var state = states[consumer] ?? CpuState()
+            defer { states[consumer] = state }
             guard let prevBusy = state.prevBusy, let prevTotal = state.prevTotal else {
                 state.prevBusy = busy
                 state.prevTotal = total

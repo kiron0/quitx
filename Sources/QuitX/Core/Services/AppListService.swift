@@ -164,9 +164,9 @@ final class AppListService {
         return sortApps(results, sortBy: config.sortBy)
     }
 
-    func fetchLiveStats(currentApps: [AppInfo], config: QuitXConfig, hogPids: Set<pid_t> = []) async -> [AppInfo] {
+    func fetchLiveStats(currentApps: [AppInfo], config: QuitXConfig, hogPids: Set<pid_t> = [], cpuUsages providedUsages: [pid_t: Double]? = nil) async -> [AppInfo] {
         let scanTask = Task.detached(priority: .userInitiated) {
-            let cpuUsages = Self.fetchCpuUsages()
+            let cpuUsages = providedUsages ?? Self.fetchCpuUsages()
             let updated = currentApps.map { app -> AppInfo in
                 if app.pids.isEmpty { return app }
                 var totalMem: UInt64 = 0

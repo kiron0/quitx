@@ -15,8 +15,8 @@ enum WindowPositioner {
             return NSRect(origin: .zero, size: size)
         }
         let sf = screen.visibleFrame
-        let x = sf.midX - (size.width / 2)
-        let y = sf.maxY - size.height - topOffset
+        let x = min(max(sf.minX, sf.midX - (size.width / 2)), sf.maxX - size.width)
+        let y = min(max(sf.minY, sf.maxY - size.height - topOffset), sf.maxY - size.height)
         return NSRect(x: x, y: y, width: size.width, height: size.height)
     }
 

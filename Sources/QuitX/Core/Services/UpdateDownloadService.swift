@@ -73,6 +73,7 @@ final class UpdateDownloadService: NSObject, ObservableObject {
     private var downloadTask: URLSessionDownloadTask?
     private var lastSpeedTime: Date?
     private var lastSpeedBytes: Int64 = 0
+    private var lastPublishedProgress: Double = -1
     private var stagedDirURL: URL?
     private(set) var currentDownloadURL: URL?
     private(set) var currentDigest: String?
@@ -522,6 +523,10 @@ final class UpdateDownloadService: NSObject, ObservableObject {
             downloadSpeed = ""
         }
 
+        let delta = abs(downloadProgress - lastPublishedProgress)
+        let reachedEnd = downloadProgress >= 1.0 && lastPublishedProgress < 1.0
+        guard delta >= 0.005 || reachedEnd else { return }
+        lastPublishedProgress = downloadProgress
         state = .downloading(
             progress: downloadProgress,
             bytesDownloaded: bytesDownloaded,

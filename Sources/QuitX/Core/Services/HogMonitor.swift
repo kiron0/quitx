@@ -54,6 +54,8 @@ final class HogMonitor {
     private var notifiedSystemOverLimit = false
     private var gate = HogRescueGate()
     private var armedAt: Date?
+    private var popoverGate = HogRescueGate()
+    private var popoverArmedAt: Date?
     private var backgroundTask: Task<Void, Never>?
     private var configObserver: AnyCancellable?
     private var lastEnabledValue: Bool?
@@ -73,7 +75,8 @@ final class HogMonitor {
         let wasEnabled = lastEnabledValue
         lastEnabledValue = enabled
         if enabled, wasEnabled == false {
-            armedAt = Date().addingTimeInterval(-HogRescueGate.armDelay)
+            armedAt = Date()
+            popoverArmedAt = Date()
         }
     }
 
@@ -101,7 +104,7 @@ final class HogMonitor {
             return
         }
         let threshold = config.effectiveHogCpuThreshold
-        let systemCPU = SystemUsage.cpuPercent()
+        let systemCPU = SystemUsage.cpuPercent(consumer: "hog")
         if systemCPU < threshold - HogRescueGate.hysteresis {
             notifiedSystemOverLimit = false
         }
@@ -127,10 +130,19 @@ final class HogMonitor {
         return gate.evaluate(cpu: cpu, threshold: threshold, armedAt: armedAt, now: Date())
     }
 
+    func popoverRescueEligible(cpu: Double, threshold: Double) -> Bool {
+        if popoverArmedAt == nil {
+            popoverArmedAt = Date()
+        }
+        return popoverGate.evaluate(cpu: cpu, threshold: threshold, armedAt: popoverArmedAt, now: Date())
+    }
+
     private func disarm() {
         notifiedSystemOverLimit = false
         gate.reset()
         armedAt = nil
+        popoverGate.reset()
+        popoverArmedAt = nil
     }
 
     func reset() {
@@ -141,9 +153,9 @@ final class HogMonitor {
 
     func noteLiveApps(
         _ apps: [AppInfo],
-        threshold: Double
+        threshold: Double,
+        usages: [pid_t: Double]
     ) -> Set<pid_t> {
-        let usages = AppListService.fetchCpuUsages()
         var cpuByPid: [pid_t: Double] = [:]
         for app in apps {
             for pid in app.pids {
