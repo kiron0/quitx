@@ -338,7 +338,7 @@ struct GeneralTabCloneView: View {
         .padding(.top, 14)
         .padding(.bottom, 10)
         .frame(width: 400, height: 511, alignment: .topLeading)
-        .background(QuitXTheme.windowBackground)
+        .background(QuitXTheme.paneBackground)
         .onAppear {
             state.syncFromMinutes(configStore.config.quitInactiveAfterMinutes)
             if configStore.config.hogCpuThreshold < 80 {
@@ -458,6 +458,6 @@ struct AdvancedTabCloneView: View {
         .padding(.top, 14)
         .padding(.bottom, 10)
         .frame(width: 400, height: 271, alignment: .topLeading)
-        .background(QuitXTheme.windowBackground)
+        .background(QuitXTheme.paneBackground)
     }
 }

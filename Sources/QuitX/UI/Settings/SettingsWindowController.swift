@@ -47,9 +47,15 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
             defer: false
         )
         win.title = targetTab.rawValue
-        win.isOpaque = true
-        win.backgroundColor = QuitXTheme.toolbarBackgroundNSColor
-        win.titlebarAppearsTransparent = true
+        if #available(macOS 26.0, *) {
+            win.isOpaque = false
+            win.backgroundColor = .clear
+            win.titlebarAppearsTransparent = false
+        } else {
+            win.isOpaque = true
+            win.backgroundColor = QuitXTheme.toolbarBackgroundNSColor
+            win.titlebarAppearsTransparent = true
+        }
         win.titlebarSeparatorStyle = .line
         win.isMovableByWindowBackground = false
         win.hidesOnDeactivate = false

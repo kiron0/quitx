@@ -105,7 +105,7 @@ struct ExcludeTabView: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
         .frame(width: 400, height: 306, alignment: .topLeading)
-        .background(QuitXTheme.windowBackground)
+        .background(QuitXTheme.paneBackground)
         .overlay {
             if let request = state.pendingRemoval {
                 QuitConfirmationOverlay(

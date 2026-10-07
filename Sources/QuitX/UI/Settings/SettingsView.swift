@@ -118,7 +118,13 @@ struct SettingsContainerView: View {
             }
         }
         .frame(width: 400, height: tabModel.activeTab.contentHeight, alignment: .top)
-        .background(QuitXTheme.windowBackground)
+        .background {
+            if #available(macOS 26.0, *) {
+                Color.clear.glassEffect(.regular, in: Rectangle())
+            } else {
+                QuitXTheme.windowBackground
+            }
+        }
     }
 }
 

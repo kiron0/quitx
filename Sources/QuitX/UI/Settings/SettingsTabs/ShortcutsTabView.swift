@@ -125,7 +125,7 @@ struct ShortcutsTabCloneView: View {
             Spacer(minLength: 0)
         }
         .frame(width: 400, height: 221)
-        .background(QuitXTheme.windowBackground)
+        .background(QuitXTheme.paneBackground)
         .onAppear {
             viewState.startMonitor(sm: sm)
         }

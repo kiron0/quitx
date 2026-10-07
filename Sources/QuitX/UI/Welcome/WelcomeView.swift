@@ -29,8 +29,14 @@ struct WelcomeView: View {
         .frame(width: 390)
         .fixedSize(horizontal: false, vertical: true)
         .background {
-            QuitXTheme.windowBackground
-                .ignoresSafeArea()
+            if #available(macOS 26.0, *) {
+                Color.clear
+                    .glassEffect(.regular, in: Rectangle())
+                    .ignoresSafeArea()
+            } else {
+                QuitXTheme.windowBackground
+                    .ignoresSafeArea()
+            }
         }
     }
 

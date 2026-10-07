@@ -27,8 +27,13 @@ enum WindowAnimator {
             window.isOpaque = false
             window.backgroundColor = .clear
         } else if hasToolbar {
-            window.isOpaque = true
-            window.backgroundColor = QuitXTheme.toolbarBackgroundNSColor
+            if #available(macOS 26.0, *) {
+                window.isOpaque = false
+                window.backgroundColor = .clear
+            } else {
+                window.isOpaque = true
+                window.backgroundColor = QuitXTheme.toolbarBackgroundNSColor
+            }
         } else {
             window.isOpaque = true
             window.backgroundColor = QuitXTheme.windowBackgroundNSColor

@@ -354,8 +354,14 @@ struct ExcludeAppPickerView: View {
         }
         .frame(minWidth: 500, maxWidth: .infinity, minHeight: 520, maxHeight: .infinity)
         .background {
-            QuitXTheme.windowBackground
-                .ignoresSafeArea()
+            if #available(macOS 26.0, *) {
+                Color.clear
+                    .glassEffect(.regular, in: Rectangle())
+                    .ignoresSafeArea()
+            } else {
+                QuitXTheme.windowBackground
+                    .ignoresSafeArea()
+            }
         }
         .ignoresSafeArea()
         .task {
@@ -369,7 +375,7 @@ struct ExcludeAppPickerView: View {
             .foregroundStyle(Color.primary)
             .frame(maxWidth: .infinity)
             .frame(height: 38)
-            .background(QuitXTheme.windowBackground)
+            .background(QuitXTheme.paneBackground)
     }
 
     private var controls: some View {

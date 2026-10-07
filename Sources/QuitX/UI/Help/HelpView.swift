@@ -398,8 +398,14 @@ struct HelpView: View {
         }
         .frame(minWidth: 740, maxWidth: .infinity, minHeight: 520, maxHeight: .infinity)
         .background {
-            QuitXTheme.windowBackground
-                .ignoresSafeArea()
+            if #available(macOS 26.0, *) {
+                Color.clear
+                    .glassEffect(.regular, in: Rectangle())
+                    .ignoresSafeArea()
+            } else {
+                QuitXTheme.windowBackground
+                    .ignoresSafeArea()
+            }
         }
         .ignoresSafeArea()
         .onChange(of: state.searchText) {
@@ -580,11 +586,11 @@ struct HelpView: View {
                 footerLinks(for: topic)
                     .padding(.horizontal, 28)
                     .padding(.vertical, 14)
-                    .background(QuitXTheme.windowBackground)
+                    .background(QuitXTheme.paneBackground)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .id(topic.id)
-            .background(QuitXTheme.windowBackground)
+            .background(QuitXTheme.paneBackground)
         } else {
             VStack(spacing: 9) {
                 Image(systemName: "questionmark.circle")
@@ -594,7 +600,7 @@ struct HelpView: View {
                     .font(.system(size: 14, weight: .semibold))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(QuitXTheme.windowBackground)
+            .background(QuitXTheme.paneBackground)
         }
     }
 

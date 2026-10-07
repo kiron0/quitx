@@ -32,6 +32,15 @@ enum QuitXTheme {
     static var windowBackground: some View {
         Color(NSColor.windowBackgroundColor)
     }
+
+    @ViewBuilder
+    static var paneBackground: some View {
+        if #available(macOS 26.0, *) {
+            Color.clear
+        } else {
+            Color(NSColor.windowBackgroundColor)
+        }
+    }
 }
 
 struct VisualEffectBlur: NSViewRepresentable {
