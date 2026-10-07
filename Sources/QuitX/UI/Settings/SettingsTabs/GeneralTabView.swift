@@ -321,11 +321,17 @@ struct GeneralTabCloneView: View {
                 row(label: "Appearance:") {
                     HStack(spacing: 18) {
                         appearanceRadio("Classic", selected: !configStore.config.liquidGlassEnabled) {
-                            configStore.config.liquidGlassEnabled = false
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                configStore.config.liquidGlassEnabled = false
+                            }
+                            SettingsWindowController.shared.applyWindowChrome()
                             configStore.save()
                         }
                         appearanceRadio("Liquid Glass", selected: configStore.config.liquidGlassEnabled) {
-                            configStore.config.liquidGlassEnabled = true
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                configStore.config.liquidGlassEnabled = true
+                            }
+                            SettingsWindowController.shared.applyWindowChrome()
                             configStore.save()
                         }
                     }

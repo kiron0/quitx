@@ -28,7 +28,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
             }
     }
 
-    private func applyWindowChrome() {
+    func applyWindowChrome() {
         guard let win = window else { return }
         let enabled = LiquidGlass.enabled
         guard appliedGlass != enabled else { return }
@@ -48,8 +48,8 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
             if win.styleMask.contains(.fullSizeContentView) {
                 win.styleMask.remove(.fullSizeContentView)
             }
-            win.isOpaque = true
             win.backgroundColor = QuitXTheme.toolbarBackgroundNSColor
+            win.isOpaque = true
             tabModel.glassTopInset = 0
         }
         win.titlebarAppearsTransparent = true

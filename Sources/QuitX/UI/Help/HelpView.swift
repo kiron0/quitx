@@ -380,6 +380,7 @@ final class HelpViewState: ObservableObject {
 
 struct HelpView: View {
     @StateObject private var state = HelpViewState()
+    @ObservedObject private var configStore: ConfigStore = ConfigStore.shared
 
     private var filteredTopics: [QuitXHelpTopic] {
         QuitXHelpTopic.all.filter { $0.matches(state.searchText) }

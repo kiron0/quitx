@@ -4,6 +4,7 @@ import SwiftUI
 struct AppUpdateView: View {
     @ObservedObject var service = UpdateDownloadService.shared
     @ObservedObject var checker = UpdateChecker.shared
+    @ObservedObject private var configStore: ConfigStore = ConfigStore.shared
     var onDismiss: () -> Void
 
     var body: some View {
