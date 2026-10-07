@@ -149,6 +149,42 @@ struct ProductivityFeaturesTests {
         #expect(targets.map(\.name) == ["Huge", "Small"])
     }
 
+    @Test("Rescue spares critical system apps")
+    func testRescueSparesSystemSettings() {
+        let config = QuitXConfig.default
+        let apps = [
+            windowedApp(name: "System Settings", bundleId: "com.apple.systempreferences", pid: 401),
+            windowedApp(name: "Activity Monitor", bundleId: "com.apple.ActivityMonitor", pid: 402),
+            windowedApp(name: "Idle", bundleId: "com.idle.app", pid: 403),
+        ]
+        let targets = InactiveRescueTargets.select(
+            apps: apps, config: config, frontmostPid: 900, ownPid: 999
+        )
+        #expect(targets.map(\.name) == ["Idle"])
+    }
+
+    @Test("Rescue consent prompt respects cooldown")
+    @MainActor
+    func testConsentPromptCooldown() {
+        let now = Date()
+        #expect(RescueConsentController.shouldPrompt(lastPrompt: .distantPast, now: now))
+        #expect(!RescueConsentController.shouldPrompt(lastPrompt: now, now: now))
+        #expect(
+            !RescueConsentController.shouldPrompt(
+                lastPrompt: now.addingTimeInterval(-59),
+                now: now,
+                cooldown: 60
+            )
+        )
+        #expect(
+            RescueConsentController.shouldPrompt(
+                lastPrompt: now.addingTimeInterval(-61),
+                now: now,
+                cooldown: 60
+            )
+        )
+    }
+
     @Test("Battery detection parses power descriptions")
     func testBatteryDetection() {
         let battery = [[kIOPSPowerSourceStateKey as String: kIOPSBatteryPowerValue as String]]

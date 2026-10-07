@@ -343,7 +343,7 @@ final class AppListViewModel: ObservableObject {
             )
             if !rescueTargets.isEmpty {
                 lastHogRescueDate = Date()
-                await quitSilently(targets: rescueTargets, force: true)
+                RescueConsentController.shared.request(targets: rescueTargets, reason: .cpu(SystemUsage.cpuPercent()))
                 return
             }
         }
@@ -441,7 +441,7 @@ final class AppListViewModel: ObservableObject {
         )
         guard !targets.isEmpty else { return }
         lastHogRescueDate = Date()
-        await quitSilently(targets: targets, force: true)
+        RescueConsentController.shared.request(targets: targets, reason: .cpu(SystemUsage.cpuPercent()))
     }
 
     private func performQuit(targets: [AppInfo], force: Bool) async {

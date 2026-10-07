@@ -91,7 +91,7 @@ final class HogMonitor {
             postNotification(
                 title: "High CPU usage",
                 body: String(
-                    format: "System CPU load stayed at %.0f%% (limit %.0f%%). QuitX is closing inactive apps to recover.",
+                    format: "System CPU load stayed at %.0f%% (limit %.0f%%). QuitX will ask you before quitting inactive apps.",
                     systemCPU,
                     threshold
                 )
@@ -207,7 +207,7 @@ final class HogNotificationDelegate: NSObject, UNUserNotificationCenterDelegate 
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
         Task { @MainActor in
-            StatusItemController.shared?.showPopover()
+            RescueConsentController.shared.reopenFromNotification()
         }
         completionHandler()
     }

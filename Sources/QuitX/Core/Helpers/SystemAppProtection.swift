@@ -36,7 +36,12 @@ enum SystemAppProtection {
         "com.apple.controlcenter",
         "com.apple.notificationcenterui",
         "com.apple.loginwindow",
-        "com.apple.ScreenSaver.Engine"
+        "com.apple.ScreenSaver.Engine",
+        "com.apple.systempreferences",
+        "com.apple.ActivityMonitor",
+        "com.apple.Console",
+        "com.apple.archiver",
+        "com.apple.DiskUtility"
     ]
 
     static func isSystemProtected(

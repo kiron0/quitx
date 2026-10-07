@@ -13,6 +13,13 @@ enum MemoryPressureTargets {
                QuitXIdentity.supportedBundleIdentifiers.contains(bid) { return false }
             if app.bundleId == QuitXConstants.SystemBundleIds.finder { return false }
             if app.bundleId == QuitXConstants.SystemBundleIds.trash { return false }
+            if let bid = app.bundleId,
+               let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid),
+               SystemAppProtection.isSystemProtected(
+                   bundleIdentifier: bid,
+                   isBackground: app.isBackground,
+                   bundleURL: url
+               ) { return false }
             let lowerBid = app.bundleId?.lowercased()
             let lowerName = app.name.lowercased()
             if let lowerBid, excluded.contains(lowerBid) { return false }
@@ -81,6 +88,6 @@ final class MemoryPressureService {
         )
         guard !targets.isEmpty else { return }
         lastRescueDate = Date()
-        await vm.quitSilently(targets: targets, force: true)
+        RescueConsentController.shared.request(targets: targets, reason: .memory)
     }
 }

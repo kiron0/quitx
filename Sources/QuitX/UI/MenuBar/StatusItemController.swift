@@ -386,6 +386,10 @@ final class StatusItemController: NSObject {
         statsStatusItem?.button
     }
 
+    var statusBarButton: NSStatusBarButton? {
+        statusItem.button
+    }
+
     func updateMenuBarStats() {
         let cfg = ConfigStore.shared.config
         guard cfg.showMenuBarStats else {
