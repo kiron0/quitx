@@ -354,7 +354,11 @@ final class StatusItemController: NSObject {
         return nil
     }
 
-    private static func statsTitle(cpu: Double, memoryUsed: UInt64) -> NSAttributedString {
+    private static func statsTitle(
+        cpu: Double,
+        memoryUsed: UInt64,
+        unit: QuitXConfig.MenuBarMemoryUnit
+    ) -> NSAttributedString {
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.menuBarFont(ofSize: 0),
             .foregroundColor: NSColor.labelColor
@@ -373,7 +377,7 @@ final class StatusItemController: NSObject {
         appendSegment(
             symbolNames: ["memorychip", "internaldrive"],
             fallback: "MEM",
-            text: BatterySaver.compactMemoryText(bytes: memoryUsed)
+            text: BatterySaver.compactMemoryText(bytes: memoryUsed, unit: unit)
         )
         return title
     }
@@ -383,7 +387,8 @@ final class StatusItemController: NSObject {
     }
 
     func updateMenuBarStats() {
-        guard ConfigStore.shared.config.showMenuBarStats else {
+        let cfg = ConfigStore.shared.config
+        guard cfg.showMenuBarStats else {
             removeStatsItem()
             return
         }
@@ -391,7 +396,7 @@ final class StatusItemController: NSObject {
         statsStatusItem = item
         guard let button = item.button else { return }
         if button.action == nil {
-            button.sendAction(on: [.leftMouseDown])
+            button.sendAction(on: [.leftMouseDown, .rightMouseDown])
             button.action = #selector(handleStatsItemClick(_:))
             button.target = self
             button.toolTip = "QuitX monitor — click for details"
@@ -399,7 +404,8 @@ final class StatusItemController: NSObject {
         button.imagePosition = .imageLeading
         button.attributedTitle = Self.statsTitle(
             cpu: SystemUsage.cpuPercent(),
-            memoryUsed: SystemUsage.memoryUsedBytes()
+            memoryUsed: SystemUsage.memoryUsedBytes(),
+            unit: cfg.menuBarMemoryUnit
         )
     }
 
@@ -412,6 +418,10 @@ final class StatusItemController: NSObject {
 
     @objc private func handleStatsItemClick(_ sender: Any?) {
         guard let button = statsStatusItem?.button else { return }
+        if let event = NSApp.currentEvent, event.type == .rightMouseDown || event.type == .rightMouseUp {
+            showContextMenu()
+            return
+        }
         StatsDetailController.shared.toggle(from: button)
     }
 

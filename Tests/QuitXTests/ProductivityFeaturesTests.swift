@@ -172,11 +172,15 @@ struct ProductivityFeaturesTests {
         #expect(BatterySaver.effectiveTimeout(minutes: 60, saverActive: false) == 60)
         #expect(BatterySaver.effectiveTimeout(minutes: 0, saverActive: true) == 0)
         let tenGB: UInt64 = 10 * 1024 * 1024 * 1024
+        let sixteenGB: UInt64 = 16 * 1024 * 1024 * 1024
         #expect(BatterySaver.menuBarText(cpu: 12.6, memoryUsedBytes: tenGB, enabled: true) == "CPU 13% · Memory 10.0 GB")
+        #expect(BatterySaver.menuBarText(cpu: 12.6, memoryUsedBytes: tenGB, enabled: true, unit: .percentage, totalBytes: sixteenGB) == "CPU 13% · Memory 62%")
         #expect(BatterySaver.menuBarText(cpu: 12.6, memoryUsedBytes: tenGB, enabled: false) == nil)
         #expect(BatterySaver.percentText(7.4) == "7%")
         #expect(BatterySaver.compactMemoryText(bytes: tenGB) == "10.0G")
+        #expect(BatterySaver.compactMemoryText(bytes: tenGB, unit: .percentage, totalBytes: sixteenGB) == "62%")
         #expect(BatterySaver.compactMemoryText(bytes: 512 * 1024 * 1024) == "512M")
+        #expect(BatterySaver.memoryPercentText(bytes: 8 * 1024 * 1024 * 1024, totalBytes: sixteenGB) == "50%")
     }
 
     @Test("Rescue gate blocks during 60s arm delay")
@@ -292,5 +296,15 @@ struct ProductivityFeaturesTests {
         #expect(targets.map(\.name) == ["Xcode"])
         #expect(AppListViewModel.othersTargets(keepingId: "missing", apps: apps).count == 2)
         #expect(AppListViewModel.othersTargets(keepingId: apps[0].id, apps: []).isEmpty)
+    }
+
+    @Test("Menu bar memory unit encodes and decodes")
+    func testMenuBarMemoryUnitConfig() throws {
+        var cfg = QuitXConfig.default
+        #expect(cfg.menuBarMemoryUnit == .gb)
+        cfg.menuBarMemoryUnit = .percentage
+        let data = try JSONEncoder().encode(cfg)
+        let decoded = try JSONDecoder().decode(QuitXConfig.self, from: data)
+        #expect(decoded.menuBarMemoryUnit == .percentage)
     }
 }

@@ -148,7 +148,33 @@ struct GeneralTabCloneView: View {
                     }
                 ))
             } help: {
-                HelpPopoverButton(text: "Live pulse of your machine: a separate usage item beside the QuitX icon shows whole-system CPU percent and memory use in GB. Click it for a blurred detail panel. Refreshes every second (5 seconds on battery saver). 🏎️💨")
+                HelpPopoverButton(text: "Live pulse of your machine: a separate usage item beside the QuitX icon shows whole-system CPU percent and memory use in GB or percentage. Click it for a blurred detail panel. Refreshes every second (5 seconds on battery saver). 🏎️💨")
+            }
+
+            row(label: "") {
+                HStack(spacing: 6) {
+                    Text("Memory format")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.primary)
+
+                    Picker("", selection: Binding(
+                        get: { configStore.config.menuBarMemoryUnit },
+                        set: {
+                            configStore.config.menuBarMemoryUnit = $0
+                            configStore.save()
+                            StatusItemController.shared?.updateMenuBarStats()
+                        }
+                    )) {
+                        Text("GB").tag(QuitXConfig.MenuBarMemoryUnit.gb)
+                        Text("Percentage").tag(QuitXConfig.MenuBarMemoryUnit.percentage)
+                    }
+                    .frame(width: 115)
+                    .labelsHidden()
+                }
+                .disabled(!configStore.config.showMenuBarStats)
+                .opacity(configStore.config.showMenuBarStats ? 1.0 : 0.42)
+            } help: {
+                HelpPopoverButton(text: "Display memory in the menu bar as gigabytes (GB) or as a percentage of total RAM (%).")
             }
 
             row(label: "") {
@@ -311,7 +337,7 @@ struct GeneralTabCloneView: View {
         .padding(.horizontal, 20)
         .padding(.top, 14)
         .padding(.bottom, 10)
-        .frame(width: 400, height: 481, alignment: .topLeading)
+        .frame(width: 400, height: 511, alignment: .topLeading)
         .background(QuitXTheme.windowBackground)
         .onAppear {
             state.syncFromMinutes(configStore.config.quitInactiveAfterMinutes)

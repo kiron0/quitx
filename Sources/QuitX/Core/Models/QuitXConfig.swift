@@ -21,6 +21,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
     var quitOnSleep: Bool = false
     var quitOnScreenLock: Bool = false
     var showMenuBarStats: Bool = false
+    var menuBarMemoryUnit: MenuBarMemoryUnit = .gb
     var hogAlertEnabled: Bool = false
     var hogCpuThreshold: Double = 80
     var memoryPressureQuitEnabled: Bool = false
@@ -32,7 +33,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         case exclude, force, includeFinder, includeTrash, includeBackground, groupBackground
         case defaultSelectAll, neverQuitMusic, musicApps, autoUpdate, confirmQuitAll, confirmIndividualAction, playSounds
         case quitInactiveAfterMinutes, disableQuitTips, sortBy, perAppQuitRules
-        case quitOnSleep, quitOnScreenLock, showMenuBarStats
+        case quitOnSleep, quitOnScreenLock, showMenuBarStats, menuBarMemoryUnit
         case hogAlertEnabled, hogCpuThreshold
         case memoryPressureQuitEnabled, memoryPressureThresholdMB, batterySaverEnabled
         case quitTimers
@@ -59,6 +60,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         quitOnSleep: Bool = false,
         quitOnScreenLock: Bool = false,
         showMenuBarStats: Bool = false,
+        menuBarMemoryUnit: MenuBarMemoryUnit = .gb,
         hogAlertEnabled: Bool = false,
         hogCpuThreshold: Double = 80,
         memoryPressureQuitEnabled: Bool = false,
@@ -86,6 +88,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         self.quitOnSleep = quitOnSleep
         self.quitOnScreenLock = quitOnScreenLock
         self.showMenuBarStats = showMenuBarStats
+        self.menuBarMemoryUnit = menuBarMemoryUnit
         self.hogAlertEnabled = hogAlertEnabled
         self.hogCpuThreshold = hogCpuThreshold
         self.memoryPressureQuitEnabled = memoryPressureQuitEnabled
@@ -117,6 +120,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         quitOnSleep = try container.decodeIfPresent(Bool.self, forKey: .quitOnSleep) ?? defaults.quitOnSleep
         quitOnScreenLock = try container.decodeIfPresent(Bool.self, forKey: .quitOnScreenLock) ?? defaults.quitOnScreenLock
         showMenuBarStats = try container.decodeIfPresent(Bool.self, forKey: .showMenuBarStats) ?? defaults.showMenuBarStats
+        menuBarMemoryUnit = try container.decodeIfPresent(MenuBarMemoryUnit.self, forKey: .menuBarMemoryUnit) ?? defaults.menuBarMemoryUnit
         hogAlertEnabled = try container.decodeIfPresent(Bool.self, forKey: .hogAlertEnabled) ?? defaults.hogAlertEnabled
         hogCpuThreshold = try container.decodeIfPresent(Double.self, forKey: .hogCpuThreshold) ?? defaults.hogCpuThreshold
         memoryPressureQuitEnabled = try container.decodeIfPresent(Bool.self, forKey: .memoryPressureQuitEnabled) ?? defaults.memoryPressureQuitEnabled
@@ -127,6 +131,22 @@ struct QuitXConfig: Codable, Equatable, Sendable {
 
     var effectiveHogCpuThreshold: Double {
         max(80, min(100, hogCpuThreshold))
+    }
+
+    enum MenuBarMemoryUnit: String, Codable, Equatable, CaseIterable, Sendable {
+        case gb = "GB"
+        case percentage = "Percentage"
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            let raw = try container.decode(String.self)
+            switch raw.lowercased() {
+            case "percentage", "percent", "%":
+                self = .percentage
+            default:
+                self = .gb
+            }
+        }
     }
 
     enum ForceMode: String, Codable, Equatable, Sendable { case normal, force }

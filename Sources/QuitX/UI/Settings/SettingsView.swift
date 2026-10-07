@@ -48,7 +48,7 @@ enum SettingsTab: String, CaseIterable {
 
     var contentHeight: CGFloat {
         switch self {
-        case .general:   return 481
+        case .general:   return 511
         case .advanced:  return 271
         case .exclude:   return 306
         case .shortcuts: return 221

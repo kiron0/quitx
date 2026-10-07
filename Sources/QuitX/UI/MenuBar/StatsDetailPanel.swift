@@ -16,6 +16,7 @@ final class StatsDetailWindow: NSPanel {
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         isMovable = false
         isMovableByWindowBackground = false
+        acceptsMouseMovedEvents = true
     }
 
     override var canBecomeKey: Bool { true }
@@ -27,6 +28,7 @@ final class StatsDetailModel: ObservableObject {
     @Published var cpu: Double = 0
     @Published var memoryUsed: UInt64 = 0
     @Published var memoryTotal: UInt64 = ProcessInfo.processInfo.physicalMemory
+    @Published var arrowX: CGFloat = 115
 
     private var timer: Timer?
 
@@ -54,6 +56,7 @@ final class StatsDetailModel: ObservableObject {
 
 struct StatsDetailView: View {
     @ObservedObject var model: StatsDetailModel
+    @ObservedObject private var configStore: ConfigStore = ConfigStore.shared
 
     private func symbol(_ names: [String]) -> Image {
         for name in names {
@@ -65,33 +68,56 @@ struct StatsDetailView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 6) {
-                symbol(["gauge.with.needle"])
-                    .font(.system(size: 11, weight: .semibold))
-                Text("QuitX Monitor")
-                    .font(.system(size: 11, weight: .semibold))
+        let containerShape = PopoverContainerShape(arrowX: model.arrowX, cornerRadius: 14)
+        VStack(alignment: .leading, spacing: 0) {
+            Color.clear
+                .frame(height: 12)
+
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 6) {
+                    symbol(["gauge.with.needle"])
+                        .font(.system(size: 11, weight: .semibold))
+                    Text("QuitX Monitor")
+                        .font(.system(size: 11, weight: .semibold))
+                }
+                .foregroundStyle(.secondary)
+
+                statRow(
+                    icon: symbol(["cpu"]),
+                    title: "CPU",
+                    value: BatterySaver.percentText(model.cpu),
+                    detail: "whole system load"
+                )
+
+                Divider()
+
+                let isPercent = configStore.config.menuBarMemoryUnit == .percentage
+                let memValue = isPercent
+                    ? BatterySaver.memoryPercentText(bytes: model.memoryUsed, totalBytes: model.memoryTotal)
+                    : MemoryFormatter.format(bytes: model.memoryUsed)
+                let memDetail = isPercent
+                    ? "\(MemoryFormatter.format(bytes: model.memoryUsed)) of \(MemoryFormatter.format(bytes: model.memoryTotal))"
+                    : "of \(MemoryFormatter.format(bytes: model.memoryTotal)) total"
+
+                statRow(
+                    icon: symbol(["memorychip", "internaldrive"]),
+                    title: "Memory",
+                    value: memValue,
+                    detail: memDetail
+                )
             }
-            .foregroundStyle(.secondary)
-
-            statRow(
-                icon: symbol(["cpu"]),
-                title: "CPU",
-                value: BatterySaver.percentText(model.cpu),
-                detail: "whole system load"
-            )
-
-            Divider()
-
-            statRow(
-                icon: symbol(["memorychip", "internaldrive"]),
-                title: "Memory",
-                value: MemoryFormatter.format(bytes: model.memoryUsed),
-                detail: "of \(MemoryFormatter.format(bytes: model.memoryTotal)) total"
-            )
+            .padding(16)
         }
-        .padding(16)
-        .frame(width: 220, alignment: .leading)
+        .frame(width: 230, alignment: .leading)
+        .background(
+            VisualEffectBlur(material: .popover, blendingMode: .behindWindow)
+                .clipShape(containerShape)
+        )
+        .overlay(
+            containerShape
+                .stroke(Color.primary.opacity(0.12), lineWidth: 0.5)
+        )
+        .clipShape(containerShape)
     }
 
     private func statRow(icon: Image, title: String, value: String, detail: String) -> some View {
@@ -111,7 +137,7 @@ struct StatsDetailView: View {
             Text(detail)
                 .font(.system(size: 9))
                 .foregroundStyle(.tertiary)
-                .frame(maxWidth: 74, alignment: .trailing)
+                .frame(maxWidth: 84, alignment: .trailing)
                 .multilineTextAlignment(.trailing)
         }
     }
@@ -125,6 +151,7 @@ final class StatsDetailController {
     private var model: StatsDetailModel?
     private var outsideMonitor: Any?
     private var localMonitor: Any?
+    private var lastCloseTimestamp: Date = .distantPast
 
     private init() {}
 
@@ -134,32 +161,21 @@ final class StatsDetailController {
         if isVisible {
             close()
         } else {
+            if Date().timeIntervalSince(lastCloseTimestamp) < 0.25 {
+                return
+            }
             show(from: button)
         }
     }
 
     func show(from button: NSStatusBarButton) {
         guard let buttonWindow = button.window else { return }
+        StatusItemController.shared?.closePopover()
+
         let model = self.model ?? StatsDetailModel()
         self.model = model
 
-        let blur = NSVisualEffectView()
-        blur.material = .hudWindow
-        blur.blendingMode = .behindWindow
-        blur.state = .active
-        blur.wantsLayer = true
-        blur.layer?.cornerRadius = 12
-        blur.layer?.masksToBounds = true
-
         let hostView = NSHostingView(rootView: StatsDetailView(model: model))
-        hostView.translatesAutoresizingMaskIntoConstraints = false
-        blur.addSubview(hostView)
-        NSLayoutConstraint.activate([
-            hostView.leadingAnchor.constraint(equalTo: blur.leadingAnchor),
-            hostView.trailingAnchor.constraint(equalTo: blur.trailingAnchor),
-            hostView.topAnchor.constraint(equalTo: blur.topAnchor),
-            hostView.bottomAnchor.constraint(equalTo: blur.bottomAnchor)
-        ])
 
         let win: StatsDetailWindow
         if let existing = window {
@@ -168,7 +184,7 @@ final class StatsDetailController {
             win = StatsDetailWindow()
             window = win
         }
-        win.contentView = blur
+        win.contentView = hostView
 
         let size = hostView.fittingSize
         win.setContentSize(size)
@@ -179,8 +195,12 @@ final class StatsDetailController {
             originX = max(screen.visibleFrame.minX + 4,
                           min(originX, screen.visibleFrame.maxX - size.width - 4))
         }
-        let originY = buttonScreenRect.minY - size.height - 6
-        win.setFrameOrigin(NSPoint(x: originX, y: originY))
+        let arrowX = max(24, min(buttonScreenRect.midX - originX, size.width - 24))
+        model.arrowX = arrowX
+
+        let originY = buttonScreenRect.minY - size.height - 2
+        win.setFrame(NSRect(x: originX, y: originY, width: size.width, height: size.height), display: true)
+        win.invalidateShadow()
 
         model.start()
         win.makeKeyAndOrderFront(nil)
@@ -188,6 +208,8 @@ final class StatsDetailController {
     }
 
     func close() {
+        guard isVisible else { return }
+        lastCloseTimestamp = Date()
         window?.orderOut(nil)
         model?.stop()
         removeMonitors()
@@ -198,7 +220,18 @@ final class StatsDetailController {
         outsideMonitor = NSEvent.addGlobalMonitorForEvents(
             matching: [.leftMouseDown, .rightMouseDown]
         ) { [weak self] _ in
-            Task { @MainActor in self?.close() }
+            guard let self, self.isVisible else { return }
+            if let button = StatusItemController.shared?.statsButton,
+               let buttonWindow = button.window {
+                let mouseLoc = NSEvent.mouseLocation
+                let buttonScreenRect = buttonWindow.convertToScreen(button.bounds)
+                if buttonScreenRect.contains(mouseLoc) {
+                    return
+                }
+            }
+            Task { @MainActor in
+                self.close()
+            }
         }
         localMonitor = NSEvent.addLocalMonitorForEvents(
             matching: [.leftMouseDown, .rightMouseDown, .keyDown]
@@ -211,11 +244,14 @@ final class StatsDetailController {
                 }
                 return event
             }
-            if let win = self.window, !win.frame.contains(NSEvent.mouseLocation) {
-                let button = StatusItemController.shared?.statsButton
-                if let button, let buttonWindow = button.window,
-                   buttonWindow.convertToScreen(button.bounds).contains(NSEvent.mouseLocation) {
-                    return event
+            let mouseLoc = NSEvent.mouseLocation
+            if let win = self.window, !win.frame.contains(mouseLoc) {
+                if let button = StatusItemController.shared?.statsButton,
+                   let buttonWindow = button.window {
+                    let buttonScreenRect = buttonWindow.convertToScreen(button.bounds)
+                    if buttonScreenRect.contains(mouseLoc) {
+                        return event
+                    }
                 }
                 self.close()
             }
