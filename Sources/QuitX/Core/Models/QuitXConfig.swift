@@ -20,6 +20,9 @@ struct QuitXConfig: Codable, Equatable, Sendable {
     var perAppQuitRules: [String: Int] = [:]
     var quitOnSleep: Bool = false
     var quitOnScreenLock: Bool = false
+    var sleepLockStartMinutes: Int = 0
+    var sleepLockEndMinutes: Int = 360
+    var sleepLockUse24Hour: Bool = true
     var showMenuBarStats: Bool = false
     var menuBarMemoryUnit: MenuBarMemoryUnit = .gb
     var hogAlertEnabled: Bool = false
@@ -35,6 +38,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         case defaultSelectAll, neverQuitMusic, musicApps, autoUpdate, confirmQuitAll, confirmIndividualAction, playSounds
         case quitInactiveAfterMinutes, disableQuitTips, sortBy, perAppQuitRules
         case quitOnSleep, quitOnScreenLock, showMenuBarStats, menuBarMemoryUnit
+        case sleepLockStartMinutes, sleepLockEndMinutes, sleepLockUse24Hour
         case hogAlertEnabled, hogCpuThreshold
         case memoryPressureQuitEnabled, memoryPressureThresholdMB, batterySaverEnabled
         case quitTimers, liquidGlassEnabled
@@ -120,6 +124,9 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         perAppQuitRules = try container.decodeIfPresent([String: Int].self, forKey: .perAppQuitRules) ?? defaults.perAppQuitRules
         quitOnSleep = try container.decodeIfPresent(Bool.self, forKey: .quitOnSleep) ?? defaults.quitOnSleep
         quitOnScreenLock = try container.decodeIfPresent(Bool.self, forKey: .quitOnScreenLock) ?? defaults.quitOnScreenLock
+        sleepLockStartMinutes = try container.decodeIfPresent(Int.self, forKey: .sleepLockStartMinutes) ?? defaults.sleepLockStartMinutes
+        sleepLockEndMinutes = try container.decodeIfPresent(Int.self, forKey: .sleepLockEndMinutes) ?? defaults.sleepLockEndMinutes
+        sleepLockUse24Hour = try container.decodeIfPresent(Bool.self, forKey: .sleepLockUse24Hour) ?? defaults.sleepLockUse24Hour
         showMenuBarStats = try container.decodeIfPresent(Bool.self, forKey: .showMenuBarStats) ?? defaults.showMenuBarStats
         menuBarMemoryUnit = try container.decodeIfPresent(MenuBarMemoryUnit.self, forKey: .menuBarMemoryUnit) ?? defaults.menuBarMemoryUnit
         hogAlertEnabled = try container.decodeIfPresent(Bool.self, forKey: .hogAlertEnabled) ?? defaults.hogAlertEnabled

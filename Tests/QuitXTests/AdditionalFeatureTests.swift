@@ -213,7 +213,7 @@ struct SettingsTabTests {
         } else {
             #expect(SettingsTab.general.contentHeight == 241)
         }
-        #expect(SettingsTab.automation.contentHeight == 301)
+        #expect(SettingsTab.automation.contentHeight == 361)
         #expect(SettingsTab.advanced.contentHeight == 271)
         #expect(SettingsTab.exclude.contentHeight == 306)
         #expect(SettingsTab.shortcuts.contentHeight == 221)

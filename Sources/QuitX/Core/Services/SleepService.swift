@@ -29,6 +29,22 @@ enum SleepQuitTargets {
     }
 }
 
+enum SleepLockRange {
+    static func active(now: Date, startMinutes: Int, endMinutes: Int, calendar: Calendar = .current) -> Bool {
+        let hour = calendar.component(.hour, from: now)
+        let minute = calendar.component(.minute, from: now)
+        return active(nowMinutes: hour * 60 + minute, startMinutes: startMinutes, endMinutes: endMinutes)
+    }
+
+    static func active(nowMinutes: Int, startMinutes: Int, endMinutes: Int) -> Bool {
+        if startMinutes == endMinutes { return true }
+        if startMinutes < endMinutes {
+            return nowMinutes >= startMinutes && nowMinutes < endMinutes
+        }
+        return nowMinutes >= startMinutes || nowMinutes < endMinutes
+    }
+}
+
 @MainActor
 final class SleepService {
     static let shared = SleepService()
@@ -73,14 +89,19 @@ final class SleepService {
 
     private func handleTrigger(enabled: Bool) async {
         guard enabled else { return }
+        let config = ConfigStore.shared.config
+        if !SleepLockRange.active(
+            now: Date(),
+            startMinutes: config.sleepLockStartMinutes,
+            endMinutes: config.sleepLockEndMinutes
+        ) {
+            return
+        }
         let vm = AppListViewModel.shared
         if Date().timeIntervalSince(vm.lastRefreshDate) > 2.0 {
             await vm.refresh()
         }
-        let targets = SleepQuitTargets.select(
-            apps: vm.apps,
-            config: ConfigStore.shared.config
-        )
+        let targets = SleepQuitTargets.select(apps: vm.apps, config: config)
         await vm.quitSilently(targets: targets, force: false)
     }
 }

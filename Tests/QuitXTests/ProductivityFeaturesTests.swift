@@ -343,4 +343,41 @@ struct ProductivityFeaturesTests {
         let decoded = try JSONDecoder().decode(QuitXConfig.self, from: data)
         #expect(decoded.menuBarMemoryUnit == .percentage)
     }
+
+    @Test("Sleep lock range gates by time window")
+    func testSleepLockRange() {
+        #expect(SleepLockRange.active(nowMinutes: 600, startMinutes: 540, endMinutes: 1020))
+        #expect(SleepLockRange.active(nowMinutes: 540, startMinutes: 540, endMinutes: 1020))
+        #expect(!SleepLockRange.active(nowMinutes: 539, startMinutes: 540, endMinutes: 1020))
+        #expect(!SleepLockRange.active(nowMinutes: 1020, startMinutes: 540, endMinutes: 1020))
+        #expect(!SleepLockRange.active(nowMinutes: 1500, startMinutes: 540, endMinutes: 1020))
+        #expect(SleepLockRange.active(nowMinutes: 1330, startMinutes: 1320, endMinutes: 420))
+        #expect(SleepLockRange.active(nowMinutes: 419, startMinutes: 1320, endMinutes: 420))
+        #expect(SleepLockRange.active(nowMinutes: 1320, startMinutes: 1320, endMinutes: 420))
+        #expect(!SleepLockRange.active(nowMinutes: 420, startMinutes: 1320, endMinutes: 420))
+        #expect(!SleepLockRange.active(nowMinutes: 1000, startMinutes: 1320, endMinutes: 420))
+        #expect(SleepLockRange.active(nowMinutes: 999, startMinutes: 999, endMinutes: 999))
+    }
+
+    @Test("Sleep lock range config defaults and round trip")
+    func testSleepLockRangeConfig() throws {
+        let cfg = QuitXConfig.default
+        #expect(cfg.sleepLockStartMinutes == 0)
+        #expect(cfg.sleepLockEndMinutes == 360)
+        #expect(cfg.sleepLockUse24Hour)
+
+        var custom = QuitXConfig.default
+        custom.sleepLockStartMinutes = 60
+        custom.sleepLockEndMinutes = 300
+        custom.sleepLockUse24Hour = false
+        let data = try JSONEncoder().encode(custom)
+        let decoded = try JSONDecoder().decode(QuitXConfig.self, from: data)
+        #expect(decoded.sleepLockStartMinutes == 60)
+        #expect(decoded.sleepLockEndMinutes == 300)
+        #expect(!decoded.sleepLockUse24Hour)
+
+        let legacy = try JSONDecoder().decode(QuitXConfig.self, from: Data("{}".utf8))
+        #expect(legacy.sleepLockStartMinutes == 0)
+        #expect(legacy.sleepLockEndMinutes == 360)
+    }
 }

@@ -198,7 +198,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Sleep and screen lock",
-                    body: "Settings > Automation offers unattended quitting: automatically and gracefully terminate safe apps when your Mac sleeps or when you lock the screen."
+                    body: "Settings > Automation offers unattended quitting: automatically and gracefully terminate safe apps when your Mac sleeps or when you lock the screen. Quit runs only inside your time range, default 12 AM to 6 AM. Outside the range, sleep or lock leaves apps running."
                 )
             ]
         ),

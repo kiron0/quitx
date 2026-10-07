@@ -54,6 +54,26 @@ fileprivate func row<Content: View, Help: View>(
     .frame(height: 25)
 }
 
+fileprivate func rowWide<Content: View, Help: View>(
+    label: String,
+    @ViewBuilder content: () -> Content,
+    @ViewBuilder help: () -> Help
+) -> some View {
+    HStack(alignment: .center, spacing: 10) {
+        Text(label)
+            .font(.system(size: 12, weight: .regular))
+            .foregroundStyle(Color.primary)
+            .frame(width: labelColumnWidth, alignment: .trailing)
+
+        content()
+
+        Spacer(minLength: 0)
+
+        help()
+    }
+    .frame(height: 25)
+}
+
 fileprivate func toggle(_ title: String, isOn: Binding<Bool>) -> some View {
     Button {
         isOn.wrappedValue.toggle()
@@ -270,22 +290,78 @@ struct AutomationTabCloneView: View {
                 HelpPopoverButton(text: "Sip power like fine wine! Auto-quit timers cut in half and CPU checks slow to 10s to spare your battery. 🔋🍷")
             }
 
+            let sleepLockOn = configStore.config.quitOnSleep || configStore.config.quitOnScreenLock
             row(label: "Sleep & Lock:") {
-                toggle("Quit apps when Mac sleeps", isOn: Binding(
-                    get: { configStore.config.quitOnSleep },
-                    set: { configStore.config.quitOnSleep = $0; configStore.save() }
+                toggle("Quit apps when Mac sleeps or locks", isOn: Binding(
+                    get: { sleepLockOn },
+                    set: { both in
+                        let wasOn = configStore.config.quitOnSleep || configStore.config.quitOnScreenLock
+                        configStore.config.quitOnSleep = both
+                        configStore.config.quitOnScreenLock = both
+                        if both && !wasOn {
+                            configStore.config.sleepLockStartMinutes = 0
+                            configStore.config.sleepLockEndMinutes = 360
+                        }
+                        configStore.save()
+                    }
                 ))
             } help: {
-                HelpPopoverButton(text: "Tidy up before nap time! Tucks your Mac into bed by gently closing safe apps when it nods off. 😴🌙")
+                HelpPopoverButton(text: "This quit is only applicable for when Mac sleeps or lock and inside the range. Turning it on sets range 12 AM to 6 AM. Sleep or lock outside the range leaves apps running.")
             }
 
-            row(label: "") {
-                toggle("Quit apps on screen lock", isOn: Binding(
-                    get: { configStore.config.quitOnScreenLock },
-                    set: { configStore.config.quitOnScreenLock = $0; configStore.save() }
-                ))
+            let subsOn = sleepLockOn
+            rowWide(label: "") {
+                HStack(spacing: 16) {
+                    Text("Time format")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.primary)
+                        .frame(width: 90, alignment: .trailing)
+
+                    HStack(spacing: 18) {
+                        appearanceRadio("24-hour", selected: configStore.config.sleepLockUse24Hour) {
+                            configStore.config.sleepLockUse24Hour = true
+                            configStore.save()
+                        }
+                        appearanceRadio("12-hour", selected: !configStore.config.sleepLockUse24Hour) {
+                            configStore.config.sleepLockUse24Hour = false
+                            configStore.save()
+                        }
+                    }
+                }
+                .disabled(!subsOn)
+                .opacity(subsOn ? 1.0 : 0.42)
             } help: {
-                HelpPopoverButton(text: "Lock and roll: walk away knowing stray apps get quietly dismissed behind you. Safe and sound. 🔒💨")
+                Color.clear.frame(width: 20, height: 20)
+            }
+
+            rowWide(label: "") {
+                HStack(spacing: 16) {
+                    Text("From:")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.primary)
+                        .frame(width: 90, alignment: .trailing)
+
+                    timePickers(start: true)
+                        .disabled(!subsOn)
+                        .opacity(subsOn ? 1.0 : 0.42)
+                }
+            } help: {
+                Color.clear.frame(width: 20, height: 20)
+            }
+
+            rowWide(label: "") {
+                HStack(spacing: 16) {
+                    Text("To:")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.primary)
+                        .frame(width: 90, alignment: .trailing)
+
+                    timePickers(start: false)
+                        .disabled(!subsOn)
+                        .opacity(subsOn ? 1.0 : 0.42)
+                }
+            } help: {
+                Color.clear.frame(width: 20, height: 20)
             }
 
             row(label: "Health:") {
@@ -424,6 +500,105 @@ struct AutomationTabCloneView: View {
             if configStore.config.quitInactiveAfterMinutes > 0 {
                 configStore.config.quitInactiveAfterMinutes = state.calculateMinutes()
                 configStore.save()
+            }
+        }
+    }
+
+    private func storedMinutes(start: Bool) -> Int {
+        start ? configStore.config.sleepLockStartMinutes : configStore.config.sleepLockEndMinutes
+    }
+
+    private func setStoredMinutes(start: Bool, _ value: Int) {
+        let clamped = min(1439, max(0, value))
+        if start {
+            configStore.config.sleepLockStartMinutes = clamped
+        } else {
+            configStore.config.sleepLockEndMinutes = clamped
+        }
+        configStore.save()
+    }
+
+    private var hourChoices: [Int] {
+        configStore.config.sleepLockUse24Hour ? Array(0...23) : Array(1...12)
+    }
+
+    private func hourBinding(start: Bool) -> Binding<Int> {
+        Binding(
+            get: {
+                let hour = storedMinutes(start: start) / 60
+                if configStore.config.sleepLockUse24Hour { return hour }
+                let hour12 = hour % 12
+                return hour12 == 0 ? 12 : hour12
+            },
+            set: { newHour in
+                let current = storedMinutes(start: start)
+                let minutePart = current % 60
+                let new24: Int
+                if configStore.config.sleepLockUse24Hour {
+                    new24 = newHour
+                } else {
+                    let isPM = (current / 60) >= 12
+                    new24 = (newHour % 12) + (isPM ? 12 : 0)
+                }
+                setStoredMinutes(start: start, new24 * 60 + minutePart)
+            }
+        )
+    }
+
+    private func minuteBinding(start: Bool) -> Binding<Int> {
+        Binding(
+            get: { storedMinutes(start: start) % 60 },
+            set: { newMinute in
+                setStoredMinutes(start: start, (storedMinutes(start: start) / 60) * 60 + newMinute)
+            }
+        )
+    }
+
+    private func meridiemBinding(start: Bool) -> Binding<Bool> {
+        Binding(
+            get: { (storedMinutes(start: start) / 60) >= 12 },
+            set: { wantPM in
+                let current = storedMinutes(start: start)
+                var hour = current / 60
+                let isPM = hour >= 12
+                if wantPM != isPM {
+                    hour = wantPM ? hour + 12 : hour - 12
+                }
+                setStoredMinutes(start: start, hour * 60 + current % 60)
+            }
+        )
+    }
+
+    private func timePickers(start: Bool) -> some View {
+        HStack(spacing: 4) {
+            Picker("", selection: hourBinding(start: start)) {
+                ForEach(hourChoices, id: \.self) { hour in
+                    Text(configStore.config.sleepLockUse24Hour ? String(format: "%02d", hour) : "\(hour)")
+                        .tag(hour)
+                }
+            }
+            .frame(width: 58)
+            .labelsHidden()
+
+            Text(":")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(Color.primary)
+
+            Picker("", selection: minuteBinding(start: start)) {
+                ForEach(0..<60, id: \.self) { minute in
+                    Text(String(format: "%02d", minute)).tag(minute)
+                }
+            }
+            .frame(width: 62)
+            .labelsHidden()
+
+            if !configStore.config.sleepLockUse24Hour {
+                Picker("", selection: meridiemBinding(start: start)) {
+                    Text("AM").tag(false)
+                    Text("PM").tag(true)
+                }
+                .frame(width: 58)
+                .labelsHidden()
             }
         }
     }
