@@ -69,7 +69,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Choose apps",
-                    body: "Select each app checkbox, or use the checkbox beside Search to select or deselect the visible list. The default selection behavior is available in Settings."
+                    body: "Select each app checkbox, or use the checkbox beside Search to select or deselect the visible list. Configure Select apps by default in Settings > Advanced or the welcome guide."
                 ),
                 QuitXHelpSection(
                     title: "Quit apps",
