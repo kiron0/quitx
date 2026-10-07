@@ -16,7 +16,7 @@ concurrency:
 jobs:
   release:
     name: Build & Publish Release
-    runs-on: macos-14
+    runs-on: macos-26
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -52,7 +52,10 @@ jobs:
 
       - name: Select Xcode Version
         run: |
-          XCODE_APP=$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -n 1)
+          XCODE_APP=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -n 1)
+          if [ -z "$XCODE_APP" ]; then
+            XCODE_APP=$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -n 1)
+          fi
           if [ -z "$XCODE_APP" ]; then
             XCODE_APP="/Applications/Xcode.app"
           fi
