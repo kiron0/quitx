@@ -11,7 +11,7 @@ ALT_DEST_APP="$HOME/Applications/$APP_NAME.app"
 cd "$ROOT_DIR"
 
 echo "🧪 [1/5] Testing..."
-swift test --build-system native 2>&1 | sed -E '/warning:.*build-system native.*deprecated/d'
+swift test --build-system native 2>&1 | LC_ALL=C sed -E '/warning:.*build-system native.*deprecated/d'
 
 echo "📦 [2/5] Bundling..."
 "$SCRIPT_DIR/build.sh"
@@ -35,6 +35,6 @@ fi
 echo "✅ Installed to $TARGET_DEST"
 
 echo "🚀 [5/5] Launching $TARGET_DEST..."
-open "$TARGET_DEST"
+open -g "$TARGET_DEST"
 
 echo "✨ QuitX successfully tested, bundled, installed, and launched!"

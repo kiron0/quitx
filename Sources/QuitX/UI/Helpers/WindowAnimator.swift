@@ -3,11 +3,23 @@ import QuartzCore
 
 @MainActor
 enum WindowAnimator {
+    private static var isRunningTests: Bool {
+        NSClassFromString("XCTestCase") != nil
+            || ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+            || ProcessInfo.processInfo.processName.contains("Tests")
+            || ProcessInfo.processInfo.processName == "xctest"
+    }
+
     static func present(
         _ window: NSWindow,
         targetFrame: NSRect,
         duration: TimeInterval = 0.25
     ) {
+        guard !isRunningTests else {
+            window.setFrame(targetFrame, display: false)
+            return
+        }
+
         let isFullSize = window.styleMask.contains(.fullSizeContentView) && window.toolbar == nil
         let hasToolbar = window.toolbar != nil
 
@@ -79,6 +91,7 @@ enum WindowAnimator {
     }
 
     static func activateExisting(_ window: NSWindow) {
+        guard !isRunningTests else { return }
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
 

@@ -60,14 +60,21 @@ struct MainPopoverView: View {
         .frame(width: 270)
         .frame(minHeight: 220)
         .frame(maxHeight: .infinity)
-        .background(
-            QuitXTheme.popoverBackground
-                .clipShape(containerShape)
-        )
-        .overlay(
-            containerShape
-                .stroke(Color.primary.opacity(0.12), lineWidth: 0.5)
-        )
+        .background {
+            if #available(macOS 26.0, *) {
+                Color.clear.glassEffect(.regular, in: containerShape)
+            } else {
+                QuitXTheme.popoverBackground.clipShape(containerShape)
+            }
+        }
+        .overlay {
+            if #available(macOS 26.0, *) {
+                EmptyView()
+            } else {
+                containerShape
+                    .stroke(Color.primary.opacity(0.12), lineWidth: 0.5)
+            }
+        }
         .overlay(alignment: .bottom) {
             if vm.showToast {
                 ToastView(message: vm.toastMessage, isError: vm.toastIsError)

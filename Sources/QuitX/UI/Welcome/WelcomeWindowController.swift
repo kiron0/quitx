@@ -20,14 +20,23 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         }
     }
 
+    private static var isRunningTests: Bool {
+        NSClassFromString("XCTestCase") != nil
+            || ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+            || ProcessInfo.processInfo.processName.contains("Tests")
+            || ProcessInfo.processInfo.processName == "xctest"
+    }
+
     private func show() {
         StatusItemController.shared?.closePopover()
 
         if let win = window {
-            if let screen = WindowPositioner.targetScreen {
-                win.setFrameOrigin(WindowPositioner.topBiasedOrigin(for: win.frame.size, on: screen))
+            if !Self.isRunningTests {
+                if let screen = WindowPositioner.targetScreen {
+                    win.setFrameOrigin(WindowPositioner.topBiasedOrigin(for: win.frame.size, on: screen))
+                }
+                WindowAnimator.activateExisting(win)
             }
-            WindowAnimator.activateExisting(win)
             return
         }
 
@@ -60,6 +69,9 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         win.animationBehavior = .none
         win.delegate = self
         self.window = win
+
+        guard !Self.isRunningTests else { return }
+
         WindowActivationCoordinator.update()
         win.orderFrontRegardless()
 

@@ -109,14 +109,22 @@ struct StatsDetailView: View {
             .padding(16)
         }
         .frame(width: 230, alignment: .leading)
-        .background(
-            VisualEffectBlur(material: .popover, blendingMode: .behindWindow)
-                .clipShape(containerShape)
-        )
-        .overlay(
-            containerShape
-                .stroke(Color.primary.opacity(0.12), lineWidth: 0.5)
-        )
+        .background {
+            if #available(macOS 26.0, *) {
+                Color.clear.glassEffect(.regular, in: containerShape)
+            } else {
+                VisualEffectBlur(material: .popover, blendingMode: .behindWindow)
+                    .clipShape(containerShape)
+            }
+        }
+        .overlay {
+            if #available(macOS 26.0, *) {
+                EmptyView()
+            } else {
+                containerShape
+                    .stroke(Color.primary.opacity(0.12), lineWidth: 0.5)
+            }
+        }
         .clipShape(containerShape)
     }
 
