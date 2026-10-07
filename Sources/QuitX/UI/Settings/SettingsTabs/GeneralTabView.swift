@@ -170,12 +170,16 @@ struct GeneralTabCloneView: View {
                     Text("CPU over")
                         .font(.system(size: 11))
                         .foregroundStyle(Color.primary)
-                    Text("\(cpuThreshold.wrappedValue)")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(Color.primary)
-                        .frame(minWidth: 22, alignment: .trailing)
+
+                    TextField("", value: cpuThreshold, format: .number)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 48)
+                        .font(.system(size: 11))
+                        .multilineTextAlignment(.center)
+
                     Stepper("", value: cpuThreshold, in: 5...100, step: 5)
                         .labelsHidden()
+
                     Text("%")
                         .font(.system(size: 11))
                         .foregroundStyle(Color.primary)
@@ -200,12 +204,16 @@ struct GeneralTabCloneView: View {
                     Text("Memory over")
                         .font(.system(size: 11))
                         .foregroundStyle(Color.primary)
-                    Text("\(memoryGB.wrappedValue)")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(Color.primary)
-                        .frame(minWidth: 22, alignment: .trailing)
+
+                    TextField("", value: memoryGB, format: .number)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 48)
+                        .font(.system(size: 11))
+                        .multilineTextAlignment(.center)
+
                     Stepper("", value: memoryGB, in: 1...systemMaxGB)
                         .labelsHidden()
+
                     Text("GB of \(systemMaxGB)")
                         .font(.system(size: 11))
                         .foregroundStyle(Color.primary)

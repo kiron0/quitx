@@ -36,14 +36,14 @@ struct ProductivityFeaturesTests {
 
     @Test("Hog detects threshold breach immediately")
     func testHogImmediateBreach() {
-        var tracker = HogTracker()
+        let tracker = HogTracker()
         #expect(tracker.hogPids(cpuByPid: [101: 70], threshold: 80).isEmpty)
         #expect(tracker.hogPids(cpuByPid: [101: 90], threshold: 80) == [101])
     }
 
     @Test("Hog resets when below threshold")
     func testHogReset() {
-        var tracker = HogTracker()
+        let tracker = HogTracker()
         #expect(tracker.hogPids(cpuByPid: [101: 90], threshold: 80) == [101])
         #expect(tracker.hogPids(cpuByPid: [101: 10], threshold: 80).isEmpty)
         #expect(tracker.hogPids(cpuByPid: [:], threshold: 80).isEmpty)
