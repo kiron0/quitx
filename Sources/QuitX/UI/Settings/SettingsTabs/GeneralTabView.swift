@@ -39,36 +39,19 @@ fileprivate func row<Content: View, Help: View>(
     @ViewBuilder content: () -> Content,
     @ViewBuilder help: () -> Help
 ) -> some View {
-    ViewThatFits(in: .horizontal) {
-        HStack(alignment: .center, spacing: 10) {
-            Text(label)
-                .font(.system(size: 12, weight: .regular))
-                .foregroundStyle(Color.primary)
-                .frame(width: labelColumnWidth, alignment: .trailing)
+    HStack(alignment: .center, spacing: 10) {
+        Text(label)
+            .font(.system(size: 12, weight: .regular))
+            .foregroundStyle(Color.primary)
+            .frame(width: labelColumnWidth, alignment: .trailing)
 
-            content().fixedSize()
+        content().fixedSize()
 
-            Spacer(minLength: 0)
+        Spacer(minLength: 0)
 
-            help()
-        }
-        .frame(height: 25)
-
-        VStack(alignment: .leading, spacing: 4) {
-            Text(label)
-                .font(.system(size: 12, weight: .regular))
-                .foregroundStyle(Color.primary)
-
-            HStack(alignment: .center, spacing: 10) {
-                content().fixedSize()
-
-                Spacer(minLength: 0)
-
-                help()
-            }
-            .frame(height: 25)
-        }
+        help()
     }
+    .frame(height: 25)
 }
 
 fileprivate func toggle(_ title: String, isOn: Binding<Bool>) -> some View {
@@ -90,6 +73,30 @@ struct GeneralTabCloneView: View {
     @EnvironmentObject private var configStore: ConfigStore
     @ObservedObject private var launchService = LaunchAtLoginService.shared
     @StateObject private var state = GeneralTabState()
+
+    private var systemMaxGB: Int {
+        max(1, Int(ProcessInfo.processInfo.physicalMemory / 1_073_741_824))
+    }
+
+    private var cpuThreshold: Binding<Int> {
+        Binding(
+            get: { Int(configStore.config.hogCpuThreshold) },
+            set: {
+                configStore.config.hogCpuThreshold = Double(min(100, max(5, $0)))
+                configStore.save()
+            }
+        )
+    }
+
+    private var memoryGB: Binding<Int> {
+        Binding(
+            get: { min(systemMaxGB, max(1, (configStore.config.memoryPressureThresholdMB + 512) / 1024)) },
+            set: {
+                configStore.config.memoryPressureThresholdMB = min(systemMaxGB, max(1, $0)) * 1024
+                configStore.save()
+            }
+        )
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
@@ -150,21 +157,63 @@ struct GeneralTabCloneView: View {
             }
 
             row(label: "Health:") {
-                toggle("Warn about CPU hogs", isOn: Binding(
+                toggle("Warn & rescue CPU hogs", isOn: Binding(
                     get: { configStore.config.hogAlertEnabled },
                     set: { configStore.config.hogAlertEnabled = $0; configStore.save() }
                 ))
             } help: {
-                HelpPopoverButton(text: "Catch runaway apps roasting your lap! Slaps a spicy flame badge on anything hogging 80%+ CPU. 🔥🍳")
+                HelpPopoverButton(text: "Catch runaway apps roasting your lap! Slaps a spicy flame badge on anything over your CPU limit, then force quits inactive apps only. Your active app never touched. 🔥🍳")
             }
 
             row(label: "") {
-                toggle("Quit memory hogs under pressure", isOn: Binding(
+                HStack(spacing: 6) {
+                    Text("CPU over")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.primary)
+                    Text("\(cpuThreshold.wrappedValue)")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(Color.primary)
+                        .frame(minWidth: 22, alignment: .trailing)
+                    Stepper("", value: cpuThreshold, in: 5...100, step: 5)
+                        .labelsHidden()
+                    Text("%")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.primary)
+                }
+                .disabled(!configStore.config.hogAlertEnabled)
+                .opacity(configStore.config.hogAlertEnabled ? 1.0 : 0.42)
+            } help: {
+                HelpPopoverButton(text: "Your CPU tripwire: load over this percent immediately triggers Smart Rescue. Force quits inactive apps only.")
+            }
+
+            row(label: "") {
+                toggle("Rescue on memory pressure", isOn: Binding(
                     get: { configStore.config.memoryPressureQuitEnabled },
                     set: { configStore.config.memoryPressureQuitEnabled = $0; configStore.save() }
                 ))
             } help: {
-                HelpPopoverButton(text: "When RAM runs dry, QuitX gently escorts 1 GB+ memory monsters out the door to let macOS breathe. 🧠🚪")
+                HelpPopoverButton(text: "When RAM runs dry past your memory limit, QuitX force quits inactive apps only — never the one you're using. Change your mind? Reopen from the gear menu. 🧠🚪")
+            }
+
+            row(label: "") {
+                HStack(spacing: 6) {
+                    Text("Memory over")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.primary)
+                    Text("\(memoryGB.wrappedValue)")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(Color.primary)
+                        .frame(minWidth: 22, alignment: .trailing)
+                    Stepper("", value: memoryGB, in: 1...systemMaxGB)
+                        .labelsHidden()
+                    Text("GB of \(systemMaxGB)")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.primary)
+                }
+                .disabled(!configStore.config.memoryPressureQuitEnabled)
+                .opacity(configStore.config.memoryPressureQuitEnabled ? 1.0 : 0.42)
+            } help: {
+                HelpPopoverButton(text: "Your memory tripwire in gigabytes, capped at this Mac's total RAM. When macOS reports pressure and any app exceeds it, Smart Rescue force quits inactive apps only.")
             }
 
             let isAutoQuitEnabled = configStore.config.quitInactiveAfterMinutes > 0
@@ -253,7 +302,7 @@ struct GeneralTabCloneView: View {
         .padding(.horizontal, 20)
         .padding(.top, 14)
         .padding(.bottom, 10)
-        .frame(width: 400, height: 421, alignment: .topLeading)
+        .frame(width: 400, height: 481, alignment: .topLeading)
         .background(QuitXTheme.windowBackground)
         .onAppear {
             state.syncFromMinutes(configStore.config.quitInactiveAfterMinutes)

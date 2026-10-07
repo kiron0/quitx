@@ -2,6 +2,23 @@
 
 All notable changes to QuitX macOS App will be documented in this file.
 
+## 1.1.0
+
+### Added
+
+- Smart Rescue (USP): when a CPU or memory limit trips, QuitX immediately force quits inactive windowed apps only — never your frontmost app, Finder, Trash, excluded, music, or Never-ruled apps. CPU tracking runs continuously in the background (every 2s, 10s on battery saver) even with the popover closed, triggering rescue the instant any limit is breached. Rescued apps land in Recently Quit for one-click reopen.
+- Immediate CPU threshold limit: removed sustain duration end-to-end; setting custom CPU percent in Settings > General immediately flags and rescues inactive windowed apps when crossed.
+- Health layout alignment in Settings: perfectly aligned all Health section rows with fixed label columns and clean toggle titles.
+- Configurable memory pressure threshold: set custom gigabyte limit with arrow steppers in Settings > General, capped at this Mac's total RAM. Smart Rescue acts when macOS reports pressure and any app exceeds the threshold.
+- Sticky search bar in Help: customized modern search input pinned at the top of the Help sidebar with instant filtering, quick clear, and clean empty state.
+- Expanded Help documentation: dedicated guides for Recently Quit & Reopen, Menu Bar CPU & Battery Saver, Resource Hogs & Memory Pressure, plus complete breakdowns for all 5 Settings tabs and shortcuts.
+
+### Changed
+
+- Status bar CPU refresh synchronized: menu bar CPU refresh interval matches each app row timing (2 seconds normal, 10 seconds battery saver), ticking together without separate drift.
+- Settings popover tooltips: aligned all help popovers across General and Advanced tabs with playful humor and emoji styling.
+- Menu bar CPU toggle: immediate live status item update on preference change without waiting for next polling cycle.
+
 ## 1.0.9
 
 ### Added

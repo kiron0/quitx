@@ -51,7 +51,7 @@ struct AppRowView: View {
                 Image(systemName: "flame.fill")
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(Color.orange)
-                    .help("\(app.name) is using sustained high CPU")
+                    .help("\(app.name) exceeded CPU limit")
             }
 
             Text(usageText)

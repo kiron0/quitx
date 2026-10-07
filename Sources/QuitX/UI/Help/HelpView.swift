@@ -232,11 +232,11 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "CPU hog warnings",
-                    body: "Enable Warn about CPU hogs in Settings > General. Apps sustaining 80%+ CPU for 5+ minutes display a flame badge in the list, plus a one-time notification per offender."
+                    body: "Enable Warn & rescue CPU hogs in Settings > General and dial in your own CPU percent with the steppers. Offenders display a flame badge plus a one-time notification, then Smart Rescue immediately force quits inactive windowed apps only — never your frontmost app."
                 ),
                 QuitXHelpSection(
                     title: "Memory pressure cleaning",
-                    body: "Enable Quit memory hogs under pressure in Settings > General. When macOS reports high memory pressure, QuitX gracefully terminates regular apps consuming over 1 GB."
+                    body: "Enable Rescue inactive on memory pressure in Settings > General and dial in your own gigabyte limit with the stepper, capped at this Mac's total RAM. When macOS reports pressure and any app exceeds it, Smart Rescue force quits inactive apps only. Quit apps land in Recently Quit, so you can reopen anything from the gear menu."
                 ),
                 QuitXHelpSection(
                     title: "Unresponsive app badges",
@@ -332,7 +332,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Badges and indicators",
-                    body: "A flame badge indicates sustained 80%+ CPU. A red triangle indicates an app that resisted normal quit — hold Option to force quit it."
+                    body: "A flame badge indicates CPU usage over your chosen limit. A red triangle indicates an app that resisted normal quit — hold Option to force quit it."
                 ),
                 QuitXHelpSection(
                     title: "Quit or shortcut fails",

@@ -3,35 +3,18 @@ import Foundation
 @preconcurrency import UserNotifications
 
 struct HogTracker: Sendable {
-    private var highSince: [pid_t: Date] = [:]
-
-    mutating func sustainedPids(
+    func hogPids(
         cpuByPid: [pid_t: Double],
-        threshold: Double,
-        sustainSeconds: Double,
-        now: Date
+        threshold: Double
     ) -> Set<pid_t> {
-        var sustained = Set<pid_t>()
-        for (pid, cpu) in cpuByPid {
-            guard cpu >= threshold else {
-                highSince.removeValue(forKey: pid)
-                continue
-            }
-            let start = highSince[pid] ?? now
-            highSince[pid] = start
-            if now.timeIntervalSince(start) >= sustainSeconds {
-                sustained.insert(pid)
-            }
+        var hogs = Set<pid_t>()
+        for (pid, cpu) in cpuByPid where cpu >= threshold {
+            hogs.insert(pid)
         }
-        for pid in Set(highSince.keys).subtracting(cpuByPid.keys) {
-            highSince.removeValue(forKey: pid)
-        }
-        return sustained
+        return hogs
     }
 
-    mutating func reset() {
-        highSince.removeAll()
-    }
+    mutating func reset() {}
 }
 
 @MainActor
@@ -41,8 +24,43 @@ final class HogMonitor {
     private var tracker = HogTracker()
     private var notifiedPids = Set<pid_t>()
     private var authRequested = false
+    private var backgroundTask: Task<Void, Never>?
 
     private init() {}
+
+    func startBackgroundMonitoring() {
+        guard backgroundTask == nil else { return }
+        backgroundTask = Task { [weak self] in
+            while let self, !Task.isCancelled {
+                let saver = BatterySaver.isSaverActive(config: ConfigStore.shared.config)
+                try? await Task.sleep(nanoseconds: saver ? 10_000_000_000 : 2_000_000_000)
+                guard !Task.isCancelled else { break }
+                await self.backgroundTick()
+            }
+        }
+    }
+
+    func stopBackgroundMonitoring() {
+        backgroundTask?.cancel()
+        backgroundTask = nil
+    }
+
+    private func backgroundTick() async {
+        let config = ConfigStore.shared.config
+        guard config.hogAlertEnabled else { return }
+        let usages = AppListService.fetchCpuUsages()
+        var cpuByPid: [pid_t: Double] = [:]
+        for app in NSWorkspace.shared.runningApplications where app.activationPolicy == .regular {
+            cpuByPid[app.processIdentifier] = usages[app.processIdentifier, default: 0]
+        }
+        let hogs = noteCpuSample(
+            cpuByPid: cpuByPid,
+            threshold: max(5, config.hogCpuThreshold),
+            apps: []
+        )
+        guard !hogs.isEmpty else { return }
+        await AppListViewModel.shared.runBackgroundHogRescue()
+    }
 
     func reset() {
         tracker.reset()
@@ -51,8 +69,7 @@ final class HogMonitor {
 
     func noteLiveApps(
         _ apps: [AppInfo],
-        threshold: Double,
-        sustainMinutes: Int
+        threshold: Double
     ) -> Set<pid_t> {
         var cpuByPid: [pid_t: Double] = [:]
         for app in apps {
@@ -60,19 +77,30 @@ final class HogMonitor {
                 cpuByPid[pid] = max(cpuByPid[pid, default: 0], app.cpuUsage)
             }
         }
-        let sustained = tracker.sustainedPids(
+        return noteCpuSample(
             cpuByPid: cpuByPid,
             threshold: threshold,
-            sustainSeconds: Double(max(1, sustainMinutes)) * 60,
-            now: Date()
+            apps: apps
         )
-        notifiedPids = notifiedPids.intersection(sustained)
-        let fresh = sustained.subtracting(notifiedPids)
+    }
+
+    @discardableResult
+    private func noteCpuSample(
+        cpuByPid: [pid_t: Double],
+        threshold: Double,
+        apps: [AppInfo]
+    ) -> Set<pid_t> {
+        let hogs = tracker.hogPids(
+            cpuByPid: cpuByPid,
+            threshold: threshold
+        )
+        notifiedPids = notifiedPids.intersection(hogs)
+        let fresh = hogs.subtracting(notifiedPids)
         if !fresh.isEmpty {
             notifyHogs(pids: fresh, apps: apps)
             notifiedPids.formUnion(fresh)
         }
-        return sustained
+        return hogs
     }
 
     private func notifyHogs(pids: Set<pid_t>, apps: [AppInfo]) {
@@ -96,9 +124,9 @@ final class HogMonitor {
         let content = UNMutableNotificationContent()
         content.title = "High CPU usage"
         if names.isEmpty {
-            content.body = "\(count) app(s) are using sustained high CPU. Open QuitX to review."
+            content.body = "\(count) app(s) exceeded CPU limit. Open QuitX to review."
         } else {
-            content.body = "\(names.joined(separator: ", ")) \(names.count == 1 ? "is" : "are") using sustained high CPU. Open QuitX to review."
+            content.body = "\(names.joined(separator: ", ")) \(names.count == 1 ? "is" : "are") over CPU limit. Open QuitX to review."
         }
         content.sound = .default
         let request = UNNotificationRequest(

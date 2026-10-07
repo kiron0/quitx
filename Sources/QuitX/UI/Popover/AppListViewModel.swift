@@ -178,6 +178,7 @@ final class AppListViewModel: ObservableObject {
     private var scanGeneration = 0
     private var liveStatsGeneration = 0
     private(set) var lastRefreshDate: Date = .distantPast
+    private var lastHogRescueDate: Date = .distantPast
 
     init() {
         showBackgroundApps = ConfigStore.shared.config.includeBackground
@@ -319,8 +320,7 @@ final class AppListViewModel: ObservableObject {
         if cfg.hogAlertEnabled {
             hogPids = HogMonitor.shared.noteLiveApps(
                 apps,
-                threshold: cfg.hogCpuThreshold,
-                sustainMinutes: cfg.hogSustainMinutes
+                threshold: cfg.hogCpuThreshold
             )
         } else {
             HogMonitor.shared.reset()
@@ -329,6 +329,20 @@ final class AppListViewModel: ObservableObject {
         let updated = await AppListService.shared.fetchLiveStats(currentApps: apps, config: cfg, hogPids: hogPids)
         guard !Task.isCancelled, !isLoading, generation == liveStatsGeneration else { return }
         let flagged = applyResistantFlags(updated)
+        if cfg.hogAlertEnabled, !hogPids.isEmpty,
+           Date().timeIntervalSince(lastHogRescueDate) >= 5 {
+            let rescueTargets = InactiveRescueTargets.select(
+                apps: flagged,
+                config: cfg,
+                frontmostPid: NSWorkspace.shared.frontmostApplication?.processIdentifier,
+                ownPid: ProcessInfo.processInfo.processIdentifier
+            )
+            if !rescueTargets.isEmpty {
+                lastHogRescueDate = Date()
+                await quitSilently(targets: rescueTargets, force: true)
+                return
+            }
+        }
         if apps != flagged {
             apps = flagged
         }
@@ -407,6 +421,23 @@ final class AppListViewModel: ObservableObject {
 
     func quitSilently(targets: [AppInfo], force: Bool) async {
         await performQuit(targets: targets, force: force)
+    }
+
+    func runBackgroundHogRescue() async {
+        guard Date().timeIntervalSince(lastHogRescueDate) >= 5 else { return }
+        if Date().timeIntervalSince(lastRefreshDate) > 2.0 {
+            await refresh()
+        }
+        let cfg = ConfigStore.shared.config
+        let targets = InactiveRescueTargets.select(
+            apps: apps,
+            config: cfg,
+            frontmostPid: NSWorkspace.shared.frontmostApplication?.processIdentifier,
+            ownPid: ProcessInfo.processInfo.processIdentifier
+        )
+        guard !targets.isEmpty else { return }
+        lastHogRescueDate = Date()
+        await quitSilently(targets: targets, force: true)
     }
 
     private func performQuit(targets: [AppInfo], force: Bool) async {

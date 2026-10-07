@@ -26,6 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         SleepService.shared.start()
         MemoryPressureService.shared.start()
         QuitTimerService.shared.start()
+        HogMonitor.shared.startBackgroundMonitoring()
         statusItemController?.startMenuBarStats()
         _ = ShortcutManager.shared
         WelcomeWindowController.shared.showIfFirstLaunch()
@@ -79,6 +80,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         SleepService.shared.stop()
         MemoryPressureService.shared.stop()
         QuitTimerService.shared.stop()
+        HogMonitor.shared.stopBackgroundMonitoring()
         SingleInstanceService.shared.stopMonitoring()
         statusItemController = nil
     }

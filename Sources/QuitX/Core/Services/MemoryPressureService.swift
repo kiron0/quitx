@@ -36,6 +36,7 @@ final class MemoryPressureService {
     static let shared = MemoryPressureService()
 
     private var source: DispatchSourceMemoryPressure?
+    private var lastRescueDate: Date = .distantPast
 
     private init() {}
 
@@ -66,11 +67,20 @@ final class MemoryPressureService {
         if Date().timeIntervalSince(vm.lastRefreshDate) > 2.0 {
             await vm.refresh()
         }
-        let targets = MemoryPressureTargets.select(
+        let trigger = MemoryPressureTargets.select(
             apps: vm.apps,
             config: config
         )
+        guard !trigger.isEmpty else { return }
+        guard Date().timeIntervalSince(lastRescueDate) >= 60 else { return }
+        let targets = InactiveRescueTargets.select(
+            apps: vm.apps,
+            config: config,
+            frontmostPid: NSWorkspace.shared.frontmostApplication?.processIdentifier,
+            ownPid: ProcessInfo.processInfo.processIdentifier
+        )
         guard !targets.isEmpty else { return }
-        await vm.quitSilently(targets: targets, force: false)
+        lastRescueDate = Date()
+        await vm.quitSilently(targets: targets, force: true)
     }
 }

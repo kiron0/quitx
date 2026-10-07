@@ -34,27 +34,19 @@ struct ProductivityFeaturesTests {
         return config
     }
 
-    @Test("Hog requires sustained threshold breach")
-    func testHogSustain() {
+    @Test("Hog detects threshold breach immediately")
+    func testHogImmediateBreach() {
         var tracker = HogTracker()
-        let now = Date()
-        #expect(tracker.sustainedPids(cpuByPid: [101: 90], threshold: 80, sustainSeconds: 300, now: now).isEmpty)
-        let later = now.addingTimeInterval(299)
-        #expect(tracker.sustainedPids(cpuByPid: [101: 90], threshold: 80, sustainSeconds: 300, now: later).isEmpty)
-        let due = now.addingTimeInterval(301)
-        #expect(tracker.sustainedPids(cpuByPid: [101: 90], threshold: 80, sustainSeconds: 300, now: due) == [101])
+        #expect(tracker.hogPids(cpuByPid: [101: 70], threshold: 80).isEmpty)
+        #expect(tracker.hogPids(cpuByPid: [101: 90], threshold: 80) == [101])
     }
 
-    @Test("Hog timer resets below threshold and on disappearance")
+    @Test("Hog resets when below threshold")
     func testHogReset() {
         var tracker = HogTracker()
-        let now = Date()
-        _ = tracker.sustainedPids(cpuByPid: [101: 90], threshold: 80, sustainSeconds: 300, now: now)
-        _ = tracker.sustainedPids(cpuByPid: [101: 10], threshold: 80, sustainSeconds: 300, now: now.addingTimeInterval(400))
-        let restarted = now.addingTimeInterval(500)
-        #expect(tracker.sustainedPids(cpuByPid: [101: 90], threshold: 80, sustainSeconds: 300, now: restarted).isEmpty)
-        _ = tracker.sustainedPids(cpuByPid: [:], threshold: 80, sustainSeconds: 300, now: restarted)
-        #expect(tracker.sustainedPids(cpuByPid: [101: 90], threshold: 80, sustainSeconds: 300, now: restarted).isEmpty)
+        #expect(tracker.hogPids(cpuByPid: [101: 90], threshold: 80) == [101])
+        #expect(tracker.hogPids(cpuByPid: [101: 10], threshold: 80).isEmpty)
+        #expect(tracker.hogPids(cpuByPid: [:], threshold: 80).isEmpty)
     }
 
     @Test("Recent list dedups, prepends, and caps")
@@ -107,6 +99,54 @@ struct ProductivityFeaturesTests {
         ]
         let targets = MemoryPressureTargets.select(apps: apps, config: config)
         #expect(targets.map(\.name) == ["Slack"])
+    }
+
+    private func windowedApp(
+        name: String,
+        bundleId: String?,
+        pid: pid_t,
+        windows: Int = 2
+    ) -> AppInfo {
+        AppInfo(
+            name: name,
+            bundleId: bundleId,
+            pid: pid,
+            pids: [pid],
+            windowCount: windows
+        )
+    }
+
+    @Test("Rescue quits inactive windows only, spares frontmost and self")
+    func testRescueSparesActive() {
+        var config = baseConfig
+        config.perAppQuitRules = ["com.never.app": 0]
+        let apps = [
+            windowedApp(name: "Active", bundleId: "com.active.app", pid: 201),
+            windowedApp(name: "Idle", bundleId: "com.idle.app", pid: 202),
+            windowedApp(name: "Me", bundleId: "io.coreify.quitx", pid: 203),
+            windowedApp(name: "Forever", bundleId: "com.never.app", pid: 204),
+            windowedApp(name: "Finder", bundleId: "com.apple.finder", pid: 205),
+            windowedApp(name: "Spotify", bundleId: "com.spotify.client", pid: 206),
+            windowedApp(name: "Windowless", bundleId: "com.plain.app", pid: 207, windows: 0),
+            AppInfo(name: "Daemon", bundleId: "com.daemon.app", pid: 208, pids: [208], isBackground: true),
+        ]
+        let targets = InactiveRescueTargets.select(
+            apps: apps, config: config, frontmostPid: 201, ownPid: 999
+        )
+        #expect(targets.map(\.name) == ["Idle"])
+    }
+
+    @Test("Rescue ignores which app uses more, keeps every guard")
+    func testRescueIgnoresUsageSize() {
+        let config = QuitXConfig.default
+        let apps = [
+            AppInfo(name: "Huge", bundleId: "com.huge.app", pid: 301, pids: [301], windowCount: 3, memoryBytes: 8 * 1024 * 1024 * 1024, cpuUsage: 350),
+            AppInfo(name: "Small", bundleId: "com.small.app", pid: 302, pids: [302], windowCount: 1, memoryBytes: 12 * 1024 * 1024, cpuUsage: 0.4),
+        ]
+        let targets = InactiveRescueTargets.select(
+            apps: apps, config: config, frontmostPid: 900, ownPid: 999
+        )
+        #expect(targets.map(\.name) == ["Huge", "Small"])
     }
 
     @Test("Battery detection parses power descriptions")

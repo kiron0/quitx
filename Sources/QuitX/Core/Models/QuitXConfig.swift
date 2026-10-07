@@ -23,7 +23,6 @@ struct QuitXConfig: Codable, Equatable, Sendable {
     var showMenuBarStats: Bool = false
     var hogAlertEnabled: Bool = false
     var hogCpuThreshold: Double = 80
-    var hogSustainMinutes: Int = 5
     var memoryPressureQuitEnabled: Bool = false
     var memoryPressureThresholdMB: Int = 1024
     var batterySaverEnabled: Bool = false
@@ -34,7 +33,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         case defaultSelectAll, neverQuitMusic, musicApps, autoUpdate, confirmQuitAll, confirmIndividualAction, playSounds
         case quitInactiveAfterMinutes, disableQuitTips, sortBy, perAppQuitRules
         case quitOnSleep, quitOnScreenLock, showMenuBarStats
-        case hogAlertEnabled, hogCpuThreshold, hogSustainMinutes
+        case hogAlertEnabled, hogCpuThreshold
         case memoryPressureQuitEnabled, memoryPressureThresholdMB, batterySaverEnabled
         case quitTimers
     }
@@ -62,7 +61,6 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         showMenuBarStats: Bool = false,
         hogAlertEnabled: Bool = false,
         hogCpuThreshold: Double = 80,
-        hogSustainMinutes: Int = 5,
         memoryPressureQuitEnabled: Bool = false,
         memoryPressureThresholdMB: Int = 1024,
         batterySaverEnabled: Bool = false,
@@ -90,7 +88,6 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         self.showMenuBarStats = showMenuBarStats
         self.hogAlertEnabled = hogAlertEnabled
         self.hogCpuThreshold = hogCpuThreshold
-        self.hogSustainMinutes = hogSustainMinutes
         self.memoryPressureQuitEnabled = memoryPressureQuitEnabled
         self.memoryPressureThresholdMB = memoryPressureThresholdMB
         self.batterySaverEnabled = batterySaverEnabled
@@ -122,7 +119,6 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         showMenuBarStats = try container.decodeIfPresent(Bool.self, forKey: .showMenuBarStats) ?? defaults.showMenuBarStats
         hogAlertEnabled = try container.decodeIfPresent(Bool.self, forKey: .hogAlertEnabled) ?? defaults.hogAlertEnabled
         hogCpuThreshold = try container.decodeIfPresent(Double.self, forKey: .hogCpuThreshold) ?? defaults.hogCpuThreshold
-        hogSustainMinutes = try container.decodeIfPresent(Int.self, forKey: .hogSustainMinutes) ?? defaults.hogSustainMinutes
         memoryPressureQuitEnabled = try container.decodeIfPresent(Bool.self, forKey: .memoryPressureQuitEnabled) ?? defaults.memoryPressureQuitEnabled
         memoryPressureThresholdMB = try container.decodeIfPresent(Int.self, forKey: .memoryPressureThresholdMB) ?? defaults.memoryPressureThresholdMB
         batterySaverEnabled = try container.decodeIfPresent(Bool.self, forKey: .batterySaverEnabled) ?? defaults.batterySaverEnabled

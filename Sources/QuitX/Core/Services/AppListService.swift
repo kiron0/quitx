@@ -241,7 +241,7 @@ final class AppListService {
 
     private static let cpuCache = OSAllocatedUnfairLock(initialState: CpuCacheState())
 
-    private static func fetchCpuUsages() -> [pid_t: Double] {
+    static func fetchCpuUsages() -> [pid_t: Double] {
         let cached: [pid_t: Double]? = cpuCache.withLock { state in
             let fresh = Date().timeIntervalSince(state.lastFetchTime) < 1.0 && !state.usages.isEmpty
             if fresh || state.isFetching { return state.usages }
