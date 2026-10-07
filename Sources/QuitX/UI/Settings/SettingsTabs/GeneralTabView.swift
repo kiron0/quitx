@@ -69,22 +69,6 @@ fileprivate func toggle(_ title: String, isOn: Binding<Bool>) -> some View {
     .buttonStyle(.plain)
 }
 
-fileprivate func stepperValueBox(_ text: String, width: CGFloat = 48) -> some View {
-    Text(text)
-        .font(.system(size: 11))
-        .foregroundStyle(Color.primary)
-        .multilineTextAlignment(.center)
-        .frame(width: width, height: 21)
-        .background(
-            RoundedRectangle(cornerRadius: 5)
-                .fill(Color(nsColor: .controlBackgroundColor))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 5)
-                .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
-        )
-}
-
 struct GeneralTabCloneView: View {
     @EnvironmentObject private var configStore: ConfigStore
     @ObservedObject private var launchService = LaunchAtLoginService.shared
@@ -95,7 +79,7 @@ struct GeneralTabCloneView: View {
     }
 
     private var minMemoryGB: Int {
-        max(1, min(systemMaxGB, Int((Double(systemMaxGB) * 0.8).rounded())))
+        max(1, min(systemMaxGB, Int((Double(systemMaxGB) * 0.6).rounded())))
     }
 
     private var cpuThreshold: Binding<Int> {
@@ -191,7 +175,10 @@ struct GeneralTabCloneView: View {
                         .font(.system(size: 11))
                         .foregroundStyle(Color.primary)
 
-                    stepperValueBox("\(cpuThreshold.wrappedValue)")
+                    Text("\(cpuThreshold.wrappedValue)")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.primary)
+                        .frame(minWidth: 20, alignment: .trailing)
 
                     Stepper("", value: cpuThreshold, in: 80...100, step: 5)
                         .labelsHidden()
@@ -221,7 +208,10 @@ struct GeneralTabCloneView: View {
                         .font(.system(size: 11))
                         .foregroundStyle(Color.primary)
 
-                    stepperValueBox("\(memoryGB.wrappedValue)")
+                    Text("\(memoryGB.wrappedValue)")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.primary)
+                        .frame(minWidth: 16, alignment: .trailing)
 
                     Stepper("", value: memoryGB, in: minMemoryGB...systemMaxGB)
                         .labelsHidden()
@@ -255,7 +245,10 @@ struct GeneralTabCloneView: View {
 
             row(label: "") {
                 HStack(spacing: 6) {
-                    stepperValueBox("\(state.autoQuitValue)")
+                    Text("\(state.autoQuitValue)")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.primary)
+                        .frame(minWidth: 20, alignment: .trailing)
 
                     Stepper("", value: $state.autoQuitValue, in: 1...999)
                         .labelsHidden()
