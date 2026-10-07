@@ -15,6 +15,7 @@ All notable changes to QuitX macOS App will be documented in this file.
 - Rescue consent panel & critical system protection: added interactive rescue consent gating and strict protections for vital macOS system processes and helper agents during resource cleanup.
 - Multi-consumer CPU monitor isolation: isolated CPU tick counters in `SystemUsage.cpuPercent(consumer:)` for menu bar, popover, and detail panel to prevent sample stealing and 0% readout artifacts.
 - Sticky search bar in Help: modern pinned search header in the Help sidebar with instant query matching, clear button, and empty state.
+- Welcome guide appearance setup: choose between Classic and Liquid Glass appearance directly from the first-launch Welcome guide with increased, spacious layout.
 - Humorous settings tooltips: comprehensive witty descriptions and easter eggs across all General and Automation settings options.
 
 ### Changed

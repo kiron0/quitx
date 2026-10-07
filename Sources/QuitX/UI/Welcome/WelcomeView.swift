@@ -12,19 +12,19 @@ struct WelcomeView: View {
     var body: some View {
         VStack(spacing: 0) {
             hero
-                .padding(.top, 16)
-                .padding(.bottom, 16)
+                .padding(.top, 22)
+                .padding(.bottom, 20)
 
             quickSetup
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 22)
 
             Button("Get Started") {
                 onDismiss()
             }
             .buttonStyle(WelcomePrimaryButtonStyle(color: gold))
-            .padding(.horizontal, 20)
-            .padding(.top, 12)
-            .padding(.bottom, 16)
+            .padding(.horizontal, 22)
+            .padding(.top, 16)
+            .padding(.bottom, 22)
         }
         .frame(width: 390)
         .fixedSize(horizontal: false, vertical: true)
@@ -40,7 +40,7 @@ struct WelcomeView: View {
     }
 
     private var quickSetup: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             Text("Quick Setup")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(Color.primary)
@@ -61,6 +61,33 @@ struct WelcomeView: View {
                     AppListViewModel.shared.applyDefaultSelection()
                 }
             ))
+
+            if #available(macOS 26.0, *) {
+                HStack(spacing: 12) {
+                    Text("Appearance")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.primary)
+                        .layoutPriority(1)
+
+                    Spacer()
+
+                    Picker("", selection: Binding(
+                        get: { configStore.config.liquidGlassEnabled },
+                        set: { newValue in
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                configStore.config.liquidGlassEnabled = newValue
+                            }
+                            configStore.save()
+                        }
+                    )) {
+                        Text("Classic").tag(false)
+                        Text("Liquid Glass").tag(true)
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.segmented)
+                    .frame(width: 168)
+                }
+            }
 
             HStack(spacing: 12) {
                 Text("Default quit mode")
@@ -85,8 +112,8 @@ struct WelcomeView: View {
                 .frame(width: 168)
             }
         }
-        .padding(10)
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 9))
+        .padding(12)
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
     }
 
     private func setupToggle(_ title: String, isOn: Binding<Bool>) -> some View {
@@ -106,11 +133,11 @@ struct WelcomeView: View {
     }
 
     private var hero: some View {
-        VStack(spacing: 8) {
-            QuitXAppIconView(size: 54, cornerRadius: 12)
+        VStack(spacing: 10) {
+            QuitXAppIconView(size: 58, cornerRadius: 13)
 
             Text("Welcome to QuitX")
-                .font(.system(size: 19, weight: .bold))
+                .font(.system(size: 20, weight: .bold))
                 .foregroundStyle(Color.primary)
 
             Text("Quickly quit apps and reclaim memory.")
