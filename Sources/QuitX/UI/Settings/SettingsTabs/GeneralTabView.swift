@@ -171,7 +171,7 @@ struct GeneralTabCloneView: View {
                 .disabled(!configStore.config.showMenuBarStats)
                 .opacity(configStore.config.showMenuBarStats ? 1.0 : 0.42)
             } help: {
-                HelpPopoverButton(text: "Display memory in the menu bar as gigabytes (GB) or as a percentage of total RAM (%).")
+                HelpPopoverButton(text: "Gigabytes for raw numbers or percentages for drama! Pick how your RAM flexes in the menu bar. 🏋️‍♂️📈")
             }
 
             if #available(macOS 26.0, *) {
@@ -233,7 +233,7 @@ struct GeneralTabCloneView: View {
                 }
                 .font(.system(size: 11.5))
             } help: {
-                Color.clear.frame(width: 20, height: 20)
+                HelpPopoverButton(text: "The nuclear option! Wipes your preferences clean back to factory fresh. No hard feelings. 🧼💥")
             }
 
             Spacer(minLength: 0)
@@ -306,7 +306,7 @@ struct AutomationTabCloneView: View {
                     }
                 ))
             } help: {
-                HelpPopoverButton(text: "This quit is only applicable for when Mac sleeps or lock and inside the range. Turning it on sets range 12 AM to 6 AM. Sleep or lock outside the range leaves apps running.")
+                HelpPopoverButton(text: "Night-shift janitor for your Mac! Only kicks apps out between your sleep hours (defaults 12 AM to 6 AM). Sneak naps during the day guilt-free. 🌙😴")
             }
 
             let subsOn = sleepLockOn
@@ -331,7 +331,7 @@ struct AutomationTabCloneView: View {
                 .disabled(!subsOn)
                 .opacity(subsOn ? 1.0 : 0.42)
             } help: {
-                Color.clear.frame(width: 20, height: 20)
+                HelpPopoverButton(text: "Military precision or morning-coffee casual? Pick 24-hour or 12-hour AM/PM dials for your sleep schedule. ⏰☕️")
             }
 
             rowWide(label: "") {
@@ -394,7 +394,7 @@ struct AutomationTabCloneView: View {
                 .disabled(!configStore.config.hogAlertEnabled)
                 .opacity(configStore.config.hogAlertEnabled ? 1.0 : 0.42)
             } help: {
-                HelpPopoverButton(text: "Your CPU tripwire: whole-system CPU load over this percent triggers Smart Rescue only after it stays over for 15 seconds. Force quits inactive apps only.")
+                HelpPopoverButton(text: "Set the panic meter! If whole-system CPU cooks past this mark for 15 solid seconds, inactive culprits get escorted out. 🚨🍳")
             }
 
             row(label: "") {
@@ -427,7 +427,7 @@ struct AutomationTabCloneView: View {
                 .disabled(!configStore.config.memoryPressureQuitEnabled)
                 .opacity(configStore.config.memoryPressureQuitEnabled ? 1.0 : 0.42)
             } help: {
-                HelpPopoverButton(text: "Your memory tripwire in gigabytes, capped at this Mac's total RAM. When macOS reports pressure and any app exceeds it, Smart Rescue force quits inactive apps only.")
+                HelpPopoverButton(text: "RAM lifeguard on duty! When memory gets swampy past your limit, inactive freeloaders get shown the door. 🏊‍♂️🛟")
             }
 
             let isAutoQuitEnabled = configStore.config.quitInactiveAfterMinutes > 0
@@ -468,7 +468,7 @@ struct AutomationTabCloneView: View {
                 .disabled(!isAutoQuitEnabled)
                 .opacity(isAutoQuitEnabled ? 1.0 : 0.42)
             } help: {
-                Color.clear.frame(width: 20, height: 20)
+                HelpPopoverButton(text: "The patience dial! How long an unused app gets to loiter before QuitX gently gives it the boot. ⏳👋")
             }
 
             Spacer(minLength: 0)

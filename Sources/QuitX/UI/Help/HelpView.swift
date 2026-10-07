@@ -115,7 +115,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "Relaunch recent apps",
-                    body: "Click the gear menu in the bottom-right corner and hover over Reopen to view recently quit apps (up to 20). Click any app to launch it immediately."
+                    body: "Click the gear menu in the bottom-right corner and hover over Reopen to view recently quit apps (up to 5). Click any app to launch it immediately."
                 ),
                 QuitXHelpSection(
                     title: "Automatic history",
@@ -198,7 +198,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Sleep and screen lock",
-                    body: "Settings > Automation offers unattended quitting: automatically and gracefully terminate safe apps when your Mac sleeps or when you lock the screen. Quit runs only inside your time range, default 12 AM to 6 AM. Outside the range, sleep or lock leaves apps running."
+                    body: "Settings > Automation offers unattended quitting: automatically and gracefully terminate safe apps when your Mac sleeps or when you lock the screen. Configure your custom active hours with start and end time pickers (default 12 AM to 6 AM), and toggle between 12-hour AM/PM and 24-hour display formats. Outside the range, sleep or lock leaves apps running."
                 )
             ]
         ),
@@ -211,7 +211,11 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "Menu bar CPU readout",
-                    body: "Enable Show CPU & memory in menu bar in Settings > General. QuitX shows a separate usage item beside its icon: whole-system CPU percent (chip icon) and memory use in GB (memory icon). Click the usage item for a native-blur detail panel with live CPU and memory values. The readout refreshes every second, or every 5 seconds under battery saver. The QuitX icon itself keeps its own click behavior."
+                    body: "Enable Show CPU & memory in menu bar in Settings > General. QuitX shows a separate usage item beside its icon: whole-system CPU percent (chip icon) and memory use in GB or percentage (memory icon), configurable via the Memory format picker. The readout refreshes every second, or every 5 seconds under battery saver. The QuitX icon itself keeps its own click behavior."
+                ),
+                QuitXHelpSection(
+                    title: "Stats detail panel",
+                    body: "Click the menu bar stats item to open a liquid glass detail panel showing live CPU load and memory usage (used out of total physical RAM). Click the stats item again, click anywhere outside, or press Esc to dismiss it."
                 ),
                 QuitXHelpSection(
                     title: "Battery saver mode",
@@ -299,7 +303,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "General & Advanced tabs",
-                    body: "Settings > General controls startup, sounds, menu CPU, appearance, sort order, and defaults. Settings > Automation manages sleep/lock actions, battery saver, health warnings, and Auto Quit. Settings > Advanced manages background apps, music protection, default selection, tips, confirmations, and Finder/Trash."
+                    body: "Settings > General controls startup, sounds, menu bar CPU/memory display, macOS 26 Liquid Glass vs Classic appearance theme, sort order, and defaults. Settings > Automation manages sleep/lock scheduling, battery saver, health rescue thresholds, and Auto Quit. Settings > Advanced manages background apps, music protection, default selection, tips, confirmations, and Finder/Trash."
                 ),
                 QuitXHelpSection(
                     title: "Exclude & Shortcuts tabs",

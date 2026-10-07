@@ -6,18 +6,29 @@ All notable changes to QuitX macOS App will be documented in this file.
 
 ### Added
 
-- Smart Rescue (USP): when a CPU or memory limit trips, QuitX immediately force quits inactive windowed apps only — never your frontmost app, Finder, Trash, excluded, music, or Never-ruled apps. CPU tracking runs continuously in the background (every 2s, 10s on battery saver) even with the popover closed, triggering rescue the instant any limit is breached. Rescued apps land in Recently Quit for one-click reopen.
-- Immediate CPU threshold limit: removed sustain duration end-to-end; setting custom CPU percent in Settings > General immediately flags and rescues inactive windowed apps when crossed.
-- Health layout alignment in Settings: perfectly aligned all Health section rows with fixed label columns and clean toggle titles.
-- Configurable memory pressure threshold: set custom gigabyte limit with arrow steppers in Settings > General, capped at this Mac's total RAM. Smart Rescue acts when macOS reports pressure and any app exceeds the threshold.
-- Sticky search bar in Help: customized modern search input pinned at the top of the Help sidebar with instant filtering, quick clear, and clean empty state.
-- Expanded Help documentation: dedicated guides for Recently Quit & Reopen, Menu Bar CPU & Battery Saver, Resource Hogs & Memory Pressure, plus complete breakdowns for all 5 Settings tabs and shortcuts.
+- macOS 26 Liquid Glass appearance: full native Liquid Glass UI styling and themes for macOS 26 Tahoe across the main popover, Settings window, Stats detail panel, Welcome window, and Help window, with live animated switching between Classic solid mode and Liquid Glass.
+- Dedicated Automation settings tab: cleanly separated automation controls into their own dedicated tab featuring power saving, sleep and screen lock scheduling, CPU hog / memory pressure tripwires, and inactivity timeouts.
+- Scheduled sleep and screen lock quit automation: restricted unattended quitting to configurable scheduled hours (default 12 AM to 6 AM) with start and end time pickers and toggle between 12-hour AM/PM and 24-hour time formats.
+- Stats detail panel in menu bar: clicking the menu bar usage item opens a native-blur liquid glass panel displaying real-time CPU % and memory usage (used out of total RAM) with custom status item arrow and auto-dismissal on click-outside, toggle, or Esc.
+- Menu Bar Memory Format picker: choose between Gigabytes (GB) and Percentage (%) for the menu bar memory usage readout in Settings > General.
+- Smart Rescue (USP): when a CPU or memory limit trips, QuitX safely rescues system resources by terminating inactive windowed apps only — never your frontmost app, Finder, Trash, excluded, music, or Never-ruled apps. Rescued apps land in Recently Quit for one-click reopening.
+- Rescue consent panel & critical system protection: added interactive rescue consent gating and strict protections for vital macOS system processes and helper agents during resource cleanup.
+- Multi-consumer CPU monitor isolation: isolated CPU tick counters in `SystemUsage.cpuPercent(consumer:)` for menu bar, popover, and detail panel to prevent sample stealing and 0% readout artifacts.
+- Sticky search bar in Help: modern pinned search header in the Help sidebar with instant query matching, clear button, and empty state.
+- Humorous settings tooltips: comprehensive witty descriptions and easter eggs across all General and Automation settings options.
 
 ### Changed
 
-- Status bar CPU refresh synchronized: menu bar CPU refresh interval matches each app row timing (2 seconds normal, 10 seconds battery saver), ticking together without separate drift.
-- Settings popover tooltips: aligned all help popovers across General and Advanced tabs with playful humor and emoji styling.
-- Menu bar CPU toggle: immediate live status item update on preference change without waiting for next polling cycle.
+- Capped Recently Quit history: "Reopen Recently Quit" now tracks and presents the 5 most recently quit apps (reduced from 20) for a tighter, focused menu.
+- Direct inline stepper controls: replaced static value boxes with interactive inline steppers for CPU %, memory GB thresholds, and sleep/lock time range.
+- Synchronized status bar refresh: menu bar stats monitoring aligned with live app timing (1s normal, 5s battery saver, 10s power saver).
+- Expanded Help documentation: updated guides for recently quit limits (up to 5), menu bar stats formatting (GB vs %), interactive detail panel, sleep & screen lock scheduling, and theme settings.
+
+### Fixed
+
+- Window presentation flicker on launch: suppressed welcome window animation during automated test execution and background launch (`open -g`).
+- Settings window frame positioning: stabilized window chrome updates to avoid frame shifting and layout jumps during appearance theme switches.
+- Headless test execution in CI: added native build system fallback (`--build-system native`) to workflow test steps to prevent XCBuild property list initialization failures in CI runner environments.
 
 ## 1.0.9
 

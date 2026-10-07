@@ -8,7 +8,7 @@ struct RecentlyQuitEntry: Codable, Equatable, Sendable {
 }
 
 enum RecentlyQuitStore {
-    static let maxCount = 20
+    static let maxCount = 5
 
     static func inserting(_ entries: [RecentlyQuitEntry], entry: RecentlyQuitEntry) -> [RecentlyQuitEntry] {
         var rest = entries.filter { !isSameApp($0, entry) }
