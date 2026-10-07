@@ -79,12 +79,12 @@ struct GeneralTabCloneView: View {
     }
 
     private var minMemoryGB: Int {
-        max(1, min(systemMaxGB, Int((Double(systemMaxGB) * 0.6).rounded())))
+        max(1, min(systemMaxGB, Int((Double(systemMaxGB) * 0.8).rounded())))
     }
 
     private var cpuThreshold: Binding<Int> {
         Binding(
-            get: { max(80, min(100, Int(configStore.config.hogCpuThreshold))) },
+            get: { Int(configStore.config.effectiveHogCpuThreshold) },
             set: {
                 configStore.config.hogCpuThreshold = Double(min(100, max(80, $0)))
                 configStore.save()
@@ -139,7 +139,7 @@ struct GeneralTabCloneView: View {
             }
 
             row(label: "Menu & Power:") {
-                toggle("Show CPU in menu bar", isOn: Binding(
+                toggle("Show CPU & memory in menu bar", isOn: Binding(
                     get: { configStore.config.showMenuBarStats },
                     set: {
                         configStore.config.showMenuBarStats = $0
@@ -148,7 +148,7 @@ struct GeneralTabCloneView: View {
                     }
                 ))
             } help: {
-                HelpPopoverButton(text: "Live pulse of your machine: glanceable CPU load beside the QuitX icon, synced every 2 seconds. 🏎️💨")
+                HelpPopoverButton(text: "Live pulse of your machine: a separate usage item beside the QuitX icon shows whole-system CPU percent and memory use in GB. Click it for a blurred detail panel. Refreshes every second (5 seconds on battery saver). 🏎️💨")
             }
 
             row(label: "") {
@@ -166,7 +166,7 @@ struct GeneralTabCloneView: View {
                     set: { configStore.config.hogAlertEnabled = $0; configStore.save() }
                 ))
             } help: {
-                HelpPopoverButton(text: "Catch runaway apps roasting your lap! Slaps a spicy flame badge on anything over your CPU limit, then force quits inactive apps only. Your active app never touched. 🔥🍳")
+                HelpPopoverButton(text: "Catch runaway apps roasting your lap! Watches whole-system CPU. After you flip this on, QuitX waits 60 seconds to arm, then acts only when load stays over your limit 15 seconds. No instant ambush. Force quits inactive apps only. 🔥🍳")
             }
 
             row(label: "") {
@@ -190,7 +190,7 @@ struct GeneralTabCloneView: View {
                 .disabled(!configStore.config.hogAlertEnabled)
                 .opacity(configStore.config.hogAlertEnabled ? 1.0 : 0.42)
             } help: {
-                HelpPopoverButton(text: "Your CPU tripwire: load over this percent immediately triggers Smart Rescue. Force quits inactive apps only.")
+                HelpPopoverButton(text: "Your CPU tripwire: whole-system CPU load over this percent triggers Smart Rescue only after it stays over for 15 seconds. Force quits inactive apps only.")
             }
 
             row(label: "") {

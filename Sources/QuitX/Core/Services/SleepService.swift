@@ -18,6 +18,12 @@ enum SleepQuitTargets {
             if config.neverQuitMusic && musicNames.contains(where: {
                 lowerName.contains($0) || lowerBid?.contains($0) == true
             }) { return false }
+            let ruleMinutes = PerAppQuitRule.storedMinutes(
+                bundleId: app.bundleId,
+                name: app.name,
+                rules: config.perAppQuitRules
+            )
+            if ruleMinutes == PerAppQuitRule.neverMinutes { return false }
             return true
         }
     }

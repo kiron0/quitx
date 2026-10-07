@@ -125,6 +125,10 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         quitTimers = try container.decodeIfPresent([String: Double].self, forKey: .quitTimers) ?? defaults.quitTimers
     }
 
+    var effectiveHogCpuThreshold: Double {
+        max(80, min(100, hogCpuThreshold))
+    }
+
     enum ForceMode: String, Codable, Equatable, Sendable { case normal, force }
     enum SortBy: String, Codable, Equatable, CaseIterable, Sendable {
         case cpuDesc = "High to Low CPU %"

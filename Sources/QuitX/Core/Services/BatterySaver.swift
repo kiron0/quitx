@@ -31,8 +31,20 @@ enum BatterySaver {
         return max(1, minutes / 2)
     }
 
-    static func menuBarText(totalCPU: Double, enabled: Bool) -> String? {
+    static func percentText(_ value: Double) -> String {
+        String(format: "%.0f%%", value)
+    }
+
+    static func compactMemoryText(bytes: UInt64) -> String {
+        let gb = Double(bytes) / 1_073_741_824
+        if gb >= 1 {
+            return String(format: "%.1fG", gb)
+        }
+        return String(format: "%.0fM", Double(bytes) / 1_048_576)
+    }
+
+    static func menuBarText(cpu: Double, memoryUsedBytes: UInt64, enabled: Bool) -> String? {
         guard enabled else { return nil }
-        return String(format: "%.0f%%", totalCPU)
+        return "CPU \(percentText(cpu)) · Memory \(MemoryFormatter.format(bytes: memoryUsedBytes))"
     }
 }

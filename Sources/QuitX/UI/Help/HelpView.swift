@@ -211,7 +211,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "Menu bar CPU readout",
-                    body: "Enable Show CPU in menu bar in Settings > General to see total CPU percent right next to the QuitX icon. The readout updates every 2 seconds in sync with your app list."
+                    body: "Enable Show CPU & memory in menu bar in Settings > General. QuitX shows a separate usage item beside its icon: whole-system CPU percent (chip icon) and memory use in GB (memory icon). Click the usage item for a native-blur detail panel with live CPU and memory values. The readout refreshes every second, or every 5 seconds under battery saver. The QuitX icon itself keeps its own click behavior."
                 ),
                 QuitXHelpSection(
                     title: "Battery saver mode",
@@ -232,7 +232,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "CPU hog warnings",
-                    body: "Enable Warn & rescue CPU hogs in Settings > General and dial in your own CPU percent with the steppers. Offenders display a flame badge plus a one-time notification, then Smart Rescue immediately force quits inactive windowed apps only — never your frontmost app."
+                    body: "Enable Warn & rescue CPU hogs in Settings > General and dial in your own CPU percent with the steppers. QuitX arms for 60 seconds after you enable the setting, then watches whole-system CPU load. Smart Rescue fires only when load stays over your limit for 15 seconds: it sends a notification and force quits inactive windowed apps only — never your frontmost app. Apps genuinely burning CPU also display a flame badge in the list. Enabling the setting never triggers an instant quit."
                 ),
                 QuitXHelpSection(
                     title: "Memory pressure cleaning",

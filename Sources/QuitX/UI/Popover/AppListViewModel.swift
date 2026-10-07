@@ -320,7 +320,7 @@ final class AppListViewModel: ObservableObject {
         if cfg.hogAlertEnabled {
             hogPids = HogMonitor.shared.noteLiveApps(
                 apps,
-                threshold: cfg.hogCpuThreshold
+                threshold: cfg.effectiveHogCpuThreshold
             )
         } else {
             HogMonitor.shared.reset()
@@ -329,7 +329,11 @@ final class AppListViewModel: ObservableObject {
         let updated = await AppListService.shared.fetchLiveStats(currentApps: apps, config: cfg, hogPids: hogPids)
         guard !Task.isCancelled, !isLoading, generation == liveStatsGeneration else { return }
         let flagged = applyResistantFlags(updated)
-        if cfg.hogAlertEnabled, !hogPids.isEmpty,
+        if cfg.hogAlertEnabled,
+           HogMonitor.shared.rescueEligible(
+               cpu: SystemUsage.cpuPercent(),
+               threshold: cfg.effectiveHogCpuThreshold
+           ),
            Date().timeIntervalSince(lastHogRescueDate) >= 5 {
             let rescueTargets = InactiveRescueTargets.select(
                 apps: flagged,

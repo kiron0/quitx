@@ -95,6 +95,9 @@ final class QuitTimerService {
         ensureTimer()
 
         let vm = AppListViewModel.shared
+        if Date().timeIntervalSince(vm.lastRefreshDate) > 2.0 {
+            await vm.refresh()
+        }
         let targets = vm.apps.filter { app in
             let key = PerAppQuitRule.ruleKey(bundleId: app.bundleId, name: app.name)
             return due.contains(key)

@@ -34,6 +34,7 @@ final class StatusItemController: NSObject {
     static let popoverWidth: CGFloat = 270
 
     private var statusItem: NSStatusItem
+    private var statsStatusItem: NSStatusItem?
     private var window: MenuPopupWindow?
     private var hostingController: NSHostingController<AnyView>?
     private var globalEventMonitor: Any?
@@ -67,6 +68,9 @@ final class StatusItemController: NSObject {
         liveMonitoringTask?.cancel()
         backgroundRefreshTask?.cancel()
         menuStatsTask?.cancel()
+        if let statsStatusItem {
+            NSStatusBar.system.removeStatusItem(statsStatusItem)
+        }
         let center = NSWorkspace.shared.notificationCenter
         workspaceObservers.forEach { center.removeObserver($0) }
         if let g = globalEventMonitor { NSEvent.removeMonitor(g) }
@@ -280,6 +284,7 @@ final class StatusItemController: NSObject {
             if Date().timeIntervalSince(lastCloseTimestamp) < 0.25 {
                 return
             }
+            StatsDetailController.shared.close()
             guard let win = window else { return }
             updatePopoverSize()
             win.contentView?.layoutSubtreeIfNeeded()
@@ -334,34 +339,94 @@ final class StatusItemController: NSObject {
         }
     }
 
-    func updateMenuBarStats() {
-        guard let button = statusItem.button else { return }
-        let totalCPU = AppListViewModel.shared.apps.reduce(0.0) { $0 + $1.cpuUsage }
-        if let text = BatterySaver.menuBarText(totalCPU: totalCPU, enabled: ConfigStore.shared.config.showMenuBarStats) {
-            button.imagePosition = .imageLeading
-            button.title = text
-            button.toolTip = "QuitX — \(text) CPU"
-        } else {
-            button.imagePosition = .imageOnly
-            button.title = ""
-            button.toolTip = "QuitX"
+    private static func menuBarAttachment(symbolNames: [String]) -> NSTextAttachment? {
+        for name in symbolNames {
+            guard let image = NSImage(systemSymbolName: name, accessibilityDescription: nil) else { continue }
+            let configuration = NSImage.SymbolConfiguration(pointSize: 11, weight: .regular)
+            let sized = image.withSymbolConfiguration(configuration) ?? image
+            sized.isTemplate = true
+            let attachment = NSTextAttachment()
+            attachment.image = sized
+            let size = sized.size
+            attachment.bounds = NSRect(x: 0, y: -2, width: size.width, height: size.height)
+            return attachment
         }
+        return nil
+    }
+
+    private static func statsTitle(cpu: Double, memoryUsed: UInt64) -> NSAttributedString {
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.menuBarFont(ofSize: 0),
+            .foregroundColor: NSColor.labelColor
+        ]
+        let title = NSMutableAttributedString()
+        func appendSegment(symbolNames: [String], fallback: String, text: String) {
+            if let attachment = menuBarAttachment(symbolNames: symbolNames) {
+                title.append(NSAttributedString(attachment: attachment))
+                title.append(NSAttributedString(string: " \(text)", attributes: attributes))
+            } else {
+                title.append(NSAttributedString(string: "\(fallback) \(text)", attributes: attributes))
+            }
+        }
+        appendSegment(symbolNames: ["cpu"], fallback: "CPU", text: BatterySaver.percentText(cpu))
+        title.append(NSAttributedString(string: "   ", attributes: attributes))
+        appendSegment(
+            symbolNames: ["memorychip", "internaldrive"],
+            fallback: "MEM",
+            text: BatterySaver.compactMemoryText(bytes: memoryUsed)
+        )
+        return title
+    }
+
+    var statsButton: NSStatusBarButton? {
+        statsStatusItem?.button
+    }
+
+    func updateMenuBarStats() {
+        guard ConfigStore.shared.config.showMenuBarStats else {
+            removeStatsItem()
+            return
+        }
+        let item = statsStatusItem ?? NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        statsStatusItem = item
+        guard let button = item.button else { return }
+        if button.action == nil {
+            button.sendAction(on: [.leftMouseDown])
+            button.action = #selector(handleStatsItemClick(_:))
+            button.target = self
+            button.toolTip = "QuitX monitor — click for details"
+        }
+        button.imagePosition = .imageLeading
+        button.attributedTitle = Self.statsTitle(
+            cpu: SystemUsage.cpuPercent(),
+            memoryUsed: SystemUsage.memoryUsedBytes()
+        )
+    }
+
+    private func removeStatsItem() {
+        StatsDetailController.shared.close()
+        guard let item = statsStatusItem else { return }
+        NSStatusBar.system.removeStatusItem(item)
+        statsStatusItem = nil
+    }
+
+    @objc private func handleStatsItemClick(_ sender: Any?) {
+        guard let button = statsStatusItem?.button else { return }
+        StatsDetailController.shared.toggle(from: button)
     }
 
     func startMenuBarStats() {
         menuStatsTask?.cancel()
+        SystemUsage.prime()
+        updateMenuBarStats()
         menuStatsTask = Task { @MainActor [weak self] in
             while let self = self {
                 let cfg = ConfigStore.shared.config
                 let onBattery = cfg.batterySaverEnabled
                     && BatterySaver.isOnBattery(descriptions: BatterySaver.currentDescriptions())
-                let interval: UInt64 = onBattery ? 10_000_000_000 : 2_000_000_000
+                let interval: UInt64 = onBattery ? 5_000_000_000 : 1_000_000_000
                 try? await Task.sleep(nanoseconds: interval)
                 guard !Task.isCancelled else { break }
-                guard !self.isShown else { continue }
-                if cfg.showMenuBarStats {
-                    await AppListViewModel.shared.updateLiveStats()
-                }
                 self.updateMenuBarStats()
             }
         }
@@ -374,6 +439,7 @@ final class StatusItemController: NSObject {
 
     private func showContextMenu() {
         closePopover()
+        StatsDetailController.shared.close()
         let menu = NSMenu()
 
         menu.addItem(MenuHelper.makeItem(

@@ -171,8 +171,82 @@ struct ProductivityFeaturesTests {
         #expect(BatterySaver.effectiveTimeout(minutes: 1, saverActive: true) == 1)
         #expect(BatterySaver.effectiveTimeout(minutes: 60, saverActive: false) == 60)
         #expect(BatterySaver.effectiveTimeout(minutes: 0, saverActive: true) == 0)
-        #expect(BatterySaver.menuBarText(totalCPU: 12.6, enabled: true) == "13%")
-        #expect(BatterySaver.menuBarText(totalCPU: 12.6, enabled: false) == nil)
+        let tenGB: UInt64 = 10 * 1024 * 1024 * 1024
+        #expect(BatterySaver.menuBarText(cpu: 12.6, memoryUsedBytes: tenGB, enabled: true) == "CPU 13% · Memory 10.0 GB")
+        #expect(BatterySaver.menuBarText(cpu: 12.6, memoryUsedBytes: tenGB, enabled: false) == nil)
+        #expect(BatterySaver.percentText(7.4) == "7%")
+        #expect(BatterySaver.compactMemoryText(bytes: tenGB) == "10.0G")
+        #expect(BatterySaver.compactMemoryText(bytes: 512 * 1024 * 1024) == "512M")
+    }
+
+    @Test("Rescue gate blocks during 60s arm delay")
+    func testHogGateArmDelay() {
+        var gate = HogRescueGate()
+        let start = Date()
+        let early = gate.evaluate(cpu: 99, threshold: 80, armedAt: start, now: start.addingTimeInterval(30))
+        #expect(!early)
+        let justArmed = gate.evaluate(cpu: 99, threshold: 80, armedAt: start, now: start.addingTimeInterval(61))
+        #expect(!justArmed)
+        let neverArmed = gate.evaluate(cpu: 99, threshold: 80, armedAt: nil, now: start.addingTimeInterval(120))
+        #expect(!neverArmed)
+    }
+
+    @Test("Rescue gate needs 15s sustained breach")
+    func testHogGateSustain() {
+        var gate = HogRescueGate()
+        let armed = Date().addingTimeInterval(-120)
+        let t0 = Date()
+        let startBreach = gate.evaluate(cpu: 99, threshold: 80, armedAt: armed, now: t0)
+        #expect(!startBreach)
+        let midBreach = gate.evaluate(cpu: 99, threshold: 80, armedAt: armed, now: t0.addingTimeInterval(14))
+        #expect(!midBreach)
+        let sustained = gate.evaluate(cpu: 99, threshold: 80, armedAt: armed, now: t0.addingTimeInterval(15))
+        #expect(sustained)
+    }
+
+    @Test("Rescue gate hysteresis keeps episode across small dip")
+    func testHogGateHysteresis() {
+        var gate = HogRescueGate()
+        let armed = Date().addingTimeInterval(-120)
+        let t0 = Date()
+        _ = gate.evaluate(cpu: 99, threshold: 80, armedAt: armed, now: t0)
+        let smallDip = gate.evaluate(cpu: 78, threshold: 80, armedAt: armed, now: t0.addingTimeInterval(5))
+        #expect(!smallDip)
+        let resumed = gate.evaluate(cpu: 99, threshold: 80, armedAt: armed, now: t0.addingTimeInterval(15))
+        #expect(resumed)
+        let bigDrop = gate.evaluate(cpu: 70, threshold: 80, armedAt: armed, now: t0.addingTimeInterval(20))
+        #expect(!bigDrop)
+        let freshBreach = gate.evaluate(cpu: 99, threshold: 80, armedAt: armed, now: t0.addingTimeInterval(21))
+        #expect(!freshBreach)
+    }
+
+    @Test("System CPU and memory percent stay in range")
+    func testSystemUsageRange() {
+        _ = SystemUsage.cpuPercent()
+        let cpu = SystemUsage.cpuPercent()
+        #expect(cpu >= 0 && cpu <= 100)
+        let memory = SystemUsage.memoryPercent()
+        #expect(memory > 0 && memory <= 100)
+    }
+
+    @Test("Sleep targets respect per-app Never rule")
+    func testSleepTargetsRespectNeverRule() {
+        var config = baseConfig
+        config.perAppQuitRules = ["com.tinyspeck.slackmacgap": 0]
+        let apps = [regularApp()]
+        let targets = SleepQuitTargets.select(apps: apps, config: config)
+        #expect(targets.isEmpty)
+    }
+
+    @Test("Effective hog threshold clamps to 80...100")
+    func testEffectiveHogThreshold() {
+        var config = QuitXConfig.default
+        config.hogCpuThreshold = 50
+        #expect(config.effectiveHogCpuThreshold == 80)
+        config.hogCpuThreshold = 200
+        #expect(config.effectiveHogCpuThreshold == 100)
+        config.hogCpuThreshold = 90
+        #expect(config.effectiveHogCpuThreshold == 90)
     }
 
     @Test("Due keys split past from future")
