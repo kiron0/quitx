@@ -69,6 +69,22 @@ fileprivate func toggle(_ title: String, isOn: Binding<Bool>) -> some View {
     .buttonStyle(.plain)
 }
 
+fileprivate func stepperValueBox(_ text: String, width: CGFloat = 48) -> some View {
+    Text(text)
+        .font(.system(size: 11))
+        .foregroundStyle(Color.primary)
+        .multilineTextAlignment(.center)
+        .frame(width: width, height: 21)
+        .background(
+            RoundedRectangle(cornerRadius: 5)
+                .fill(Color(nsColor: .controlBackgroundColor))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 5)
+                .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
+        )
+}
+
 struct GeneralTabCloneView: View {
     @EnvironmentObject private var configStore: ConfigStore
     @ObservedObject private var launchService = LaunchAtLoginService.shared
@@ -78,11 +94,15 @@ struct GeneralTabCloneView: View {
         max(1, Int(ProcessInfo.processInfo.physicalMemory / 1_073_741_824))
     }
 
+    private var minMemoryGB: Int {
+        max(1, min(systemMaxGB, Int((Double(systemMaxGB) * 0.8).rounded())))
+    }
+
     private var cpuThreshold: Binding<Int> {
         Binding(
-            get: { Int(configStore.config.hogCpuThreshold) },
+            get: { max(80, min(100, Int(configStore.config.hogCpuThreshold))) },
             set: {
-                configStore.config.hogCpuThreshold = Double(min(100, max(5, $0)))
+                configStore.config.hogCpuThreshold = Double(min(100, max(80, $0)))
                 configStore.save()
             }
         )
@@ -90,9 +110,9 @@ struct GeneralTabCloneView: View {
 
     private var memoryGB: Binding<Int> {
         Binding(
-            get: { min(systemMaxGB, max(1, (configStore.config.memoryPressureThresholdMB + 512) / 1024)) },
+            get: { min(systemMaxGB, max(minMemoryGB, (configStore.config.memoryPressureThresholdMB + 512) / 1024)) },
             set: {
-                configStore.config.memoryPressureThresholdMB = min(systemMaxGB, max(1, $0)) * 1024
+                configStore.config.memoryPressureThresholdMB = min(systemMaxGB, max(minMemoryGB, $0)) * 1024
                 configStore.save()
             }
         )
@@ -171,13 +191,9 @@ struct GeneralTabCloneView: View {
                         .font(.system(size: 11))
                         .foregroundStyle(Color.primary)
 
-                    TextField("", value: cpuThreshold, format: .number)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 48)
-                        .font(.system(size: 11))
-                        .multilineTextAlignment(.center)
+                    stepperValueBox("\(cpuThreshold.wrappedValue)")
 
-                    Stepper("", value: cpuThreshold, in: 5...100, step: 5)
+                    Stepper("", value: cpuThreshold, in: 80...100, step: 5)
                         .labelsHidden()
 
                     Text("%")
@@ -205,13 +221,9 @@ struct GeneralTabCloneView: View {
                         .font(.system(size: 11))
                         .foregroundStyle(Color.primary)
 
-                    TextField("", value: memoryGB, format: .number)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 48)
-                        .font(.system(size: 11))
-                        .multilineTextAlignment(.center)
+                    stepperValueBox("\(memoryGB.wrappedValue)")
 
-                    Stepper("", value: memoryGB, in: 1...systemMaxGB)
+                    Stepper("", value: memoryGB, in: minMemoryGB...systemMaxGB)
                         .labelsHidden()
 
                     Text("GB of \(systemMaxGB)")
@@ -243,11 +255,7 @@ struct GeneralTabCloneView: View {
 
             row(label: "") {
                 HStack(spacing: 6) {
-                    TextField("", value: $state.autoQuitValue, format: .number)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 48)
-                        .font(.system(size: 11))
-                        .multilineTextAlignment(.center)
+                    stepperValueBox("\(state.autoQuitValue)")
 
                     Stepper("", value: $state.autoQuitValue, in: 1...999)
                         .labelsHidden()
@@ -314,6 +322,15 @@ struct GeneralTabCloneView: View {
         .background(QuitXTheme.windowBackground)
         .onAppear {
             state.syncFromMinutes(configStore.config.quitInactiveAfterMinutes)
+            if configStore.config.hogCpuThreshold < 80 {
+                configStore.config.hogCpuThreshold = 80
+                configStore.save()
+            }
+            let currentMemGB = (configStore.config.memoryPressureThresholdMB + 512) / 1024
+            if currentMemGB < minMemoryGB {
+                configStore.config.memoryPressureThresholdMB = minMemoryGB * 1024
+                configStore.save()
+            }
         }
         .onChange(of: state.autoQuitValue) {
             if configStore.config.quitInactiveAfterMinutes > 0 {

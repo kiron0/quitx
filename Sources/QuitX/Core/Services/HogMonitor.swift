@@ -55,7 +55,7 @@ final class HogMonitor {
         }
         let hogs = noteCpuSample(
             cpuByPid: cpuByPid,
-            threshold: max(5, config.hogCpuThreshold),
+            threshold: max(80, config.hogCpuThreshold),
             apps: []
         )
         guard !hogs.isEmpty else { return }
