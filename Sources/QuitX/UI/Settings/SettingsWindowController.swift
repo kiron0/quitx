@@ -7,14 +7,6 @@ private final class SettingsWindow: NSWindow {
     }
 }
 
-private final class PassThroughView: NSView {
-    override func hitTest(_ point: NSPoint) -> NSView? { nil }
-}
-
-private final class PassThroughEffectView: NSVisualEffectView {
-    override func hitTest(_ point: NSPoint) -> NSView? { nil }
-}
-
 @MainActor
 final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDelegate {
     static let shared = SettingsWindowController()
@@ -56,6 +48,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         )
         win.title = targetTab.rawValue
         if #available(macOS 26.0, *) {
+            win.styleMask.insert(.fullSizeContentView)
             win.isOpaque = false
             win.backgroundColor = .clear
             win.titlebarAppearsTransparent = true
@@ -89,10 +82,6 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         win.contentViewController = hosting
         self.window = win
 
-        if #available(macOS 26.0, *) {
-            installTitlebarGlass(on: win)
-        }
-
         WindowActivationCoordinator.update()
 
         let targetFrame: NSRect
@@ -103,34 +92,13 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
             targetFrame = win.frame
         }
         WindowAnimator.present(win, targetFrame: targetFrame)
-    }
 
-    @available(macOS 26.0, *)
-    private func installTitlebarGlass(on win: NSWindow) {
-        guard let themeFrame = win.contentView?.superview else { return }
-
-        let titlebarHeight = win.frameRect(forContentRect: .zero).height
-        guard titlebarHeight > 0 else { return }
-
-        let frame = NSRect(
-            x: 0,
-            y: themeFrame.bounds.maxY - titlebarHeight,
-            width: themeFrame.bounds.width,
-            height: titlebarHeight
-        )
-
-        let blur = PassThroughEffectView(frame: frame)
-        blur.material = .titlebar
-        blur.blendingMode = .behindWindow
-        blur.state = .active
-        blur.autoresizingMask = [.width, .minYMargin]
-        themeFrame.addSubview(blur, positioned: .below, relativeTo: themeFrame.subviews.first)
-
-        let tint = PassThroughView(frame: frame)
-        tint.wantsLayer = true
-        tint.layer?.backgroundColor = NSColor.labelColor.withAlphaComponent(QuitXTheme.cardBackgroundOpacity).cgColor
-        tint.autoresizingMask = [.width, .minYMargin]
-        themeFrame.addSubview(tint, positioned: .above, relativeTo: blur)
+        if #available(macOS 26.0, *) {
+            let inset = win.frame.height - win.contentRect(forFrameRect: win.frame).height
+            if inset > 0 {
+                tabModel.glassTopInset = inset
+            }
+        }
     }
 
     private func targetFrameFor(_ win: NSWindow, tab: SettingsTab, screen: NSScreen) -> NSRect {
@@ -168,7 +136,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         let newY = currentFrame.maxY - targetHeight
         let newFrame = NSRect(x: currentFrame.origin.x, y: newY, width: 400, height: targetHeight)
 
-        win.setFrame(newFrame, display: true, animate: true)
+        win.setFrame(newFrame, display: true, animate: false)
     }
 
     nonisolated func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {

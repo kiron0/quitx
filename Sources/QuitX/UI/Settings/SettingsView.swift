@@ -93,6 +93,7 @@ struct HelpPopoverButton: View {
 
 final class SettingsTabViewModel: ObservableObject {
     @Published var activeTab: SettingsTab = .general
+    @Published var glassTopInset: CGFloat = 0
 }
 
 struct SettingsContainerView: View {
@@ -120,7 +121,14 @@ struct SettingsContainerView: View {
         .frame(width: 400, height: tabModel.activeTab.contentHeight, alignment: .top)
         .background {
             if #available(macOS 26.0, *) {
-                Color.clear.glassEffect(.regular, in: Rectangle())
+                ZStack(alignment: .top) {
+                    Color.clear.glassEffect(.regular, in: Rectangle())
+                    if tabModel.glassTopInset > 0 {
+                        QuitXTheme.cardBackground
+                            .frame(height: tabModel.glassTopInset)
+                    }
+                }
+                .ignoresSafeArea()
             } else {
                 QuitXTheme.windowBackground
             }
