@@ -80,7 +80,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         activeTab = targetTab
         tabModel.activeTab = targetTab
 
-        let initialContentRect = NSRect(x: 0, y: 0, width: 400, height: targetTab.contentHeight)
+        let initialContentRect = NSRect(x: 0, y: 0, width: 480, height: targetTab.contentHeight)
 
         let win = SettingsWindow(
             contentRect: initialContentRect,
@@ -146,7 +146,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
     }
 
     private func targetFrameFor(_ win: NSWindow, tab: SettingsTab, screen: NSScreen) -> NSRect {
-        let contentRect = NSRect(x: 0, y: 0, width: 400, height: tab.contentHeight)
+        let contentRect = NSRect(x: 0, y: 0, width: 480, height: tab.contentHeight)
         let frameRect = win.frameRect(forContentRect: contentRect)
         return WindowPositioner.topBiasedFrame(for: frameRect.size, on: screen)
     }
@@ -172,13 +172,13 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
             tabModel.activeTab = tab
         }
 
-        let targetContentRect = NSRect(x: 0, y: 0, width: 400, height: tab.contentHeight)
+        let targetContentRect = NSRect(x: 0, y: 0, width: 480, height: tab.contentHeight)
         let targetFrameRect = win.frameRect(forContentRect: targetContentRect)
         let targetHeight = targetFrameRect.height
 
         let currentFrame = win.frame
         let newY = currentFrame.maxY - targetHeight
-        let newFrame = NSRect(x: currentFrame.origin.x, y: newY, width: 400, height: targetHeight)
+        let newFrame = NSRect(x: currentFrame.origin.x, y: newY, width: 480, height: targetHeight)
 
         win.setFrame(newFrame, display: true, animate: false)
     }

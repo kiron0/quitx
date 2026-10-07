@@ -3,6 +3,7 @@ import AppKit
 
 enum SettingsTab: String, CaseIterable {
     case general = "General"
+    case automation = "Automation"
     case advanced = "Advanced"
     case exclude = "Exclude"
     case shortcuts = "Shortcuts"
@@ -15,6 +16,7 @@ enum SettingsTab: String, CaseIterable {
     var iconName: String {
         switch self {
         case .general:   return "preferences-general"
+        case .automation: return "preferences-automation"
         case .advanced:  return "preferences-advanced"
         case .exclude:   return "preferences-exclude"
         case .shortcuts: return "preferences-shortcuts"
@@ -25,6 +27,7 @@ enum SettingsTab: String, CaseIterable {
     var fallbackSymbolName: String {
         switch self {
         case .general:   return "gearshape"
+        case .automation: return "timer"
         case .advanced:  return "slider.horizontal.3"
         case .exclude:   return "nosign"
         case .shortcuts: return "command"
@@ -49,8 +52,9 @@ enum SettingsTab: String, CaseIterable {
     var contentHeight: CGFloat {
         switch self {
         case .general:
-            if #available(macOS 26.0, *) { return 541 }
-            return 511
+            if #available(macOS 26.0, *) { return 271 }
+            return 241
+        case .automation: return 301
         case .advanced:  return 271
         case .exclude:   return 306
         case .shortcuts: return 221
@@ -108,6 +112,9 @@ struct SettingsContainerView: View {
             case .general:
                 GeneralTabCloneView()
                     .environmentObject(configStore)
+            case .automation:
+                AutomationTabCloneView()
+                    .environmentObject(configStore)
             case .advanced:
                 AdvancedTabCloneView()
                     .environmentObject(configStore)
@@ -120,7 +127,7 @@ struct SettingsContainerView: View {
                 AboutTabCloneView()
             }
         }
-        .frame(width: 400, height: tabModel.activeTab.contentHeight, alignment: .top)
+        .frame(width: 480, height: tabModel.activeTab.contentHeight, alignment: .top)
         .overlay(alignment: .top) {
             if LiquidGlass.enabled {
                 Color.primary.opacity(0.12)

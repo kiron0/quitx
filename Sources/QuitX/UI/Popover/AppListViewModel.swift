@@ -328,22 +328,27 @@ final class AppListViewModel: ObservableObject {
         let updated = await AppListService.shared.fetchLiveStats(currentApps: apps, config: cfg, hogPids: hogPids)
         guard !Task.isCancelled, !isLoading, generation == liveStatsGeneration else { return }
         let flagged = applyResistantFlags(updated)
-        if cfg.hogAlertEnabled,
-           HogMonitor.shared.rescueEligible(
-               cpu: SystemUsage.cpuPercent(),
-               threshold: cfg.effectiveHogCpuThreshold
-           ),
-           Date().timeIntervalSince(lastHogRescueDate) >= 5 {
-            let rescueTargets = InactiveRescueTargets.select(
-                apps: flagged,
-                config: cfg,
-                frontmostPid: NSWorkspace.shared.frontmostApplication?.processIdentifier,
-                ownPid: ProcessInfo.processInfo.processIdentifier
-            )
-            if !rescueTargets.isEmpty {
-                lastHogRescueDate = Date()
-                RescueConsentController.shared.request(targets: rescueTargets, reason: .cpu(SystemUsage.cpuPercent()))
-                return
+        if cfg.hogAlertEnabled {
+            let sysCpu = SystemUsage.cpuPercent()
+            if HogMonitor.shared.rescueEligible(
+                cpu: sysCpu,
+                threshold: cfg.effectiveHogCpuThreshold
+            ),
+               Date().timeIntervalSince(lastHogRescueDate) >= 5 {
+                let rescueTargets = InactiveRescueTargets.select(
+                    apps: flagged,
+                    config: cfg,
+                    frontmostPid: NSWorkspace.shared.frontmostApplication?.processIdentifier,
+                    ownPid: ProcessInfo.processInfo.processIdentifier
+                )
+                if !rescueTargets.isEmpty {
+                    lastHogRescueDate = Date()
+                    RescueConsentController.shared.request(
+                        targets: rescueTargets,
+                        reason: .cpu(value: sysCpu, limit: cfg.effectiveHogCpuThreshold)
+                    )
+                    return
+                }
             }
         }
         if apps != flagged {
@@ -426,7 +431,7 @@ final class AppListViewModel: ObservableObject {
         await performQuit(targets: targets, force: force)
     }
 
-    func runBackgroundHogRescue() async {
+    func runBackgroundHogRescue(cpu: Double, limit: Double) async {
         guard Date().timeIntervalSince(lastHogRescueDate) >= 5 else { return }
         if Date().timeIntervalSince(lastRefreshDate) > 2.0 {
             await refresh()
@@ -440,7 +445,7 @@ final class AppListViewModel: ObservableObject {
         )
         guard !targets.isEmpty else { return }
         lastHogRescueDate = Date()
-        RescueConsentController.shared.request(targets: targets, reason: .cpu(SystemUsage.cpuPercent()))
+        RescueConsentController.shared.request(targets: targets, reason: .cpu(value: cpu, limit: limit))
     }
 
     private func performQuit(targets: [AppInfo], force: Bool) async {

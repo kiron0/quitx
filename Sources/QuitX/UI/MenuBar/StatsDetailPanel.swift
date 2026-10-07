@@ -144,6 +144,7 @@ final class StatsDetailController {
     private var localMonitor: Any?
     private var resignObserver: NSObjectProtocol?
     private var lastCloseTimestamp: Date = .distantPast
+    private var frontmostAtShow: NSRunningApplication?
 
     private init() {}
 
@@ -203,6 +204,8 @@ final class StatsDetailController {
         }
 
         model.start()
+        frontmostAtShow = NSWorkspace.shared.frontmostApplication
+        NSApp.activate(ignoringOtherApps: true)
         win.makeKeyAndOrderFront(nil)
         installMonitors()
     }
@@ -213,6 +216,19 @@ final class StatsDetailController {
         window?.orderOut(nil)
         model?.stop()
         removeMonitors()
+        restoreFrontmost()
+    }
+
+    private func restoreFrontmost() {
+        guard NSApp.isActive,
+              let prev = frontmostAtShow,
+              prev != NSRunningApplication.current,
+              !prev.isTerminated else {
+            frontmostAtShow = nil
+            return
+        }
+        frontmostAtShow = nil
+        prev.activate(options: [])
     }
 
     private func installMonitors() {

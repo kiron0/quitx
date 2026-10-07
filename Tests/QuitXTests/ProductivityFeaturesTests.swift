@@ -219,13 +219,13 @@ struct ProductivityFeaturesTests {
         #expect(BatterySaver.memoryPercentText(bytes: 8 * 1024 * 1024 * 1024, totalBytes: sixteenGB) == "50%")
     }
 
-    @Test("Rescue gate blocks during 60s arm delay")
+    @Test("Rescue gate blocks during 15s arm delay")
     func testHogGateArmDelay() {
         var gate = HogRescueGate()
         let start = Date()
-        let early = gate.evaluate(cpu: 99, threshold: 80, armedAt: start, now: start.addingTimeInterval(30))
+        let early = gate.evaluate(cpu: 99, threshold: 80, armedAt: start, now: start.addingTimeInterval(10))
         #expect(!early)
-        let justArmed = gate.evaluate(cpu: 99, threshold: 80, armedAt: start, now: start.addingTimeInterval(61))
+        let justArmed = gate.evaluate(cpu: 99, threshold: 80, armedAt: start, now: start.addingTimeInterval(16))
         #expect(!justArmed)
         let neverArmed = gate.evaluate(cpu: 99, threshold: 80, armedAt: nil, now: start.addingTimeInterval(120))
         #expect(!neverArmed)

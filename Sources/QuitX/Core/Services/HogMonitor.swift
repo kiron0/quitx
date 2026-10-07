@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import Foundation
 @preconcurrency import UserNotifications
 
@@ -18,7 +19,7 @@ struct HogTracker: Sendable {
 }
 
 struct HogRescueGate {
-    static let armDelay: TimeInterval = 60
+    static let armDelay: TimeInterval = 15
     static let sustainInterval: TimeInterval = 15
     static let hysteresis: Double = 5
 
@@ -54,8 +55,27 @@ final class HogMonitor {
     private var gate = HogRescueGate()
     private var armedAt: Date?
     private var backgroundTask: Task<Void, Never>?
+    private var configObserver: AnyCancellable?
+    private var lastEnabledValue: Bool?
 
-    private init() {}
+    private init() {
+        configObserver = ConfigStore.shared.$config
+            .map(\.hogAlertEnabled)
+            .removeDuplicates()
+            .sink { [weak self] enabled in
+                Task { @MainActor [weak self] in
+                    self?.handleEnabledChange(enabled)
+                }
+            }
+    }
+
+    private func handleEnabledChange(_ enabled: Bool) {
+        let wasEnabled = lastEnabledValue
+        lastEnabledValue = enabled
+        if enabled, wasEnabled == false {
+            armedAt = Date().addingTimeInterval(-HogRescueGate.armDelay)
+        }
+    }
 
     func startBackgroundMonitoring() {
         guard backgroundTask == nil else { return }
@@ -97,7 +117,7 @@ final class HogMonitor {
                 )
             )
         }
-        await AppListViewModel.shared.runBackgroundHogRescue()
+        await AppListViewModel.shared.runBackgroundHogRescue(cpu: systemCPU, limit: threshold)
     }
 
     func rescueEligible(cpu: Double, threshold: Double) -> Bool {

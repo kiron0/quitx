@@ -190,7 +190,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Configure global interval",
-                    body: "Open Settings > General, enable Quit Inactive Apps After, then choose minutes, hours, or days. Turn it off to disable automatic quitting."
+                    body: "Open Settings > Automation, enable Quit Inactive Apps After, then choose minutes, hours, or days. Turn it off to disable automatic quitting."
                 ),
                 QuitXHelpSection(
                     title: "Per-app rules",
@@ -198,7 +198,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Sleep and screen lock",
-                    body: "Settings > General offers unattended quitting: automatically and gracefully terminate safe apps when your Mac sleeps or when you lock the screen."
+                    body: "Settings > Automation offers unattended quitting: automatically and gracefully terminate safe apps when your Mac sleeps or when you lock the screen."
                 )
             ]
         ),
@@ -232,11 +232,11 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "CPU hog warnings",
-                    body: "Enable Warn & rescue CPU hogs in Settings > General and dial in your own CPU percent with the steppers. QuitX arms for 60 seconds after you enable the setting, then watches whole-system CPU load. Smart Rescue fires only when load stays over your limit for 15 seconds: it sends a notification and force quits inactive windowed apps only — never your frontmost app. Apps genuinely burning CPU also display a flame badge in the list. Enabling the setting never triggers an instant quit."
+                    body: "Enable Warn & rescue CPU hogs in Settings > Automation and dial in your own CPU percent with the steppers. QuitX arms for 15 seconds after you enable the setting, then watches whole-system CPU load. Smart Rescue fires only when load stays over your limit for 15 seconds: it sends a notification and force quits inactive windowed apps only — never your frontmost app. Apps genuinely burning CPU also display a flame badge in the list. Enabling the setting never triggers an instant quit."
                 ),
                 QuitXHelpSection(
                     title: "Memory pressure cleaning",
-                    body: "Enable Rescue inactive on memory pressure in Settings > General and dial in your own gigabyte limit with the stepper, capped at this Mac's total RAM. When macOS reports pressure and any app exceeds it, Smart Rescue force quits inactive apps only. Quit apps land in Recently Quit, so you can reopen anything from the gear menu."
+                    body: "Enable Rescue inactive on memory pressure in Settings > Automation and dial in your own gigabyte limit with the stepper, capped at this Mac's total RAM. When macOS reports pressure and any app exceeds it, Smart Rescue force quits inactive apps only. Quit apps land in Recently Quit, so you can reopen anything from the gear menu."
                 ),
                 QuitXHelpSection(
                     title: "Unresponsive app badges",
@@ -299,7 +299,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "General & Advanced tabs",
-                    body: "Settings > General controls startup, sounds, sleep/lock actions, menu CPU, battery saver, health warnings, sort order, and Auto Quit. Settings > Advanced manages background apps, music protection, default selection, tips, confirmations, and Finder/Trash."
+                    body: "Settings > General controls startup, sounds, menu CPU, appearance, sort order, and defaults. Settings > Automation manages sleep/lock actions, battery saver, health warnings, and Auto Quit. Settings > Advanced manages background apps, music protection, default selection, tips, confirmations, and Finder/Trash."
                 ),
                 QuitXHelpSection(
                     title: "Exclude & Shortcuts tabs",
@@ -691,7 +691,7 @@ struct HelpView: View {
 
             case "auto-quit":
                 Button("Auto Quit Settings") {
-                    SettingsWindowController.shared.show(tab: .general)
+                    SettingsWindowController.shared.show(tab: .automation)
                 }
 
             case "finder-trash":

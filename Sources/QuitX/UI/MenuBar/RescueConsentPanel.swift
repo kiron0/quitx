@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 enum RescueReason {
-    case cpu(Double)
+    case cpu(value: Double, limit: Double)
     case memory
 
     var title: String {
@@ -14,10 +14,11 @@ enum RescueReason {
 
     var detail: String {
         switch self {
-        case .cpu(let value):
+        case .cpu(let value, let limit):
             return String(
-                format: "System CPU stayed at %.0f%%. QuitX wants to quit inactive apps. Your call.",
-                value
+                format: "System CPU stayed at %.0f%% (limit %.0f%%). QuitX wants to quit inactive apps. Your call.",
+                value,
+                limit
             )
         case .memory:
             return "Memory is running out. QuitX wants to quit high-memory inactive apps. Your call."
@@ -39,9 +40,8 @@ final class RescueConsentController {
     fileprivate static let maxListedTargets = 6
 
     private var window: ArrowPopoverWindow?
-    private var resignObserver: NSObjectProtocol?
-    private var keyMonitor: Any?
     private var lastPromptDate: Date = .distantPast
+    private var frontmostAtShow: NSRunningApplication?
     private var pendingTargets: [AppInfo] = []
     private var lastPayload: (targets: [AppInfo], reason: RescueReason)?
 
@@ -80,6 +80,7 @@ final class RescueConsentController {
 
     func reopenFromNotification() {
         if isVisible {
+            NSApp.activate(ignoringOtherApps: true)
             window?.makeKeyAndOrderFront(nil)
             return
         }
@@ -94,10 +95,19 @@ final class RescueConsentController {
     private func close() {
         window?.orderOut(nil)
         pendingTargets = []
-        if let monitor = keyMonitor {
-            NSEvent.removeMonitor(monitor)
-            keyMonitor = nil
+        restoreFrontmost()
+    }
+
+    private func restoreFrontmost() {
+        guard NSApp.isActive,
+              let prev = frontmostAtShow,
+              prev != NSRunningApplication.current,
+              !prev.isTerminated else {
+            frontmostAtShow = nil
+            return
         }
+        frontmostAtShow = nil
+        prev.activate(options: [])
     }
 
     private func present(targets: [AppInfo], reason: RescueReason) {
@@ -120,13 +130,6 @@ final class RescueConsentController {
         } else {
             win = ArrowPopoverWindow()
             window = win
-            resignObserver = NotificationCenter.default.addObserver(
-                forName: NSWindow.didResignKeyNotification,
-                object: win,
-                queue: .main
-            ) { [weak self] _ in
-                Task { @MainActor in self?.close() }
-            }
         }
         win.contentView = hostView
 
@@ -147,16 +150,16 @@ final class RescueConsentController {
         }
         win.setFrame(NSRect(x: originX, y: originY, width: size.width, height: size.height), display: true)
 
-        if keyMonitor == nil {
-            keyMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
-                guard let self, event.keyCode == 53 else { return event }
-                self.cancel()
-                return nil
-            }
-        }
+        frontmostAtShow = NSWorkspace.shared.frontmostApplication
+        NSApp.activate(ignoringOtherApps: true)
 
         win.makeKeyAndOrderFront(nil)
     }
+}
+
+@MainActor
+final class ConsentButtonHover: ObservableObject {
+    @Published var hovered: String?
 }
 
 struct RescueConsentView: View {
@@ -164,6 +167,8 @@ struct RescueConsentView: View {
     let targets: [AppInfo]
     let onConfirm: () -> Void
     let onCancel: () -> Void
+
+    @StateObject private var hover = ConsentButtonHover()
 
     private var listedTargets: [AppInfo] {
         Array(targets.prefix(RescueConsentController.maxListedTargets))
@@ -239,7 +244,8 @@ struct RescueConsentView: View {
     }
 
     private func consentButton(title: String, style: ButtonStyle, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+        let isHovered = hover.hovered == title
+        return Button(action: action) {
             Text(title)
                 .font(.system(size: 11, weight: .medium))
                 .padding(.horizontal, 10)
@@ -247,10 +253,15 @@ struct RescueConsentView: View {
                 .frame(minWidth: 56)
         }
         .buttonStyle(.plain)
-        .foregroundStyle(style == .destructive ? Color.white : Color.primary)
+        .foregroundStyle(style == .destructive ? Color.white : (isHovered ? Color.primary : Color.secondary))
         .background {
             Capsule()
-                .fill(style == .destructive ? Color(red: 240/255, green: 70/255, blue: 50/255) : Color.primary.opacity(0.1))
+                .fill(
+                    style == .destructive
+                        ? Color(red: 240/255, green: 70/255, blue: 50/255).opacity(isHovered ? 1.0 : 0.88)
+                        : Color.primary.opacity(isHovered ? 0.18 : 0.1)
+                )
         }
+        .onHover { hover.hovered = $0 ? title : nil }
     }
 }

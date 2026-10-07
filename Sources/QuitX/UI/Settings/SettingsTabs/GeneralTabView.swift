@@ -96,35 +96,6 @@ fileprivate func appearanceRadio(_ title: String, selected: Bool, action: @escap
 struct GeneralTabCloneView: View {
     @EnvironmentObject private var configStore: ConfigStore
     @ObservedObject private var launchService = LaunchAtLoginService.shared
-    @StateObject private var state = GeneralTabState()
-
-    private var systemMaxGB: Int {
-        max(1, Int(ProcessInfo.processInfo.physicalMemory / 1_073_741_824))
-    }
-
-    private var minMemoryGB: Int {
-        max(1, min(systemMaxGB, Int((Double(systemMaxGB) * 0.8).rounded())))
-    }
-
-    private var cpuThreshold: Binding<Int> {
-        Binding(
-            get: { Int(configStore.config.effectiveHogCpuThreshold) },
-            set: {
-                configStore.config.hogCpuThreshold = Double(min(100, max(80, $0)))
-                configStore.save()
-            }
-        )
-    }
-
-    private var memoryGB: Binding<Int> {
-        Binding(
-            get: { min(systemMaxGB, max(minMemoryGB, (configStore.config.memoryPressureThresholdMB + 512) / 1024)) },
-            set: {
-                configStore.config.memoryPressureThresholdMB = min(systemMaxGB, max(minMemoryGB, $0)) * 1024
-                configStore.save()
-            }
-        )
-    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
@@ -142,24 +113,6 @@ struct GeneralTabCloneView: View {
                 ))
             } help: {
                 HelpPopoverButton(text: "A deeply satisfying laser sound will play when quitting apps. 👾🔫")
-            }
-
-            row(label: "Sleep & Lock:") {
-                toggle("Quit apps when Mac sleeps", isOn: Binding(
-                    get: { configStore.config.quitOnSleep },
-                    set: { configStore.config.quitOnSleep = $0; configStore.save() }
-                ))
-            } help: {
-                HelpPopoverButton(text: "Tidy up before nap time! Tucks your Mac into bed by gently closing safe apps when it nods off. 😴🌙")
-            }
-
-            row(label: "") {
-                toggle("Quit apps on screen lock", isOn: Binding(
-                    get: { configStore.config.quitOnScreenLock },
-                    set: { configStore.config.quitOnScreenLock = $0; configStore.save() }
-                ))
-            } help: {
-                HelpPopoverButton(text: "Lock and roll: walk away knowing stray apps get quietly dismissed behind you. Safe and sound. 🔒💨")
             }
 
             row(label: "Menu & Power:") {
@@ -201,7 +154,114 @@ struct GeneralTabCloneView: View {
                 HelpPopoverButton(text: "Display memory in the menu bar as gigabytes (GB) or as a percentage of total RAM (%).")
             }
 
-            row(label: "") {
+            if #available(macOS 26.0, *) {
+                row(label: "Appearance:") {
+                    HStack(spacing: 18) {
+                        appearanceRadio("Classic", selected: !configStore.config.liquidGlassEnabled) {
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                configStore.config.liquidGlassEnabled = false
+                            }
+                            SettingsWindowController.shared.applyWindowChrome()
+                            configStore.save()
+                        }
+                        appearanceRadio("Liquid Glass", selected: configStore.config.liquidGlassEnabled) {
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                configStore.config.liquidGlassEnabled = true
+                            }
+                            SettingsWindowController.shared.applyWindowChrome()
+                            configStore.save()
+                        }
+                    }
+                    .fixedSize()
+                } help: {
+                    HelpPopoverButton(text: "Choose window look: classic solid theme or macOS 26 Liquid Glass. 🔮")
+                }
+            }
+
+            row(label: "Sort:") {
+                Picker("", selection: Binding(
+                    get: { configStore.config.sortBy },
+                    set: { configStore.config.sortBy = $0; configStore.save(refreshAppList: true) }
+                )) {
+                    ForEach(QuitXConfig.SortBy.allCases, id: \.self) { sortOpt in
+                        Text(sortOpt.rawValue).tag(sortOpt)
+                    }
+                }
+                .frame(width: 175, alignment: .leading)
+                .labelsHidden()
+            } help: {
+                HelpPopoverButton(text: "Keep your apps in line: sort alphabetically, by heavy CPU hogs, or by memory gobblers. 📊🧭")
+            }
+
+            row(label: "Default:") {
+                Picker("", selection: Binding(
+                    get: { configStore.config.force == .force ? "Force quit" : "Normal quit" },
+                    set: { configStore.config.force = ($0 == "Force quit" ? .force : .normal); configStore.save(refreshAppList: true) }
+                )) {
+                    Text("Normal quit").tag("Normal quit")
+                    Text("Force quit").tag("Force quit")
+                }
+                .frame(width: 175, alignment: .leading)
+                .labelsHidden()
+            } help: {
+                HelpPopoverButton(text: "Choose how aggressive QuitX should be by default. Tip: hold ⌥ (Option) anytime to flip modes on the fly. ⚡️")
+            }
+
+            row(label: "Reset:") {
+                Button("Reset all") {
+                    SettingsResetService.shared.resetAllSettings()
+                }
+                .font(.system(size: 11.5))
+            } help: {
+                Color.clear.frame(width: 20, height: 20)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 14)
+        .padding(.bottom, 10)
+        .frame(width: 480, height: SettingsTab.general.contentHeight, alignment: .topLeading)
+        .background(QuitXTheme.paneBackground)
+    }
+}
+
+struct AutomationTabCloneView: View {
+    @EnvironmentObject private var configStore: ConfigStore
+    @StateObject private var state = GeneralTabState()
+
+    private var systemMaxGB: Int {
+        max(1, Int(ProcessInfo.processInfo.physicalMemory / 1_073_741_824))
+    }
+
+    private var minMemoryGB: Int {
+        max(1, min(systemMaxGB, Int((Double(systemMaxGB) * 0.8).rounded())))
+    }
+
+    private var cpuThreshold: Binding<Int> {
+        Binding(
+            get: { Int(configStore.config.effectiveHogCpuThreshold) },
+            set: {
+                configStore.config.hogCpuThreshold = Double(min(100, max(80, $0)))
+                configStore.save()
+            }
+        )
+    }
+
+    private var memoryGB: Binding<Int> {
+        Binding(
+            get: { min(systemMaxGB, max(minMemoryGB, (configStore.config.memoryPressureThresholdMB + 512) / 1024)) },
+            set: {
+                configStore.config.memoryPressureThresholdMB = min(systemMaxGB, max(minMemoryGB, $0)) * 1024
+                configStore.save()
+            }
+        )
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+
+            row(label: "Power:") {
                 toggle("Save power on battery", isOn: Binding(
                     get: { configStore.config.batterySaverEnabled },
                     set: { configStore.config.batterySaverEnabled = $0; configStore.save() }
@@ -210,13 +270,31 @@ struct GeneralTabCloneView: View {
                 HelpPopoverButton(text: "Sip power like fine wine! Auto-quit timers cut in half and CPU checks slow to 10s to spare your battery. 🔋🍷")
             }
 
+            row(label: "Sleep & Lock:") {
+                toggle("Quit apps when Mac sleeps", isOn: Binding(
+                    get: { configStore.config.quitOnSleep },
+                    set: { configStore.config.quitOnSleep = $0; configStore.save() }
+                ))
+            } help: {
+                HelpPopoverButton(text: "Tidy up before nap time! Tucks your Mac into bed by gently closing safe apps when it nods off. 😴🌙")
+            }
+
+            row(label: "") {
+                toggle("Quit apps on screen lock", isOn: Binding(
+                    get: { configStore.config.quitOnScreenLock },
+                    set: { configStore.config.quitOnScreenLock = $0; configStore.save() }
+                ))
+            } help: {
+                HelpPopoverButton(text: "Lock and roll: walk away knowing stray apps get quietly dismissed behind you. Safe and sound. 🔒💨")
+            }
+
             row(label: "Health:") {
                 toggle("Warn & rescue CPU hogs", isOn: Binding(
                     get: { configStore.config.hogAlertEnabled },
                     set: { configStore.config.hogAlertEnabled = $0; configStore.save() }
                 ))
             } help: {
-                HelpPopoverButton(text: "Catch runaway apps roasting your lap! Watches whole-system CPU. After you flip this on, QuitX waits 60 seconds to arm, then acts only when load stays over your limit 15 seconds. No instant ambush. Force quits inactive apps only. 🔥🍳")
+                HelpPopoverButton(text: "Catch runaway apps roasting your lap! Watches whole-system CPU. After you flip this on, QuitX waits 15 seconds to arm, then acts only when load stays over your limit 15 seconds. No instant ambush. Force quits inactive apps only. 🔥🍳")
             }
 
             row(label: "") {
@@ -317,75 +395,12 @@ struct GeneralTabCloneView: View {
                 Color.clear.frame(width: 20, height: 20)
             }
 
-            if #available(macOS 26.0, *) {
-                row(label: "Appearance:") {
-                    HStack(spacing: 18) {
-                        appearanceRadio("Classic", selected: !configStore.config.liquidGlassEnabled) {
-                            withAnimation(.easeInOut(duration: 0.25)) {
-                                configStore.config.liquidGlassEnabled = false
-                            }
-                            SettingsWindowController.shared.applyWindowChrome()
-                            configStore.save()
-                        }
-                        appearanceRadio("Liquid Glass", selected: configStore.config.liquidGlassEnabled) {
-                            withAnimation(.easeInOut(duration: 0.25)) {
-                                configStore.config.liquidGlassEnabled = true
-                            }
-                            SettingsWindowController.shared.applyWindowChrome()
-                            configStore.save()
-                        }
-                    }
-                    .fixedSize()
-                } help: {
-                    HelpPopoverButton(text: "Choose window look: classic solid theme or macOS 26 Liquid Glass. 🔮")
-                }
-            }
-
-            row(label: "Sort:") {
-                Picker("", selection: Binding(
-                    get: { configStore.config.sortBy },
-                    set: { configStore.config.sortBy = $0; configStore.save(refreshAppList: true) }
-                )) {
-                    ForEach(QuitXConfig.SortBy.allCases, id: \.self) { sortOpt in
-                        Text(sortOpt.rawValue).tag(sortOpt)
-                    }
-                }
-                .frame(width: 175, alignment: .leading)
-                .labelsHidden()
-            } help: {
-                HelpPopoverButton(text: "Keep your apps in line: sort alphabetically, by heavy CPU hogs, or by memory gobblers. 📊🧭")
-            }
-
-            row(label: "Default:") {
-                Picker("", selection: Binding(
-                    get: { configStore.config.force == .force ? "Force quit" : "Normal quit" },
-                    set: { configStore.config.force = ($0 == "Force quit" ? .force : .normal); configStore.save(refreshAppList: true) }
-                )) {
-                    Text("Normal quit").tag("Normal quit")
-                    Text("Force quit").tag("Force quit")
-                }
-                .frame(width: 175, alignment: .leading)
-                .labelsHidden()
-            } help: {
-                HelpPopoverButton(text: "Choose how aggressive QuitX should be by default. Tip: hold ⌥ (Option) anytime to flip modes on the fly. ⚡️")
-            }
-
-            row(label: "Reset:") {
-                Button("Reset all") {
-                    SettingsResetService.shared.resetAllSettings()
-                    state.syncFromMinutes(configStore.config.quitInactiveAfterMinutes)
-                }
-                .font(.system(size: 11.5))
-            } help: {
-                Color.clear.frame(width: 20, height: 20)
-            }
-
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 20)
         .padding(.top, 14)
         .padding(.bottom, 10)
-        .frame(width: 400, height: SettingsTab.general.contentHeight, alignment: .topLeading)
+        .frame(width: 480, height: SettingsTab.automation.contentHeight, alignment: .topLeading)
         .background(QuitXTheme.paneBackground)
         .onAppear {
             state.syncFromMinutes(configStore.config.quitInactiveAfterMinutes)
@@ -505,7 +520,7 @@ struct AdvancedTabCloneView: View {
         .padding(.horizontal, 20)
         .padding(.top, 14)
         .padding(.bottom, 10)
-        .frame(width: 400, height: 271, alignment: .topLeading)
+        .frame(width: 480, height: 271, alignment: .topLeading)
         .background(QuitXTheme.paneBackground)
     }
 }

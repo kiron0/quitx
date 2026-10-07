@@ -107,7 +107,7 @@ struct AboutTabCloneView: View {
         }
         .padding(.top, 16)
         .padding(.bottom, 14)
-        .frame(width: 400, height: 186, alignment: .topLeading)
+        .frame(width: 480, height: 186, alignment: .topLeading)
         .background(QuitXTheme.paneBackground)
     }
 }
