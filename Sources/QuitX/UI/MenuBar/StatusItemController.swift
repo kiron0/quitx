@@ -1,33 +1,6 @@
 import AppKit
 import SwiftUI
 
-final class MenuPopupWindow: NSPanel {
-    init(contentRect: NSRect) {
-        super.init(
-            contentRect: contentRect,
-            styleMask: [.borderless, .nonactivatingPanel],
-            backing: .buffered,
-            defer: false
-        )
-        self.isOpaque = false
-        self.backgroundColor = .clear
-        self.hasShadow = true
-        self.level = .popUpMenu
-        self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        self.isMovable = false
-        self.isMovableByWindowBackground = false
-        self.acceptsMouseMovedEvents = true
-    }
-
-    override var canBecomeKey: Bool {
-        return true
-    }
-
-    override var canBecomeMain: Bool {
-        return false
-    }
-}
-
 @MainActor
 final class StatusItemController: NSObject {
     static weak var shared: StatusItemController?
@@ -35,7 +8,7 @@ final class StatusItemController: NSObject {
 
     private var statusItem: NSStatusItem
     private var statsStatusItem: NSStatusItem?
-    private var window: MenuPopupWindow?
+    private var window: ArrowPopoverWindow?
     private var hostingController: NSHostingController<AnyView>?
     private var globalEventMonitor: Any?
     private var localEventMonitor: Any?
@@ -152,7 +125,7 @@ final class StatusItemController: NSObject {
         hosting.view.wantsLayer = true
         self.hostingController = hosting
 
-        let win = MenuPopupWindow(contentRect: NSRect(x: 0, y: 0, width: Self.popoverWidth, height: 200))
+        let win = ArrowPopoverWindow(level: .popUpMenu)
         win.contentViewController = hosting
         self.window = win
 
@@ -209,11 +182,6 @@ final class StatusItemController: NSObject {
             }
             let originY = buttonScreenRect.minY - totalHeight - 2
             frame.origin = NSPoint(x: originX, y: originY)
-
-            let arrowX = max(30, min(buttonScreenRect.midX - originX, newSize.width - 30))
-            if abs(AppListViewModel.shared.arrowX - arrowX) > 0.5 {
-                AppListViewModel.shared.arrowX = arrowX
-            }
         }
 
         frame = frame.integral

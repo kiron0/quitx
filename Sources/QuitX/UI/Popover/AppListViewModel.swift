@@ -85,7 +85,6 @@ final class AppListViewModel: ObservableObject {
     @Published private(set) var isBatchQuitting: Bool = false
     @Published var currentQuote: String = "Don't give up quitting ⚡"
     @Published var listNeedsScrolling: Bool = false
-    @Published var arrowX: CGFloat = 135
     @Published var showConfirmQuitAll: Bool = false {
         didSet {
             StatusItemController.shared?.updatePopoverSize()

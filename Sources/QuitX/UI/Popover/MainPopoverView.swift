@@ -20,7 +20,6 @@ struct MainPopoverView: View {
         endPoint: .bottom
     )
     var body: some View {
-        let containerShape = PopoverContainerShape(arrowX: vm.arrowX, cornerRadius: 14)
         VStack(spacing: 0) {
             Color.clear
                 .frame(height: 12)
@@ -60,21 +59,7 @@ struct MainPopoverView: View {
         .frame(width: 270)
         .frame(minHeight: 220)
         .frame(maxHeight: .infinity)
-        .background {
-            if LiquidGlass.enabled {
-                LiquidGlassFill(shape: containerShape)
-            } else {
-                QuitXTheme.popoverBackground.clipShape(containerShape)
-            }
-        }
-        .overlay {
-            if LiquidGlass.enabled {
-                EmptyView()
-            } else {
-                containerShape
-                    .stroke(Color.primary.opacity(0.12), lineWidth: 0.5)
-            }
-        }
+        .arrowPopoverChrome(classicBackground: AnyView(QuitXTheme.popoverBackground))
         .overlay(alignment: .bottom) {
             if vm.showToast {
                 ToastView(message: vm.toastMessage, isError: vm.toastIsError)
@@ -140,7 +125,7 @@ struct MainPopoverView: View {
         }
         .animation(.easeInOut(duration: 0.18), value: vm.showConfirmQuitAll)
         .animation(.easeInOut(duration: 0.18), value: vm.pendingIndividualAction)
-        .clipShape(containerShape)
+        .clipShape(arrowPopoverShape)
         .onChange(of: vm.filteredApps.count) {
             StatusItemController.shared?.updatePopoverSize()
         }

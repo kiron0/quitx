@@ -49,9 +49,10 @@ final class QuitService {
         }
 
         let knownPids: Set<pid_t> = Set(app.pids.isEmpty ? (app.pid.map { [$0] } ?? []) : app.pids)
+        let rootURL = Self.rootBundleURL(for: app)
 
         var helperPids: Set<pid_t> = []
-        if let bundleId = app.bundleId, let rootURL = Self.rootBundleURL(for: app) {
+        if let bundleId = app.bundleId, let rootURL {
             let prefix = bundleId + "."
             for running in NSWorkspace.shared.runningApplications {
                 guard !running.isTerminated else { continue }
@@ -83,6 +84,12 @@ final class QuitService {
                         firstError = firstError ?? "Process identity changed"
                         return
                     }
+                } else if let rootURL {
+                    let runningPath = running.bundleURL?.standardizedFileURL.path ?? ""
+                    guard running.bundleIdentifier == app.bundleId
+                        || runningPath.hasPrefix(rootURL.path + "/Contents/") else {
+                        return
+                    }
                 }
                 guard !running.isTerminated else { return }
                 let accepted = force ? running.forceTerminate() : running.terminate()
@@ -97,12 +104,15 @@ final class QuitService {
                     pendingRawPids.append((pid, force, isHelper))
                 }
             } else if Darwin.kill(pid, 0) == 0 {
-                if force {
-                    Darwin.kill(pid, SIGKILL)
-                } else {
-                    Darwin.kill(pid, SIGTERM)
+                if let rootURL, let path = Self.executablePath(pid: pid),
+                   path.hasPrefix(rootURL.path + "/") {
+                    if force {
+                        Darwin.kill(pid, SIGKILL)
+                    } else {
+                        Darwin.kill(pid, SIGTERM)
+                    }
+                    pendingRawPids.append((pid, force, isHelper))
                 }
-                pendingRawPids.append((pid, force, isHelper))
             }
         }
 
@@ -196,6 +206,13 @@ final class QuitService {
             }
         }
         return nil
+    }
+
+    private static func executablePath(pid: pid_t) -> String? {
+        var buffer = [CChar](repeating: 0, count: 4096)
+        let length = proc_pidpath(pid, &buffer, 4096)
+        guard length > 0 else { return nil }
+        return String(cString: buffer)
     }
 
     private static func runAppleScript(_ source: String, app: AppInfo, label: String) async -> QuitResult {

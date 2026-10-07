@@ -32,34 +32,13 @@ enum RescueReason {
     }
 }
 
-final class RescueConsentPanel: NSPanel {
-    init() {
-        super.init(
-            contentRect: .zero,
-            styleMask: [.borderless, .nonactivatingPanel],
-            backing: .buffered,
-            defer: false
-        )
-        isOpaque = false
-        backgroundColor = .clear
-        hasShadow = true
-        level = .statusBar
-        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        isMovable = false
-        isMovableByWindowBackground = false
-    }
-
-    override var canBecomeKey: Bool { true }
-    override var canBecomeMain: Bool { false }
-}
-
 @MainActor
 final class RescueConsentController {
     static let shared = RescueConsentController()
     nonisolated static let promptCooldown: TimeInterval = 60
-    fileprivate static let maxListedNames = 6
+    fileprivate static let maxListedTargets = 6
 
-    private var window: RescueConsentPanel?
+    private var window: ArrowPopoverWindow?
     private var resignObserver: NSObjectProtocol?
     private var keyMonitor: Any?
     private var lastPromptDate: Date = .distantPast
@@ -129,17 +108,17 @@ final class RescueConsentController {
         let hostView = NSHostingView(
             rootView: RescueConsentView(
                 reason: reason,
-                targetNames: targets.map(\.name),
+                targets: targets,
                 onConfirm: { [weak self] in self?.confirm() },
                 onCancel: { [weak self] in self?.cancel() }
             )
         )
 
-        let win: RescueConsentPanel
+        let win: ArrowPopoverWindow
         if let existing = window {
             win = existing
         } else {
-            win = RescueConsentPanel()
+            win = ArrowPopoverWindow()
             window = win
             resignObserver = NotificationCenter.default.addObserver(
                 forName: NSWindow.didResignKeyNotification,
@@ -182,26 +161,27 @@ final class RescueConsentController {
 
 struct RescueConsentView: View {
     let reason: RescueReason
-    let targetNames: [String]
+    let targets: [AppInfo]
     let onConfirm: () -> Void
     let onCancel: () -> Void
 
-    private let containerShape = RoundedRectangle(cornerRadius: 12, style: .continuous)
-
-    private var listedNames: [String] {
-        Array(targetNames.prefix(RescueConsentController.maxListedNames))
+    private var listedTargets: [AppInfo] {
+        Array(targets.prefix(RescueConsentController.maxListedTargets))
     }
 
     private var overflowCount: Int {
-        max(0, targetNames.count - RescueConsentController.maxListedNames)
+        max(0, targets.count - RescueConsentController.maxListedTargets)
     }
 
     private var confirmTitle: String {
-        targetNames.count == 1 ? "Quit 1 app" : "Quit \(targetNames.count) apps"
+        targets.count == 1 ? "Quit 1 app" : "Quit \(targets.count) apps"
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
+            Color.clear
+                .frame(height: 12)
+
             HStack(spacing: 7) {
                 Image(systemName: reason.symbolName)
                     .font(.system(size: 13, weight: .semibold))
@@ -210,56 +190,47 @@ struct RescueConsentView: View {
                     .font(.system(size: 12.5, weight: .semibold))
                     .foregroundStyle(Color.primary)
             }
+            .padding(.horizontal, 8)
 
             Text(reason.detail)
                 .font(.system(size: 11))
                 .foregroundStyle(Color.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 8)
 
-            VStack(alignment: .leading, spacing: 4) {
-                ForEach(listedNames, id: \.self) { name in
-                    HStack(spacing: 6) {
-                        Image(systemName: "app")
-                            .font(.system(size: 9))
-                            .foregroundStyle(Color.secondary)
-                        Text(name)
-                            .font(.system(size: 11))
+            VStack(alignment: .leading, spacing: 2) {
+                ForEach(listedTargets) { app in
+                    HStack(spacing: 5) {
+                        AppIconView(bundleId: app.bundleId, pid: app.pid, size: 18, cornerRadius: 3)
+                        Text(app.name)
+                            .font(.system(size: 12.5, weight: .regular))
                             .foregroundStyle(Color.primary)
                             .lineLimit(1)
+                            .truncationMode(.tail)
+                        Spacer(minLength: 4)
                     }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3.5)
                 }
                 if overflowCount > 0 {
                     Text("+\(overflowCount) more")
                         .font(.system(size: 10))
                         .foregroundStyle(Color.secondary)
+                        .padding(.horizontal, 8)
                 }
             }
-            .padding(8)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.primary.opacity(0.06))
-            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .padding(.vertical, 2)
 
             HStack(spacing: 8) {
                 Spacer()
                 consentButton(title: "Cancel", style: .neutral, action: onCancel)
                 consentButton(title: confirmTitle, style: .destructive, action: onConfirm)
             }
+            .padding(.horizontal, 8)
         }
-        .padding(14)
-        .frame(width: 280)
-        .background {
-            if LiquidGlass.enabled {
-                LiquidGlassFill(shape: containerShape)
-            } else {
-                VisualEffectBlur(material: .popover, blendingMode: .behindWindow)
-                    .clipShape(containerShape)
-            }
-        }
-        .overlay {
-            containerShape
-                .stroke(Color.primary.opacity(0.12), lineWidth: 0.5)
-        }
-        .clipShape(containerShape)
+        .padding(.bottom, 14)
+        .frame(width: StatusItemController.popoverWidth)
+        .arrowPopoverChrome()
     }
 
     private enum ButtonStyle {

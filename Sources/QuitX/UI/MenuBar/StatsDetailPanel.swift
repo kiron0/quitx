@@ -5,34 +5,11 @@ extension Notification.Name {
     static let quitxStatsSample = Notification.Name("QuitXStatsSample")
 }
 
-final class StatsDetailWindow: NSPanel {
-    init() {
-        super.init(
-            contentRect: .zero,
-            styleMask: [.borderless, .nonactivatingPanel],
-            backing: .buffered,
-            defer: false
-        )
-        isOpaque = false
-        backgroundColor = .clear
-        hasShadow = true
-        level = .statusBar
-        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        isMovable = false
-        isMovableByWindowBackground = false
-        acceptsMouseMovedEvents = true
-    }
-
-    override var canBecomeKey: Bool { true }
-    override var canBecomeMain: Bool { false }
-}
-
 @MainActor
 final class StatsDetailModel: ObservableObject {
     @Published var cpu: Double = 0
     @Published var memoryUsed: UInt64 = 0
     @Published var memoryTotal: UInt64 = ProcessInfo.processInfo.physicalMemory
-    @Published var arrowX: CGFloat = 115
 
     private var timer: Timer?
     private var sampleObserver: NSObjectProtocol?
@@ -92,7 +69,6 @@ struct StatsDetailView: View {
     }
 
     var body: some View {
-        let containerShape = PopoverContainerShape(arrowX: model.arrowX, cornerRadius: 14)
         VStack(alignment: .leading, spacing: 0) {
             Color.clear
                 .frame(height: 12)
@@ -133,23 +109,7 @@ struct StatsDetailView: View {
             .padding(16)
         }
         .frame(width: 230, alignment: .leading)
-        .background {
-            if LiquidGlass.enabled {
-                LiquidGlassFill(shape: containerShape)
-            } else {
-                VisualEffectBlur(material: .popover, blendingMode: .behindWindow)
-                    .clipShape(containerShape)
-            }
-        }
-        .overlay {
-            if LiquidGlass.enabled {
-                EmptyView()
-            } else {
-                containerShape
-                    .stroke(Color.primary.opacity(0.12), lineWidth: 0.5)
-            }
-        }
-        .clipShape(containerShape)
+        .arrowPopoverChrome()
     }
 
     private func statRow(icon: Image, title: String, value: String, detail: String) -> some View {
@@ -179,7 +139,7 @@ struct StatsDetailView: View {
 final class StatsDetailController {
     static let shared = StatsDetailController()
 
-    private var window: StatsDetailWindow?
+    private var window: ArrowPopoverWindow?
     private var model: StatsDetailModel?
     private var localMonitor: Any?
     private var resignObserver: NSObjectProtocol?
@@ -209,11 +169,11 @@ final class StatsDetailController {
 
         let hostView = NSHostingView(rootView: StatsDetailView(model: model))
 
-        let win: StatsDetailWindow
+        let win: ArrowPopoverWindow
         if let existing = window {
             win = existing
         } else {
-            win = StatsDetailWindow()
+            win = ArrowPopoverWindow()
             window = win
         }
         win.contentView = hostView
@@ -227,8 +187,6 @@ final class StatsDetailController {
             originX = max(screen.visibleFrame.minX + 4,
                           min(originX, screen.visibleFrame.maxX - size.width - 4))
         }
-        let arrowX = max(24, min(buttonScreenRect.midX - originX, size.width - 24))
-        model.arrowX = arrowX
 
         let originY = buttonScreenRect.minY - size.height - 2
         win.setFrame(NSRect(x: originX, y: originY, width: size.width, height: size.height), display: true)
