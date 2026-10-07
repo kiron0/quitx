@@ -53,10 +53,10 @@ struct WelcomeView: View {
                     configStore.save()
                 }
             ))
-            setupToggle("Deselect apps by default", isOn: Binding(
-                get: { !configStore.config.defaultSelectAll },
+            setupToggle("Select apps by default", isOn: Binding(
+                get: { configStore.config.defaultSelectAll },
                 set: {
-                    configStore.config.defaultSelectAll = !$0
+                    configStore.config.defaultSelectAll = $0
                     configStore.save(refreshAppList: true)
                     AppListViewModel.shared.applyDefaultSelection()
                 }

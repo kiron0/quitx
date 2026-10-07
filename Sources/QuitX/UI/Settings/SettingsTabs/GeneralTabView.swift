@@ -633,10 +633,10 @@ struct AdvancedTabCloneView: View {
             }
 
             row(label: "Behavior:") {
-                toggle("Deselect apps by default", isOn: Binding(
-                    get: { !configStore.config.defaultSelectAll },
+                toggle("Select apps by default", isOn: Binding(
+                    get: { configStore.config.defaultSelectAll },
                     set: {
-                        configStore.config.defaultSelectAll = !$0
+                        configStore.config.defaultSelectAll = $0
                         configStore.save()
                         AppListViewModel.shared.applyDefaultSelection()
                     }

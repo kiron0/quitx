@@ -23,6 +23,7 @@ All notable changes to QuitX macOS App will be documented in this file.
 - Capped Recently Quit history: "Reopen Recently Quit" now tracks and presents the 5 most recently quit apps (reduced from 20) for a tighter, focused menu.
 - Direct inline stepper controls: replaced static value boxes with interactive inline steppers for CPU %, memory GB thresholds, and sleep/lock time range.
 - Synchronized status bar refresh: menu bar stats monitoring aligned with live app timing (1s normal, 5s battery saver, 10s power saver).
+- Default app selection label simplified: renamed "Deselect apps by default" to "Select apps by default" across Welcome guide and Settings > Advanced with direct positive boolean binding.
 - Expanded Help documentation: updated guides for recently quit limits (up to 5), menu bar stats formatting (GB vs %), interactive detail panel, sleep & screen lock scheduling, and theme settings.
 
 ### Fixed
