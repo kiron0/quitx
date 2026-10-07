@@ -17,6 +17,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
     private var hostingController: NSHostingController<AnyView>?
     private var toolbar: NSToolbar?
     private var chromeObserver: AnyCancellable?
+    private var appliedGlass: Bool?
 
     private override init() {
         super.init()
@@ -29,19 +30,32 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
 
     private func applyWindowChrome() {
         guard let win = window else { return }
-        if LiquidGlass.enabled {
-            win.styleMask.insert(.fullSizeContentView)
+        let enabled = LiquidGlass.enabled
+        guard appliedGlass != enabled else { return }
+        appliedGlass = enabled
+        let savedFrame = win.frame
+        if enabled {
+            if !win.styleMask.contains(.fullSizeContentView) {
+                win.styleMask.insert(.fullSizeContentView)
+            }
             win.isOpaque = false
             win.backgroundColor = .clear
             let inset = win.frame.height - win.contentRect(forFrameRect: win.frame).height
-            tabModel.glassTopInset = inset > 0 ? inset : tabModel.glassTopInset
+            if inset > 0 {
+                tabModel.glassTopInset = inset
+            }
         } else {
-            win.styleMask.remove(.fullSizeContentView)
+            if win.styleMask.contains(.fullSizeContentView) {
+                win.styleMask.remove(.fullSizeContentView)
+            }
             win.isOpaque = true
             win.backgroundColor = QuitXTheme.toolbarBackgroundNSColor
             tabModel.glassTopInset = 0
         }
         win.titlebarAppearsTransparent = true
+        if win.frame != savedFrame {
+            win.setFrame(savedFrame, display: true, animate: false)
+        }
     }
 
     var isOpen: Bool { window != nil }
@@ -86,6 +100,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
             win.backgroundColor = QuitXTheme.toolbarBackgroundNSColor
             win.titlebarAppearsTransparent = true
         }
+        appliedGlass = LiquidGlass.enabled
         win.titlebarSeparatorStyle = .line
         win.isMovableByWindowBackground = false
         win.hidesOnDeactivate = false
