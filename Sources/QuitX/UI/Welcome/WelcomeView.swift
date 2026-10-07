@@ -29,9 +29,8 @@ struct WelcomeView: View {
         .frame(width: 390)
         .fixedSize(horizontal: false, vertical: true)
         .background {
-            if #available(macOS 26.0, *) {
-                Color.clear
-                    .glassEffect(.regular, in: Rectangle())
+            if LiquidGlass.enabled {
+                LiquidGlassFill(shape: Rectangle())
                     .ignoresSafeArea()
             } else {
                 QuitXTheme.windowBackground

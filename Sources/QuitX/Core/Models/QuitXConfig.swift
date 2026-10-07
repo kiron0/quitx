@@ -28,6 +28,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
     var memoryPressureThresholdMB: Int = 1024
     var batterySaverEnabled: Bool = false
     var quitTimers: [String: Double] = [:]
+    var liquidGlassEnabled: Bool = true
 
     private enum CodingKeys: String, CodingKey {
         case exclude, force, includeFinder, includeTrash, includeBackground, groupBackground
@@ -36,7 +37,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         case quitOnSleep, quitOnScreenLock, showMenuBarStats, menuBarMemoryUnit
         case hogAlertEnabled, hogCpuThreshold
         case memoryPressureQuitEnabled, memoryPressureThresholdMB, batterySaverEnabled
-        case quitTimers
+        case quitTimers, liquidGlassEnabled
     }
 
     init(
@@ -127,6 +128,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         memoryPressureThresholdMB = try container.decodeIfPresent(Int.self, forKey: .memoryPressureThresholdMB) ?? defaults.memoryPressureThresholdMB
         batterySaverEnabled = try container.decodeIfPresent(Bool.self, forKey: .batterySaverEnabled) ?? defaults.batterySaverEnabled
         quitTimers = try container.decodeIfPresent([String: Double].self, forKey: .quitTimers) ?? defaults.quitTimers
+        liquidGlassEnabled = try container.decodeIfPresent(Bool.self, forKey: .liquidGlassEnabled) ?? defaults.liquidGlassEnabled
     }
 
     var effectiveHogCpuThreshold: Double {

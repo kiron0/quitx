@@ -27,7 +27,7 @@ enum WindowAnimator {
             window.isOpaque = false
             window.backgroundColor = .clear
         } else if hasToolbar {
-            if #available(macOS 26.0, *) {
+            if LiquidGlass.enabled {
                 window.isOpaque = false
                 window.backgroundColor = .clear
             } else {

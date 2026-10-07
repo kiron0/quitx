@@ -33,9 +33,10 @@ enum QuitXTheme {
         Color(NSColor.windowBackgroundColor)
     }
 
+    @MainActor
     @ViewBuilder
     static var paneBackground: some View {
-        if #available(macOS 26.0, *) {
+        if LiquidGlass.enabled {
             Color.clear
         } else {
             Color(NSColor.windowBackgroundColor)

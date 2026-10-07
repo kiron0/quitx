@@ -61,14 +61,14 @@ struct MainPopoverView: View {
         .frame(minHeight: 220)
         .frame(maxHeight: .infinity)
         .background {
-            if #available(macOS 26.0, *) {
-                Color.clear.glassEffect(.regular, in: containerShape)
+            if LiquidGlass.enabled {
+                LiquidGlassFill(shape: containerShape)
             } else {
                 QuitXTheme.popoverBackground.clipShape(containerShape)
             }
         }
         .overlay {
-            if #available(macOS 26.0, *) {
+            if LiquidGlass.enabled {
                 EmptyView()
             } else {
                 containerShape

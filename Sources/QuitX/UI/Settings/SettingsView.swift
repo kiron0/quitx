@@ -48,7 +48,9 @@ enum SettingsTab: String, CaseIterable {
 
     var contentHeight: CGFloat {
         switch self {
-        case .general:   return 511
+        case .general:
+            if #available(macOS 26.0, *) { return 541 }
+            return 511
         case .advanced:  return 271
         case .exclude:   return 306
         case .shortcuts: return 221
@@ -119,10 +121,16 @@ struct SettingsContainerView: View {
             }
         }
         .frame(width: 400, height: tabModel.activeTab.contentHeight, alignment: .top)
+        .overlay(alignment: .top) {
+            if LiquidGlass.enabled {
+                Color.primary.opacity(0.12)
+                    .frame(height: 0.5)
+            }
+        }
         .background {
-            if #available(macOS 26.0, *) {
+            if LiquidGlass.enabled {
                 ZStack(alignment: .top) {
-                    Color.clear.glassEffect(.regular, in: Rectangle())
+                    LiquidGlassFill(shape: Rectangle())
                     if tabModel.glassTopInset > 0 {
                         QuitXTheme.cardBackground
                             .frame(height: tabModel.glassTopInset)

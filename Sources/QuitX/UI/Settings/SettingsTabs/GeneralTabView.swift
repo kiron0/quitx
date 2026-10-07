@@ -69,6 +69,30 @@ fileprivate func toggle(_ title: String, isOn: Binding<Bool>) -> some View {
     .buttonStyle(.plain)
 }
 
+fileprivate func appearanceRadio(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
+    Button(action: action) {
+        HStack(spacing: 6) {
+            ZStack {
+                Circle()
+                    .strokeBorder(
+                        selected ? Color.accentColor : Color.secondary.opacity(0.5),
+                        lineWidth: 1.5
+                    )
+                    .frame(width: 14, height: 14)
+                if selected {
+                    Circle()
+                        .fill(Color.accentColor)
+                        .frame(width: 7, height: 7)
+                }
+            }
+            Text(title)
+                .font(.system(size: 12, weight: .regular))
+                .foregroundStyle(Color.primary)
+        }
+    }
+    .buttonStyle(.plain)
+}
+
 struct GeneralTabCloneView: View {
     @EnvironmentObject private var configStore: ConfigStore
     @ObservedObject private var launchService = LaunchAtLoginService.shared
@@ -293,6 +317,24 @@ struct GeneralTabCloneView: View {
                 Color.clear.frame(width: 20, height: 20)
             }
 
+            if #available(macOS 26.0, *) {
+                row(label: "Appearance:") {
+                    HStack(spacing: 18) {
+                        appearanceRadio("Classic", selected: !configStore.config.liquidGlassEnabled) {
+                            configStore.config.liquidGlassEnabled = false
+                            configStore.save()
+                        }
+                        appearanceRadio("Liquid Glass", selected: configStore.config.liquidGlassEnabled) {
+                            configStore.config.liquidGlassEnabled = true
+                            configStore.save()
+                        }
+                    }
+                    .fixedSize()
+                } help: {
+                    HelpPopoverButton(text: "Choose window look: classic solid theme or macOS 26 Liquid Glass. 🔮")
+                }
+            }
+
             row(label: "Sort:") {
                 Picker("", selection: Binding(
                     get: { configStore.config.sortBy },
@@ -337,7 +379,7 @@ struct GeneralTabCloneView: View {
         .padding(.horizontal, 20)
         .padding(.top, 14)
         .padding(.bottom, 10)
-        .frame(width: 400, height: 511, alignment: .topLeading)
+        .frame(width: 400, height: SettingsTab.general.contentHeight, alignment: .topLeading)
         .background(QuitXTheme.paneBackground)
         .onAppear {
             state.syncFromMinutes(configStore.config.quitInactiveAfterMinutes)

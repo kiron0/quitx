@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SwiftUI
 
 private final class SettingsWindow: NSWindow {
@@ -15,6 +16,33 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
     private let tabModel = SettingsTabViewModel()
     private var hostingController: NSHostingController<AnyView>?
     private var toolbar: NSToolbar?
+    private var chromeObserver: AnyCancellable?
+
+    private override init() {
+        super.init()
+        chromeObserver = ConfigStore.shared.$config
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                Task { @MainActor in self?.applyWindowChrome() }
+            }
+    }
+
+    private func applyWindowChrome() {
+        guard let win = window else { return }
+        if LiquidGlass.enabled {
+            win.styleMask.insert(.fullSizeContentView)
+            win.isOpaque = false
+            win.backgroundColor = .clear
+            let inset = win.frame.height - win.contentRect(forFrameRect: win.frame).height
+            tabModel.glassTopInset = inset > 0 ? inset : tabModel.glassTopInset
+        } else {
+            win.styleMask.remove(.fullSizeContentView)
+            win.isOpaque = true
+            win.backgroundColor = QuitXTheme.toolbarBackgroundNSColor
+            tabModel.glassTopInset = 0
+        }
+        win.titlebarAppearsTransparent = true
+    }
 
     var isOpen: Bool { window != nil }
 
@@ -47,12 +75,13 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
             defer: false
         )
         win.title = targetTab.rawValue
-        if #available(macOS 26.0, *) {
+        if LiquidGlass.enabled {
             win.styleMask.insert(.fullSizeContentView)
             win.isOpaque = false
             win.backgroundColor = .clear
             win.titlebarAppearsTransparent = true
         } else {
+            win.styleMask.remove(.fullSizeContentView)
             win.isOpaque = true
             win.backgroundColor = QuitXTheme.toolbarBackgroundNSColor
             win.titlebarAppearsTransparent = true
@@ -93,7 +122,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         }
         WindowAnimator.present(win, targetFrame: targetFrame)
 
-        if #available(macOS 26.0, *) {
+        if LiquidGlass.enabled {
             let inset = win.frame.height - win.contentRect(forFrameRect: win.frame).height
             if inset > 0 {
                 tabModel.glassTopInset = inset

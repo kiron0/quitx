@@ -402,10 +402,17 @@ final class StatusItemController: NSObject {
             button.toolTip = "QuitX monitor — click for details"
         }
         button.imagePosition = .imageLeading
+        let cpu = SystemUsage.cpuPercent()
+        let memoryUsed = SystemUsage.memoryUsedBytes()
         button.attributedTitle = Self.statsTitle(
-            cpu: SystemUsage.cpuPercent(),
-            memoryUsed: SystemUsage.memoryUsedBytes(),
+            cpu: cpu,
+            memoryUsed: memoryUsed,
             unit: cfg.menuBarMemoryUnit
+        )
+        NotificationCenter.default.post(
+            name: .quitxStatsSample,
+            object: nil,
+            userInfo: ["cpu": cpu, "mem": memoryUsed]
         )
     }
 

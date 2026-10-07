@@ -254,6 +254,21 @@ struct QuitXConfigTests {
         #expect(decoded == cfg)
     }
 
+    @Test("liquidGlassEnabled defaults on and decodes")
+    func testLiquidGlassEnabled() throws {
+        #expect(QuitXConfig.default.liquidGlassEnabled == true)
+
+        let empty = "{}".data(using: .utf8)!
+        let decodedEmpty = try JSONDecoder().decode(QuitXConfig.self, from: empty)
+        #expect(decodedEmpty.liquidGlassEnabled == true)
+
+        var cfg = QuitXConfig.default
+        cfg.liquidGlassEnabled = false
+        let data = try JSONEncoder().encode(cfg)
+        let decoded = try JSONDecoder().decode(QuitXConfig.self, from: data)
+        #expect(decoded.liquidGlassEnabled == false)
+    }
+
     @Test("SortBy decode from cpu string variants")
     func testSortByDecodeCpu() throws {
         for str in ["High to Low CPU %", "cpu", "cpuDesc"] {

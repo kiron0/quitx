@@ -1,6 +1,10 @@
 import AppKit
 import SwiftUI
 
+extension Notification.Name {
+    static let quitxStatsSample = Notification.Name("QuitXStatsSample")
+}
+
 final class StatsDetailWindow: NSPanel {
     init() {
         super.init(
@@ -31,20 +35,40 @@ final class StatsDetailModel: ObservableObject {
     @Published var arrowX: CGFloat = 115
 
     private var timer: Timer?
+    private var sampleObserver: NSObjectProtocol?
 
     func start() {
+        stop()
         tick()
-        guard timer == nil else { return }
-        let timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.tick() }
+        if ConfigStore.shared.config.showMenuBarStats {
+            sampleObserver = NotificationCenter.default.addObserver(
+                forName: .quitxStatsSample,
+                object: nil,
+                queue: .main
+            ) { [weak self] note in
+                guard let cpu = note.userInfo?["cpu"] as? Double,
+                      let mem = note.userInfo?["mem"] as? UInt64 else { return }
+                Task { @MainActor in
+                    self?.cpu = cpu
+                    self?.memoryUsed = mem
+                }
+            }
+        } else {
+            let timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+                Task { @MainActor in self?.tick() }
+            }
+            RunLoop.main.add(timer, forMode: .common)
+            self.timer = timer
         }
-        RunLoop.main.add(timer, forMode: .common)
-        self.timer = timer
     }
 
     func stop() {
         timer?.invalidate()
         timer = nil
+        if let sampleObserver {
+            NotificationCenter.default.removeObserver(sampleObserver)
+            self.sampleObserver = nil
+        }
     }
 
     private func tick() {
@@ -110,15 +134,15 @@ struct StatsDetailView: View {
         }
         .frame(width: 230, alignment: .leading)
         .background {
-            if #available(macOS 26.0, *) {
-                Color.clear.glassEffect(.regular, in: containerShape)
+            if LiquidGlass.enabled {
+                LiquidGlassFill(shape: containerShape)
             } else {
                 VisualEffectBlur(material: .popover, blendingMode: .behindWindow)
                     .clipShape(containerShape)
             }
         }
         .overlay {
-            if #available(macOS 26.0, *) {
+            if LiquidGlass.enabled {
                 EmptyView()
             } else {
                 containerShape
@@ -157,8 +181,8 @@ final class StatsDetailController {
 
     private var window: StatsDetailWindow?
     private var model: StatsDetailModel?
-    private var outsideMonitor: Any?
     private var localMonitor: Any?
+    private var resignObserver: NSObjectProtocol?
     private var lastCloseTimestamp: Date = .distantPast
 
     private init() {}
@@ -210,6 +234,16 @@ final class StatsDetailController {
         win.setFrame(NSRect(x: originX, y: originY, width: size.width, height: size.height), display: true)
         win.invalidateShadow()
 
+        if resignObserver == nil {
+            resignObserver = NotificationCenter.default.addObserver(
+                forName: NSWindow.didResignKeyNotification,
+                object: win,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in self?.close() }
+            }
+        }
+
         model.start()
         win.makeKeyAndOrderFront(nil)
         installMonitors()
@@ -224,54 +258,17 @@ final class StatsDetailController {
     }
 
     private func installMonitors() {
-        guard outsideMonitor == nil else { return }
-        outsideMonitor = NSEvent.addGlobalMonitorForEvents(
-            matching: [.leftMouseDown, .rightMouseDown]
-        ) { [weak self] _ in
-            guard let self, self.isVisible else { return }
-            if let button = StatusItemController.shared?.statsButton,
-               let buttonWindow = button.window {
-                let mouseLoc = NSEvent.mouseLocation
-                let buttonScreenRect = buttonWindow.convertToScreen(button.bounds)
-                if buttonScreenRect.contains(mouseLoc) {
-                    return
-                }
-            }
-            Task { @MainActor in
-                self.close()
-            }
-        }
+        guard localMonitor == nil else { return }
         localMonitor = NSEvent.addLocalMonitorForEvents(
-            matching: [.leftMouseDown, .rightMouseDown, .keyDown]
+            matching: [.keyDown]
         ) { [weak self] event in
-            guard let self, self.isVisible else { return event }
-            if event.type == .keyDown {
-                if event.keyCode == 53 {
-                    self.close()
-                    return nil
-                }
-                return event
-            }
-            let mouseLoc = NSEvent.mouseLocation
-            if let win = self.window, !win.frame.contains(mouseLoc) {
-                if let button = StatusItemController.shared?.statsButton,
-                   let buttonWindow = button.window {
-                    let buttonScreenRect = buttonWindow.convertToScreen(button.bounds)
-                    if buttonScreenRect.contains(mouseLoc) {
-                        return event
-                    }
-                }
-                self.close()
-            }
-            return event
+            guard let self, self.isVisible, event.keyCode == 53 else { return event }
+            self.close()
+            return nil
         }
     }
 
     private func removeMonitors() {
-        if let monitor = outsideMonitor {
-            NSEvent.removeMonitor(monitor)
-            outsideMonitor = nil
-        }
         if let monitor = localMonitor {
             NSEvent.removeMonitor(monitor)
             localMonitor = nil

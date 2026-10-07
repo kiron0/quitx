@@ -354,9 +354,8 @@ struct ExcludeAppPickerView: View {
         }
         .frame(minWidth: 500, maxWidth: .infinity, minHeight: 520, maxHeight: .infinity)
         .background {
-            if #available(macOS 26.0, *) {
-                Color.clear
-                    .glassEffect(.regular, in: Rectangle())
+            if LiquidGlass.enabled {
+                LiquidGlassFill(shape: Rectangle())
                     .ignoresSafeArea()
             } else {
                 QuitXTheme.windowBackground
