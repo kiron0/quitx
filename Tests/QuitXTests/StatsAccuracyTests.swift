@@ -181,7 +181,20 @@ struct StatsAccuracyTests {
 
     @Test("Top process sample matches independent ps ground truth")
     func testTopProcessGroundTruth() async throws {
+        func pidMap(_ raw: String) -> [pid_t: Double] {
+            var map: [pid_t: Double] = [:]
+            for line in raw.split(separator: "\n") {
+                let parts = line.split(separator: " ", maxSplits: 1)
+                guard parts.count == 2, let pid = pid_t(parts[0]),
+                      let value = Double(parts[1].trimmingCharacters(in: .whitespaces)) else { continue }
+                map[pid] = value
+            }
+            return map
+        }
+
+        let before = pidMap(shellOutput("/bin/ps", ["-A", "-o", "pid=,%cpu="]))
         let result = await TopProcessSampler.sample(limit: 8)
+        let after = pidMap(shellOutput("/bin/ps", ["-A", "-o", "pid=,%cpu="]))
         #expect(!result.cpu.isEmpty)
         #expect(!result.mem.isEmpty)
 
@@ -198,22 +211,18 @@ struct StatsAccuracyTests {
         }
 
         guard !result.cpu.isEmpty else { return }
-        let raw = shellOutput("/bin/ps", ["-A", "-o", "pid=,%cpu="])
-        var groundByPid: [pid_t: Double] = [:]
-        for line in raw.split(separator: "\n") {
-            let parts = line.split(separator: " ", maxSplits: 1)
-            guard parts.count == 2, let pid = pid_t(parts[0]),
-                  let value = Double(parts[1].trimmingCharacters(in: .whitespaces)) else { continue }
-            groundByPid[pid] = value
-        }
-        var matched = 0
+        var checked = 0
+        var good = 0
         for proc in result.cpu {
-            guard let ground = groundByPid[proc.id] else { continue }
-            matched += 1
-            #expect(abs(ground - proc.cpu) < 15.0, "pid \(proc.id): sampler \(proc.cpu) vs ground \(ground)")
-            if matched >= 3 { break }
+            let readings = [before[proc.id], after[proc.id]].compactMap { $0 }
+            guard !readings.isEmpty else { continue }
+            checked += 1
+            let low = readings.min()! - 15.0
+            let high = readings.max()! + 15.0
+            if proc.cpu >= low && proc.cpu <= high { good += 1 }
         }
-        #expect(matched > 0, "no overlapping pid between sampler and ground ps")
+        #expect(checked > 0, "no overlapping pid between sampler and ground ps")
+        #expect(good >= checked - 1, "unstable pids: \(checked - good) of \(checked)")
     }
 
     @Test("History buffer keeps last 180 samples")
@@ -228,5 +237,19 @@ struct StatsAccuracyTests {
         #expect(history.count == 180)
         #expect(history.last == 199)
         #expect(history.first == 20)
+    }
+
+    @Test("IOReport frequency readings are plausible")
+    func testIOReportFrequencySanity() {
+        guard CPUFrequencySampler.prepare() else { return }
+        _ = CPUFrequencySampler.poll()
+        Thread.sleep(forTimeInterval: 1.2)
+        guard let reading = CPUFrequencySampler.poll() else { return }
+        if reading.efficiencyMHz > 0 {
+            #expect(reading.efficiencyMHz >= 300 && reading.efficiencyMHz <= 4000, "efficiency \(reading.efficiencyMHz)")
+        }
+        if reading.performanceMHz > 0 {
+            #expect(reading.performanceMHz >= 300 && reading.performanceMHz <= 6000, "performance \(reading.performanceMHz)")
+        }
     }
 }

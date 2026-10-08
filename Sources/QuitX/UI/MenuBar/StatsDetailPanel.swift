@@ -77,6 +77,9 @@ final class StatsDetailModel: ObservableObject {
         freqAllMHz = freqs.allMHz
         freqEfficiencyMHz = freqs.efficiencyMHz
         freqPerformanceMHz = freqs.performanceMHz
+        if freqAllMHz == 0, freqEfficiencyMHz == 0, freqPerformanceMHz == 0 {
+            _ = CPUFrequencySampler.prepare()
+        }
         tick()
         let timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.tick() }
@@ -116,6 +119,11 @@ final class StatsDetailModel: ObservableObject {
         load5 = load.1
         load15 = load.2
         uptime = SystemUsage.uptimeDescription()
+
+        if let reading = CPUFrequencySampler.poll() {
+            if reading.efficiencyMHz > 0 { freqEfficiencyMHz = reading.efficiencyMHz }
+            if reading.performanceMHz > 0 { freqPerformanceMHz = reading.performanceMHz }
+        }
 
         if let breakdown = SystemUsage.memoryBreakdown() {
             memTotal = breakdown.total
