@@ -203,12 +203,26 @@ enum SystemUsage {
             guard sysctlbyname(name, &value, &len, nil, 0) == 0 else { return nil }
             return Int(value)
         }
-        if let efficiency = sysctlInt("hw.perflevel0.logicalcpu"),
-           let performance = sysctlInt("hw.perflevel1.logicalcpu"),
-           efficiency > 0, performance > 0, efficiency + performance >= total {
-            return CoreCounts(efficiency: efficiency, performance: performance, total: total)
+        if let level0 = sysctlInt("hw.perflevel0.logicalcpu"),
+           let level1 = sysctlInt("hw.perflevel1.logicalcpu"),
+           level0 > 0, level1 > 0, level0 + level1 >= total {
+            let level0Name = sysctlString("hw.perflevel0.name")
+            if level0Name == "Performance" {
+                return CoreCounts(efficiency: level1, performance: level0, total: total)
+            }
+            if level0Name == "Efficiency" {
+                return CoreCounts(efficiency: level0, performance: level1, total: total)
+            }
+            return CoreCounts(efficiency: level0, performance: level1, total: total)
         }
         return CoreCounts(efficiency: 0, performance: 0, total: total)
+    }
+
+    private static func sysctlString(_ name: String) -> String? {
+        var buffer = [CChar](repeating: 0, count: 64)
+        var len = 64
+        guard sysctlbyname(name, &buffer, &len, nil, 0) == 0, len > 0 else { return nil }
+        return String(cString: buffer)
     }
 
     static func frequenciesMHz() -> Frequencies {
@@ -218,10 +232,16 @@ enum SystemUsage {
             guard sysctlbyname(name, &value, &len, nil, 0) == 0, value > 0 else { return 0 }
             return Int(value / 1_000_000)
         }
+        var efficiencyKey = "hw.perflevel0.cpufrequency"
+        var performanceKey = "hw.perflevel1.cpufrequency"
+        if sysctlString("hw.perflevel0.name") == "Performance" {
+            efficiencyKey = "hw.perflevel1.cpufrequency"
+            performanceKey = "hw.perflevel0.cpufrequency"
+        }
         return Frequencies(
             allMHz: sysctlHz("hw.cpufrequency"),
-            efficiencyMHz: sysctlHz("hw.perflevel0.cpufrequency"),
-            performanceMHz: sysctlHz("hw.perflevel1.cpufrequency")
+            efficiencyMHz: sysctlHz(efficiencyKey),
+            performanceMHz: sysctlHz(performanceKey)
         )
     }
 

@@ -215,7 +215,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Stats detail panel",
-                    body: "Click the menu bar stats item to open a liquid glass detail panel showing live CPU load and memory usage (used out of total physical RAM). Click the stats item again, click anywhere outside, or press Esc to dismiss it."
+                    body: "Click the menu bar stats item to open a liquid glass detail panel showing live CPU load and memory usage (used out of total unified memory). Click the stats item again, click anywhere outside, or press Esc to dismiss it."
                 ),
                 QuitXHelpSection(
                     title: "Battery saver mode",
@@ -240,7 +240,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Memory pressure cleaning",
-                    body: "Enable Rescue inactive on memory pressure in Settings > Automation and dial in your own gigabyte limit with the stepper, capped at this Mac's total RAM. When macOS reports pressure and any app exceeds it, Smart Rescue force quits inactive apps only. Quit apps land in Recently Quit, so you can reopen anything from the gear menu."
+                    body: "Enable Rescue inactive on memory pressure in Settings > Automation and dial in your own gigabyte limit with the stepper, capped at this Mac's total memory. When macOS reports pressure and any app exceeds it, Smart Rescue force quits inactive apps only. Quit apps land in Recently Quit, so you can reopen anything from the gear menu."
                 ),
                 QuitXHelpSection(
                     title: "Unresponsive app badges",

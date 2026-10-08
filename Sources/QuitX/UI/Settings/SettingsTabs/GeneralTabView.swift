@@ -171,7 +171,7 @@ struct GeneralTabCloneView: View {
                 .disabled(!configStore.config.showMenuBarStats)
                 .opacity(configStore.config.showMenuBarStats ? 1.0 : 0.42)
             } help: {
-                HelpPopoverButton(text: "Gigabytes for raw numbers or percentages for drama! Pick how your RAM flexes in the menu bar. 🏋️‍♂️📈")
+                HelpPopoverButton(text: "Gigabytes for raw numbers or percentages for drama! Pick how your memory flexes in the menu bar. 🏋️‍♂️📈")
             }
 
             if #available(macOS 26.0, *) {
@@ -403,7 +403,7 @@ struct AutomationTabCloneView: View {
                     set: { configStore.config.memoryPressureQuitEnabled = $0; configStore.save() }
                 ))
             } help: {
-                HelpPopoverButton(text: "When RAM runs dry past your memory limit, QuitX force quits inactive apps only — never the one you're using. Change your mind? Reopen from the gear menu. 🧠🚪")
+                HelpPopoverButton(text: "When memory runs dry past your limit, QuitX force quits inactive apps only — never the one you're using. Change your mind? Reopen from the gear menu. 🧠🚪")
             }
 
             row(label: "") {
@@ -427,7 +427,7 @@ struct AutomationTabCloneView: View {
                 .disabled(!configStore.config.memoryPressureQuitEnabled)
                 .opacity(configStore.config.memoryPressureQuitEnabled ? 1.0 : 0.42)
             } help: {
-                HelpPopoverButton(text: "RAM lifeguard on duty! When memory gets swampy past your limit, inactive freeloaders get shown the door. 🏊‍♂️🛟")
+                HelpPopoverButton(text: "Memory lifeguard on duty! When memory gets swampy past your limit, inactive freeloaders get shown the door. 🏊‍♂️🛟")
             }
 
             let isAutoQuitEnabled = configStore.config.quitInactiveAfterMinutes > 0

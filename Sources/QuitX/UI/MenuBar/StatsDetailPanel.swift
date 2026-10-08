@@ -6,7 +6,7 @@ import SwiftUI
 final class StatsDetailModel: ObservableObject {
     enum Mode: String, CaseIterable {
         case cpu = "CPU"
-        case ram = "RAM"
+        case memory = "Memory"
     }
 
     @Published var mode: Mode = .cpu
@@ -501,12 +501,14 @@ struct StatsDetailView: View {
                     .foregroundStyle(isSelected ? Color.primary : Color.secondary)
                     .frame(maxWidth: .infinity)
                     .frame(height: 22)
+                    .contentShape(Rectangle())
                     .background(
                         RoundedRectangle(cornerRadius: 5)
                             .fill(isSelected ? Color.primary.opacity(0.12) : Color.clear)
                     )
                 }
                 .buttonStyle(.plain)
+                .contentShape(Rectangle())
             }
         }
         .padding(2)
@@ -531,8 +533,8 @@ struct StatsDetailView: View {
                     switch model.mode {
                     case .cpu:
                         cpuContent
-                    case .ram:
-                        ramContent
+                    case .memory:
+                        memoryContent
                     }
                 }
                 .padding(.horizontal, 10)
@@ -683,7 +685,7 @@ struct StatsDetailView: View {
         }
     }
 
-    private var ramContent: some View {
+    private var memoryContent: some View {
         let usedFraction = model.memTotal > 0 ? Double(model.memUsed) / Double(model.memTotal) : 0
         return VStack(alignment: .leading, spacing: 10) {
             card {

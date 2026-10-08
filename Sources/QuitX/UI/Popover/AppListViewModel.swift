@@ -177,7 +177,7 @@ final class AppListViewModel: ObservableObject {
         "Quitters are winners 🏆",
         "Time to quit(all) 🤘",
         "A fresh start without a restart ⚡",
-        "Clear your mind and your RAM 🧠",
+        "Clear your mind and your memory 🧠",
         "Less noise, more speed 🚀"
     ]
 
