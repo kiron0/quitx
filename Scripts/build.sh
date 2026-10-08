@@ -28,13 +28,7 @@ cp "$ROOT_DIR"/Support/Sounds/*.aiff "$RESOURCES_DIR"/ 2>/dev/null || true
 cp "$ROOT_DIR/Support/Assets.car" "$RESOURCES_DIR"/ 2>/dev/null || true
 /usr/libexec/PlistBuddy -c "Set :CFBundleIconFile AppIcon" "$CONTENTS/Info.plist" 2>/dev/null || true
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$CONTENTS/Info.plist" 2>/dev/null || true
-if [[ -n "${DEVELOPER_ID_APPLICATION:-}" ]]; then
-    echo "▶ Signing with Developer ID: $DEVELOPER_ID_APPLICATION"
-    codesign --force --deep --options runtime --sign "$DEVELOPER_ID_APPLICATION" "$APP_DIR"
-else
-    echo "▶ Signing ad-hoc (set DEVELOPER_ID_APPLICATION for release signing)"
-    codesign --force --deep --sign - "$APP_DIR"
-fi
+codesign --force --deep --sign - "$APP_DIR"
 echo "✅ $APP_NAME.app ready: $APP_DIR"
 
 if [[ "${1:-}" == "--run" ]]; then
