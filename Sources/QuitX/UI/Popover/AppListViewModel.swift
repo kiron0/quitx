@@ -82,6 +82,8 @@ final class AppListViewModel: ObservableObject {
     @Published var showToast: Bool = false
     @Published private(set) var toastMessage: String = ""
     @Published private(set) var toastIsError: Bool = false
+    @Published private(set) var toastActionTitle: String?
+    private var toastAction: (@MainActor () -> Void)?
     @Published private(set) var pendingAppIds: Set<String> = []
     @Published private(set) var isBatchQuitting: Bool = false
     @Published var currentQuote: String = "Don't give up quitting ⚡"
@@ -94,6 +96,12 @@ final class AppListViewModel: ObservableObject {
     }
     @Published var isConfirmQuitAllForced: Bool = false
     private var pendingQuitAllTargets: [AppInfo]?
+    var confirmationTargetCount: Int {
+        pendingQuitAllTargets?.count ?? selectedVisibleCount
+    }
+    var confirmationTargetsAreAllVisible: Bool {
+        pendingQuitAllTargets == nil && isAllSelected
+    }
     @Published var pendingIndividualAction: IndividualAction? = nil {
         didSet {
             StatusItemController.shared?.updatePopoverSize()
@@ -402,7 +410,14 @@ final class AppListViewModel: ObservableObject {
         if succeeded {
             triggerToast(message: "\(app.name) quit", isError: false)
         } else if !force {
-            triggerToast(message: "\(app.name) is still open — ⌥ to force quit", isError: true)
+            triggerToast(
+                message: "\(app.name) is still open",
+                isError: true,
+                actionTitle: "Force Quit",
+                action: { [weak self] in
+                    self?.requestQuitSingle(app: app, force: true)
+                }
+            )
         } else {
             triggerToast(message: "Couldn’t quit \(app.name)", isError: true)
         }
@@ -482,10 +497,22 @@ final class AppListViewModel: ObservableObject {
             let noun = successfulIds.count == 1 ? "app" : "apps"
             triggerToast(message: "\(successfulIds.count) \(noun) quit", isError: false)
         } else {
-            triggerToast(
-                message: "\(successfulIds.count) quit, \(failureCount) failed",
-                isError: true
-            )
+            let failedTargets = results.filter { !$0.success }.map(\.app)
+            if force {
+                triggerToast(
+                    message: "\(successfulIds.count) quit, \(failureCount) failed",
+                    isError: true
+                )
+            } else {
+                triggerToast(
+                    message: "\(successfulIds.count) quit, \(failureCount) still open",
+                    isError: true,
+                    actionTitle: "Force Quit",
+                    action: { [weak self] in
+                        self?.requestForceQuit(failedTargets)
+                    }
+                )
+            }
         }
     }
 
@@ -500,19 +527,49 @@ final class AppListViewModel: ObservableObject {
         }
     }
 
-    private func triggerToast(message: String, isError: Bool) {
+    func performToastAction() {
+        guard let action = toastAction else { return }
+        toastTask?.cancel()
+        showToast = false
+        toastActionTitle = nil
+        toastAction = nil
+        action()
+    }
+
+    private func requestForceQuit(_ targets: [AppInfo]) {
+        guard !targets.isEmpty else { return }
+        if targets.count == 1 {
+            requestQuitSingle(app: targets[0], force: true)
+        } else if configStore.config.confirmQuitAll {
+            selected = Set(targets.map(\.id))
+            requestConfirmQuitAll(targets: targets, force: true)
+        } else {
+            Task { await performQuit(targets: targets, force: true) }
+        }
+    }
+
+    private func triggerToast(
+        message: String,
+        isError: Bool,
+        actionTitle: String? = nil,
+        action: (@MainActor () -> Void)? = nil
+    ) {
         toastTask?.cancel()
         toastMessage = message
         toastIsError = isError
+        toastActionTitle = actionTitle
+        toastAction = action
         showToast = true
         toastTask = Task { @MainActor [weak self] in
             do {
-                try await Task.sleep(nanoseconds: 2_000_000_000)
+                try await Task.sleep(nanoseconds: action == nil ? 2_000_000_000 : 6_000_000_000)
             } catch {
                 return
             }
             guard !Task.isCancelled else { return }
             self?.showToast = false
+            self?.toastActionTitle = nil
+            self?.toastAction = nil
         }
     }
 }

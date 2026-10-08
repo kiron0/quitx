@@ -62,7 +62,12 @@ struct MainPopoverView: View {
         .arrowPopoverChrome(arrowX: vm.popoverArrowX, classicBackground: AnyView(QuitXTheme.popoverBackground))
         .overlay(alignment: .bottom) {
             if vm.showToast {
-                ToastView(message: vm.toastMessage, isError: vm.toastIsError)
+                ToastView(
+                    message: vm.toastMessage,
+                    isError: vm.toastIsError,
+                    actionTitle: vm.toastActionTitle,
+                    action: { vm.performToastAction() }
+                )
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .padding(.bottom, 36)
             }
@@ -71,8 +76,8 @@ struct MainPopoverView: View {
         .overlay {
             if vm.showConfirmQuitAll {
                 QuitConfirmationOverlay(
-                    count: vm.selectedVisibleCount,
-                    isAll: vm.isAllSelected,
+                    count: vm.confirmationTargetCount,
+                    isAll: vm.confirmationTargetsAreAllVisible,
                     isForced: vm.isConfirmQuitAllForced,
                     onConfirm: {
                         vm.confirmQuitAllAction()
@@ -421,4 +426,3 @@ struct MainPopoverView: View {
         return menu
     }
 }
-

@@ -386,11 +386,6 @@ final class StatusItemController: NSObject {
             memoryUsed: memoryUsed,
             unit: cfg.menuBarMemoryUnit
         )
-        NotificationCenter.default.post(
-            name: .quitxStatsSample,
-            object: nil,
-            userInfo: ["cpu": cpu, "mem": memoryUsed]
-        )
     }
 
     private func removeStatsItem() {
