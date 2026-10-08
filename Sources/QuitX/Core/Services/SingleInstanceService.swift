@@ -53,7 +53,7 @@ final class SingleInstanceService {
 
     private func handleNewInstance(_ application: NSRunningApplication) async {
         let current = NSRunningApplication.current
-        guard !application.isTerminated,
+        guard Self.isRunning(application),
               application.processIdentifier != current.processIdentifier,
               Self.isQuitX(application) else { return }
 
@@ -66,14 +66,18 @@ final class SingleInstanceService {
     }
 
     private func matchingApplications() -> [NSRunningApplication] {
-        NSWorkspace.shared.runningApplications.filter { !$0.isTerminated && Self.isQuitX($0) }
+        NSWorkspace.shared.runningApplications.filter { Self.isRunning($0) && Self.isQuitX($0) }
     }
 
     private static func isQuitX(_ application: NSRunningApplication) -> Bool {
         if application.processIdentifier == ProcessInfo.processInfo.processIdentifier { return true }
-        guard !application.isTerminated else { return false }
+        guard isRunning(application) else { return false }
         guard let bundleIdentifier = application.bundleIdentifier else { return false }
         return QuitXIdentity.supportedBundleIdentifiers.contains(bundleIdentifier)
+    }
+
+    private static func isRunning(_ application: NSRunningApplication) -> Bool {
+        !application.isTerminated && QuitService.processIsRunning(application.processIdentifier)
     }
 
     private func preferred(_ lhs: NSRunningApplication, over rhs: NSRunningApplication) -> Bool {
@@ -104,28 +108,31 @@ final class SingleInstanceService {
     private func terminate(_ applications: [NSRunningApplication]) async {
         guard !applications.isEmpty else { return }
 
-        for application in applications where !application.isTerminated {
+        for application in applications where Self.isRunning(application) {
             _ = application.terminate()
         }
 
         await waitForTermination(applications, timeout: 3)
 
-        let remaining = applications.filter { !$0.isTerminated }
+        let remaining = applications.filter(Self.isRunning)
         for application in remaining {
             _ = application.forceTerminate()
-            Darwin.kill(application.processIdentifier, SIGKILL)
+            let pid = application.processIdentifier
+            if QuitService.processIsRunning(pid) {
+                Darwin.kill(pid, SIGKILL)
+            }
         }
 
         await waitForTermination(remaining, timeout: 2)
 
-        for application in remaining where !application.isTerminated {
+        for application in remaining where Self.isRunning(application) {
             NSLog("Could not terminate older QuitX instance with PID %d", application.processIdentifier)
         }
     }
 
     private func waitForTermination(_ applications: [NSRunningApplication], timeout: TimeInterval) async {
         let deadline = Date().addingTimeInterval(timeout)
-        while applications.contains(where: { !$0.isTerminated }), Date() < deadline {
+        while applications.contains(where: Self.isRunning), Date() < deadline {
             try? await Task.sleep(nanoseconds: 100_000_000)
         }
     }

@@ -51,6 +51,7 @@ final class StatsDetailModel: ObservableObject {
 
     private var timer: Timer?
     private var sampleGeneration = 0
+    private var topProcessTask: Task<Void, Never>?
     private var sampleFailureToastShown = false
     private var toastTask: Task<Void, Never>?
     private static let historyLimit = 180
@@ -92,10 +93,11 @@ final class StatsDetailModel: ObservableObject {
         timer?.invalidate()
         timer = nil
         sampleGeneration += 1
+        topProcessTask?.cancel()
+        topProcessTask = nil
     }
 
     private func tick() {
-        sampleGeneration += 1
         let generation = sampleGeneration
 
         let detail = SystemUsage.cpuDetail(consumer: "statsPanel")
@@ -141,9 +143,16 @@ final class StatsDetailModel: ObservableObject {
             appendHistory(&memHistory, value: Double(memUsed) / Double(memTotal) * 100)
         }
 
-        Task { [weak self] in
+        guard topProcessTask == nil else { return }
+        topProcessTask = Task { [weak self] in
             let top = await TopProcessSampler.sample()
-            guard let self, !Task.isCancelled, self.sampleGeneration == generation else { return }
+            guard let self else { return }
+            defer {
+                if self.sampleGeneration == generation {
+                    self.topProcessTask = nil
+                }
+            }
+            guard !Task.isCancelled, self.sampleGeneration == generation else { return }
             self.cpuTop = top.cpu
             self.memTop = top.mem
             if top.cpu.isEmpty, top.mem.isEmpty, !self.sampleFailureToastShown {

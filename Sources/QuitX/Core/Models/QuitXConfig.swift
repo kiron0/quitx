@@ -65,6 +65,9 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         perAppQuitRules: [String: Int] = [:],
         quitOnSleep: Bool = false,
         quitOnScreenLock: Bool = false,
+        sleepLockStartMinutes: Int = 0,
+        sleepLockEndMinutes: Int = 360,
+        sleepLockUse24Hour: Bool = true,
         showMenuBarStats: Bool = false,
         menuBarStatStyle: MenuBarStatStyle = .icon,
         menuBarMemoryUnit: MenuBarMemoryUnit = .gb,
@@ -73,7 +76,8 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         memoryPressureQuitEnabled: Bool = false,
         memoryPressureThresholdMB: Int = 1024,
         batterySaverEnabled: Bool = false,
-        quitTimers: [String: Double] = [:]
+        quitTimers: [String: Double] = [:],
+        liquidGlassEnabled: Bool = true
     ) {
         self.exclude = exclude
         self.force = force
@@ -94,6 +98,9 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         self.perAppQuitRules = perAppQuitRules
         self.quitOnSleep = quitOnSleep
         self.quitOnScreenLock = quitOnScreenLock
+        self.sleepLockStartMinutes = min(1439, max(0, sleepLockStartMinutes))
+        self.sleepLockEndMinutes = min(1439, max(0, sleepLockEndMinutes))
+        self.sleepLockUse24Hour = sleepLockUse24Hour
         self.showMenuBarStats = showMenuBarStats
         self.menuBarStatStyle = menuBarStatStyle
         self.menuBarMemoryUnit = menuBarMemoryUnit
@@ -103,6 +110,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         self.memoryPressureThresholdMB = memoryPressureThresholdMB
         self.batterySaverEnabled = batterySaverEnabled
         self.quitTimers = quitTimers
+        self.liquidGlassEnabled = liquidGlassEnabled
     }
 
     init(from decoder: Decoder) throws {

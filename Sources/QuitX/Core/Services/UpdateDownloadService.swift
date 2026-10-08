@@ -96,6 +96,7 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         downloadSpeed = ""
         lastSpeedTime = nil
         lastSpeedBytes = 0
+        lastPublishedProgress = -1
         state = .downloading(progress: 0.0, bytesDownloaded: 0, totalBytes: 0, speed: "")
 
         let configuration = URLSessionConfiguration.default
@@ -138,8 +139,13 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         currentEdSignature = nil
     }
 
-    private func finishSession() {
-        session?.finishTasksAndInvalidate()
+    private func isActive(session: URLSession, task: URLSessionTask) -> Bool {
+        self.session === session && self.downloadTask === task
+    }
+
+    private func finishSession(_ completedSession: URLSession, task: URLSessionTask) {
+        guard isActive(session: completedSession, task: task) else { return }
+        completedSession.finishTasksAndInvalidate()
         session = nil
         downloadTask = nil
     }
@@ -535,15 +541,25 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         )
     }
 
-    fileprivate func handleDownloadFinished(persistentDMG: URL) async {
+    fileprivate func handleDownloadFinished(
+        persistentDMG: URL,
+        session completedSession: URLSession,
+        task completedTask: URLSessionTask
+    ) async {
+        guard isActive(session: completedSession, task: completedTask) else {
+            try? FileManager.default.removeItem(at: persistentDMG.deletingLastPathComponent())
+            return
+        }
         let version = targetVersion
-        defer { finishSession() }
+        let digest = currentDigest
+        let edSignature = currentEdSignature
+        defer { finishSession(completedSession, task: completedTask) }
 
         do {
-            guard let digest = currentDigest, !digest.isEmpty else {
+            guard let digest, !digest.isEmpty else {
                 throw UpdateError.missingDigest
             }
-            guard let edSignature = currentEdSignature, !edSignature.isEmpty else {
+            guard let edSignature, !edSignature.isEmpty else {
                 throw UpdateError.missingSignature
             }
 
@@ -553,7 +569,7 @@ final class UpdateDownloadService: NSObject, ObservableObject {
                 try Self.verifyEdSignature(of: dmgURL, signatureBase64: edSignature)
             }.value
 
-            guard state != .idle else {
+            guard isActive(session: completedSession, task: completedTask) else {
                 try? FileManager.default.removeItem(at: persistentDMG.deletingLastPathComponent())
                 return
             }
@@ -562,8 +578,8 @@ final class UpdateDownloadService: NSObject, ObservableObject {
             let stagedURL = try await extractAppFromDMG(dmgURL: persistentDMG)
             stagedDirURL = stagedURL.deletingLastPathComponent()
 
-            guard state != .idle else {
-                clearStagedDirectory()
+            guard isActive(session: completedSession, task: completedTask) else {
+                try? FileManager.default.removeItem(at: stagedURL.deletingLastPathComponent())
                 return
             }
 
@@ -572,21 +588,26 @@ final class UpdateDownloadService: NSObject, ObservableObject {
                 try Self.validateUpdateBundle(at: stagedURL, expectedVersion: expectedVersion)
             }.value
 
-            guard state != .idle else {
-                clearStagedDirectory()
+            guard isActive(session: completedSession, task: completedTask) else {
+                try? FileManager.default.removeItem(at: stagedURL.deletingLastPathComponent())
                 return
             }
 
             state = .ready(stagedURL: stagedURL, version: version)
         } catch {
+            guard isActive(session: completedSession, task: completedTask) else {
+                try? FileManager.default.removeItem(at: persistentDMG.deletingLastPathComponent())
+                return
+            }
             clearStagedDirectory()
             try? FileManager.default.removeItem(at: persistentDMG.deletingLastPathComponent())
             state = .failed(message: error.localizedDescription)
         }
     }
 
-    fileprivate func handleDownloadFailed(error: Error) {
-        finishSession()
+    fileprivate func handleDownloadFailed(error: Error, session failedSession: URLSession, task failedTask: URLSessionTask) {
+        guard isActive(session: failedSession, task: failedTask) else { return }
+        finishSession(failedSession, task: failedTask)
         if let urlError = error as? URLError, urlError.code == .cancelled {
             state = .idle
             return
@@ -604,6 +625,7 @@ extension UpdateDownloadService: URLSessionDownloadDelegate {
         totalBytesExpectedToWrite: Int64
     ) {
         Task { @MainActor in
+            guard self.isActive(session: session, task: downloadTask) else { return }
             self.handleProgress(
                 bytesWritten: bytesWritten,
                 totalWritten: totalBytesWritten,
@@ -626,10 +648,16 @@ extension UpdateDownloadService: URLSessionDownloadDelegate {
             try FileManager.default.moveItem(at: location, to: persistentDMG)
 
             Task { @MainActor in
-                await self.handleDownloadFinished(persistentDMG: persistentDMG)
+                await self.handleDownloadFinished(
+                    persistentDMG: persistentDMG,
+                    session: session,
+                    task: downloadTask
+                )
             }
         } catch {
             Task { @MainActor in
+                guard self.isActive(session: session, task: downloadTask) else { return }
+                self.finishSession(session, task: downloadTask)
                 self.state = .failed(message: "Failed to process downloaded file: \(error.localizedDescription)")
             }
         }
@@ -638,7 +666,7 @@ extension UpdateDownloadService: URLSessionDownloadDelegate {
     nonisolated func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         if let error = error {
             Task { @MainActor in
-                self.handleDownloadFailed(error: error)
+                self.handleDownloadFailed(error: error, session: session, task: task)
             }
         }
     }

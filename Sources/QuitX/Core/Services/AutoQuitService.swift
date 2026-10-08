@@ -1,5 +1,4 @@
 import AppKit
-import Darwin
 
 @MainActor
 final class AutoQuitService {
@@ -14,7 +13,8 @@ final class AutoQuitService {
         guard timer == nil else { return }
 
         let now = Date()
-        for app in NSWorkspace.shared.runningApplications where app.activationPolicy == .regular {
+        for app in NSWorkspace.shared.runningApplications
+        where app.activationPolicy == .regular && QuitService.processIsRunning(app.processIdentifier) {
             lastActiveTimestamps[app.processIdentifier] = now
         }
 
@@ -22,6 +22,18 @@ final class AutoQuitService {
             self,
             selector: #selector(appDidActivate(_:)),
             name: NSWorkspace.didActivateApplicationNotification,
+            object: nil
+        )
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(appDidLaunch(_:)),
+            name: NSWorkspace.didLaunchApplicationNotification,
+            object: nil
+        )
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(appDidTerminate(_:)),
+            name: NSWorkspace.didTerminateApplicationNotification,
             object: nil
         )
 
@@ -37,11 +49,7 @@ final class AutoQuitService {
     func stopTracking() {
         timer?.invalidate()
         timer = nil
-        NSWorkspace.shared.notificationCenter.removeObserver(
-            self,
-            name: NSWorkspace.didActivateApplicationNotification,
-            object: nil
-        )
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
         lastActiveTimestamps.removeAll()
         quittingPids.removeAll()
     }
@@ -53,7 +61,20 @@ final class AutoQuitService {
 
     @objc private func appDidActivate(_ notification: Notification) {
         guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else { return }
-        lastActiveTimestamps[app.processIdentifier] = Date()
+        let pid = app.processIdentifier
+        guard QuitService.processIsRunning(pid) else { return }
+        lastActiveTimestamps[pid] = Date()
+    }
+
+    @objc private func appDidLaunch(_ notification: Notification) {
+        appDidActivate(notification)
+    }
+
+    @objc private func appDidTerminate(_ notification: Notification) {
+        guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else { return }
+        let pid = app.processIdentifier
+        lastActiveTimestamps.removeValue(forKey: pid)
+        quittingPids.remove(pid)
     }
 
     private var cachedExcludeList: [String] = []
@@ -69,7 +90,9 @@ final class AutoQuitService {
     private func checkInactiveApps() async {
         let config = ConfigStore.shared.config
 
-        let running = NSWorkspace.shared.runningApplications
+        let running = NSWorkspace.shared.runningApplications.filter {
+            QuitService.processIsRunning($0.processIdentifier)
+        }
         let runningPids = Set(running.map(\.processIdentifier))
         lastActiveTimestamps = lastActiveTimestamps.filter { runningPids.contains($0.key) }
         quittingPids = quittingPids.intersection(runningPids)
@@ -83,7 +106,7 @@ final class AutoQuitService {
         let protectedMusicApps = config.musicApps.map { $0.lowercased() }
         let frontmostPid = NSWorkspace.shared.frontmostApplication?.processIdentifier
 
-        var appsToQuit: [NSRunningApplication] = []
+        var appsToQuit: [AppInfo] = []
 
         for app in running {
             guard app.activationPolicy == .regular else { continue }
@@ -135,27 +158,27 @@ final class AutoQuitService {
                 continue
             }
 
-            appsToQuit.append(app)
+            appsToQuit.append(AppInfo(
+                name: app.localizedName ?? app.bundleURL?.deletingPathExtension().lastPathComponent ?? "Unknown",
+                bundleId: app.bundleIdentifier,
+                pid: pid,
+                isBackground: false
+            ))
         }
 
         guard !appsToQuit.isEmpty else { return }
 
         for app in appsToQuit {
-            quittingPids.insert(app.processIdentifier)
-            app.terminate()
+            if let pid = app.pid { quittingPids.insert(pid) }
         }
-
-        let pollNs: UInt64 = 100_000_000
-        for _ in 0..<20 {
-            if appsToQuit.allSatisfy(\.isTerminated) { break }
-            try? await Task.sleep(nanoseconds: pollNs)
-        }
-
+        let results = await QuitService.shared.quit(apps: appsToQuit, force: false)
         let afterQuit = Date()
+        let successful = results.filter(\.success).map(\.app)
+        RecentlyQuitService.shared.record(apps: successful)
 
-        for app in appsToQuit {
-            let pid = app.processIdentifier
-            if app.isTerminated {
+        for result in results {
+            guard let pid = result.app.pid else { continue }
+            if result.success {
                 lastActiveTimestamps.removeValue(forKey: pid)
             } else {
                 lastActiveTimestamps[pid] = afterQuit

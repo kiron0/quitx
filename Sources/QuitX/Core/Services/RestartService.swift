@@ -13,12 +13,12 @@ final class RestartService {
         let results = await QuitService.shared.quit(apps: [app], force: force)
         guard results.first?.success == true else { return false }
 
-        if let pid = app.pid, let runningApp = NSRunningApplication(processIdentifier: pid) {
+        if let pid = app.pid, QuitService.processIsRunning(pid) {
             let deadline = Date().addingTimeInterval(2.0)
-            while !runningApp.isTerminated, Date() < deadline, !Task.isCancelled {
+            while QuitService.processIsRunning(pid), Date() < deadline, !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 50_000_000)
             }
-            guard runningApp.isTerminated else { return false }
+            guard !QuitService.processIsRunning(pid) else { return false }
         } else {
             try? await Task.sleep(nanoseconds: 200_000_000)
         }

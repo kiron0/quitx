@@ -74,9 +74,16 @@ final class UpdateChecker: ObservableObject {
 
             let release = try JSONDecoder().decode(GatekeeperRelease.self, from: data)
             let latestVersionRaw = release.version.trimmingCharacters(in: CharacterSet(charactersIn: "vV "))
-            let downloadURL = URL(string: release.downloadUrl)
+            let downloadURL = Self.secureDownloadURL(from: release.downloadUrl)
 
             if isVersion(latestVersionRaw, greaterThan: currentVersion) {
+                guard let downloadURL else {
+                    handleError(
+                        message: "Update metadata contains an invalid or insecure download URL.",
+                        isUserInitiated: isUserInitiated
+                    )
+                    return
+                }
                 guard let digest = release.digest, !digest.isEmpty else {
                     handleError(
                         message: "Update metadata is missing its checksum digest.",
@@ -108,6 +115,13 @@ final class UpdateChecker: ObservableObject {
 
     func isVersion(_ v1: String, greaterThan v2: String) -> Bool {
         VersionComparator.isGreaterThan(v1, v2)
+    }
+
+    nonisolated static func secureDownloadURL(from value: String) -> URL? {
+        guard let url = URL(string: value),
+              url.scheme?.lowercased() == "https",
+              url.host != nil else { return nil }
+        return url
     }
 
     private func handleUpdateAvailable(latestVersion: String, downloadURL: URL?, digest: String?, edSignature: String?, isUserInitiated: Bool) {

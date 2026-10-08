@@ -35,6 +35,14 @@ struct AppUpdateTests {
         #expect(release.edSignature?.isEmpty == false)
     }
 
+    @Test("Update download URLs require HTTPS and a host")
+    func testSecureDownloadURLValidation() {
+        #expect(UpdateChecker.secureDownloadURL(from: "https://updates.example.com/QuitX.dmg") != nil)
+        #expect(UpdateChecker.secureDownloadURL(from: "http://updates.example.com/QuitX.dmg") == nil)
+        #expect(UpdateChecker.secureDownloadURL(from: "file:///tmp/QuitX.dmg") == nil)
+        #expect(UpdateChecker.secureDownloadURL(from: "not a URL") == nil)
+    }
+
     @Test("Relaunch Script Generation Syntax and Safety")
     func testRelaunchScriptGeneration() {
         let script = UpdateDownloadService.generateRelaunchScript()
