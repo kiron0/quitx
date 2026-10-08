@@ -54,6 +54,15 @@ fileprivate func row<Content: View, Help: View>(
     .frame(height: 25)
 }
 
+fileprivate func row<Content: View>(
+    label: String,
+    @ViewBuilder content: () -> Content
+) -> some View {
+    row(label: label, content: content) {
+        EmptyView()
+    }
+}
+
 fileprivate func toggle(_ title: String, isOn: Binding<Bool>) -> some View {
     Button {
         isOn.wrappedValue.toggle()
@@ -150,8 +159,6 @@ struct GeneralTabCloneView: View {
                 }
                 .disabled(!configStore.config.showMenuBarStats)
                 .opacity(configStore.config.showMenuBarStats ? 1.0 : 0.42)
-            } help: {
-                HelpPopoverButton(text: "Symbols or letters? Flaunt tiny sleek icons or spell it out loud with CPU and MEM tags. 🏷️✨")
             }
 
             row(label: "") {
@@ -176,8 +183,6 @@ struct GeneralTabCloneView: View {
                 }
                 .disabled(!configStore.config.showMenuBarStats)
                 .opacity(configStore.config.showMenuBarStats ? 1.0 : 0.42)
-            } help: {
-                HelpPopoverButton(text: "Gigabytes for raw numbers or percentages for drama! Pick how your memory flexes in the menu bar. 🏋️‍♂️📈")
             }
 
             if #available(macOS 26.0, *) {
@@ -336,8 +341,6 @@ struct AutomationTabCloneView: View {
                 }
                 .disabled(!subsOn)
                 .opacity(subsOn ? 1.0 : 0.42)
-            } help: {
-                HelpPopoverButton(text: "Military precision or morning-coffee casual? Pick 24-hour or 12-hour AM/PM dials for your sleep schedule. ⏰☕️")
             }
 
             row(label: "") {
@@ -351,8 +354,6 @@ struct AutomationTabCloneView: View {
                 }
                 .disabled(!subsOn)
                 .opacity(subsOn ? 1.0 : 0.42)
-            } help: {
-                HelpPopoverButton(text: "Bedtime curfew begins! Unattended apps take a hike starting from this hour. 🌜🛌")
             }
 
             row(label: "") {
@@ -366,8 +367,6 @@ struct AutomationTabCloneView: View {
                 }
                 .disabled(!subsOn)
                 .opacity(subsOn ? 1.0 : 0.42)
-            } help: {
-                HelpPopoverButton(text: "Morning call! Night patrol clocks out and your day resumes without automated quits. ☀️☕️")
             }
 
             row(label: "Health:") {
@@ -399,8 +398,6 @@ struct AutomationTabCloneView: View {
                 }
                 .disabled(!configStore.config.hogAlertEnabled)
                 .opacity(configStore.config.hogAlertEnabled ? 1.0 : 0.42)
-            } help: {
-                HelpPopoverButton(text: "Set the panic meter! If whole-system CPU cooks past this mark for 15 solid seconds, inactive culprits get escorted out. 🚨🍳")
             }
 
             row(label: "") {
@@ -432,8 +429,6 @@ struct AutomationTabCloneView: View {
                 }
                 .disabled(!configStore.config.memoryPressureQuitEnabled)
                 .opacity(configStore.config.memoryPressureQuitEnabled ? 1.0 : 0.42)
-            } help: {
-                HelpPopoverButton(text: "Memory lifeguard on duty! When memory gets swampy past your limit, inactive freeloaders get shown the door. 🏊‍♂️🛟")
             }
 
             let isAutoQuitEnabled = configStore.config.quitInactiveAfterMinutes > 0
@@ -473,8 +468,6 @@ struct AutomationTabCloneView: View {
                 }
                 .disabled(!isAutoQuitEnabled)
                 .opacity(isAutoQuitEnabled ? 1.0 : 0.42)
-            } help: {
-                HelpPopoverButton(text: "The patience dial! How long an unused app gets to loiter before QuitX gently gives it the boot. ⏳👋")
             }
 
             Spacer(minLength: 0)
@@ -625,8 +618,6 @@ struct AdvancedTabCloneView: View {
                     get: { configStore.config.groupBackground },
                     set: { configStore.config.groupBackground = $0; configStore.save(refreshAppList: true) }
                 ))
-            } help: {
-                HelpPopoverButton(text: "Herd the digital clones! Bundles duplicate processes of the same app into a single neat row instead of an army. 👯‍♂️📦")
             }
 
             row(label: "Protection:") {
