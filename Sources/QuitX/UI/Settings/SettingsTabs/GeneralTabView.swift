@@ -151,7 +151,7 @@ struct GeneralTabCloneView: View {
                 .disabled(!configStore.config.showMenuBarStats)
                 .opacity(configStore.config.showMenuBarStats ? 1.0 : 0.42)
             } help: {
-                HelpPopoverButton(text: "Choose whether CPU & memory display with icons or text labels in the menu bar. 🏷️")
+                HelpPopoverButton(text: "Symbols or letters? Flaunt tiny sleek icons or spell it out loud with CPU and MEM tags. 🏷️✨")
             }
 
             row(label: "") {
@@ -200,7 +200,7 @@ struct GeneralTabCloneView: View {
                     }
                     .fixedSize()
                 } help: {
-                    HelpPopoverButton(text: "Choose window look: classic solid theme or macOS 26 Liquid Glass. 🔮")
+                    HelpPopoverButton(text: "Classic retro solidity or futuristic translucent Liquid Glass drip. Dress your windows for success. 🔮🪞")
                 }
             }
 
@@ -450,7 +450,7 @@ struct AutomationTabCloneView: View {
                     }
                 ))
             } help: {
-                HelpPopoverButton(text: "Keep things running in ship-shape by setting an automatic Quit for inactive apps. 🛳")
+                HelpPopoverButton(text: "Ghostbusters for idle apps! Automatically boots dormant apps into the sunset when you wander away. 👻👋")
             }
 
             row(label: "") {
@@ -626,7 +626,7 @@ struct AdvancedTabCloneView: View {
                     set: { configStore.config.groupBackground = $0; configStore.save(refreshAppList: true) }
                 ))
             } help: {
-                HelpPopoverButton(text: "Check this box to group multiple instances of the same background app into a single line item. Leave it unchecked to give each app instance its own line. 👨‍👨‍👦‍👦 -> 👨👨👨👨")
+                HelpPopoverButton(text: "Herd the digital clones! Bundles duplicate processes of the same app into a single neat row instead of an army. 👯‍♂️📦")
             }
 
             row(label: "Protection:") {
