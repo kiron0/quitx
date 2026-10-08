@@ -51,7 +51,6 @@ final class SleepService {
     static let shared = SleepService()
 
     private var sleepObserver: NSObjectProtocol?
-    private var lockObserver: NSObjectProtocol?
 
     private init() {}
 
@@ -63,16 +62,7 @@ final class SleepService {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
-                await self?.handleTrigger(enabled: ConfigStore.shared.config.quitOnSleep)
-            }
-        }
-        lockObserver = DistributedNotificationCenter.default().addObserver(
-            forName: NSNotification.Name("com.apple.screenIsLocked"),
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                await self?.handleTrigger(enabled: ConfigStore.shared.config.quitOnScreenLock)
+                await self?.handleTrigger()
             }
         }
     }
@@ -82,14 +72,10 @@ final class SleepService {
             NSWorkspace.shared.notificationCenter.removeObserver(sleepObserver)
             self.sleepObserver = nil
         }
-        if let lockObserver {
-            DistributedNotificationCenter.default().removeObserver(lockObserver)
-            self.lockObserver = nil
-        }
     }
 
-    private func handleTrigger(enabled: Bool) async {
-        guard enabled else { return }
+    private func handleTrigger() async {
+        guard ConfigStore.shared.config.quitOnSleep else { return }
         let config = ConfigStore.shared.config
         if !SleepLockRange.active(
             now: Date(),
@@ -103,7 +89,7 @@ final class SleepService {
         var assertionID = IOPMAssertionID(0)
         let assertionProps = [
             kIOPMAssertionTypeKey: kIOPMAssertionTypePreventUserIdleSystemSleep,
-            kIOPMAssertionNameKey: "QuitX quitting apps on sleep or lock"
+            kIOPMAssertionNameKey: "QuitX quitting apps on sleep"
         ] as CFDictionary
         let assertOK = IOPMAssertionCreateWithProperties(assertionProps, &assertionID) == kIOReturnSuccess
         defer {

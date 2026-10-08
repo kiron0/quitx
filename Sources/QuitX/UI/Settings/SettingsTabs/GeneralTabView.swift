@@ -296,15 +296,15 @@ struct AutomationTabCloneView: View {
                 HelpPopoverButton(text: "Sip power like fine wine! Auto-quit timers cut in half and CPU checks slow to 10s to spare your battery. 🔋🍷")
             }
 
-            let sleepLockOn = configStore.config.quitOnSleep || configStore.config.quitOnScreenLock
-            row(label: "Sleep & Lock:") {
-                toggle("Quit apps when Mac sleeps or locks", isOn: Binding(
-                    get: { sleepLockOn },
-                    set: { both in
-                        let wasOn = configStore.config.quitOnSleep || configStore.config.quitOnScreenLock
-                        configStore.config.quitOnSleep = both
-                        configStore.config.quitOnScreenLock = both
-                        if both && !wasOn {
+            let sleepOn = configStore.config.quitOnSleep
+            row(label: "Sleep:") {
+                toggle("Quit apps when Mac sleeps", isOn: Binding(
+                    get: { configStore.config.quitOnSleep },
+                    set: { enabled in
+                        let wasOn = configStore.config.quitOnSleep
+                        configStore.config.quitOnSleep = enabled
+                        configStore.config.quitOnScreenLock = false
+                        if enabled && !wasOn {
                             configStore.config.sleepLockStartMinutes = 0
                             configStore.config.sleepLockEndMinutes = 360
                         }
@@ -312,10 +312,10 @@ struct AutomationTabCloneView: View {
                     }
                 ))
             } help: {
-                HelpPopoverButton(text: "Night-shift janitor for your Mac! Only kicks apps out between your sleep hours (defaults 12 AM to 6 AM). Sneak naps during the day guilt-free. 🌙😴")
+                HelpPopoverButton(text: "Night-shift janitor for your Mac! Only kicks apps out when your Mac sleeps between scheduled hours (defaults 12 AM to 6 AM). Sneak naps during the day guilt-free. 🌙😴")
             }
 
-            let subsOn = sleepLockOn
+            let subsOn = sleepOn
             row(label: "") {
                 HStack(spacing: 6) {
                     Text("Time format")

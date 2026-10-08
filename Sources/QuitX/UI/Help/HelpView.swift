@@ -197,8 +197,8 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                     body: "Open the three-dot menu on any app row, choose Auto-quit, then pick a timeout or Never. A per-app rule overrides the global interval. Use Default returns the app to the global setting."
                 ),
                 QuitXHelpSection(
-                    title: "Sleep and screen lock",
-                    body: "Settings > Automation offers unattended quitting: automatically and gracefully terminate safe apps when your Mac sleeps or when you lock the screen. Configure your custom active hours with start and end time pickers (default 12 AM to 6 AM), and toggle between 12-hour AM/PM and 24-hour display formats. Outside the range, sleep or lock leaves apps running."
+                    title: "Sleep quit schedule",
+                    body: "Settings > Automation offers unattended quitting: automatically and gracefully terminate safe apps when your Mac sleeps. Configure your custom active hours with start and end time pickers (default 12 AM to 6 AM), and toggle between 12-hour AM/PM and 24-hour display formats. Outside the range, sleep leaves apps running."
                 )
             ]
         ),
@@ -303,7 +303,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "General & Advanced tabs",
-                    body: "Settings > General controls startup, sounds, menu bar CPU/memory display, macOS 26 Liquid Glass vs Classic appearance theme, sort order, and defaults. Settings > Automation manages sleep/lock scheduling, battery saver, health rescue thresholds, and Auto Quit. Settings > Advanced manages background apps, music protection, default selection, tips, confirmations, and Finder/Trash."
+                    body: "Settings > General controls startup, sounds, menu bar CPU/memory display, macOS 26 Liquid Glass vs Classic appearance theme, sort order, and defaults. Settings > Automation manages sleep scheduling, battery saver, health rescue thresholds, and Auto Quit. Settings > Advanced manages background apps, music protection, default selection, tips, confirmations, and Finder/Trash."
                 ),
                 QuitXHelpSection(
                     title: "Exclude & Shortcuts tabs",
