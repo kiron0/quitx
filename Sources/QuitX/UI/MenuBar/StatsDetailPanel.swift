@@ -462,6 +462,7 @@ private struct ProcessList: View {
 
 struct StatsDetailView: View {
     @ObservedObject var model: StatsDetailModel
+    @ObservedObject private var configStore: ConfigStore = ConfigStore.shared
 
     private let panelWidth: CGFloat = 270
     private let headerHeight: CGFloat = 47

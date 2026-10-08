@@ -188,6 +188,7 @@ struct RescueConsentView: View {
     var arrowX: CGFloat? = nil
 
     @StateObject private var hover = ConsentButtonHover()
+    @ObservedObject private var configStore: ConfigStore = ConfigStore.shared
 
     private var listedTargets: [AppInfo] {
         Array(targets.prefix(RescueConsentController.maxListedTargets))
