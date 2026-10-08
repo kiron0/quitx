@@ -4,7 +4,7 @@ import SwiftUI
 
 private final class SettingsWindow: NSWindow {
     override func animationResizeTime(_ newFrame: NSRect) -> TimeInterval {
-        0.18
+        0
     }
 }
 
@@ -66,6 +66,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         let targetTab = tab ?? .general
 
         if let win = window {
+            dismissTooltips(for: win)
             if let tab = tab {
                 switchToTab(tab)
             }
@@ -145,10 +146,16 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         }
     }
 
+    private func targetHeight(for win: NSWindow, tab: SettingsTab) -> CGFloat {
+        let chromeHeight = win.frame.height - win.contentLayoutRect.height
+        let effectiveChrome = chromeHeight > 0 ? chromeHeight : 88
+        return tab.contentHeight + effectiveChrome
+    }
+
     private func targetFrameFor(_ win: NSWindow, tab: SettingsTab, screen: NSScreen) -> NSRect {
-        let contentRect = NSRect(x: 0, y: 0, width: 480, height: tab.contentHeight)
-        let frameRect = win.frameRect(forContentRect: contentRect)
-        return WindowPositioner.topBiasedFrame(for: frameRect.size, on: screen)
+        let height = targetHeight(for: win, tab: tab)
+        let size = NSSize(width: 480, height: height)
+        return WindowPositioner.topBiasedFrame(for: size, on: screen)
     }
 
     func windowWillClose(_ notification: Notification) {
@@ -158,8 +165,25 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
         WindowActivationCoordinator.update()
     }
 
+    private func dismissTooltips(for win: NSWindow) {
+        NotificationCenter.default.post(name: QuitXConstants.Notifications.dismissSettingsTooltips, object: nil)
+        for child in win.childWindows ?? [] {
+            if "\(type(of: child))".contains("Popover") || child.className.contains("Popover") {
+                child.orderOut(nil)
+                win.removeChildWindow(child)
+            }
+        }
+        for w in NSApp.windows where w.parent === win {
+            if "\(type(of: w))".contains("Popover") || w.className.contains("Popover") {
+                w.orderOut(nil)
+                win.removeChildWindow(w)
+            }
+        }
+    }
+
     func switchToTab(_ tab: SettingsTab) {
         guard let win = window else { return }
+        dismissTooltips(for: win)
         if activeTab == tab { return }
         activeTab = tab
 
@@ -172,13 +196,10 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
             tabModel.activeTab = tab
         }
 
-        let targetContentRect = NSRect(x: 0, y: 0, width: 480, height: tab.contentHeight)
-        let targetFrameRect = win.frameRect(forContentRect: targetContentRect)
-        let targetHeight = targetFrameRect.height
-
         let currentFrame = win.frame
-        let newY = currentFrame.maxY - targetHeight
-        let newFrame = NSRect(x: currentFrame.origin.x, y: newY, width: 480, height: targetHeight)
+        let height = targetHeight(for: win, tab: tab)
+        let newY = currentFrame.maxY - height
+        let newFrame = NSRect(x: currentFrame.origin.x, y: newY, width: 480, height: height)
 
         win.setFrame(newFrame, display: true, animate: false)
     }
@@ -209,6 +230,9 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
 
     @objc private func toolbarItemClicked(_ sender: NSToolbarItem) {
         guard let tab = SettingsTab(rawValue: sender.itemIdentifier.rawValue) else { return }
+        if let win = window {
+            dismissTooltips(for: win)
+        }
         switchToTab(tab)
     }
 }

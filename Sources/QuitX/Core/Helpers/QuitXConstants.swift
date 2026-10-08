@@ -17,6 +17,7 @@ enum QuitXConstants {
         static let showSettings = Notification.Name("io.coreify.quitx.showSettings")
         static let showPreferences = Notification.Name("io.coreify.quitx.showPreferences")
         static let showPopover = Notification.Name("io.coreify.quitx.showPopover")
+        static let dismissSettingsTooltips = Notification.Name("io.coreify.quitx.dismissSettingsTooltips")
     }
 
     enum UserDefaultsKeys {

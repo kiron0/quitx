@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import Combine
 
 enum SettingsTab: String, CaseIterable {
     case general = "General"
@@ -63,9 +64,93 @@ enum SettingsTab: String, CaseIterable {
     }
 }
 
-final class HelpPopoverState: ObservableObject {
+final class HelpPopoverState: NSObject, ObservableObject, NSPopoverDelegate {
     @Published var isShowing = false
     @Published var isHovered = false
+    weak var anchorView: NSView?
+    private let popover = NSPopover()
+    private var dismissObserver: AnyCancellable?
+
+    override init() {
+        super.init()
+        popover.animates = false
+        popover.behavior = .transient
+        popover.delegate = self
+        dismissObserver = NotificationCenter.default.publisher(for: QuitXConstants.Notifications.dismissSettingsTooltips)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.hide()
+            }
+    }
+
+    deinit {
+        if popover.isShown { popover.performClose(nil) }
+    }
+
+    func toggle(text: String) {
+        if popover.isShown {
+            hide()
+        } else {
+            show(text: text)
+        }
+    }
+
+    func hide() {
+        if popover.isShown { popover.performClose(nil) }
+        isShowing = false
+        isHovered = false
+    }
+
+    private func show(text: String) {
+        guard let anchor = anchorView else { return }
+        let hosting = NSHostingController(rootView: HelpPopoverContentView(text: text))
+        hosting.view.layoutSubtreeIfNeeded()
+        let size = hosting.view.fittingSize
+        popover.contentViewController = hosting
+        popover.contentSize = NSSize(width: 230, height: max(ceil(size.height), 20))
+        popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .minY)
+        isShowing = true
+    }
+
+    func popoverDidClose(_ notification: Notification) {
+        isShowing = false
+        isHovered = false
+    }
+}
+
+private struct HelpPopoverContentView: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 11.5))
+            .foregroundStyle(Color.primary)
+            .lineSpacing(2.5)
+            .padding(.horizontal, 13)
+            .padding(.vertical, 10)
+            .frame(width: 230)
+            .background {
+                if LiquidGlass.enabled {
+                    LiquidGlassFill(shape: RoundedRectangle(cornerRadius: 10))
+                } else {
+                    QuitXTheme.windowBackgroundColor
+                }
+            }
+    }
+}
+
+private struct PopoverAnchorView: NSViewRepresentable {
+    var onResolve: (NSView) -> Void
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async { onResolve(view) }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async { onResolve(nsView) }
+    }
 }
 
 struct HelpPopoverButton: View {
@@ -74,7 +159,7 @@ struct HelpPopoverButton: View {
 
     var body: some View {
         Button {
-            state.isShowing.toggle()
+            state.toggle(text: text)
         } label: {
             let isActive = state.isShowing || state.isHovered
             Image(systemName: "questionmark.circle")
@@ -85,22 +170,10 @@ struct HelpPopoverButton: View {
         }
         .buttonStyle(.plain)
         .onHover { h in state.isHovered = h }
-        .popover(isPresented: $state.isShowing, arrowEdge: .bottom) {
-            Text(text)
-                .font(.system(size: 11.5))
-                .foregroundStyle(Color.primary)
-                .lineSpacing(2.5)
-                .padding(.horizontal, 13)
-                .padding(.vertical, 10)
-                .frame(width: 230)
-                .presentationBackground {
-                    if LiquidGlass.enabled {
-                        LiquidGlassFill(shape: RoundedRectangle(cornerRadius: 10))
-                    } else {
-                        QuitXTheme.windowBackgroundColor
-                    }
-                }
+        .onDisappear {
+            state.hide()
         }
+        .background(PopoverAnchorView { state.anchorView = $0 })
     }
 }
 
@@ -154,6 +227,9 @@ struct SettingsContainerView: View {
             } else {
                 QuitXTheme.windowBackground
             }
+        }
+        .onChange(of: tabModel.activeTab) { _, _ in
+            NotificationCenter.default.post(name: QuitXConstants.Notifications.dismissSettingsTooltips, object: nil)
         }
     }
 }
