@@ -24,6 +24,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
     var sleepLockEndMinutes: Int = 360
     var sleepLockUse24Hour: Bool = true
     var showMenuBarStats: Bool = false
+    var menuBarStatStyle: MenuBarStatStyle = .icon
     var menuBarMemoryUnit: MenuBarMemoryUnit = .gb
     var hogAlertEnabled: Bool = false
     var hogCpuThreshold: Double = 80
@@ -37,7 +38,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         case exclude, force, includeFinder, includeTrash, includeBackground, groupBackground
         case defaultSelectAll, neverQuitMusic, musicApps, autoUpdate, confirmQuitAll, confirmIndividualAction, playSounds
         case quitInactiveAfterMinutes, disableQuitTips, sortBy, perAppQuitRules
-        case quitOnSleep, quitOnScreenLock, showMenuBarStats, menuBarMemoryUnit
+        case quitOnSleep, quitOnScreenLock, showMenuBarStats, menuBarStatStyle, menuBarMemoryUnit
         case sleepLockStartMinutes, sleepLockEndMinutes, sleepLockUse24Hour
         case hogAlertEnabled, hogCpuThreshold
         case memoryPressureQuitEnabled, memoryPressureThresholdMB, batterySaverEnabled
@@ -65,6 +66,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         quitOnSleep: Bool = false,
         quitOnScreenLock: Bool = false,
         showMenuBarStats: Bool = false,
+        menuBarStatStyle: MenuBarStatStyle = .icon,
         menuBarMemoryUnit: MenuBarMemoryUnit = .gb,
         hogAlertEnabled: Bool = false,
         hogCpuThreshold: Double = 80,
@@ -93,6 +95,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         self.quitOnSleep = quitOnSleep
         self.quitOnScreenLock = quitOnScreenLock
         self.showMenuBarStats = showMenuBarStats
+        self.menuBarStatStyle = menuBarStatStyle
         self.menuBarMemoryUnit = menuBarMemoryUnit
         self.hogAlertEnabled = hogAlertEnabled
         self.hogCpuThreshold = hogCpuThreshold
@@ -128,6 +131,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         sleepLockEndMinutes = min(1439, max(0, Self.dec(container, .sleepLockEndMinutes, defaults.sleepLockEndMinutes)))
         sleepLockUse24Hour = Self.dec(container, .sleepLockUse24Hour, defaults.sleepLockUse24Hour)
         showMenuBarStats = Self.dec(container, .showMenuBarStats, defaults.showMenuBarStats)
+        menuBarStatStyle = Self.dec(container, .menuBarStatStyle, defaults.menuBarStatStyle)
         menuBarMemoryUnit = Self.dec(container, .menuBarMemoryUnit, defaults.menuBarMemoryUnit)
         hogAlertEnabled = Self.dec(container, .hogAlertEnabled, defaults.hogAlertEnabled)
         hogCpuThreshold = Self.dec(container, .hogCpuThreshold, defaults.hogCpuThreshold)
@@ -144,6 +148,22 @@ struct QuitXConfig: Codable, Equatable, Sendable {
 
     var effectiveHogCpuThreshold: Double {
         max(80, min(100, hogCpuThreshold))
+    }
+
+    enum MenuBarStatStyle: String, Codable, Equatable, CaseIterable, Sendable {
+        case icon = "Icon"
+        case text = "Text"
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            let raw = try container.decode(String.self)
+            switch raw.lowercased() {
+            case "text", "txt":
+                self = .text
+            default:
+                self = .icon
+            }
+        }
     }
 
     enum MenuBarMemoryUnit: String, Codable, Equatable, CaseIterable, Sendable {

@@ -330,7 +330,8 @@ final class StatusItemController: NSObject {
     private static func statsTitle(
         cpu: Double,
         memoryUsed: UInt64,
-        unit: QuitXConfig.MenuBarMemoryUnit
+        unit: QuitXConfig.MenuBarMemoryUnit,
+        style: QuitXConfig.MenuBarStatStyle = .icon
     ) -> NSAttributedString {
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.menuBarFont(ofSize: 0),
@@ -338,7 +339,7 @@ final class StatusItemController: NSObject {
         ]
         let title = NSMutableAttributedString()
         func appendSegment(symbolNames: [String], fallback: String, text: String) {
-            if let attachment = menuBarAttachment(symbolNames: symbolNames) {
+            if style == .icon, let attachment = menuBarAttachment(symbolNames: symbolNames) {
                 title.append(NSAttributedString(attachment: attachment))
                 title.append(NSAttributedString(string: " \(text)", attributes: attributes))
             } else {
@@ -384,7 +385,8 @@ final class StatusItemController: NSObject {
         button.attributedTitle = Self.statsTitle(
             cpu: cpu,
             memoryUsed: memoryUsed,
-            unit: cfg.menuBarMemoryUnit
+            unit: cfg.menuBarMemoryUnit,
+            style: cfg.menuBarStatStyle
         )
     }
 

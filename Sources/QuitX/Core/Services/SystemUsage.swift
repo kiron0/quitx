@@ -205,15 +205,15 @@ enum SystemUsage {
         }
         if let level0 = sysctlInt("hw.perflevel0.logicalcpu"),
            let level1 = sysctlInt("hw.perflevel1.logicalcpu"),
-           level0 > 0, level1 > 0, level0 + level1 >= total {
+           level0 > 0, level1 > 0, level0 + level1 == total {
             let level0Name = sysctlString("hw.perflevel0.name")
-            if level0Name == "Performance" {
+            if level0Name?.caseInsensitiveCompare("Performance") == .orderedSame {
                 return CoreCounts(efficiency: level1, performance: level0, total: total)
             }
-            if level0Name == "Efficiency" {
+            if level0Name?.caseInsensitiveCompare("Efficiency") == .orderedSame {
                 return CoreCounts(efficiency: level0, performance: level1, total: total)
             }
-            return CoreCounts(efficiency: level0, performance: level1, total: total)
+            return CoreCounts(efficiency: level1, performance: level0, total: total)
         }
         return CoreCounts(efficiency: 0, performance: 0, total: total)
     }

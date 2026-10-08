@@ -344,6 +344,16 @@ struct ProductivityFeaturesTests {
         #expect(decoded.menuBarMemoryUnit == .percentage)
     }
 
+    @Test("Menu bar stat style encodes and decodes")
+    func testMenuBarStatStyleConfig() throws {
+        var cfg = QuitXConfig.default
+        #expect(cfg.menuBarStatStyle == .icon)
+        cfg.menuBarStatStyle = .text
+        let data = try JSONEncoder().encode(cfg)
+        let decoded = try JSONDecoder().decode(QuitXConfig.self, from: data)
+        #expect(decoded.menuBarStatStyle == .text)
+    }
+
     @Test("Sleep lock range gates by time window")
     func testSleepLockRange() {
         #expect(SleepLockRange.active(nowMinutes: 600, startMinutes: 540, endMinutes: 1020))
@@ -456,6 +466,7 @@ struct ProductivityFeaturesTests {
         #expect(decoded.sleepLockEndMinutes == cfg.sleepLockEndMinutes)
         #expect(decoded.sleepLockUse24Hour == cfg.sleepLockUse24Hour)
         #expect(decoded.showMenuBarStats == cfg.showMenuBarStats)
+        #expect(decoded.menuBarStatStyle == cfg.menuBarStatStyle)
         #expect(decoded.menuBarMemoryUnit == cfg.menuBarMemoryUnit)
         #expect(decoded.hogAlertEnabled == cfg.hogAlertEnabled)
         #expect(decoded.hogCpuThreshold == cfg.hogCpuThreshold)

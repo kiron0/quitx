@@ -135,7 +135,7 @@ struct GeneralTabCloneView: View {
                 HelpPopoverButton(text: "A deeply satisfying laser sound will play when quitting apps. 👾🔫")
             }
 
-            row(label: "Menu & Power:") {
+            row(label: "Menu Bar:") {
                 toggle("Show CPU & memory in menu bar", isOn: Binding(
                     get: { configStore.config.showMenuBarStats },
                     set: {
@@ -149,29 +149,51 @@ struct GeneralTabCloneView: View {
             }
 
             row(label: "") {
-                HStack(spacing: 6) {
-                    Text("Memory format")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color.primary)
+                HStack(spacing: 12) {
+                    HStack(spacing: 6) {
+                        Text("Style")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.primary)
 
-                    Picker("", selection: Binding(
-                        get: { configStore.config.menuBarMemoryUnit },
-                        set: {
-                            configStore.config.menuBarMemoryUnit = $0
-                            configStore.save()
-                            StatusItemController.shared?.updateMenuBarStats()
+                        Picker("", selection: Binding(
+                            get: { configStore.config.menuBarStatStyle },
+                            set: {
+                                configStore.config.menuBarStatStyle = $0
+                                configStore.save()
+                                StatusItemController.shared?.updateMenuBarStats()
+                            }
+                        )) {
+                            Text("Icon").tag(QuitXConfig.MenuBarStatStyle.icon)
+                            Text("Text").tag(QuitXConfig.MenuBarStatStyle.text)
                         }
-                    )) {
-                        Text("GB").tag(QuitXConfig.MenuBarMemoryUnit.gb)
-                        Text("Percentage").tag(QuitXConfig.MenuBarMemoryUnit.percentage)
+                        .frame(width: 75)
+                        .labelsHidden()
                     }
-                    .frame(width: 115)
-                    .labelsHidden()
+
+                    HStack(spacing: 6) {
+                        Text("Memory format")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.primary)
+
+                        Picker("", selection: Binding(
+                            get: { configStore.config.menuBarMemoryUnit },
+                            set: {
+                                configStore.config.menuBarMemoryUnit = $0
+                                configStore.save()
+                                StatusItemController.shared?.updateMenuBarStats()
+                            }
+                        )) {
+                            Text("GB").tag(QuitXConfig.MenuBarMemoryUnit.gb)
+                            Text("Percentage").tag(QuitXConfig.MenuBarMemoryUnit.percentage)
+                        }
+                        .frame(width: 105)
+                        .labelsHidden()
+                    }
                 }
                 .disabled(!configStore.config.showMenuBarStats)
                 .opacity(configStore.config.showMenuBarStats ? 1.0 : 0.42)
             } help: {
-                HelpPopoverButton(text: "Gigabytes for raw numbers or percentages for drama! Pick how your memory flexes in the menu bar. 🏋️‍♂️📈")
+                HelpPopoverButton(text: "Choose icon or text style, and gigabytes or percentages for the menu bar readout. 🏋️‍♂️📈")
             }
 
             if #available(macOS 26.0, *) {

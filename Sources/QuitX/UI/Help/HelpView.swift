@@ -211,7 +211,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "Menu bar CPU readout",
-                    body: "Enable Show CPU & memory in menu bar in Settings > General. QuitX shows a separate usage item beside its icon: whole-system CPU percent (chip icon) and memory use in GB or percentage (memory icon), configurable via the Memory format picker. The readout refreshes every second, or every 5 seconds under battery saver. The QuitX icon itself keeps its own click behavior."
+                    body: "Enable Show CPU & memory in menu bar in Settings > General. QuitX shows a separate usage item beside its icon: whole-system CPU percent and memory use in GB or percentage, with your choice of icon or text prefixes and memory format pickers. The readout refreshes every second, or every 5 seconds under battery saver. The QuitX icon itself keeps its own click behavior."
                 ),
                 QuitXHelpSection(
                     title: "Stats detail panel",
