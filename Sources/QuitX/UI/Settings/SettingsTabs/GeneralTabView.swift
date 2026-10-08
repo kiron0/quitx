@@ -54,26 +54,6 @@ fileprivate func row<Content: View, Help: View>(
     .frame(height: 25)
 }
 
-fileprivate func rowWide<Content: View, Help: View>(
-    label: String,
-    @ViewBuilder content: () -> Content,
-    @ViewBuilder help: () -> Help
-) -> some View {
-    HStack(alignment: .center, spacing: 10) {
-        Text(label)
-            .font(.system(size: 12, weight: .regular))
-            .foregroundStyle(Color.primary)
-            .frame(width: labelColumnWidth, alignment: .trailing)
-
-        content()
-
-        Spacer(minLength: 0)
-
-        help()
-    }
-    .frame(height: 25)
-}
-
 fileprivate func toggle(_ title: String, isOn: Binding<Bool>) -> some View {
     Button {
         isOn.wrappedValue.toggle()
@@ -149,51 +129,57 @@ struct GeneralTabCloneView: View {
             }
 
             row(label: "") {
-                HStack(spacing: 12) {
-                    HStack(spacing: 6) {
-                        Text("Style")
-                            .font(.system(size: 11))
-                            .foregroundStyle(Color.primary)
+                HStack(spacing: 6) {
+                    Text("Style format")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.primary)
+                        .frame(width: 86, alignment: .leading)
 
-                        Picker("", selection: Binding(
-                            get: { configStore.config.menuBarStatStyle },
-                            set: {
-                                configStore.config.menuBarStatStyle = $0
-                                configStore.save()
-                                StatusItemController.shared?.updateMenuBarStats()
-                            }
-                        )) {
-                            Text("Icon").tag(QuitXConfig.MenuBarStatStyle.icon)
-                            Text("Text").tag(QuitXConfig.MenuBarStatStyle.text)
+                    Picker("", selection: Binding(
+                        get: { configStore.config.menuBarStatStyle },
+                        set: {
+                            configStore.config.menuBarStatStyle = $0
+                            configStore.save()
+                            StatusItemController.shared?.updateMenuBarStats()
                         }
-                        .frame(width: 75)
-                        .labelsHidden()
+                    )) {
+                        Text("Icon").tag(QuitXConfig.MenuBarStatStyle.icon)
+                        Text("Text").tag(QuitXConfig.MenuBarStatStyle.text)
                     }
-
-                    HStack(spacing: 6) {
-                        Text("Memory format")
-                            .font(.system(size: 11))
-                            .foregroundStyle(Color.primary)
-
-                        Picker("", selection: Binding(
-                            get: { configStore.config.menuBarMemoryUnit },
-                            set: {
-                                configStore.config.menuBarMemoryUnit = $0
-                                configStore.save()
-                                StatusItemController.shared?.updateMenuBarStats()
-                            }
-                        )) {
-                            Text("GB").tag(QuitXConfig.MenuBarMemoryUnit.gb)
-                            Text("Percentage").tag(QuitXConfig.MenuBarMemoryUnit.percentage)
-                        }
-                        .frame(width: 105)
-                        .labelsHidden()
-                    }
+                    .frame(width: 115)
+                    .labelsHidden()
                 }
                 .disabled(!configStore.config.showMenuBarStats)
                 .opacity(configStore.config.showMenuBarStats ? 1.0 : 0.42)
             } help: {
-                HelpPopoverButton(text: "Choose icon or text style, and gigabytes or percentages for the menu bar readout. 🏋️‍♂️📈")
+                HelpPopoverButton(text: "Choose whether CPU & memory display with icons or text labels in the menu bar. 🏷️")
+            }
+
+            row(label: "") {
+                HStack(spacing: 6) {
+                    Text("Memory format")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.primary)
+                        .frame(width: 86, alignment: .leading)
+
+                    Picker("", selection: Binding(
+                        get: { configStore.config.menuBarMemoryUnit },
+                        set: {
+                            configStore.config.menuBarMemoryUnit = $0
+                            configStore.save()
+                            StatusItemController.shared?.updateMenuBarStats()
+                        }
+                    )) {
+                        Text("GB").tag(QuitXConfig.MenuBarMemoryUnit.gb)
+                        Text("Percentage").tag(QuitXConfig.MenuBarMemoryUnit.percentage)
+                    }
+                    .frame(width: 115)
+                    .labelsHidden()
+                }
+                .disabled(!configStore.config.showMenuBarStats)
+                .opacity(configStore.config.showMenuBarStats ? 1.0 : 0.42)
+            } help: {
+                HelpPopoverButton(text: "Gigabytes for raw numbers or percentages for drama! Pick how your memory flexes in the menu bar. 🏋️‍♂️📈")
             }
 
             if #available(macOS 26.0, *) {
@@ -332,14 +318,14 @@ struct AutomationTabCloneView: View {
             }
 
             let subsOn = sleepLockOn
-            rowWide(label: "") {
-                HStack(spacing: 16) {
+            row(label: "") {
+                HStack(spacing: 6) {
                     Text("Time format")
                         .font(.system(size: 11))
                         .foregroundStyle(Color.primary)
-                        .frame(width: 90, alignment: .trailing)
+                        .frame(width: 72, alignment: .leading)
 
-                    HStack(spacing: 18) {
+                    HStack(spacing: 16) {
                         appearanceRadio("24-hour", selected: configStore.config.sleepLockUse24Hour) {
                             configStore.config.sleepLockUse24Hour = true
                             configStore.save()
@@ -356,32 +342,32 @@ struct AutomationTabCloneView: View {
                 HelpPopoverButton(text: "Military precision or morning-coffee casual? Pick 24-hour or 12-hour AM/PM dials for your sleep schedule. ⏰☕️")
             }
 
-            rowWide(label: "") {
-                HStack(spacing: 16) {
+            row(label: "") {
+                HStack(spacing: 6) {
                     Text("From:")
                         .font(.system(size: 11))
                         .foregroundStyle(Color.primary)
-                        .frame(width: 90, alignment: .trailing)
+                        .frame(width: 72, alignment: .leading)
 
                     timePickers(start: true)
-                        .disabled(!subsOn)
-                        .opacity(subsOn ? 1.0 : 0.42)
                 }
+                .disabled(!subsOn)
+                .opacity(subsOn ? 1.0 : 0.42)
             } help: {
                 Color.clear.frame(width: 20, height: 20)
             }
 
-            rowWide(label: "") {
-                HStack(spacing: 16) {
+            row(label: "") {
+                HStack(spacing: 6) {
                     Text("To:")
                         .font(.system(size: 11))
                         .foregroundStyle(Color.primary)
-                        .frame(width: 90, alignment: .trailing)
+                        .frame(width: 72, alignment: .leading)
 
                     timePickers(start: false)
-                        .disabled(!subsOn)
-                        .opacity(subsOn ? 1.0 : 0.42)
                 }
+                .disabled(!subsOn)
+                .opacity(subsOn ? 1.0 : 0.42)
             } help: {
                 Color.clear.frame(width: 20, height: 20)
             }

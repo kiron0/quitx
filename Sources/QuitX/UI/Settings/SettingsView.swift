@@ -52,8 +52,8 @@ enum SettingsTab: String, CaseIterable {
     var contentHeight: CGFloat {
         switch self {
         case .general:
-            if #available(macOS 26.0, *) { return 271 }
-            return 241
+            if #available(macOS 26.0, *) { return 301 }
+            return 271
         case .automation: return 361
         case .advanced:  return 271
         case .exclude:   return 306
