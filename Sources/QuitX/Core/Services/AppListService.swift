@@ -1,4 +1,5 @@
 import AppKit
+import Darwin
 import os
 
 final class AppListService {
@@ -19,6 +20,7 @@ final class AppListService {
     func fetchApps(config: QuitXConfig) async -> [AppInfo] {
         let running = NSWorkspace.shared.runningApplications.compactMap { app -> RunningAppSnapshot? in
             guard !app.isTerminated else { return nil }
+            guard Self.processIsRunning(app.processIdentifier) else { return nil }
             let rawName = app.localizedName
                 ?? app.bundleURL?.deletingPathExtension().lastPathComponent
                 ?? app.executableURL?.lastPathComponent
@@ -167,11 +169,13 @@ final class AppListService {
     func fetchLiveStats(currentApps: [AppInfo], config: QuitXConfig, hogPids: Set<pid_t> = [], cpuUsages providedUsages: [pid_t: Double]? = nil) async -> [AppInfo] {
         let scanTask = Task.detached(priority: .userInitiated) {
             let cpuUsages = providedUsages ?? Self.fetchCpuUsages()
-            let updated = currentApps.map { app -> AppInfo in
+            let updated = currentApps.compactMap { app -> AppInfo? in
                 if app.pids.isEmpty { return app }
+                let livePids = app.pids.filter(Self.processIsRunning)
+                guard !livePids.isEmpty else { return nil }
                 var totalMem: UInt64 = 0
                 var totalCpu: Double = 0.0
-                for pid in app.pids {
+                for pid in livePids {
                     totalMem += Self.memoryUsage(pid: pid)
                     totalCpu += cpuUsages[pid, default: 0.0]
                 }
@@ -179,14 +183,14 @@ final class AppListService {
                     id: app.id,
                     name: app.name,
                     bundleId: app.bundleId,
-                    pid: app.pid,
-                    pids: app.pids,
+                    pid: app.pid.flatMap { livePids.contains($0) ? $0 : nil } ?? livePids.first,
+                    pids: livePids,
                     isBackground: app.isBackground,
                     windowCount: app.windowCount,
                     memoryBytes: totalMem,
                     cpuUsage: totalCpu,
                     isUnresponsive: false,
-                    isCpuHog: !Set(app.pids).isDisjoint(with: hogPids)
+                    isCpuHog: !Set(livePids).isDisjoint(with: hogPids)
                 )
             }
             return Self.sortApps(updated, sortBy: config.sortBy)
@@ -304,6 +308,13 @@ final class AppListService {
     }
 
     private static let memoryCache = OSAllocatedUnfairLock(initialState: [pid_t: (bytes: UInt64, timestamp: Date)]())
+
+    static func processIsRunning(_ pid: pid_t) -> Bool {
+        guard pid > 0 else { return false }
+        errno = 0
+        if Darwin.kill(pid, 0) == 0 { return true }
+        return errno == EPERM
+    }
 
     private static func memoryUsage(pid: pid_t) -> UInt64 {
         if let cached = memoryCache.withLock({ $0[pid] }), Date().timeIntervalSince(cached.timestamp) < 1.5 {

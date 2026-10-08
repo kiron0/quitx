@@ -126,6 +126,18 @@ struct AppSortingAndGroupingTests {
         #expect(regularOnly.count == 1)
         #expect(regularOnly.first?.name == "App")
     }
+
+    @Test("Live stats remove exited processes but preserve virtual rows")
+    func testLiveStatsPruneExitedProcesses() async {
+        let exited = AppInfo(name: "Exited", pid: pid_t.max)
+        let virtual = AppInfo(name: "Trash", pid: nil, pids: [])
+        let updated = await AppListService.shared.fetchLiveStats(
+            currentApps: [exited, virtual],
+            config: .default,
+            cpuUsages: [:]
+        )
+        #expect(updated.map(\.name) == ["Trash"])
+    }
 }
 
 @Suite("App Filtering Logic Tests")
@@ -476,6 +488,15 @@ struct QuitServiceTests {
         #expect(results[0].error != nil)
     }
 
+    @Test("Quit rejects pseudo PID without sending a signal")
+    func testQuitRejectsPseudoPid() async {
+        let app = AppInfo(name: "Ghost", bundleId: "com.example.ghost", pid: -1)
+        let results = await QuitService.shared.quit(apps: [app], force: true)
+        #expect(results.count == 1)
+        #expect(!results[0].success)
+        #expect(results[0].error == "App not found")
+    }
+
     @Test("QuitResult properly encapsulates force flag")
     func testQuitResultForcedFlag() {
         let app = AppInfo(name: "App", pid: 10)
@@ -483,6 +504,22 @@ struct QuitServiceTests {
         let resNormal = QuitResult(app: app, success: true, forced: false, error: nil)
         #expect(resForced.forced)
         #expect(!resNormal.forced)
+    }
+
+    @Test("Process liveness rejects invalid and missing identifiers")
+    func testProcessLiveness() {
+        #expect(QuitService.processIsRunning(ProcessInfo.processInfo.processIdentifier))
+        #expect(!QuitService.processIsRunning(-1))
+        #expect(!QuitService.processIsRunning(0))
+        #expect(!QuitService.processIsRunning(pid_t.max))
+    }
+
+    @Test("App discovery rejects pseudo and exited process identifiers")
+    func testAppDiscoveryPidValidation() {
+        #expect(!AppListService.processIsRunning(-1))
+        #expect(!AppListService.processIsRunning(0))
+        #expect(AppListService.processIsRunning(ProcessInfo.processInfo.processIdentifier))
+        #expect(!AppListService.processIsRunning(pid_t.max))
     }
 }
 
