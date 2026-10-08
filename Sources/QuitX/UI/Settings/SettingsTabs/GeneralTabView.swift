@@ -135,19 +135,18 @@ struct GeneralTabCloneView: View {
                         .foregroundStyle(Color.primary)
                         .frame(width: 86, alignment: .leading)
 
-                    Picker("", selection: Binding(
-                        get: { configStore.config.menuBarStatStyle },
-                        set: {
-                            configStore.config.menuBarStatStyle = $0
+                    HStack(spacing: 16) {
+                        appearanceRadio("Icon", selected: configStore.config.menuBarStatStyle == .icon) {
+                            configStore.config.menuBarStatStyle = .icon
                             configStore.save()
                             StatusItemController.shared?.updateMenuBarStats()
                         }
-                    )) {
-                        Text("Icon").tag(QuitXConfig.MenuBarStatStyle.icon)
-                        Text("Text").tag(QuitXConfig.MenuBarStatStyle.text)
+                        appearanceRadio("Text", selected: configStore.config.menuBarStatStyle == .text) {
+                            configStore.config.menuBarStatStyle = .text
+                            configStore.save()
+                            StatusItemController.shared?.updateMenuBarStats()
+                        }
                     }
-                    .frame(width: 115)
-                    .labelsHidden()
                 }
                 .disabled(!configStore.config.showMenuBarStats)
                 .opacity(configStore.config.showMenuBarStats ? 1.0 : 0.42)
@@ -162,19 +161,18 @@ struct GeneralTabCloneView: View {
                         .foregroundStyle(Color.primary)
                         .frame(width: 86, alignment: .leading)
 
-                    Picker("", selection: Binding(
-                        get: { configStore.config.menuBarMemoryUnit },
-                        set: {
-                            configStore.config.menuBarMemoryUnit = $0
+                    HStack(spacing: 16) {
+                        appearanceRadio("GB", selected: configStore.config.menuBarMemoryUnit == .gb) {
+                            configStore.config.menuBarMemoryUnit = .gb
                             configStore.save()
                             StatusItemController.shared?.updateMenuBarStats()
                         }
-                    )) {
-                        Text("GB").tag(QuitXConfig.MenuBarMemoryUnit.gb)
-                        Text("Percentage").tag(QuitXConfig.MenuBarMemoryUnit.percentage)
+                        appearanceRadio("Percentage", selected: configStore.config.menuBarMemoryUnit == .percentage) {
+                            configStore.config.menuBarMemoryUnit = .percentage
+                            configStore.save()
+                            StatusItemController.shared?.updateMenuBarStats()
+                        }
                     }
-                    .frame(width: 115)
-                    .labelsHidden()
                 }
                 .disabled(!configStore.config.showMenuBarStats)
                 .opacity(configStore.config.showMenuBarStats ? 1.0 : 0.42)
@@ -323,7 +321,7 @@ struct AutomationTabCloneView: View {
                     Text("Time format")
                         .font(.system(size: 11))
                         .foregroundStyle(Color.primary)
-                        .frame(width: 72, alignment: .leading)
+                        .frame(width: 86, alignment: .leading)
 
                     HStack(spacing: 16) {
                         appearanceRadio("24-hour", selected: configStore.config.sleepLockUse24Hour) {
@@ -347,7 +345,7 @@ struct AutomationTabCloneView: View {
                     Text("From:")
                         .font(.system(size: 11))
                         .foregroundStyle(Color.primary)
-                        .frame(width: 72, alignment: .leading)
+                        .frame(width: 86, alignment: .leading)
 
                     timePickers(start: true)
                 }
@@ -362,7 +360,7 @@ struct AutomationTabCloneView: View {
                     Text("To:")
                         .font(.system(size: 11))
                         .foregroundStyle(Color.primary)
-                        .frame(width: 72, alignment: .leading)
+                        .frame(width: 86, alignment: .leading)
 
                     timePickers(start: false)
                 }
