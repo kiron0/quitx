@@ -501,11 +501,11 @@ struct StatsDetailView: View {
                     .foregroundStyle(isSelected ? Color.primary : Color.secondary)
                     .frame(maxWidth: .infinity)
                     .frame(height: 22)
-                    .contentShape(Rectangle())
                     .background(
                         RoundedRectangle(cornerRadius: 5)
-                            .fill(isSelected ? Color.primary.opacity(0.12) : Color.clear)
+                            .fill(isSelected ? Color.primary.opacity(0.12) : Color.primary.opacity(0.0001))
                     )
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .contentShape(Rectangle())

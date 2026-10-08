@@ -9,7 +9,7 @@ All notable changes to QuitX macOS App will be documented in this file.
 - macOS 26 Liquid Glass appearance: full native Liquid Glass UI styling and themes for macOS 26 Tahoe across the main popover, Settings window, Stats detail panel, Welcome window, and Help window, with live animated switching between Classic solid mode and Liquid Glass.
 - Dedicated Automation settings tab: cleanly separated automation controls into their own dedicated tab featuring power saving, sleep and screen lock scheduling, CPU hog / memory pressure tripwires, and inactivity timeouts.
 - Scheduled sleep and screen lock quit automation: restricted unattended quitting to configurable scheduled hours (default 12 AM to 6 AM) with start and end time pickers and toggle between 12-hour AM/PM and 24-hour time formats.
-- Stats detail panel in menu bar: clicking the menu bar usage item opens a native-blur liquid glass panel displaying real-time CPU % and memory usage (used out of total RAM) with custom status item arrow and auto-dismissal on click-outside, toggle, or Esc.
+- Stats detail panel in menu bar: clicking the menu bar usage item opens a native-blur liquid glass panel displaying real-time CPU % and memory usage (used out of total unified memory) with custom status item arrow and auto-dismissal on click-outside, toggle, or Esc.
 - Menu Bar Memory Format picker: choose between Gigabytes (GB) and Percentage (%) for the menu bar memory usage readout in Settings > General.
 - Smart Rescue (USP): when a CPU or memory limit trips, QuitX safely rescues system resources by terminating inactive windowed apps only — never your frontmost app, Finder, Trash, excluded, music, or Never-ruled apps. Rescued apps land in Recently Quit for one-click reopening.
 - Rescue consent panel & critical system protection: added interactive rescue consent gating and strict protections for vital macOS system processes and helper agents during resource cleanup.
@@ -316,10 +316,10 @@ All notable changes to QuitX macOS App will be documented in this file.
 - Initial release of QuitX for macOS (native Swift, AppKit & SwiftUI).
 - Menubar status item with fast popover UI.
 - 1-Click Quit All and Option-key dynamic Force Quit All.
-- Real-time CPU and resident memory (RAM) usage monitoring per running app.
+- Real-time CPU and resident memory usage monitoring per running app.
 - Protected & excluded apps list management.
 - Automatic inactive app quit timer (15m, 30m, 1h, 2h).
-- Instant search filter and A-Z / RAM / CPU sorting options.
+- Instant search filter and A-Z / Memory / CPU sorting options.
 - Session stash and restore for quick reboot / context switching.
 - Native system sound effects and toast notifications.
 - Launch at login support and automatic update checks.
