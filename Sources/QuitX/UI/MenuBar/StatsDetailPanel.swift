@@ -338,19 +338,12 @@ private struct SectionHeader: View {
     let title: String
 
     var body: some View {
-        HStack(spacing: 8) {
-            Rectangle()
-                .fill(Color.primary.opacity(0.12))
-                .frame(height: 1)
-            Text(title)
-                .font(.system(size: 9.5, weight: .medium))
-                .foregroundStyle(Color.secondary)
-                .tracking(1.0)
-                .fixedSize()
-            Rectangle()
-                .fill(Color.primary.opacity(0.12))
-                .frame(height: 1)
-        }
+        Text(title)
+            .font(.system(size: 9.5, weight: .bold))
+            .foregroundStyle(Color.secondary)
+            .tracking(0.6)
+            .textCase(.uppercase)
+            .padding(.horizontal, 2)
     }
 }
 
@@ -364,15 +357,17 @@ private struct DetailRow: View {
             if let dotColor {
                 Circle()
                     .fill(dotColor)
-                    .frame(width: 7, height: 7)
+                    .frame(width: 6.5, height: 6.5)
             }
             Text(title)
                 .font(.system(size: 11))
-                .foregroundStyle(.primary.opacity(0.85))
+                .foregroundStyle(Color.primary.opacity(0.85))
             Spacer(minLength: 8)
             Text(value)
                 .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                .foregroundStyle(Color.primary)
         }
+        .frame(height: 18)
     }
 }
 
@@ -467,7 +462,7 @@ struct StatsDetailView: View {
     @ObservedObject var model: StatsDetailModel
 
     private let panelWidth: CGFloat = 270
-    private let headerHeight: CGFloat = 50
+    private let headerHeight: CGFloat = 47
     private var maxHeight: CGFloat {
         (NSScreen.main?.visibleFrame.height ?? 800) - 140
     }
@@ -478,28 +473,58 @@ struct StatsDetailView: View {
 
     private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         content()
-            .padding(.horizontal, 10)
-            .padding(.vertical, 9)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 8)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(QuitXTheme.cardBackground, in: RoundedRectangle(cornerRadius: 7))
             .overlay(
                 RoundedRectangle(cornerRadius: 7)
-                    .stroke(Color.primary.opacity(0.09), lineWidth: 0.5)
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
             )
+    }
+
+    private var tabSelector: some View {
+        HStack(spacing: 2) {
+            ForEach(StatsDetailModel.Mode.allCases, id: \.self) { mode in
+                let isSelected = model.mode == mode
+                Button {
+                    withAnimation(.easeInOut(duration: 0.16)) {
+                        model.mode = mode
+                    }
+                } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: mode == .cpu ? "cpu" : "memorychip")
+                            .font(.system(size: 10.5, weight: isSelected ? .semibold : .regular))
+                        Text(mode.rawValue)
+                            .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
+                    }
+                    .foregroundStyle(isSelected ? Color.primary : Color.secondary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 22)
+                    .background(
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(isSelected ? Color.primary.opacity(0.12) : Color.clear)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(2)
+        .background(
+            RoundedRectangle(cornerRadius: 6.5)
+                .fill(Color.primary.opacity(0.05))
+        )
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Picker("", selection: $model.mode) {
-                ForEach(StatsDetailModel.Mode.allCases, id: \.self) { mode in
-                    Text(mode.rawValue).tag(mode)
-                }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .padding(.horizontal, 12)
-            .padding(.top, 12)
-            .padding(.bottom, 8)
+            Color.clear
+                .frame(height: 12)
+
+            tabSelector
+                .padding(.horizontal, 10)
+                .padding(.top, 3)
+                .padding(.bottom, 6)
 
             ScrollView(.vertical, showsIndicators: false) {
                 Group {
@@ -510,8 +535,8 @@ struct StatsDetailView: View {
                         ramContent
                     }
                 }
-                .padding(.horizontal, 12)
-                .padding(.bottom, 16)
+                .padding(.horizontal, 10)
+                .padding(.bottom, 12)
                 .background(
                     GeometryReader { geometry in
                         Color.clear.preference(
@@ -536,43 +561,46 @@ struct StatsDetailView: View {
             if model.showToast {
                 ToastView(message: model.toastMessage, isError: model.toastIsError)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .padding(.bottom, 14)
+                    .padding(.bottom, 12)
             }
         }
         .animation(.easeInOut(duration: 0.2), value: model.showToast)
     }
 
     private var cpuContent: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 16) {
-                SegmentedRing(
-                    segments: [
-                        (model.systemPct / 100, StatsTheme.red),
-                        (model.userPct / 100, StatsTheme.blue),
-                        (model.idlePct / 100, StatsTheme.gray)
-                    ],
-                    centerText: pct(model.cpu),
-                    size: 82,
-                    lineWidth: 9
-                )
-                VStack(spacing: 4) {
+        VStack(alignment: .leading, spacing: 10) {
+            card {
+                HStack(spacing: 16) {
                     SegmentedRing(
                         segments: [
-                            (model.load1 / Double(max(1, model.efficiencyCores + model.performanceCores)), StatsTheme.blue)
+                            (model.systemPct / 100, StatsTheme.red),
+                            (model.userPct / 100, StatsTheme.blue),
+                            (model.idlePct / 100, StatsTheme.gray)
                         ],
-                        centerText: String(format: "%.2f", model.load1),
-                        size: 52,
-                        lineWidth: 6
+                        centerText: pct(model.cpu),
+                        size: 78,
+                        lineWidth: 8.5
                     )
-                    Text("load")
-                        .font(.system(size: 9.5))
-                        .foregroundStyle(Color.secondary)
+                    VStack(spacing: 3) {
+                        SegmentedRing(
+                            segments: [
+                                (model.load1 / Double(max(1, model.efficiencyCores + model.performanceCores)), StatsTheme.blue)
+                            ],
+                            centerText: String(format: "%.2f", model.load1),
+                            size: 50,
+                            lineWidth: 5.5
+                        )
+                        Text("load")
+                            .font(.system(size: 9.5, weight: .medium))
+                            .foregroundStyle(Color.secondary)
+                    }
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 3)
             }
-            .frame(maxWidth: .infinity)
 
-            VStack(alignment: .leading, spacing: 8) {
-                SectionHeader(title: "USAGE HISTORY")
+            VStack(alignment: .leading, spacing: 5) {
+                SectionHeader(title: "Usage History")
                 card {
                     VStack(alignment: .leading, spacing: 8) {
                         ZStack {
@@ -590,52 +618,64 @@ struct StatsDetailView: View {
                 }
             }
 
-            VStack(alignment: .leading, spacing: 6) {
-                SectionHeader(title: "DETAILS")
-                DetailRow(title: "System:", value: pct(model.systemPct), dotColor: StatsTheme.red)
-                DetailRow(title: "User:", value: pct(model.userPct), dotColor: StatsTheme.blue)
-                DetailRow(title: "Idle:", value: pct(model.idlePct), dotColor: StatsTheme.gray)
-                if model.efficiencyCores > 0 {
-                    DetailRow(title: "Efficiency cores:", value: pct(model.efficiencyPct), dotColor: StatsTheme.teal)
+            VStack(alignment: .leading, spacing: 5) {
+                SectionHeader(title: "Details")
+                card {
+                    VStack(alignment: .leading, spacing: 4.5) {
+                        DetailRow(title: "System:", value: pct(model.systemPct), dotColor: StatsTheme.red)
+                        DetailRow(title: "User:", value: pct(model.userPct), dotColor: StatsTheme.blue)
+                        DetailRow(title: "Idle:", value: pct(model.idlePct), dotColor: StatsTheme.gray)
+                        if model.efficiencyCores > 0 {
+                            DetailRow(title: "Efficiency cores:", value: pct(model.efficiencyPct), dotColor: StatsTheme.teal)
+                        }
+                        if model.performanceCores > 0 {
+                            DetailRow(title: "Performance cores:", value: pct(model.performancePct), dotColor: StatsTheme.purple)
+                        }
+                        DetailRow(title: "Uptime:", value: model.uptime)
+                    }
                 }
-                if model.performanceCores > 0 {
-                    DetailRow(title: "Performance cores:", value: pct(model.performancePct), dotColor: StatsTheme.purple)
-                }
-                DetailRow(title: "Uptime:", value: model.uptime)
             }
 
-            VStack(alignment: .leading, spacing: 6) {
-                SectionHeader(title: "AVERAGE LOAD")
-                DetailRow(title: "1 minute:", value: String(format: "%.2f", model.load1))
-                DetailRow(title: "5 minutes:", value: String(format: "%.2f", model.load5))
-                DetailRow(title: "15 minutes:", value: String(format: "%.2f", model.load15))
+            VStack(alignment: .leading, spacing: 5) {
+                SectionHeader(title: "Average Load")
+                card {
+                    VStack(alignment: .leading, spacing: 4.5) {
+                        DetailRow(title: "1 minute:", value: String(format: "%.2f", model.load1))
+                        DetailRow(title: "5 minutes:", value: String(format: "%.2f", model.load5))
+                        DetailRow(title: "15 minutes:", value: String(format: "%.2f", model.load15))
+                    }
+                }
             }
 
             if model.freqAllMHz > 0 || model.freqEfficiencyMHz > 0 || model.freqPerformanceMHz > 0 {
-                VStack(alignment: .leading, spacing: 6) {
-                    SectionHeader(title: "FREQUENCY")
-                    if model.freqAllMHz > 0 {
-                        DetailRow(title: "All cores:", value: "\(model.freqAllMHz) MHz")
-                    }
-                    if model.freqEfficiencyMHz > 0 {
-                        DetailRow(
-                            title: "Efficiency cores:",
-                            value: "\(model.freqEfficiencyMHz) MHz",
-                            dotColor: StatsTheme.teal
-                        )
-                    }
-                    if model.freqPerformanceMHz > 0 {
-                        DetailRow(
-                            title: "Performance cores:",
-                            value: "\(model.freqPerformanceMHz) MHz",
-                            dotColor: StatsTheme.purple
-                        )
+                VStack(alignment: .leading, spacing: 5) {
+                    SectionHeader(title: "Frequency")
+                    card {
+                        VStack(alignment: .leading, spacing: 4.5) {
+                            if model.freqAllMHz > 0 {
+                                DetailRow(title: "All cores:", value: "\(model.freqAllMHz) MHz")
+                            }
+                            if model.freqEfficiencyMHz > 0 {
+                                DetailRow(
+                                    title: "Efficiency cores:",
+                                    value: "\(model.freqEfficiencyMHz) MHz",
+                                    dotColor: StatsTheme.teal
+                                )
+                            }
+                            if model.freqPerformanceMHz > 0 {
+                                DetailRow(
+                                    title: "Performance cores:",
+                                    value: "\(model.freqPerformanceMHz) MHz",
+                                    dotColor: StatsTheme.purple
+                                )
+                            }
+                        }
                     }
                 }
             }
 
-            VStack(alignment: .leading, spacing: 8) {
-                SectionHeader(title: "TOP PROCESSES")
+            VStack(alignment: .leading, spacing: 5) {
+                SectionHeader(title: "Top Processes")
                 card {
                     ProcessList(procs: model.cpuTop, showCpu: true, onCopy: { model.toast($0) })
                 }
@@ -645,36 +685,28 @@ struct StatsDetailView: View {
 
     private var ramContent: some View {
         let usedFraction = model.memTotal > 0 ? Double(model.memUsed) / Double(model.memTotal) : 0
-        return VStack(alignment: .leading, spacing: 16) {
-            Button {
-                NSWorkspace.shared.open(
-                    URL(fileURLWithPath: "/System/Applications/Utilities/Activity Monitor.app")
-                )
-            } label: {
-                Text("Open Activity Monitor")
-                    .font(.system(size: 11, weight: .medium))
+        return VStack(alignment: .leading, spacing: 10) {
+            card {
+                HStack(alignment: .center, spacing: 16) {
+                    PressureGauge(fraction: usedFraction)
+                        .frame(width: 90, height: 72)
+                    SegmentedRing(
+                        segments: [
+                            (Double(model.memApp) / Double(model.memTotal), StatsTheme.blue),
+                            (Double(model.memWired) / Double(model.memTotal), StatsTheme.orange),
+                            (Double(model.memCompressed) / Double(model.memTotal), StatsTheme.pink)
+                        ],
+                        centerText: pct(usedFraction * 100),
+                        size: 72,
+                        lineWidth: 8
+                    )
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 2)
             }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
 
-            HStack(alignment: .top, spacing: 18) {
-                PressureGauge(fraction: usedFraction)
-                    .frame(width: 96, height: 78)
-                SegmentedRing(
-                    segments: [
-                        (Double(model.memApp) / Double(model.memTotal), StatsTheme.blue),
-                        (Double(model.memWired) / Double(model.memTotal), StatsTheme.orange),
-                        (Double(model.memCompressed) / Double(model.memTotal), StatsTheme.pink)
-                    ],
-                    centerText: pct(usedFraction * 100),
-                    size: 76,
-                    lineWidth: 8
-                )
-            }
-            .frame(maxWidth: .infinity)
-
-            VStack(alignment: .leading, spacing: 8) {
-                SectionHeader(title: "USAGE HISTORY")
+            VStack(alignment: .leading, spacing: 5) {
+                SectionHeader(title: "Usage History")
                 card {
                     ZStack {
                         StatsHistoryChart(values: model.memHistory, maxValue: 100, color: StatsTheme.chartBlue)
@@ -687,31 +719,63 @@ struct StatsDetailView: View {
                 }
             }
 
-            VStack(alignment: .leading, spacing: 6) {
-                SectionHeader(title: "DETAILS")
-                DetailRow(title: "Used:", value: MemoryFormatter.format(bytes: model.memUsed))
-                stackedMemoryBar(total: Double(model.memTotal))
-                DetailRow(title: "App:", value: MemoryFormatter.format(bytes: model.memApp), dotColor: StatsTheme.blue)
-                DetailRow(title: "Wired:", value: MemoryFormatter.format(bytes: model.memWired), dotColor: StatsTheme.orange)
-                DetailRow(
-                    title: "Compressed:",
-                    value: MemoryFormatter.format(bytes: model.memCompressed),
-                    dotColor: StatsTheme.pink
-                )
-                DetailRow(title: "Free:", value: MemoryFormatter.format(bytes: model.memFree), dotColor: StatsTheme.gray)
-                DetailRow(
-                    title: "Swap:",
-                    value: model.swapUsed > 0 ? MemoryFormatter.format(bytes: model.swapUsed) : "None",
-                    dotColor: StatsTheme.yellow
-                )
+            VStack(alignment: .leading, spacing: 5) {
+                SectionHeader(title: "Details")
+                card {
+                    VStack(alignment: .leading, spacing: 4.5) {
+                        DetailRow(title: "Used:", value: MemoryFormatter.format(bytes: model.memUsed))
+                        stackedMemoryBar(total: Double(model.memTotal))
+                            .padding(.vertical, 2)
+                        DetailRow(title: "App:", value: MemoryFormatter.format(bytes: model.memApp), dotColor: StatsTheme.blue)
+                        DetailRow(title: "Wired:", value: MemoryFormatter.format(bytes: model.memWired), dotColor: StatsTheme.orange)
+                        DetailRow(
+                            title: "Compressed:",
+                            value: MemoryFormatter.format(bytes: model.memCompressed),
+                            dotColor: StatsTheme.pink
+                        )
+                        DetailRow(title: "Free:", value: MemoryFormatter.format(bytes: model.memFree), dotColor: StatsTheme.gray)
+                        DetailRow(
+                            title: "Swap:",
+                            value: model.swapUsed > 0 ? MemoryFormatter.format(bytes: model.swapUsed) : "None",
+                            dotColor: StatsTheme.yellow
+                        )
+                    }
+                }
             }
 
-            VStack(alignment: .leading, spacing: 8) {
-                SectionHeader(title: "TOP PROCESSES")
+            VStack(alignment: .leading, spacing: 5) {
+                SectionHeader(title: "Top Processes")
                 card {
                     ProcessList(procs: model.memTop, showCpu: false, onCopy: { model.toast($0) })
                 }
             }
+
+            Button {
+                NSWorkspace.shared.open(
+                    URL(fileURLWithPath: "/System/Applications/Utilities/Activity Monitor.app")
+                )
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "waveform.path.ecg")
+                        .font(.system(size: 10.5))
+                        .foregroundStyle(QuitXTheme.accent)
+                    Text("Open Activity Monitor")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(Color.primary)
+                    Spacer()
+                    Image(systemName: "arrow.up.right")
+                        .font(.system(size: 9.5, weight: .semibold))
+                        .foregroundStyle(Color.secondary)
+                }
+                .padding(.horizontal, 9)
+                .frame(height: 26)
+                .background(QuitXTheme.cardBackground, in: RoundedRectangle(cornerRadius: 6))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
+                )
+            }
+            .buttonStyle(.plain)
         }
     }
 
