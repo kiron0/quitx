@@ -171,14 +171,6 @@ struct StatsAccuracyTests {
         }
     }
 
-    @Test("Frequencies are plausible when reported")
-    func testFrequenciesPlausible() {
-        let freqs = SystemUsage.frequenciesMHz()
-        for value in [freqs.allMHz, freqs.efficiencyMHz, freqs.performanceMHz] where value > 0 {
-            #expect(value >= 300 && value <= 7000)
-        }
-    }
-
     @Test("Top process sample matches independent ps ground truth")
     func testTopProcessGroundTruth() async throws {
         func pidMap(_ raw: String) -> [pid_t: Double] {
@@ -239,17 +231,4 @@ struct StatsAccuracyTests {
         #expect(history.first == 20)
     }
 
-    @Test("IOReport frequency readings are plausible")
-    func testIOReportFrequencySanity() {
-        guard CPUFrequencySampler.prepare() else { return }
-        _ = CPUFrequencySampler.poll()
-        Thread.sleep(forTimeInterval: 1.2)
-        guard let reading = CPUFrequencySampler.poll() else { return }
-        if reading.efficiencyMHz > 0 {
-            #expect(reading.efficiencyMHz >= 300 && reading.efficiencyMHz <= 4000, "efficiency \(reading.efficiencyMHz)")
-        }
-        if reading.performanceMHz > 0 {
-            #expect(reading.performanceMHz >= 300 && reading.performanceMHz <= 6000, "performance \(reading.performanceMHz)")
-        }
-    }
 }

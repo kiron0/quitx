@@ -50,7 +50,6 @@ final class UpdateChecker: ObservableObject {
         defer { isChecking = false }
 
         var request = URLRequest(url: updateWorkerURL)
-        request.setValue(QuitXConstants.updateSecretKey, forHTTPHeaderField: "X-QuitX-Key")
         request.setValue("QuitX-App", forHTTPHeaderField: "User-Agent")
         request.cachePolicy = .reloadIgnoringLocalCacheData
         request.timeoutInterval = 8.0

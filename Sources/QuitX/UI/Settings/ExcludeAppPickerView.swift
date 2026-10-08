@@ -18,12 +18,13 @@ enum InstalledApplicationScanner {
 
     static func scan(forceRefresh: Bool = false) -> [InstalledApplication] {
         lock.lock()
+
+        defer { lock.unlock() }
+
         let cacheIsFresh = Date().timeIntervalSince(cachedAt) < cacheLifetime
         if !forceRefresh, cacheIsFresh, let cached {
-            lock.unlock()
             return cached
         }
-        lock.unlock()
 
         var applicationsByIdentifier: [String: InstalledApplication] = [:]
         for app in NSWorkspace.shared.runningApplications {
@@ -99,10 +100,8 @@ enum InstalledApplicationScanner {
             $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
         }
 
-        lock.lock()
         cached = sorted
         cachedAt = Date()
-        lock.unlock()
 
         return sorted
     }

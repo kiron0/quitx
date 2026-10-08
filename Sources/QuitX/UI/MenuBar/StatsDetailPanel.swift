@@ -25,9 +25,6 @@ final class StatsDetailModel: ObservableObject {
     @Published var load1: Double = 0
     @Published var load5: Double = 0
     @Published var load15: Double = 0
-    @Published var freqAllMHz: Int = 0
-    @Published var freqEfficiencyMHz: Int = 0
-    @Published var freqPerformanceMHz: Int = 0
     @Published var uptime: String = ""
 
     @Published var cpuHistory: [Double] = []
@@ -74,13 +71,6 @@ final class StatsDetailModel: ObservableObject {
         let counts = SystemUsage.coreCounts()
         efficiencyCores = counts.efficiency
         performanceCores = counts.performance
-        let freqs = SystemUsage.frequenciesMHz()
-        freqAllMHz = freqs.allMHz
-        freqEfficiencyMHz = freqs.efficiencyMHz
-        freqPerformanceMHz = freqs.performanceMHz
-        if freqAllMHz == 0, freqEfficiencyMHz == 0, freqPerformanceMHz == 0 {
-            _ = CPUFrequencySampler.prepare()
-        }
         tick()
         let timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.tick() }
@@ -121,11 +111,6 @@ final class StatsDetailModel: ObservableObject {
         load5 = load.1
         load15 = load.2
         uptime = SystemUsage.uptimeDescription()
-
-        if let reading = CPUFrequencySampler.poll() {
-            if reading.efficiencyMHz > 0 { freqEfficiencyMHz = reading.efficiencyMHz }
-            if reading.performanceMHz > 0 { freqPerformanceMHz = reading.performanceMHz }
-        }
 
         if let breakdown = SystemUsage.memoryBreakdown() {
             memTotal = breakdown.total
@@ -662,33 +647,6 @@ struct StatsDetailView: View {
                         DetailRow(title: "1 minute:", value: String(format: "%.2f", model.load1))
                         DetailRow(title: "5 minutes:", value: String(format: "%.2f", model.load5))
                         DetailRow(title: "15 minutes:", value: String(format: "%.2f", model.load15))
-                    }
-                }
-            }
-
-            if model.freqAllMHz > 0 || model.freqEfficiencyMHz > 0 || model.freqPerformanceMHz > 0 {
-                VStack(alignment: .leading, spacing: 5) {
-                    SectionHeader(title: "Frequency")
-                    card {
-                        VStack(alignment: .leading, spacing: 4.5) {
-                            if model.freqAllMHz > 0 {
-                                DetailRow(title: "All cores:", value: "\(model.freqAllMHz) MHz")
-                            }
-                            if model.freqEfficiencyMHz > 0 {
-                                DetailRow(
-                                    title: "Efficiency cores:",
-                                    value: "\(model.freqEfficiencyMHz) MHz",
-                                    dotColor: StatsTheme.teal
-                                )
-                            }
-                            if model.freqPerformanceMHz > 0 {
-                                DetailRow(
-                                    title: "Performance cores:",
-                                    value: "\(model.freqPerformanceMHz) MHz",
-                                    dotColor: StatsTheme.purple
-                                )
-                            }
-                        }
                     }
                 }
             }

@@ -16,7 +16,7 @@ struct AppUpdateTests {
             "releaseName": "v1.0.4",
             "releaseNotes": "Fixes and improvements",
             "publishedAt": "2026-10-03T17:37:26Z",
-            "downloadUrl": "https://updates.example.com/download/12345?key=secret",
+            "downloadUrl": "https://updates.example.com/download/12345",
             "sizeBytes": 4384565,
             "fileName": "QuitX-v1.0.4.dmg",
             "digest": "sha256:0e358a884c81bd1eb7f0ba654ea0193e4289e4253fa2e22918ad1b389b0f40ca",

@@ -58,12 +58,6 @@ enum SystemUsage {
         let total: Int
     }
 
-    struct Frequencies {
-        let allMHz: Int
-        let efficiencyMHz: Int
-        let performanceMHz: Int
-    }
-
     struct MemoryBreakdown {
         let total: UInt64
         let app: UInt64
@@ -223,26 +217,6 @@ enum SystemUsage {
         var len = 64
         guard sysctlbyname(name, &buffer, &len, nil, 0) == 0, len > 0 else { return nil }
         return String(cString: buffer)
-    }
-
-    static func frequenciesMHz() -> Frequencies {
-        func sysctlHz(_ name: String) -> Int {
-            var value: UInt64 = 0
-            var len = MemoryLayout<UInt64>.size
-            guard sysctlbyname(name, &value, &len, nil, 0) == 0, value > 0 else { return 0 }
-            return Int(value / 1_000_000)
-        }
-        var efficiencyKey = "hw.perflevel0.cpufrequency"
-        var performanceKey = "hw.perflevel1.cpufrequency"
-        if sysctlString("hw.perflevel0.name") == "Performance" {
-            efficiencyKey = "hw.perflevel1.cpufrequency"
-            performanceKey = "hw.perflevel0.cpufrequency"
-        }
-        return Frequencies(
-            allMHz: sysctlHz("hw.cpufrequency"),
-            efficiencyMHz: sysctlHz(efficiencyKey),
-            performanceMHz: sysctlHz(performanceKey)
-        )
     }
 
     static func loadAverages() -> (Double, Double, Double) {

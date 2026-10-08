@@ -29,6 +29,8 @@ All notable changes to QuitX macOS App will be documented in this file.
 
 ### Fixed
 
+- Removed private CPU-frequency APIs and their stats UI for future Mac App Store compatibility.
+- Hardened update delivery: removed the ineffective embedded gatekeeper key and require signed update verification as the trust boundary.
 - Window presentation flicker on launch: suppressed welcome window animation during automated test execution and background launch (`open -g`).
 - Settings window frame positioning: stabilized window chrome updates to avoid frame shifting and layout jumps during appearance theme switches.
 - Headless test execution in CI: added native build system fallback (`--build-system native`) to workflow test steps to prevent XCBuild property list initialization failures in CI runner environments.
