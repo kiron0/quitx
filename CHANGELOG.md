@@ -29,6 +29,12 @@ All notable changes to QuitX macOS App will be documented in this file.
 
 ### Fixed
 
+- Hardened process lifecycle & PID liveness: eliminated stale `NSRunningApplication` state across single-instance cleanup, auto-quit tracking, and restart verification to prevent invalid signals or false restart failures.
+- Auto-quit Recently Quit tracking: routed unattended automatic quits through `QuitService` to guarantee reliable termination and populate the Recently Quit history as documented.
+- Isolated update download sessions: bound async download delegates and staging tasks strictly to the active session identity, dropping stale callbacks on cancellation.
+- Top process sampling concurrency throttle: enforced single in-flight `TopProcessSampler` task in Stats detail panel to prevent overlapping `ps` runs during rapid ticks.
+- Installed application scan serialization: serialized cache-miss scans in `InstalledAppCatalog` so concurrent callers reuse the populated result without redundant disk sweeps.
+- Relaxed VM stat memory drift tolerance: increased page cache drift allowance in stats test assertions to ensure stability on high-load CI runners.
 - Removed private CPU-frequency APIs and their stats UI for future Mac App Store compatibility.
 - Hardened update delivery: removed the ineffective embedded gatekeeper key and require signed update verification as the trust boundary.
 - Window presentation flicker on launch: suppressed welcome window animation during automated test execution and background launch (`open -g`).
