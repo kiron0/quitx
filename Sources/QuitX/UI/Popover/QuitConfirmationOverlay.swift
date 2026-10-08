@@ -141,15 +141,26 @@ struct QuitConfirmationOverlay: View {
             .padding(.vertical, 12)
             .frame(width: cardWidth)
             .frame(minHeight: 132)
-            .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(NSColor.windowBackgroundColor))
-                    .shadow(color: Color.black.opacity(0.4), radius: 8, y: 3)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color.primary.opacity(0.12), lineWidth: 0.8)
-            )
+            .background {
+                let cardShape = RoundedRectangle(cornerRadius: 12)
+                if LiquidGlass.enabled {
+                    cardShape
+                        .fill(.ultraThinMaterial)
+                        .overlay {
+                            LiquidGlassFill(shape: cardShape)
+                        }
+                        .shadow(color: Color.black.opacity(0.35), radius: 10, y: 4)
+                } else {
+                    cardShape
+                        .fill(Color(NSColor.windowBackgroundColor))
+                        .shadow(color: Color.black.opacity(0.4), radius: 8, y: 3)
+                }
+            }
+            .overlay {
+                let cardShape = RoundedRectangle(cornerRadius: 12)
+                cardShape
+                    .stroke(Color.primary.opacity(LiquidGlass.enabled ? 0.18 : 0.12), lineWidth: 0.8)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .allowsHitTesting(true)

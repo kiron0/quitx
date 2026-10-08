@@ -93,6 +93,13 @@ struct HelpPopoverButton: View {
                 .padding(.horizontal, 13)
                 .padding(.vertical, 10)
                 .frame(width: 230)
+                .presentationBackground {
+                    if LiquidGlass.enabled {
+                        LiquidGlassFill(shape: RoundedRectangle(cornerRadius: 10))
+                    } else {
+                        QuitXTheme.windowBackgroundColor
+                    }
+                }
         }
     }
 }
