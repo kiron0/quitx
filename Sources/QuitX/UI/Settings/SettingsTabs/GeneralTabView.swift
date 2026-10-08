@@ -352,7 +352,7 @@ struct AutomationTabCloneView: View {
                 .disabled(!subsOn)
                 .opacity(subsOn ? 1.0 : 0.42)
             } help: {
-                Color.clear.frame(width: 20, height: 20)
+                HelpPopoverButton(text: "Bedtime curfew begins! Unattended apps take a hike starting from this hour. 🌜🛌")
             }
 
             row(label: "") {
@@ -367,7 +367,7 @@ struct AutomationTabCloneView: View {
                 .disabled(!subsOn)
                 .opacity(subsOn ? 1.0 : 0.42)
             } help: {
-                Color.clear.frame(width: 20, height: 20)
+                HelpPopoverButton(text: "Morning call! Night patrol clocks out and your day resumes without automated quits. ☀️☕️")
             }
 
             row(label: "Health:") {

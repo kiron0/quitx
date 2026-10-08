@@ -10,21 +10,22 @@ All notable changes to QuitX macOS App will be documented in this file.
 - Dedicated Automation settings tab: cleanly separated automation controls into their own dedicated tab featuring power saving, sleep and screen lock scheduling, CPU hog / memory pressure tripwires, and inactivity timeouts.
 - Scheduled sleep and screen lock quit automation: restricted unattended quitting to configurable scheduled hours (default 12 AM to 6 AM) with start and end time pickers and toggle between 12-hour AM/PM and 24-hour time formats.
 - Stats detail panel in menu bar: clicking the menu bar usage item opens a native-blur liquid glass panel displaying real-time CPU % and memory usage (used out of total unified memory) with custom status item arrow and auto-dismissal on click-outside, toggle, or Esc.
-- Menu Bar Memory Format picker: choose between Gigabytes (GB) and Percentage (%) for the menu bar memory usage readout in Settings > General.
+- Menu Bar Style & Memory format pickers: configure menu bar CPU & memory readouts with Icon (SF Symbols) vs Text (`CPU` / `MEM`) prefixes, alongside Gigabytes (GB) vs Percentage (%) memory units in Settings > General.
 - Smart Rescue (USP): when a CPU or memory limit trips, QuitX safely rescues system resources by terminating inactive windowed apps only — never your frontmost app, Finder, Trash, excluded, music, or Never-ruled apps. Rescued apps land in Recently Quit for one-click reopening.
 - Rescue consent panel & critical system protection: added interactive rescue consent gating and strict protections for vital macOS system processes and helper agents during resource cleanup.
 - Multi-consumer CPU monitor isolation: isolated CPU tick counters in `SystemUsage.cpuPercent(consumer:)` for menu bar, popover, and detail panel to prevent sample stealing and 0% readout artifacts.
 - Sticky search bar in Help: modern pinned search header in the Help sidebar with instant query matching, clear button, and empty state.
 - Welcome guide appearance setup: choose between Classic and Liquid Glass appearance directly from the first-launch Welcome guide with increased, spacious layout.
-- Humorous settings tooltips: comprehensive witty descriptions and easter eggs across all General and Automation settings options.
+- Humorous settings tooltips: comprehensive witty descriptions, tooltips, and easter eggs across all settings rows and schedule pickers.
 
 ### Changed
 
 - Capped Recently Quit history: "Reopen Recently Quit" now tracks and presents the 5 most recently quit apps (reduced from 20) for a tighter, focused menu.
 - Direct inline stepper controls: replaced static value boxes with interactive inline steppers for CPU %, memory GB thresholds, and sleep/lock time range.
+- Settings sub-options visual alignment: synchronized Menu Bar style/memory formats and Sleep & Lock schedule rows into uniform, aligned sub-option layouts matching Health and Automation sections.
 - Synchronized status bar refresh: menu bar stats monitoring aligned with live app timing (1s normal, 5s battery saver, 10s power saver).
 - Default app selection label simplified: renamed "Deselect apps by default" to "Select apps by default" across Welcome guide and Settings > Advanced with direct positive boolean binding.
-- Expanded Help documentation: updated guides for recently quit limits (up to 5), menu bar stats formatting (GB vs %), interactive detail panel, sleep & screen lock scheduling, and theme settings.
+- Expanded Help documentation: updated guides for recently quit limits (up to 5), menu bar stats formatting (Icon vs Text, GB vs %), interactive detail panel, sleep & screen lock scheduling, and theme settings.
 
 ### Fixed
 
