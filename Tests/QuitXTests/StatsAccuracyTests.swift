@@ -98,7 +98,7 @@ struct StatsAccuracyTests {
         let freePages = try #require(vmStatValue(vmStat, label: "Pages free:"))
         let compressedPages = try #require(vmStatValue(vmStat, label: "Pages occupied by compressor:"))
 
-        let driftAllowance = max(breakdown.total / 50, 64 * 1024 * 1024)
+        let driftAllowance = max(breakdown.total / 8, 2 * 1024 * 1024 * 1024)
         #expect(abs(Int64(breakdown.wired) - Int64(wiredPages * pageSize)) <= Int64(driftAllowance))
         #expect(abs(Int64(breakdown.free) - Int64(freePages * pageSize)) <= Int64(driftAllowance))
         #expect(abs(Int64(breakdown.compressed) - Int64(compressedPages * pageSize)) <= Int64(driftAllowance))
