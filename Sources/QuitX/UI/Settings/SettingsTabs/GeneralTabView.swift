@@ -138,6 +138,19 @@ struct GeneralTabCloneView: View {
             }
 
             row(label: "") {
+                toggle("Show battery in menu bar", isOn: Binding(
+                    get: { configStore.config.batteryMenuBarEnabled },
+                    set: {
+                        configStore.config.batteryMenuBarEnabled = $0
+                        configStore.save()
+                        StatusItemController.shared?.updateMenuBarStats()
+                    }
+                ))
+            } help: {
+                HelpPopoverButton(text: "Battery peek without the click! Adds charge percent beside your CPU and memory stats, with a charging bolt icon when you're plugged in. 🔋⚡")
+            }
+
+            row(label: "") {
                 HStack(spacing: 6) {
                     Text("Style format")
                         .font(.system(size: 11))

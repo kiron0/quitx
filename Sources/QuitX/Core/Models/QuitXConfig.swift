@@ -24,6 +24,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
     var sleepLockEndMinutes: Int = 360
     var sleepLockUse24Hour: Bool = true
     var showMenuBarStats: Bool = false
+    var batteryMenuBarEnabled: Bool = false
     var menuBarStatStyle: MenuBarStatStyle = .icon
     var menuBarMemoryUnit: MenuBarMemoryUnit = .gb
     var hogAlertEnabled: Bool = false
@@ -31,6 +32,10 @@ struct QuitXConfig: Codable, Equatable, Sendable {
     var memoryPressureQuitEnabled: Bool = false
     var memoryPressureThresholdMB: Int = 1024
     var batterySaverEnabled: Bool = false
+    var batteryQuitEnabled: Bool = false
+    var batteryQuitThreshold: Int = 20
+    var batterySleepGuardEnabled: Bool = false
+    var batterySleepGuardThreshold: Int = 30
     var quitTimers: [String: Double] = [:]
     var liquidGlassEnabled: Bool = true
 
@@ -38,10 +43,11 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         case exclude, force, includeFinder, includeTrash, includeBackground, groupBackground
         case defaultSelectAll, neverQuitMusic, musicApps, autoUpdate, confirmQuitAll, confirmIndividualAction, playSounds
         case quitInactiveAfterMinutes, disableQuitTips, sortBy, perAppQuitRules
-        case quitOnSleep, quitOnScreenLock, showMenuBarStats, menuBarStatStyle, menuBarMemoryUnit
+        case quitOnSleep, quitOnScreenLock, showMenuBarStats, batteryMenuBarEnabled, menuBarStatStyle, menuBarMemoryUnit
         case sleepLockStartMinutes, sleepLockEndMinutes, sleepLockUse24Hour
         case hogAlertEnabled, hogCpuThreshold
         case memoryPressureQuitEnabled, memoryPressureThresholdMB, batterySaverEnabled
+        case batteryQuitEnabled, batteryQuitThreshold, batterySleepGuardEnabled, batterySleepGuardThreshold
         case quitTimers, liquidGlassEnabled
     }
 
@@ -69,6 +75,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         sleepLockEndMinutes: Int = 360,
         sleepLockUse24Hour: Bool = true,
         showMenuBarStats: Bool = false,
+        batteryMenuBarEnabled: Bool = false,
         menuBarStatStyle: MenuBarStatStyle = .icon,
         menuBarMemoryUnit: MenuBarMemoryUnit = .gb,
         hogAlertEnabled: Bool = false,
@@ -76,6 +83,10 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         memoryPressureQuitEnabled: Bool = false,
         memoryPressureThresholdMB: Int = 1024,
         batterySaverEnabled: Bool = false,
+        batteryQuitEnabled: Bool = false,
+        batteryQuitThreshold: Int = 20,
+        batterySleepGuardEnabled: Bool = false,
+        batterySleepGuardThreshold: Int = 30,
         quitTimers: [String: Double] = [:],
         liquidGlassEnabled: Bool = true
     ) {
@@ -102,6 +113,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         self.sleepLockEndMinutes = min(1439, max(0, sleepLockEndMinutes))
         self.sleepLockUse24Hour = sleepLockUse24Hour
         self.showMenuBarStats = showMenuBarStats
+        self.batteryMenuBarEnabled = batteryMenuBarEnabled
         self.menuBarStatStyle = menuBarStatStyle
         self.menuBarMemoryUnit = menuBarMemoryUnit
         self.hogAlertEnabled = hogAlertEnabled
@@ -109,6 +121,10 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         self.memoryPressureQuitEnabled = memoryPressureQuitEnabled
         self.memoryPressureThresholdMB = memoryPressureThresholdMB
         self.batterySaverEnabled = batterySaverEnabled
+        self.batteryQuitEnabled = batteryQuitEnabled
+        self.batteryQuitThreshold = min(90, max(5, batteryQuitThreshold))
+        self.batterySleepGuardEnabled = batterySleepGuardEnabled
+        self.batterySleepGuardThreshold = min(90, max(5, batterySleepGuardThreshold))
         self.quitTimers = quitTimers
         self.liquidGlassEnabled = liquidGlassEnabled
     }
@@ -139,6 +155,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         sleepLockEndMinutes = min(1439, max(0, Self.dec(container, .sleepLockEndMinutes, defaults.sleepLockEndMinutes)))
         sleepLockUse24Hour = Self.dec(container, .sleepLockUse24Hour, defaults.sleepLockUse24Hour)
         showMenuBarStats = Self.dec(container, .showMenuBarStats, defaults.showMenuBarStats)
+        batteryMenuBarEnabled = Self.dec(container, .batteryMenuBarEnabled, defaults.batteryMenuBarEnabled)
         menuBarStatStyle = Self.dec(container, .menuBarStatStyle, defaults.menuBarStatStyle)
         menuBarMemoryUnit = Self.dec(container, .menuBarMemoryUnit, defaults.menuBarMemoryUnit)
         hogAlertEnabled = Self.dec(container, .hogAlertEnabled, defaults.hogAlertEnabled)
@@ -146,6 +163,10 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         memoryPressureQuitEnabled = Self.dec(container, .memoryPressureQuitEnabled, defaults.memoryPressureQuitEnabled)
         memoryPressureThresholdMB = Self.dec(container, .memoryPressureThresholdMB, defaults.memoryPressureThresholdMB)
         batterySaverEnabled = Self.dec(container, .batterySaverEnabled, defaults.batterySaverEnabled)
+        batteryQuitEnabled = Self.dec(container, .batteryQuitEnabled, defaults.batteryQuitEnabled)
+        batteryQuitThreshold = min(90, max(5, Self.dec(container, .batteryQuitThreshold, defaults.batteryQuitThreshold)))
+        batterySleepGuardEnabled = Self.dec(container, .batterySleepGuardEnabled, defaults.batterySleepGuardEnabled)
+        batterySleepGuardThreshold = min(90, max(5, Self.dec(container, .batterySleepGuardThreshold, defaults.batterySleepGuardThreshold)))
         quitTimers = Self.dec(container, .quitTimers, defaults.quitTimers)
         liquidGlassEnabled = Self.dec(container, .liquidGlassEnabled, defaults.liquidGlassEnabled)
     }
@@ -156,6 +177,14 @@ struct QuitXConfig: Codable, Equatable, Sendable {
 
     var effectiveHogCpuThreshold: Double {
         max(80, min(100, hogCpuThreshold))
+    }
+
+    var effectiveBatteryQuitThreshold: Int {
+        max(5, min(90, batteryQuitThreshold))
+    }
+
+    var effectiveBatterySleepGuardThreshold: Int {
+        max(5, min(90, batterySleepGuardThreshold))
     }
 
     enum MenuBarStatStyle: String, Codable, Equatable, CaseIterable, Sendable {

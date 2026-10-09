@@ -4,11 +4,13 @@ import SwiftUI
 enum RescueReason {
     case cpu(value: Double, limit: Double)
     case memory
+    case battery(percent: Double, threshold: Double)
 
     var title: String {
         switch self {
         case .cpu: return "High CPU usage"
         case .memory: return "Memory pressure"
+        case .battery: return "Low battery"
         }
     }
 
@@ -22,6 +24,12 @@ enum RescueReason {
             )
         case .memory:
             return "Memory is running out. QuitX wants to quit high-memory inactive apps. Your call."
+        case .battery(let percent, let threshold):
+            return String(
+                format: "Battery is at %.0f%% (limit %.0f%%). QuitX wants to quit inactive apps to save power. Your call.",
+                percent,
+                threshold
+            )
         }
     }
 
@@ -29,6 +37,7 @@ enum RescueReason {
         switch self {
         case .cpu: return "gauge.with.dots.needle.67percent"
         case .memory: return "memorychip"
+        case .battery: return "batterymedium"
         }
     }
 }

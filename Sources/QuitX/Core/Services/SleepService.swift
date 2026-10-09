@@ -84,6 +84,11 @@ final class SleepService {
         ) {
             return
         }
+        if config.batterySleepGuardEnabled,
+           let percent = BatteryDetailSampler.snapshot()?.percent,
+           percent <= config.effectiveBatterySleepGuardThreshold {
+            return
+        }
         StatusItemController.shared?.closePopover()
         let vm = AppListViewModel.shared
 

@@ -331,7 +331,8 @@ final class StatusItemController: NSObject {
         cpu: Double,
         memoryUsed: UInt64,
         unit: QuitXConfig.MenuBarMemoryUnit,
-        style: QuitXConfig.MenuBarStatStyle = .icon
+        style: QuitXConfig.MenuBarStatStyle = .icon,
+        battery: BatterySnapshot? = nil
     ) -> NSAttributedString {
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.menuBarFont(ofSize: 0),
@@ -353,6 +354,27 @@ final class StatusItemController: NSObject {
             fallback: "MEM",
             text: BatterySaver.compactMemoryText(bytes: memoryUsed, unit: unit)
         )
+        if let battery {
+            title.append(NSAttributedString(string: "   ", attributes: attributes))
+            let batterySymbols: [String]
+            if battery.isCharging {
+                batterySymbols = [
+                    BatteryDetailSampler.menuBarSymbolName(percent: battery.percent, charging: true),
+                    "bolt.fill"
+                ]
+            } else if battery.isACPower {
+                batterySymbols = ["powercord", "power.plug"]
+            } else {
+                batterySymbols = [
+                    BatteryDetailSampler.menuBarSymbolName(percent: battery.percent, charging: false)
+                ]
+            }
+            appendSegment(
+                symbolNames: batterySymbols,
+                fallback: battery.isACPower && !battery.isCharging ? "AC" : "BAT",
+                text: "\(battery.percent)%"
+            )
+        }
         return title
     }
 
@@ -382,11 +404,13 @@ final class StatusItemController: NSObject {
         button.imagePosition = .imageLeading
         let cpu = SystemUsage.cpuPercent(consumer: "menuBar")
         let memoryUsed = SystemUsage.memoryUsedBytes()
+        let battery = cfg.batteryMenuBarEnabled ? BatteryDetailSampler.snapshot() : nil
         button.attributedTitle = Self.statsTitle(
             cpu: cpu,
             memoryUsed: memoryUsed,
             unit: cfg.menuBarMemoryUnit,
-            style: cfg.menuBarStatStyle
+            style: cfg.menuBarStatStyle,
+            battery: battery
         )
     }
 

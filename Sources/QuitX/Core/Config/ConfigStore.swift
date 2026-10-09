@@ -60,6 +60,14 @@ final class ConfigStore: ObservableObject {
             config.memoryPressureThresholdMB = systemMaxGB * 1024
             mutated = true
         }
+        if config.batteryQuitThreshold < 5 || config.batteryQuitThreshold > 90 {
+            config.batteryQuitThreshold = min(90, max(5, config.batteryQuitThreshold))
+            mutated = true
+        }
+        if config.batterySleepGuardThreshold < 5 || config.batterySleepGuardThreshold > 90 {
+            config.batterySleepGuardThreshold = min(90, max(5, config.batterySleepGuardThreshold))
+            mutated = true
+        }
         var seen = Set<String>()
         let deduped = config.exclude.filter { seen.insert($0.lowercased()).inserted }
         if deduped.count != config.exclude.count {

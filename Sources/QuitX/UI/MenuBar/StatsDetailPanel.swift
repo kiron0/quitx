@@ -7,6 +7,7 @@ final class StatsDetailModel: ObservableObject {
     enum Mode: String, CaseIterable {
         case cpu = "CPU"
         case memory = "Memory"
+        case battery = "Battery"
     }
 
     @Published var mode: Mode = .cpu
@@ -37,6 +38,7 @@ final class StatsDetailModel: ObservableObject {
     @Published var memFree: UInt64 = 0
     @Published var swapUsed: UInt64 = 0
     @Published var swapTotal: UInt64 = 0
+    @Published var battery: BatterySnapshot?
 
     @Published var showToast: Bool = false
     @Published private(set) var toastMessage: String = ""
@@ -111,6 +113,8 @@ final class StatsDetailModel: ObservableObject {
         swapUsed = swap.used
         swapTotal = swap.total
 
+        battery = BatteryDetailSampler.snapshot()
+
         appendHistory(&cpuHistory, value: cpu)
         if memTotal > 0 {
             appendHistory(&memHistory, value: Double(memUsed) / Double(memTotal) * 100)
@@ -158,6 +162,7 @@ private enum StatsTheme {
     static let pink = Color(red: 0.98, green: 0.30, blue: 0.45)
     static let gray = Color.primary.opacity(0.25)
     static let yellow = Color(red: 0.98, green: 0.80, blue: 0.20)
+    static let green = Color(red: 0.20, green: 0.72, blue: 0.35)
 
     static func cpuLevelColor(index: Int) -> Color {
         let goldenRatio = 0.618_033_988_75
@@ -468,9 +473,15 @@ struct StatsDetailView: View {
             )
     }
 
+    private var visibleModes: [StatsDetailModel.Mode] {
+        StatsDetailModel.Mode.allCases.filter { mode in
+            mode != .battery || configStore.config.batteryMenuBarEnabled
+        }
+    }
+
     private var tabSelector: some View {
         HStack(spacing: 2) {
-            ForEach(StatsDetailModel.Mode.allCases, id: \.self) { mode in
+            ForEach(visibleModes, id: \.self) { mode in
                 let isSelected = model.mode == mode
                 Button {
                     withAnimation(.easeInOut(duration: 0.16)) {
@@ -478,7 +489,7 @@ struct StatsDetailView: View {
                     }
                 } label: {
                     HStack(spacing: 5) {
-                        Image(systemName: mode == .cpu ? "cpu" : "memorychip")
+                        Image(systemName: mode == .cpu ? "cpu" : mode == .memory ? "memorychip" : "batteryblock")
                             .font(.system(size: 10.5, weight: isSelected ? .semibold : .regular))
                         Text(mode.rawValue)
                             .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
@@ -520,6 +531,12 @@ struct StatsDetailView: View {
                         cpuContent
                     case .memory:
                         memoryContent
+                    case .battery:
+                        if configStore.config.batteryMenuBarEnabled {
+                            batteryContent
+                        } else {
+                            cpuContent
+                        }
                     }
                 }
                 .padding(.horizontal, 10)
@@ -552,6 +569,13 @@ struct StatsDetailView: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: model.showToast)
+        .onChange(of: configStore.config.batteryMenuBarEnabled) { _, enabled in
+            if !enabled, model.mode == .battery {
+                withAnimation(.easeInOut(duration: 0.16)) {
+                    model.mode = .cpu
+                }
+            }
+        }
     }
 
     private var cpuContent: some View {
@@ -739,6 +763,110 @@ struct StatsDetailView: View {
             }
             .buttonStyle(.plain)
         }
+    }
+
+    private var batteryContent: some View {
+        Group {
+            if let battery = model.battery {
+                VStack(alignment: .leading, spacing: 10) {
+                    card {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(alignment: .center, spacing: 10) {
+                                Image(systemName: BatteryDetailSampler.menuBarSymbolName(
+                                    percent: battery.percent,
+                                    charging: battery.isCharging
+                                ))
+                                    .font(.system(size: 28))
+                                    .foregroundStyle(Color.primary)
+                                Text("\(battery.percent)%")
+                                    .font(.system(size: 22, weight: .semibold))
+                                    .foregroundStyle(Color.primary)
+                                Spacer()
+                            }
+                            Text("Power Source: \(battery.isACPower ? "Power Adapter" : "Battery")")
+                                .font(.system(size: 11))
+                                .foregroundStyle(Color.secondary)
+                            if let timeText = batteryNativeTimeText(battery) {
+                                Text(timeText)
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(Color.secondary)
+                            }
+                            if let limit = battery.chargingLimitPercent {
+                                Text("Charging Limit: \(limit)%")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(Color.secondary)
+                            }
+                        }
+                        .padding(.vertical, 2)
+                    }
+
+                    VStack(alignment: .leading, spacing: 5) {
+                        SectionHeader(title: "Details")
+                        card {
+                            VStack(alignment: .leading, spacing: 4.5) {
+                                let showFlow = battery.isCharging || !battery.isACPower
+                                if showFlow, let watts = battery.powerW {
+                                    DetailRow(title: "Power:", value: String(format: "%.1f W", watts))
+                                }
+                                if showFlow, let amps = battery.amperageMA {
+                                    DetailRow(
+                                        title: "Amperage:",
+                                        value: String(format: "%+.0f mA", Double(amps)),
+                                        dotColor: StatsTheme.orange
+                                    )
+                                }
+                                if let volts = battery.voltageMV {
+                                    DetailRow(title: "Voltage:", value: String(format: "%.2f V", Double(volts) / 1000.0))
+                                }
+                                if let temp = battery.tempC {
+                                    DetailRow(
+                                        title: "Temperature:",
+                                        value: String(format: "%.1f °C", temp),
+                                        dotColor: temp > 35 ? StatsTheme.orange : StatsTheme.green
+                                    )
+                                }
+                                if let charge = battery.chargeMAh, let design = battery.designCapacityMAh, design > 0 {
+                                    DetailRow(
+                                        title: "Charge:",
+                                        value: "\(charge) / \(design) mAh",
+                                        dotColor: StatsTheme.blue
+                                    )
+                                }
+                                if let cycles = battery.cycleCount {
+                                    DetailRow(title: "Cycle Count:", value: "\(cycles)")
+                                }
+                                if let health = battery.healthPercent {
+                                    DetailRow(title: "Max Capacity:", value: "\(health)%")
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                VStack(spacing: 8) {
+                    Image(systemName: "batteryblock.slash")
+                        .font(.system(size: 26))
+                        .foregroundStyle(Color.secondary)
+                    Text("No battery detected")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 30)
+            }
+        }
+    }
+
+    private func batteryNativeTimeText(_ battery: BatterySnapshot) -> String? {
+        if battery.isCharging {
+            return BatteryDetailSampler.formatClock(minutes: battery.timeToFullMin ?? 0)
+                .map { "Time to Full: \($0)" }
+        }
+        if !battery.isACPower {
+            return BatteryDetailSampler.formatClock(minutes: battery.timeToEmptyMin ?? 0)
+                .map { "Remaining: \($0)" }
+        }
+        return nil
     }
 
     private func stackedMemoryBar(total: Double) -> some View {
