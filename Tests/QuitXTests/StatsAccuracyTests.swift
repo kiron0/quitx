@@ -5,6 +5,18 @@ import Testing
 
 @Suite("Stats panel analytics accuracy")
 struct StatsAccuracyTests {
+    @Test("CPU tick deltas survive UInt32 counter wrap")
+    func testCpuTickCounterWrap() {
+        #expect(SystemUsage.cpuTickDelta(previous: UInt64(UInt32.max - 4), current: 7) == 12)
+        #expect(SystemUsage.cpuTickDelta(previous: 100, current: 145) == 45)
+        #expect(
+            SystemUsage.cpuTickDeltas(
+                previous: [UInt64(UInt32.max), 20, 30, 40],
+                current: [4, 25, 32, 41]
+            ) == [5, 5, 2, 1]
+        )
+    }
+
     private func shellOutput(_ path: String, _ args: [String]) -> String {
         let pipe = Pipe()
         let proc = Process()
@@ -68,6 +80,16 @@ struct StatsAccuracyTests {
         #expect(abs(a.total - b.total) < 35)
     }
 
+    @Test("Menu bar CPU and detail CPU use same per-core calculation")
+    func testMenuBarAndDetailCpuAgree() async throws {
+        _ = SystemUsage.cpuPercent(consumer: "testMenuBar")
+        _ = SystemUsage.cpuDetail(consumer: "testDetail")
+        try await Task.sleep(nanoseconds: 500_000_000)
+        let menuBar = SystemUsage.cpuPercent(consumer: "testMenuBar")
+        let detail = SystemUsage.cpuDetail(consumer: "testDetail")
+        #expect(abs(menuBar - detail.total) < 10)
+    }
+
     @Test("Load averages match sysctl ground truth")
     func testLoadAveragesGroundTruth() {
         let ours = SystemUsage.loadAverages()
@@ -97,12 +119,22 @@ struct StatsAccuracyTests {
         let wiredPages = try #require(vmStatValue(vmStat, label: "Pages wired down:"))
         let freePages = try #require(vmStatValue(vmStat, label: "Pages free:"))
         let compressedPages = try #require(vmStatValue(vmStat, label: "Pages occupied by compressor:"))
+        let purgeablePages = try #require(vmStatValue(vmStat, label: "Pages purgeable:"))
+        let anonymousPages = try #require(vmStatValue(vmStat, label: "Anonymous pages:"))
+        let fileBackedPages = try #require(vmStatValue(vmStat, label: "File-backed pages:"))
 
-        let driftAllowance = max(breakdown.total / 8, 2 * 1024 * 1024 * 1024)
+        let driftAllowance = max(breakdown.total / 32, 256 * 1024 * 1024)
         #expect(abs(Int64(breakdown.wired) - Int64(wiredPages * pageSize)) <= Int64(driftAllowance))
         #expect(abs(Int64(breakdown.free) - Int64(freePages * pageSize)) <= Int64(driftAllowance))
         #expect(abs(Int64(breakdown.compressed) - Int64(compressedPages * pageSize)) <= Int64(driftAllowance))
+        let expectedAppPages = anonymousPages >= purgeablePages ? anonymousPages - purgeablePages : 0
+        #expect(abs(Int64(breakdown.app) - Int64(expectedAppPages * pageSize)) <= Int64(driftAllowance))
+        #expect(
+            abs(Int64(breakdown.cached) - Int64((fileBackedPages + purgeablePages) * pageSize))
+                <= Int64(driftAllowance)
+        )
         #expect(breakdown.app > 0)
+        #expect(breakdown.cached > 0)
         #expect(breakdown.free > 0)
     }
 

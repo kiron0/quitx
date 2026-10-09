@@ -4,35 +4,38 @@ import os
 
 enum SystemUsage {
     private struct CpuState {
-        var prevBusy: UInt64?
-        var prevTotal: UInt64?
+        var previousTicks: [UInt64] = []
         var lastPercent: Double = 0
     }
 
     private static let cpuLock = OSAllocatedUnfairLock(initialState: [String: CpuState]())
 
-    static func prime() {
-        _ = cpuPercent(consumer: "prime")
+    static func prime(consumer: String = "menuBar") {
+        _ = cpuPercent(consumer: consumer)
     }
 
     static func cpuPercent(consumer: String = "default") -> Double {
-        guard let (busy, total) = readCpuTicks() else {
+        guard let ticks = readPerCoreTicks() else {
             return cpuLock.withLock { $0[consumer]?.lastPercent ?? 0 }
         }
         return cpuLock.withLock { states -> Double in
             var state = states[consumer] ?? CpuState()
             defer { states[consumer] = state }
-            guard let prevBusy = state.prevBusy, let prevTotal = state.prevTotal else {
-                state.prevBusy = busy
-                state.prevTotal = total
+            guard state.previousTicks.count == ticks.count, !state.previousTicks.isEmpty else {
+                state.previousTicks = ticks
                 return 0
             }
-            state.prevBusy = busy
-            state.prevTotal = total
-            guard total > prevTotal else { return state.lastPercent }
-            let deltaTotal = total - prevTotal
+            let deltas = cpuTickDeltas(previous: state.previousTicks, current: ticks)
+            state.previousTicks = ticks
+            var deltaBusy: UInt64 = 0
+            var deltaTotal: UInt64 = 0
+            var index = 0
+            while index + 3 < deltas.count {
+                deltaBusy += deltas[index] + deltas[index + 2] + deltas[index + 3]
+                deltaTotal += deltas[index] + deltas[index + 1] + deltas[index + 2] + deltas[index + 3]
+                index += 4
+            }
             guard deltaTotal > 0 else { return state.lastPercent }
-            let deltaBusy = busy >= prevBusy ? busy - prevBusy : 0
             let raw = Double(deltaBusy) / Double(deltaTotal) * 100
             let clamped = min(100, max(0, raw))
             state.lastPercent = clamped
@@ -41,7 +44,7 @@ enum SystemUsage {
     }
 
     static func memoryUsedBytes() -> UInt64 {
-        readMemory()?.used ?? 0
+        readVmStats()?.used ?? 0
     }
 
     struct CpuDetail {
@@ -63,6 +66,7 @@ enum SystemUsage {
         let app: UInt64
         let wired: UInt64
         let compressed: UInt64
+        let cached: UInt64
         let free: UInt64
         let used: UInt64
     }
@@ -120,10 +124,10 @@ enum SystemUsage {
                 let pIdle = state.prev[base + 1]
                 let pSystem = state.prev[base + 2]
                 let pNice = state.prev[base + 3]
-                let dU = ticks[base] >= pUser ? ticks[base] - pUser : 0
-                let dI = ticks[base + 1] >= pIdle ? ticks[base + 1] - pIdle : 0
-                let dS = ticks[base + 2] >= pSystem ? ticks[base + 2] - pSystem : 0
-                let dN = ticks[base + 3] >= pNice ? ticks[base + 3] - pNice : 0
+                let dU = cpuTickDelta(previous: pUser, current: ticks[base])
+                let dI = cpuTickDelta(previous: pIdle, current: ticks[base + 1])
+                let dS = cpuTickDelta(previous: pSystem, current: ticks[base + 2])
+                let dN = cpuTickDelta(previous: pNice, current: ticks[base + 3])
                 let dTotal = dU + dI + dS + dN
                 if dTotal > 0 {
                     perCore.append(min(100, Double(dU + dS + dN) / Double(dTotal) * 100))
@@ -160,6 +164,15 @@ enum SystemUsage {
             state.lastPerCore = perCore
             return CpuDetail(total: totalPct, system: systemPct, user: userPct, idle: idlePct, perCore: perCore)
         }
+    }
+
+    static func cpuTickDelta(previous: UInt64, current: UInt64) -> UInt64 {
+        UInt64(UInt32(truncatingIfNeeded: current) &- UInt32(truncatingIfNeeded: previous))
+    }
+
+    static func cpuTickDeltas(previous: [UInt64], current: [UInt64]) -> [UInt64] {
+        guard previous.count == current.count else { return [] }
+        return zip(previous, current).map { cpuTickDelta(previous: $0.0, current: $0.1) }
     }
 
     private static func readPerCoreTicks() -> [UInt64]? {
@@ -260,6 +273,7 @@ enum SystemUsage {
             app: stats.app,
             wired: stats.wired,
             compressed: stats.compressed,
+            cached: stats.cached,
             free: stats.free,
             used: stats.used
         )
@@ -292,6 +306,7 @@ enum SystemUsage {
         let app: UInt64
         let wired: UInt64
         let compressed: UInt64
+        let cached: UInt64
         let free: UInt64
     }
 
@@ -309,57 +324,27 @@ enum SystemUsage {
         }
         guard result == KERN_SUCCESS else { return nil }
         let pageSize = UInt64(vm_page_size)
-        let app = UInt64(stats.internal_page_count) * pageSize
+        let internalPages = UInt64(stats.internal_page_count)
+        let purgeablePages = UInt64(stats.purgeable_count)
+        let app = internalPages >= purgeablePages ? (internalPages - purgeablePages) * pageSize : 0
         let wired = UInt64(stats.wire_count) * pageSize
         let compressed = UInt64(stats.compressor_page_count) * pageSize
+        let cached = (UInt64(stats.external_page_count) + purgeablePages) * pageSize
         let free = UInt64(stats.free_count) * pageSize
-        return VmStats(used: app + wired + compressed, app: app, wired: wired, compressed: compressed, free: free)
+        return VmStats(
+            used: app + wired + compressed,
+            app: app,
+            wired: wired,
+            compressed: compressed,
+            cached: cached,
+            free: free
+        )
     }
 
     static func memoryPercent() -> Double {
-        guard let memory = readMemory(), memory.total > 0 else { return 0 }
-        let raw = Double(memory.used) / Double(memory.total) * 100
+        let total = ProcessInfo.processInfo.physicalMemory
+        guard let memory = readVmStats(), total > 0 else { return 0 }
+        let raw = Double(memory.used) / Double(total) * 100
         return min(100, max(0, raw))
-    }
-
-    private static func readMemory() -> (used: UInt64, total: UInt64)? {
-        var stats = vm_statistics64_data_t()
-        var count = mach_msg_type_number_t(
-            MemoryLayout<vm_statistics64_data_t>.stride / MemoryLayout<integer_t>.stride
-        )
-        let host = mach_host_self()
-        defer { mach_port_deallocate(mach_task_self_, host) }
-        let result = withUnsafeMutablePointer(to: &stats) { pointer in
-            pointer.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
-                host_statistics64(host, HOST_VM_INFO64, $0, &count)
-            }
-        }
-        guard result == KERN_SUCCESS else { return nil }
-        let pageSize = UInt64(vm_page_size)
-        let appPages = UInt64(stats.internal_page_count)
-        let wiredPages = UInt64(stats.wire_count)
-        let compressedPages = UInt64(stats.compressor_page_count)
-        return (used: (appPages + wiredPages + compressedPages) * pageSize, ProcessInfo.processInfo.physicalMemory)
-    }
-
-    private static func readCpuTicks() -> (busy: UInt64, total: UInt64)? {
-        var info = host_cpu_load_info_data_t()
-        var count = mach_msg_type_number_t(
-            MemoryLayout<host_cpu_load_info_data_t>.stride / MemoryLayout<integer_t>.stride
-        )
-        let host = mach_host_self()
-        defer { mach_port_deallocate(mach_task_self_, host) }
-        let result = withUnsafeMutablePointer(to: &info) { pointer in
-            pointer.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
-                host_statistics(host, HOST_CPU_LOAD_INFO, $0, &count)
-            }
-        }
-        guard result == KERN_SUCCESS else { return nil }
-        let user = UInt64(info.cpu_ticks.0)
-        let idle = UInt64(info.cpu_ticks.1)
-        let system = UInt64(info.cpu_ticks.2)
-        let nice = UInt64(info.cpu_ticks.3)
-        let busy = user + system + nice
-        return (busy, busy + idle)
     }
 }

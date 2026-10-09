@@ -20,8 +20,6 @@ final class StatsDetailModel: ObservableObject {
     @Published var perCore: [Double] = []
     @Published var efficiencyCores: Int = 0
     @Published var performanceCores: Int = 0
-    @Published var efficiencyPct: Double = 0
-    @Published var performancePct: Double = 0
     @Published var load1: Double = 0
     @Published var load5: Double = 0
     @Published var load15: Double = 0
@@ -36,6 +34,7 @@ final class StatsDetailModel: ObservableObject {
     @Published var memApp: UInt64 = 0
     @Published var memWired: UInt64 = 0
     @Published var memCompressed: UInt64 = 0
+    @Published var memCached: UInt64 = 0
     @Published var memFree: UInt64 = 0
     @Published var swapUsed: UInt64 = 0
     @Published var swapTotal: UInt64 = 0
@@ -97,15 +96,6 @@ final class StatsDetailModel: ObservableObject {
         idlePct = detail.idle
         perCore = detail.perCore
 
-        if efficiencyCores > 0, detail.perCore.count >= efficiencyCores {
-            let slice = detail.perCore[0..<efficiencyCores]
-            efficiencyPct = slice.reduce(0, +) / Double(slice.count)
-        }
-        if performanceCores > 0, detail.perCore.count >= efficiencyCores + performanceCores {
-            let slice = detail.perCore[efficiencyCores..<(efficiencyCores + performanceCores)]
-            performancePct = slice.reduce(0, +) / Double(slice.count)
-        }
-
         let load = SystemUsage.loadAverages()
         load1 = load.0
         load5 = load.1
@@ -117,6 +107,7 @@ final class StatsDetailModel: ObservableObject {
             memApp = breakdown.app
             memWired = breakdown.wired
             memCompressed = breakdown.compressed
+            memCached = breakdown.cached
             memFree = breakdown.free
         }
         let swap = SystemUsage.swapUsage()
@@ -171,7 +162,6 @@ private enum StatsTheme {
     static let orange = Color(red: 1.00, green: 0.62, blue: 0.15)
     static let pink = Color(red: 0.98, green: 0.30, blue: 0.45)
     static let gray = Color.primary.opacity(0.25)
-    static let green = Color(red: 0.30, green: 0.80, blue: 0.35)
     static let yellow = Color(red: 0.98, green: 0.80, blue: 0.20)
 }
 
@@ -208,14 +198,8 @@ private struct SegmentedRing: View {
     }
 }
 
-private struct PressureGauge: View {
+private struct MemoryUsageGauge: View {
     let fraction: Double
-
-    private var label: String {
-        if fraction < 0.6 { return "Good" }
-        if fraction < 0.8 { return "Warning" }
-        return "Critical"
-    }
 
     private func point(angleDegrees: Double, radius: Double, center: CGPoint) -> CGPoint {
         let radians = angleDegrees * .pi / 180
@@ -243,12 +227,10 @@ private struct PressureGauge: View {
                 let clamped = min(1, max(0, fraction))
 
                 ZStack {
-                    zonePath(from: 0, to: 0.6, center: center, radius: radius)
-                        .stroke(StatsTheme.green, style: StrokeStyle(lineWidth: 7, lineCap: .butt))
-                    zonePath(from: 0.6, to: 0.8, center: center, radius: radius)
-                        .stroke(StatsTheme.yellow, style: StrokeStyle(lineWidth: 7, lineCap: .butt))
-                    zonePath(from: 0.8, to: 1.0, center: center, radius: radius)
-                        .stroke(StatsTheme.red, style: StrokeStyle(lineWidth: 7, lineCap: .butt))
+                    zonePath(from: 0, to: 1, center: center, radius: radius)
+                        .stroke(StatsTheme.gray, style: StrokeStyle(lineWidth: 7, lineCap: .butt))
+                    zonePath(from: 0, to: clamped, center: center, radius: radius)
+                        .stroke(StatsTheme.blue, style: StrokeStyle(lineWidth: 7, lineCap: .butt))
 
                     Path { path in
                         path.move(to: center)
@@ -262,7 +244,7 @@ private struct PressureGauge: View {
                         .position(center)
                 }
             }
-            Text(label)
+            Text("RAM used")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.secondary)
         }
@@ -312,7 +294,6 @@ private struct StatsHistoryChart: View {
 
 private struct CoreBars: View {
     let perCore: [Double]
-    let efficiencyCount: Int
     let height: CGFloat = 34
 
     var body: some View {
@@ -322,7 +303,7 @@ private struct CoreBars: View {
                 VStack(spacing: 0) {
                     Spacer(minLength: 0)
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(index < efficiencyCount ? StatsTheme.teal : StatsTheme.purple)
+                        .fill(StatsTheme.blue)
                         .frame(height: max(3, height * CGFloat(min(100, max(0, value))) / 100))
                 }
                 .frame(height: height)
@@ -617,7 +598,7 @@ struct StatsDetailView: View {
                             }
                         }
                         if !model.perCore.isEmpty {
-                            CoreBars(perCore: model.perCore, efficiencyCount: model.efficiencyCores)
+                            CoreBars(perCore: model.perCore)
                         }
                     }
                 }
@@ -631,10 +612,10 @@ struct StatsDetailView: View {
                         DetailRow(title: "User:", value: pct(model.userPct), dotColor: StatsTheme.blue)
                         DetailRow(title: "Idle:", value: pct(model.idlePct), dotColor: StatsTheme.gray)
                         if model.efficiencyCores > 0 {
-                            DetailRow(title: "Efficiency cores:", value: pct(model.efficiencyPct), dotColor: StatsTheme.teal)
+                            DetailRow(title: "Efficiency cores:", value: "\(model.efficiencyCores)", dotColor: StatsTheme.teal)
                         }
                         if model.performanceCores > 0 {
-                            DetailRow(title: "Performance cores:", value: pct(model.performancePct), dotColor: StatsTheme.purple)
+                            DetailRow(title: "Performance cores:", value: "\(model.performanceCores)", dotColor: StatsTheme.purple)
                         }
                         DetailRow(title: "Uptime:", value: model.uptime)
                     }
@@ -666,7 +647,7 @@ struct StatsDetailView: View {
         return VStack(alignment: .leading, spacing: 10) {
             card {
                 HStack(alignment: .center, spacing: 16) {
-                    PressureGauge(fraction: usedFraction)
+                    MemoryUsageGauge(fraction: usedFraction)
                         .frame(width: 90, height: 72)
                     SegmentedRing(
                         segments: [
@@ -711,6 +692,7 @@ struct StatsDetailView: View {
                             value: MemoryFormatter.format(bytes: model.memCompressed),
                             dotColor: StatsTheme.pink
                         )
+                        DetailRow(title: "Cached:", value: MemoryFormatter.format(bytes: model.memCached))
                         DetailRow(title: "Free:", value: MemoryFormatter.format(bytes: model.memFree), dotColor: StatsTheme.gray)
                         DetailRow(
                             title: "Swap:",
