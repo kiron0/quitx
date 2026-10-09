@@ -166,6 +166,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
     }
 
     private func dismissTooltips(for win: NSWindow) {
+        HelpPopoverState.closeAll()
         NotificationCenter.default.post(name: QuitXConstants.Notifications.dismissSettingsTooltips, object: nil)
         for child in win.childWindows ?? [] {
             if "\(type(of: child))".contains("Popover") || child.className.contains("Popover") {

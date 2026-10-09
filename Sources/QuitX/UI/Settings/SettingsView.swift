@@ -64,78 +64,137 @@ enum SettingsTab: String, CaseIterable {
     }
 }
 
-final class HelpPopoverState: NSObject, ObservableObject, NSPopoverDelegate {
+final class HelpPopoverState: NSObject, ObservableObject {
+    private static var activeStates = NSHashTable<HelpPopoverState>.weakObjects()
+
     @Published var isShowing = false
     @Published var isHovered = false
     weak var anchorView: NSView?
-    private let popover = NSPopover()
+    private var window: ArrowPopoverWindow?
     private var dismissObserver: AnyCancellable?
+    private var localMonitor: Any?
+    private var globalMonitor: Any?
+
+    static func closeAll() {
+        for state in activeStates.allObjects { state.close() }
+    }
 
     override init() {
         super.init()
-        popover.animates = false
-        popover.behavior = .transient
-        popover.delegate = self
         dismissObserver = NotificationCenter.default.publisher(for: QuitXConstants.Notifications.dismissSettingsTooltips)
-            .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
-                self?.hide()
+            .sink { [weak self] notification in
+                guard let self else { return }
+                if let obj = notification.object as? NSObject, obj === self { return }
+                self.close()
             }
     }
 
     deinit {
-        if popover.isShown { popover.performClose(nil) }
+        if let localMonitor { NSEvent.removeMonitor(localMonitor) }
+        if let globalMonitor { NSEvent.removeMonitor(globalMonitor) }
+        window?.orderOut(nil)
     }
 
     func toggle(text: String) {
-        if popover.isShown {
-            hide()
-        } else {
-            show(text: text)
-        }
+        if isShowing { close() } else { show(text: text) }
     }
 
-    func hide() {
-        if popover.isShown { popover.performClose(nil) }
-        isShowing = false
-        isHovered = false
+    func hide() { close() }
+
+    private func close() {
+        if isShowing {
+            window?.orderOut(nil)
+            isShowing = false
+            isHovered = false
+            Self.activeStates.remove(self)
+        }
+        if let localMonitor { NSEvent.removeMonitor(localMonitor); self.localMonitor = nil }
+        if let globalMonitor { NSEvent.removeMonitor(globalMonitor); self.globalMonitor = nil }
     }
 
     private func show(text: String) {
-        guard let anchor = anchorView else { return }
-        let hosting = NSHostingController(rootView: HelpPopoverContentView(text: text))
-        hosting.view.layoutSubtreeIfNeeded()
-        let size = hosting.view.fittingSize
-        popover.contentViewController = hosting
-        popover.contentSize = NSSize(width: 230, height: max(ceil(size.height), 20))
-        popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .minY)
-        isShowing = true
-    }
+        guard let anchor = anchorView, let anchorWindow = anchor.window else { return }
+        NotificationCenter.default.post(name: QuitXConstants.Notifications.dismissSettingsTooltips, object: self)
 
-    func popoverDidClose(_ notification: Notification) {
-        isShowing = false
-        isHovered = false
+        let anchorScreenRect = anchorWindow.convertToScreen(anchor.convert(anchor.bounds, to: nil))
+        let hostView = NSHostingView(rootView: HelpPopoverContentView(text: text))
+        let size = hostView.fittingSize
+
+        var originX = anchorScreenRect.midX - size.width / 2
+        if let screen = anchorWindow.screen ?? NSScreen.main {
+            originX = max(screen.visibleFrame.minX + 4, min(originX, screen.visibleFrame.maxX - size.width - 4))
+        }
+        let originY = anchorScreenRect.minY - size.height - 2
+        let arrowX = anchorScreenRect.midX - originX
+        hostView.rootView = HelpPopoverContentView(text: text, arrowX: arrowX)
+
+        let win: ArrowPopoverWindow
+        if let existing = window {
+            win = existing
+        } else {
+            let created = ArrowPopoverWindow()
+            window = created
+            win = created
+        }
+        win.contentView = hostView
+        win.setContentSize(size)
+        win.setFrame(NSRect(x: originX, y: originY, width: size.width, height: size.height), display: true)
+        win.invalidateShadow()
+
+        localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .keyDown]) { [weak self] event in
+            guard let self, self.isShowing else { return event }
+            if event.type == .keyDown {
+                if event.keyCode == 53 {
+                    self.close()
+                    return nil
+                }
+                return event
+            }
+            guard let anchor = self.anchorView, let anchorWindow = anchor.window else {
+                self.close()
+                return event
+            }
+            guard event.window === anchorWindow else {
+                self.close()
+                return event
+            }
+            var hit: NSView? = anchorWindow.contentView?.hitTest(event.locationInWindow)
+            var onAnchor = false
+            while let current = hit {
+                if current === anchor { onAnchor = true; break }
+                hit = current.superview
+            }
+            self.close()
+            return onAnchor ? nil : event
+        }
+        globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown]) { [weak self] _ in
+            Task { @MainActor in self?.close() }
+        }
+
+        NSApp.activate(ignoringOtherApps: true)
+        win.makeKeyAndOrderFront(nil)
+        isShowing = true
+        Self.activeStates.add(self)
     }
 }
 
 private struct HelpPopoverContentView: View {
     let text: String
+    var arrowX: CGFloat? = nil
 
     var body: some View {
-        Text(text)
-            .font(.system(size: 11.5))
-            .foregroundStyle(Color.primary)
-            .lineSpacing(2.5)
-            .padding(.horizontal, 13)
-            .padding(.vertical, 10)
-            .frame(width: 230)
-            .background {
-                if LiquidGlass.enabled {
-                    LiquidGlassFill(shape: RoundedRectangle(cornerRadius: 10))
-                } else {
-                    QuitXTheme.windowBackgroundColor
-                }
-            }
+        VStack(spacing: 0) {
+            Color.clear
+                .frame(height: 12)
+            Text(text)
+                .font(.system(size: 11.5))
+                .foregroundStyle(Color.primary)
+                .lineSpacing(2.5)
+                .padding(.horizontal, 13)
+                .padding(.vertical, 10)
+                .frame(width: 230)
+        }
+        .arrowPopoverChrome(arrowX: arrowX, classicBackground: AnyView(QuitXTheme.popoverBackground))
     }
 }
 
@@ -229,6 +288,7 @@ struct SettingsContainerView: View {
             }
         }
         .onChange(of: tabModel.activeTab) { _, _ in
+            HelpPopoverState.closeAll()
             NotificationCenter.default.post(name: QuitXConstants.Notifications.dismissSettingsTooltips, object: nil)
         }
     }
