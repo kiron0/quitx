@@ -98,7 +98,11 @@ final class QuitService {
                 guard Self.processIsRunning(pid) else { return }
                 let accepted = force ? running.forceTerminate() : running.terminate()
                 if accepted {
-                    pendingApps.append((running, force, isHelper))
+                    if running.processIdentifier > 0 {
+                        pendingApps.append((running, force, isHelper))
+                    } else {
+                        pendingRawPids.append((pid, force, isHelper))
+                    }
                 } else {
                     if force {
                         Darwin.kill(pid, SIGKILL)

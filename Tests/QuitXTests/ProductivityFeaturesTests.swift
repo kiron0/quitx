@@ -149,8 +149,8 @@ struct ProductivityFeaturesTests {
         #expect(targets.map(\.name) == ["Huge", "Small"])
     }
 
-    @Test("Rescue spares critical system apps")
-    func testRescueSparesSystemSettings() {
+    @Test("Rescue permits safe Apple utilities")
+    func testRescuePermitsSafeAppleUtilities() {
         let config = QuitXConfig.default
         let apps = [
             windowedApp(name: "System Settings", bundleId: "com.apple.systempreferences", pid: 401),
@@ -160,7 +160,7 @@ struct ProductivityFeaturesTests {
         let targets = InactiveRescueTargets.select(
             apps: apps, config: config, frontmostPid: 900, ownPid: 999
         )
-        #expect(targets.map(\.name) == ["Idle"])
+        #expect(targets.map(\.name) == ["System Settings", "Activity Monitor", "Idle"])
     }
 
     @Test("Rescue consent prompt respects cooldown")

@@ -18,9 +18,20 @@ final class AppListService {
 
     @MainActor
     func fetchApps(config: QuitXConfig) async -> [AppInfo] {
-        let running = NSWorkspace.shared.runningApplications.compactMap { app -> RunningAppSnapshot? in
+        let workspaceApps = NSWorkspace.shared.runningApplications
+        let needsPidRecovery = workspaceApps.contains {
+            !$0.isTerminated && $0.processIdentifier <= 0 && $0.executableURL != nil
+        }
+        let processPaths = needsPidRecovery ? Self.runningProcessPaths() : [:]
+        var seenPids = Set<pid_t>()
+
+        let running = workspaceApps.compactMap { app -> RunningAppSnapshot? in
             guard !app.isTerminated else { return nil }
-            guard Self.processIsRunning(app.processIdentifier) else { return nil }
+            guard let pid = Self.resolvedProcessIdentifier(
+                reportedPid: app.processIdentifier,
+                executablePath: app.executableURL?.path,
+                processPaths: processPaths
+            ), Self.processIsRunning(pid), seenPids.insert(pid).inserted else { return nil }
             let rawName = app.localizedName
                 ?? app.bundleURL?.deletingPathExtension().lastPathComponent
                 ?? app.executableURL?.lastPathComponent
@@ -28,7 +39,7 @@ final class AppListService {
             let name = SystemAppProtection.cleanAppName(rawName)
             guard !name.isEmpty else { return nil }
             return RunningAppSnapshot(
-                pid: app.processIdentifier,
+                pid: pid,
                 name: name,
                 bundleId: app.bundleIdentifier,
                 bundleURL: app.bundleURL,
@@ -314,6 +325,38 @@ final class AppListService {
         errno = 0
         if Darwin.kill(pid, 0) == 0 { return true }
         return errno == EPERM
+    }
+
+    static func resolvedProcessIdentifier(
+        reportedPid: pid_t,
+        executablePath: String?,
+        processPaths: [pid_t: String]
+    ) -> pid_t? {
+        if reportedPid > 0 { return reportedPid }
+        guard let executablePath, !executablePath.isEmpty else { return nil }
+        let target = URL(fileURLWithPath: executablePath).standardizedFileURL.path
+        return processPaths
+            .filter { URL(fileURLWithPath: $0.value).standardizedFileURL.path == target }
+            .map(\.key)
+            .min()
+    }
+
+    private static func runningProcessPaths() -> [pid_t: String] {
+        let estimatedCount = max(0, Int(proc_listallpids(nil, 0)))
+        guard estimatedCount > 0 else { return [:] }
+
+        var pids = [pid_t](repeating: 0, count: estimatedCount + 128)
+        let byteCount = Int32(pids.count * MemoryLayout<pid_t>.stride)
+        let actualCount = proc_listallpids(&pids, byteCount)
+        guard actualCount > 0 else { return [:] }
+
+        var paths: [pid_t: String] = [:]
+        for pid in pids.prefix(Int(actualCount)) where pid > 0 {
+            var buffer = [CChar](repeating: 0, count: 4096)
+            guard proc_pidpath(pid, &buffer, UInt32(buffer.count)) > 0 else { continue }
+            paths[pid] = String(cString: buffer)
+        }
+        return paths
     }
 
     private static func memoryUsage(pid: pid_t) -> UInt64 {

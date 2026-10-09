@@ -30,18 +30,13 @@ enum SystemAppProtection {
 
     private static let criticalAppleBundleIds: Set<String> = [
         "com.apple.dock",
-        "com.apple.Spotlight",
-        "com.apple.SystemUIServer",
-        "com.apple.WindowManager",
+        "com.apple.spotlight",
+        "com.apple.systemuiserver",
+        "com.apple.windowmanager",
         "com.apple.controlcenter",
         "com.apple.notificationcenterui",
         "com.apple.loginwindow",
-        "com.apple.ScreenSaver.Engine",
-        "com.apple.systempreferences",
-        "com.apple.ActivityMonitor",
-        "com.apple.Console",
-        "com.apple.archiver",
-        "com.apple.DiskUtility"
+        "com.apple.screensaver.engine"
     ]
 
     static func isSystemProtected(
@@ -54,22 +49,18 @@ enum SystemAppProtection {
             return true
         }
 
-        if !bid.isEmpty && criticalAppleBundleIds.contains(bid) {
+        if !bid.isEmpty && criticalAppleBundleIds.contains(bid.lowercased()) {
             return true
         }
 
-        if path.hasPrefix("/System/Library/CoreServices/") && bid != QuitXConstants.SystemBundleIds.finder {
-            return true
-        }
         if path.hasPrefix("/System/Library/PrivateFrameworks/") || path.hasPrefix("/usr/") {
             return true
         }
 
         if isBackground {
-            if bid.hasPrefix("com.apple.") {
-                return true
-            }
-            if path.hasPrefix("/System/") || path.hasPrefix("/System/Volumes/") || path.hasPrefix("/Library/Apple/") {
+            if path.hasPrefix("/System/Library/")
+                || path.hasPrefix("/System/Volumes/Preboot/")
+                || path.hasPrefix("/Library/Apple/System/") {
                 return true
             }
         }

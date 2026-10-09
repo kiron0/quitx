@@ -288,6 +288,66 @@ struct AppFilteringTests {
     }
 }
 
+@Suite("System App Protection Tests")
+struct SystemAppProtectionTests {
+    @Test("Preview remains quit eligible")
+    func testPreviewIsNotProtected() {
+        #expect(!SystemAppProtection.isSystemProtected(
+            bundleIdentifier: "com.apple.Preview",
+            isBackground: false,
+            path: "/System/Applications/Preview.app"
+        ))
+        #expect(!SystemAppProtection.isSystemProtected(
+            bundleIdentifier: "com.apple.Preview",
+            isBackground: true,
+            path: "/System/Applications/Preview.app"
+        ))
+    }
+
+    @Test("Safe Apple utilities remain quit eligible")
+    func testSafeAppleUtilitiesAreNotProtected() {
+        let utilities = [
+            ("com.apple.systempreferences", "/System/Applications/System Settings.app"),
+            ("com.apple.ActivityMonitor", "/System/Applications/Utilities/Activity Monitor.app"),
+            ("com.apple.Console", "/System/Applications/Utilities/Console.app"),
+            ("com.apple.DiskUtility", "/System/Applications/Utilities/Disk Utility.app"),
+            ("com.apple.archiver", "/System/Library/CoreServices/Applications/Archive Utility.app")
+        ]
+        for (bundleIdentifier, path) in utilities {
+            #expect(!SystemAppProtection.isSystemProtected(
+                bundleIdentifier: bundleIdentifier,
+                isBackground: false,
+                path: path
+            ))
+        }
+    }
+
+    @Test("Critical system UI remains protected")
+    func testCriticalSystemUIIsProtected() {
+        #expect(SystemAppProtection.isSystemProtected(
+            bundleIdentifier: "com.apple.dock",
+            isBackground: false,
+            path: "/System/Library/CoreServices/Dock.app"
+        ))
+        #expect(SystemAppProtection.isSystemProtected(
+            bundleIdentifier: "com.apple.systemuiserver",
+            isBackground: true,
+            path: "/System/Library/CoreServices/SystemUIServer.app"
+        ))
+    }
+
+    @Test("Invalid workspace PID resolves from executable path")
+    func testInvalidPidRecovery() {
+        let executable = "/System/Applications/Preview.app/Contents/MacOS/Preview"
+        let resolved = AppListService.resolvedProcessIdentifier(
+            reportedPid: -1,
+            executablePath: executable,
+            processPaths: [36210: executable, 91: "/usr/libexec/other"]
+        )
+        #expect(resolved == 36210)
+    }
+}
+
 @Suite("UpdateChecker Version Comparison Tests")
 @MainActor
 struct UpdateCheckerVersionTests {
