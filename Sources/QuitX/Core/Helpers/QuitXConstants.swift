@@ -7,17 +7,17 @@ enum QuitXConstants {
     static let primaryBundleId = "io.coreify.quitx"
     static let firstLaunchSeenKey = UserDefaultsKeys.firstLaunchSeen
     static let supportedBundleIdentifiers: Set<String> = [
-        "io.coreify.quitx",
+        primaryBundleId,
         "com.coreify.quitx",
         "com.kiron.quitx",
         "com.quitx.QuitX"
     ]
 
     enum Notifications {
-        static let showSettings = Notification.Name("io.coreify.quitx.showSettings")
-        static let showPreferences = Notification.Name("io.coreify.quitx.showPreferences")
-        static let showPopover = Notification.Name("io.coreify.quitx.showPopover")
-        static let dismissSettingsTooltips = Notification.Name("io.coreify.quitx.dismissSettingsTooltips")
+        static let showSettings = Notification.Name("\(QuitXConstants.primaryBundleId).showSettings")
+        static let showPreferences = Notification.Name("\(QuitXConstants.primaryBundleId).showPreferences")
+        static let showPopover = Notification.Name("\(QuitXConstants.primaryBundleId).showPopover")
+        static let dismissSettingsTooltips = Notification.Name("\(QuitXConstants.primaryBundleId).dismissSettingsTooltips")
     }
 
     enum UserDefaultsKeys {

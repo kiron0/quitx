@@ -38,7 +38,7 @@ enum AppIconCache {
             return existing
         }
         let resolved: NSImage
-        if bundleId == "com.apple.trash" {
+        if bundleId == QuitXConstants.SystemBundleIds.trash {
             let img = NSImage(systemSymbolName: "trash", accessibilityDescription: "Trash")
             img?.isTemplate = true
             resolved = img ?? NSWorkspace.shared.icon(for: .applicationBundle)

@@ -413,7 +413,7 @@ struct ExcludeAppPickerSelectionTests {
         let vm = ExcludeAppPickerViewModel()
         let app1 = makeApp(id: "com.apple.safari", name: "Safari")
         let app2 = makeApp(id: "com.apple.mail", name: "Mail")
-        let app3 = makeApp(id: "com.apple.finder", name: "Finder")
+        let app3 = makeApp(id: QuitXConstants.SystemBundleIds.finder, name: "Finder")
         let apps = [app1, app2, app3]
 
         #expect(!vm.isAllSelected(for: apps))
@@ -449,7 +449,7 @@ struct ExcludeAppPickerSelectionTests {
 struct WelcomeGuideLaunchTests {
     @Test("Welcome guide strictly marks first launch seen once")
     func testFirstLaunchStrictlyOnce() {
-        let suiteName = "io.coreify.quitx.tests.welcome.\(UUID().uuidString)"
+        let suiteName = "\(QuitXConstants.primaryBundleId).tests.welcome.\(UUID().uuidString)"
         guard let testDefaults = UserDefaults(suiteName: suiteName) else {
             return
         }

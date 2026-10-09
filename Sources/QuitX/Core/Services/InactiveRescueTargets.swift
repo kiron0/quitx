@@ -17,7 +17,7 @@ enum InactiveRescueTargets {
             if app.pids.contains(ownPid) { return false }
             if let frontmostPid, app.pids.contains(frontmostPid) { return false }
             if let bid = app.bundleId,
-               QuitXIdentity.supportedBundleIdentifiers.contains(bid) { return false }
+               QuitXConstants.supportedBundleIdentifiers.contains(bid) { return false }
             if app.bundleId == QuitXConstants.SystemBundleIds.finder { return false }
             if app.bundleId == QuitXConstants.SystemBundleIds.trash { return false }
             if let bid = app.bundleId,

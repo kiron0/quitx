@@ -67,7 +67,7 @@ struct ShortcutIdentityTests {
         let unchanged = AppInfo(id: explicit.id, name: explicit.name, pid: explicit.pid, pids: explicit.pids, isBackground: true)
         #expect(unchanged.id == explicit.id)
 
-        let foreground = AppInfo(name: "Finder", bundleId: "com.apple.finder", pid: 42)
-        #expect(foreground.id == "42-com.apple.finder")
+        let foreground = AppInfo(name: "Finder", bundleId: QuitXConstants.SystemBundleIds.finder, pid: 42)
+        #expect(foreground.id == "42-\(QuitXConstants.SystemBundleIds.finder)")
     }
 }

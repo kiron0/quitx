@@ -79,8 +79,8 @@ struct ProductivityFeaturesTests {
             regularApp(name: "Photoshop", bundleId: "com.adobe.Photoshop", pid: 102),
             regularApp(name: "Spotify", bundleId: "com.spotify.client", pid: 103),
             regularApp(name: "Helper", bundleId: "com.x.helper", pid: 104, background: true),
-            regularApp(name: "Finder", bundleId: "com.apple.finder", pid: 105),
-            regularApp(name: "QuitX", bundleId: "io.coreify.quitx", pid: 106),
+            regularApp(name: "Finder", bundleId: QuitXConstants.SystemBundleIds.finder, pid: 105),
+            regularApp(name: QuitXConstants.appName, bundleId: QuitXConstants.primaryBundleId, pid: 106),
         ]
         let targets = SleepQuitTargets.select(apps: apps, config: baseConfig)
         #expect(targets.map(\.name) == ["Slack"])
@@ -123,9 +123,9 @@ struct ProductivityFeaturesTests {
         let apps = [
             windowedApp(name: "Active", bundleId: "com.active.app", pid: 201),
             windowedApp(name: "Idle", bundleId: "com.idle.app", pid: 202),
-            windowedApp(name: "Me", bundleId: "io.coreify.quitx", pid: 203),
+            windowedApp(name: "Me", bundleId: QuitXConstants.primaryBundleId, pid: 203),
             windowedApp(name: "Forever", bundleId: "com.never.app", pid: 204),
-            windowedApp(name: "Finder", bundleId: "com.apple.finder", pid: 205),
+            windowedApp(name: "Finder", bundleId: QuitXConstants.SystemBundleIds.finder, pid: 205),
             windowedApp(name: "Spotify", bundleId: "com.spotify.client", pid: 206),
             windowedApp(name: "Windowless", bundleId: "com.plain.app", pid: 207, windows: 0),
             AppInfo(name: "Daemon", bundleId: "com.daemon.app", pid: 208, pids: [208], isBackground: true),

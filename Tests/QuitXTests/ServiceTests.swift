@@ -143,10 +143,10 @@ struct AppSortingAndGroupingTests {
 @Suite("App Filtering Logic Tests")
 struct AppFilteringTests {
     let regular1 = AppInfo(name: "Safari", bundleId: "com.apple.Safari", pid: 100)
-    let regular2 = AppInfo(name: "Finder", bundleId: "com.apple.finder", pid: 101)
+    let regular2 = AppInfo(name: "Finder", bundleId: QuitXConstants.SystemBundleIds.finder, pid: 101)
     let musicApp = AppInfo(name: "Spotify", bundleId: "com.spotify.client", pid: 102)
     let bgApp = AppInfo(name: "CoreAgent", bundleId: "com.apple.coreagent", pid: 103, isBackground: true)
-    let trashApp = AppInfo(name: "Trash", bundleId: "com.apple.trash", pid: nil)
+    let trashApp = AppInfo(name: "Trash", bundleId: QuitXConstants.SystemBundleIds.trash, pid: nil)
 
     @Test("Filter by excluded name case-insensitive")
     func testExcludeByName() {
@@ -199,7 +199,7 @@ struct AppFilteringTests {
         let includeFinder = false
         let apps = [regular1, regular2]
         let filtered = apps.filter { app in
-            if !includeFinder && (app.bundleId == "com.apple.finder" || app.name.lowercased() == "finder") {
+            if !includeFinder && (app.bundleId == QuitXConstants.SystemBundleIds.finder || app.name.lowercased() == "finder") {
                 return false
             }
             return true
@@ -213,7 +213,7 @@ struct AppFilteringTests {
         let includeFinder = true
         let apps = [regular1, regular2]
         let filtered = apps.filter { app in
-            if !includeFinder && (app.bundleId == "com.apple.finder" || app.name.lowercased() == "finder") {
+            if !includeFinder && (app.bundleId == QuitXConstants.SystemBundleIds.finder || app.name.lowercased() == "finder") {
                 return false
             }
             return true

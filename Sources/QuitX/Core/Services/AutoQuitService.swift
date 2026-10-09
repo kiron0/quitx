@@ -117,7 +117,7 @@ final class AutoQuitService {
                 continue
             }
             if quittingPids.contains(pid) { continue }
-            if let rawBid = app.bundleIdentifier, QuitXIdentity.supportedBundleIdentifiers.contains(rawBid) {
+            if let rawBid = app.bundleIdentifier, QuitXConstants.supportedBundleIdentifiers.contains(rawBid) {
                 continue
             }
             if SystemAppProtection.isSystemProtected(

@@ -9,7 +9,7 @@ enum SleepQuitTargets {
         return apps.filter { app in
             guard !app.isBackground else { return false }
             if let bid = app.bundleId,
-               QuitXIdentity.supportedBundleIdentifiers.contains(bid) { return false }
+               QuitXConstants.supportedBundleIdentifiers.contains(bid) { return false }
             if app.bundleId == QuitXConstants.SystemBundleIds.finder { return false }
             if app.bundleId == QuitXConstants.SystemBundleIds.trash { return false }
             let lowerBid = app.bundleId?.lowercased()

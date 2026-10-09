@@ -55,8 +55,8 @@ final class StatusItemController: NSObject {
 
         button.image = makeMenuBarIcon()
         button.imagePosition = .imageOnly
-        button.toolTip = "QuitX"
-        button.setAccessibilityLabel("QuitX")
+        button.toolTip = QuitXConstants.appName
+        button.setAccessibilityLabel(QuitXConstants.appName)
 
         button.sendAction(on: [.leftMouseDown, .rightMouseDown])
         button.action = #selector(handleStatusItemClick(_:))

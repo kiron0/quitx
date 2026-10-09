@@ -184,7 +184,7 @@ struct AppUpdateTests {
         #expect(extractedApp.lastPathComponent == "QuitX.app")
 
         let bundle = try #require(Bundle(url: extractedApp))
-        #expect(bundle.bundleIdentifier == "io.coreify.quitx")
+        #expect(bundle.bundleIdentifier == QuitXConstants.primaryBundleId)
 
         #expect(throws: UpdateError.invalidSignature) {
             try UpdateDownloadService.validateUpdateBundle(at: extractedApp, expectedVersion: "9.9.9")
@@ -207,18 +207,18 @@ struct AppUpdateTests {
         initialConfig.sortBy = .name
 
         let encoded = try JSONEncoder().encode(initialConfig)
-        testDefaults.set(encoded, forKey: "QuitXConfig")
-        testDefaults.set(["^", "⌥", "Q"], forKey: "sc_quit_keys")
-        testDefaults.set(true, forKey: "quitx_first_launch_seen_v1")
+        testDefaults.set(encoded, forKey: QuitXConstants.UserDefaultsKeys.config)
+        testDefaults.set(["^", "⌥", "Q"], forKey: QuitXConstants.UserDefaultsKeys.quitAllKeys)
+        testDefaults.set(true, forKey: QuitXConstants.UserDefaultsKeys.firstLaunchSeen)
 
-        let storedData = try #require(testDefaults.data(forKey: "QuitXConfig"))
+        let storedData = try #require(testDefaults.data(forKey: QuitXConstants.UserDefaultsKeys.config))
         let restoredConfig = try JSONDecoder().decode(QuitXConfig.self, from: storedData)
 
         #expect(restoredConfig.exclude == customExclude)
         #expect(restoredConfig.neverQuitMusic == false)
         #expect(restoredConfig.sortBy == .name)
-        #expect(testDefaults.stringArray(forKey: "sc_quit_keys") == ["^", "⌥", "Q"])
-        #expect(testDefaults.bool(forKey: "quitx_first_launch_seen_v1") == true)
+        #expect(testDefaults.stringArray(forKey: QuitXConstants.UserDefaultsKeys.quitAllKeys) == ["^", "⌥", "Q"])
+        #expect(testDefaults.bool(forKey: QuitXConstants.UserDefaultsKeys.firstLaunchSeen) == true)
     }
 
     @Test("Digest Verification Rejects Mismatched Payloads")

@@ -50,7 +50,7 @@ enum SystemAppProtection {
         path: String
     ) -> Bool {
         let bid = bundleIdentifier ?? ""
-        if !bid.isEmpty && QuitXIdentity.supportedBundleIdentifiers.contains(bid) {
+        if !bid.isEmpty && QuitXConstants.supportedBundleIdentifiers.contains(bid) {
             return true
         }
 
@@ -58,7 +58,7 @@ enum SystemAppProtection {
             return true
         }
 
-        if path.hasPrefix("/System/Library/CoreServices/") && bid != "com.apple.finder" {
+        if path.hasPrefix("/System/Library/CoreServices/") && bid != QuitXConstants.SystemBundleIds.finder {
             return true
         }
         if path.hasPrefix("/System/Library/PrivateFrameworks/") || path.hasPrefix("/usr/") {

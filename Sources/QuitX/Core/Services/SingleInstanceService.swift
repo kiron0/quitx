@@ -73,7 +73,7 @@ final class SingleInstanceService {
         if application.processIdentifier == ProcessInfo.processInfo.processIdentifier { return true }
         guard isRunning(application) else { return false }
         guard let bundleIdentifier = application.bundleIdentifier else { return false }
-        return QuitXIdentity.supportedBundleIdentifiers.contains(bundleIdentifier)
+        return QuitXConstants.supportedBundleIdentifiers.contains(bundleIdentifier)
     }
 
     private static func isRunning(_ application: NSRunningApplication) -> Bool {
