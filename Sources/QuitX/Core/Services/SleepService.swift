@@ -84,6 +84,7 @@ final class SleepService {
         ) {
             return
         }
+        StatusItemController.shared?.closePopover()
         let vm = AppListViewModel.shared
 
         var assertionID = IOPMAssertionID(0)
