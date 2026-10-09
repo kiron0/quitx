@@ -18,8 +18,7 @@ final class StatsDetailModel: ObservableObject {
     @Published var userPct: Double = 0
     @Published var idlePct: Double = 100
     @Published var perCore: [Double] = []
-    @Published var efficiencyCores: Int = 0
-    @Published var performanceCores: Int = 0
+    @Published var cpuLevels: [SystemUsage.CpuLevel] = []
     @Published var load1: Double = 0
     @Published var load5: Double = 0
     @Published var load15: Double = 0
@@ -67,9 +66,7 @@ final class StatsDetailModel: ObservableObject {
     func start() {
         stop()
         sampleFailureToastShown = false
-        let counts = SystemUsage.coreCounts()
-        efficiencyCores = counts.efficiency
-        performanceCores = counts.performance
+        cpuLevels = SystemUsage.cpuTopology().levels
         tick()
         let timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.tick() }
@@ -157,12 +154,16 @@ private enum StatsTheme {
     static let red = Color(red: 0.94, green: 0.27, blue: 0.30)
     static let blue = Color(red: 0.13, green: 0.55, blue: 0.95)
     static let chartBlue = Color(red: 0.15, green: 0.55, blue: 0.98)
-    static let teal = Color(red: 0.20, green: 0.85, blue: 0.78)
-    static let purple = Color(red: 0.45, green: 0.45, blue: 0.95)
     static let orange = Color(red: 1.00, green: 0.62, blue: 0.15)
     static let pink = Color(red: 0.98, green: 0.30, blue: 0.45)
     static let gray = Color.primary.opacity(0.25)
     static let yellow = Color(red: 0.98, green: 0.80, blue: 0.20)
+
+    static func cpuLevelColor(index: Int) -> Color {
+        let goldenRatio = 0.618_033_988_75
+        let hue = (0.56 + Double(index) * goldenRatio).truncatingRemainder(dividingBy: 1)
+        return Color(hue: hue, saturation: 0.72, brightness: 0.92)
+    }
 }
 
 private struct SegmentedRing: View {
@@ -570,7 +571,7 @@ struct StatsDetailView: View {
                     VStack(spacing: 3) {
                         SegmentedRing(
                             segments: [
-                                (model.load1 / Double(max(1, model.efficiencyCores + model.performanceCores)), StatsTheme.blue)
+                                (model.load1 / Double(max(1, model.cpuLevels.reduce(0) { $0 + $1.logicalCores })), StatsTheme.blue)
                             ],
                             centerText: String(format: "%.2f", model.load1),
                             size: 50,
@@ -611,11 +612,12 @@ struct StatsDetailView: View {
                         DetailRow(title: "System:", value: pct(model.systemPct), dotColor: StatsTheme.red)
                         DetailRow(title: "User:", value: pct(model.userPct), dotColor: StatsTheme.blue)
                         DetailRow(title: "Idle:", value: pct(model.idlePct), dotColor: StatsTheme.gray)
-                        if model.efficiencyCores > 0 {
-                            DetailRow(title: "Efficiency cores:", value: "\(model.efficiencyCores)", dotColor: StatsTheme.teal)
-                        }
-                        if model.performanceCores > 0 {
-                            DetailRow(title: "Performance cores:", value: "\(model.performanceCores)", dotColor: StatsTheme.purple)
+                        ForEach(model.cpuLevels) { level in
+                            DetailRow(
+                                title: "\(level.name) cores:",
+                                value: "\(level.logicalCores)",
+                                dotColor: StatsTheme.cpuLevelColor(index: level.index)
+                            )
                         }
                         DetailRow(title: "Uptime:", value: model.uptime)
                     }

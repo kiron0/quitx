@@ -55,9 +55,16 @@ enum SystemUsage {
         let perCore: [Double]
     }
 
-    struct CoreCounts {
-        let efficiency: Int
-        let performance: Int
+    struct CpuLevel: Identifiable, Equatable, Sendable {
+        let index: Int
+        let name: String
+        let logicalCores: Int
+
+        var id: Int { index }
+    }
+
+    struct CpuTopology: Equatable, Sendable {
+        let levels: [CpuLevel]
         let total: Int
     }
 
@@ -202,27 +209,45 @@ enum SystemUsage {
         return ticks
     }
 
-    static func coreCounts() -> CoreCounts {
+    static func cpuTopology() -> CpuTopology {
         let total = ProcessInfo.processInfo.activeProcessorCount
-        func sysctlInt(_ name: String) -> Int? {
-            var value: Int32 = 0
-            var len = MemoryLayout<Int32>.size
-            guard sysctlbyname(name, &value, &len, nil, 0) == 0 else { return nil }
-            return Int(value)
+        guard let levelCount = sysctlInt("hw.nperflevels"), levelCount > 0 else {
+            return CpuTopology(
+                levels: [CpuLevel(index: 0, name: "CPU", logicalCores: total)],
+                total: total
+            )
         }
-        if let level0 = sysctlInt("hw.perflevel0.logicalcpu"),
-           let level1 = sysctlInt("hw.perflevel1.logicalcpu"),
-           level0 > 0, level1 > 0, level0 + level1 == total {
-            let level0Name = sysctlString("hw.perflevel0.name")
-            if level0Name?.caseInsensitiveCompare("Performance") == .orderedSame {
-                return CoreCounts(efficiency: level1, performance: level0, total: total)
+
+        let levels = (0..<levelCount).compactMap { index -> CpuLevel? in
+            guard let logicalCores = sysctlInt("hw.perflevel\(index).logicalcpu"), logicalCores > 0 else {
+                return nil
             }
-            if level0Name?.caseInsensitiveCompare("Efficiency") == .orderedSame {
-                return CoreCounts(efficiency: level0, performance: level1, total: total)
+            let reportedName = sysctlString("hw.perflevel\(index).name")?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let name: String
+            if let reportedName, !reportedName.isEmpty {
+                name = reportedName
+            } else {
+                name = "Performance level \(index)"
             }
-            return CoreCounts(efficiency: level1, performance: level0, total: total)
+            return CpuLevel(index: index, name: name, logicalCores: logicalCores)
         }
-        return CoreCounts(efficiency: 0, performance: 0, total: total)
+
+        guard levels.count == levelCount,
+              levels.reduce(0, { $0 + $1.logicalCores }) == total else {
+            return CpuTopology(
+                levels: [CpuLevel(index: 0, name: "CPU", logicalCores: total)],
+                total: total
+            )
+        }
+        return CpuTopology(levels: levels, total: total)
+    }
+
+    private static func sysctlInt(_ name: String) -> Int? {
+        var value: Int32 = 0
+        var len = MemoryLayout<Int32>.size
+        guard sysctlbyname(name, &value, &len, nil, 0) == 0 else { return nil }
+        return Int(value)
     }
 
     private static func sysctlString(_ name: String) -> String? {

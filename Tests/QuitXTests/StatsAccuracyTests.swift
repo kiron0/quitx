@@ -190,16 +190,17 @@ struct StatsAccuracyTests {
         #expect(!SystemUsage.uptimeDescription().isEmpty)
     }
 
-    @Test("Core counts match active processor count")
-    func testCoreCounts() {
-        let counts = SystemUsage.coreCounts()
+    @Test("Dynamic CPU topology matches active processor count")
+    func testCpuTopology() {
+        let topology = SystemUsage.cpuTopology()
         let active = ProcessInfo.processInfo.activeProcessorCount
-        #expect(counts.total == active)
-        if counts.efficiency > 0 {
-            #expect(counts.efficiency + counts.performance == counts.total)
-        }
-        if counts.performance > 0 {
-            #expect(counts.efficiency + counts.performance == counts.total)
+        #expect(topology.total == active)
+        #expect(!topology.levels.isEmpty)
+        #expect(topology.levels.reduce(0, { $0 + $1.logicalCores }) == topology.total)
+        for (position, level) in topology.levels.enumerated() {
+            #expect(level.index == position)
+            #expect(!level.name.isEmpty)
+            #expect(level.logicalCores > 0)
         }
     }
 
