@@ -121,10 +121,14 @@ struct StatsAccuracyTests {
             try #require(vmStatValue(text, label: label))
         }
 
+        func pagesOrZero(_ text: String, _ label: String) -> UInt64 {
+            (try? vmStatValue(text, label: label)) ?? 0
+        }
+
         let wiredBefore = try pages(groundBefore, "Pages wired down:")
         let wiredPages = try pages(vmStat, "Pages wired down:")
-        let freeBefore = try pages(groundBefore, "Pages free:")
-        let freePages = try pages(vmStat, "Pages free:")
+        let freeBefore = try pages(groundBefore, "Pages free:") + pagesOrZero(groundBefore, "Pages speculative:")
+        let freePages = try pages(vmStat, "Pages free:") + pagesOrZero(vmStat, "Pages speculative:")
         let compressedBefore = try pages(groundBefore, "Pages occupied by compressor:")
         let compressedPages = try pages(vmStat, "Pages occupied by compressor:")
         let purgeableBefore = try pages(groundBefore, "Pages purgeable:")
