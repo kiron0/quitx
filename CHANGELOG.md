@@ -4,6 +4,10 @@ All notable changes to QuitX macOS App will be documented in this file.
 
 ## 1.1.1
 
+### Added
+
+- Battery monitoring: optional menu bar charge status, detailed power and health metrics, configurable low-battery rescue, and a low-battery guard for sleep-triggered quits.
+
 ### Changed
 
 - Refined system app protection rules: permit quitting safe, user-facing Apple utilities and document tools (Preview, System Settings, Activity Monitor, Console, Disk Utility, Archive Utility) while keeping core system UI (Dock, WindowManager, SystemUIServer, loginwindow) strictly guarded.

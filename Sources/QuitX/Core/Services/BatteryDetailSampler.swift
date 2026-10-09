@@ -36,17 +36,20 @@ enum BatteryDetailSampler {
         }
         let smart = smartBattery ?? readSmartBattery()
 
-        let percent = intValue(battery[kIOPSCurrentCapacityKey as String]) ?? 0
+        guard let rawPercent = intValue(battery[kIOPSCurrentCapacityKey as String]) else {
+            return nil
+        }
+        let percent = max(0, min(100, rawPercent))
         let isACPower = !BatterySaver.isOnBattery(descriptions: descs)
         let timeToEmpty = unknownToNil(intValue(battery[kIOPSTimeToEmptyKey as String]))
         let timeToFull = unknownToNil(intValue(battery[kIOPSTimeToFullChargeKey as String]))
-        let isCharging = boolValue(smart, "IsCharging")
-            ?? boolValue(battery, kIOPSIsChargingKey as String)
+        let isCharging = boolValue(battery, kIOPSIsChargingKey as String)
+            ?? boolValue(smart, "IsCharging")
             ?? false
 
         let amperage = saneAmperage(intValue(smart, "Amperage"))
             ?? saneAmperage(intValue(smart, "InstantAmperage"))
-        let voltage = intValue(smart, "Voltage")
+        let voltage = saneVoltage(intValue(smart, "Voltage"))
         let powerW: Double? = {
             guard let amperage, let voltage else { return nil }
             return Double(abs(amperage) * voltage) / 1_000_000
@@ -64,7 +67,7 @@ enum BatteryDetailSampler {
             return nil
         }()
         return BatterySnapshot(
-            percent: max(0, min(100, percent)),
+            percent: percent,
             isCharging: isCharging,
             isACPower: isACPower,
             timeToEmptyMin: timeToEmpty,
@@ -129,18 +132,22 @@ enum BatteryDetailSampler {
     static func menuBarSymbolName(percent: Int, charging: Bool) -> String {
         let bucket: Int
         switch percent {
-        case ..<5: bucket = 0
-        case ..<15: bucket = 10
-        case ..<35: bucket = 25
-        case ..<60: bucket = 50
-        case ..<85: bucket = 75
+        case ..<13: bucket = 0
+        case ..<38: bucket = 25
+        case ..<63: bucket = 50
+        case ..<88: bucket = 75
         default: bucket = 100
         }
-        return charging ? "battery.\(bucket).bolt" : "battery.\(bucket)"
+        return charging ? "battery.100.bolt" : "battery.\(bucket)"
     }
 
     private static func saneAmperage(_ raw: Int?) -> Int? {
-        guard let raw, abs(raw) <= 30_000 else { return nil }
+        guard let raw, raw >= -30_000, raw <= 30_000 else { return nil }
+        return raw
+    }
+
+    private static func saneVoltage(_ raw: Int?) -> Int? {
+        guard let raw, raw > 0, raw <= 30_000 else { return nil }
         return raw
     }
 

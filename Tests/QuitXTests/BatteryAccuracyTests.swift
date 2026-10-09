@@ -56,6 +56,14 @@ struct BatteryAccuracyTests {
         #expect(BatteryDetailSampler.snapshot(descriptions: [], smartBattery: [:]) == nil)
     }
 
+    @Test("Missing battery percentage returns nil")
+    func missingPercentageReturnsNil() {
+        let descriptions: [[String: Any]] = [
+            ["Type": "InternalBattery", Self.stateKey: "Battery Power"]
+        ]
+        #expect(BatteryDetailSampler.snapshot(descriptions: descriptions, smartBattery: [:]) == nil)
+    }
+
     @Test("Injected battery snapshot decodes every field")
     func injectedBatterySnapshot() {
         let descriptions: [[String: Any]] = [
@@ -222,8 +230,8 @@ struct BatteryAccuracyTests {
     func percentMatchesIoregCapacity() throws {
         guard let snapshot = BatteryDetailSampler.snapshot() else { return }
         let ioreg = try shellOutput("ioreg -r -c AppleSmartBattery -d 1")
-        let current = try intFromIoreg(ioreg, key: "\"CurrentCapacity\"")
-        let maxCap = try intFromIoreg(ioreg, key: "\"MaxCapacity\"")
+        let current = try intFromIoreg(ioreg, key: "CurrentCapacity")
+        let maxCap = try intFromIoreg(ioreg, key: "MaxCapacity")
         guard let current, let maxCap, maxCap > 0 else { return }
         let expected = Int((Double(current) / Double(maxCap) * 100).rounded())
         #expect(abs(snapshot.percent - expected) <= 2)
@@ -369,6 +377,20 @@ struct BatteryAccuracyTests {
         let ok = BatteryDetailSampler.snapshot(descriptions: descriptions, smartBattery: sane)
         #expect(ok?.amperageMA == -1234)
         #expect(abs((ok?.powerW ?? 0) - 14.808) < 0.001)
+
+        let minimum = BatteryDetailSampler.snapshot(
+            descriptions: descriptions,
+            smartBattery: ["Amperage": Int.min, "Voltage": 12000]
+        )
+        #expect(minimum?.amperageMA == nil)
+        #expect(minimum?.powerW == nil)
+
+        let invalidVoltage = BatteryDetailSampler.snapshot(
+            descriptions: descriptions,
+            smartBattery: ["Amperage": -1234, "Voltage": Int.max]
+        )
+        #expect(invalidVoltage?.voltageMV == nil)
+        #expect(invalidVoltage?.powerW == nil)
     }
 
     @Test("Clock format matches native h:mm")
@@ -381,12 +403,12 @@ struct BatteryAccuracyTests {
     @Test("Menu bar symbol buckets follow system icon levels")
     func menuBarSymbolBuckets() {
         #expect(BatteryDetailSampler.menuBarSymbolName(percent: 0, charging: false) == "battery.0")
-        #expect(BatteryDetailSampler.menuBarSymbolName(percent: 10, charging: false) == "battery.10")
+        #expect(BatteryDetailSampler.menuBarSymbolName(percent: 10, charging: false) == "battery.0")
         #expect(BatteryDetailSampler.menuBarSymbolName(percent: 25, charging: false) == "battery.25")
         #expect(BatteryDetailSampler.menuBarSymbolName(percent: 50, charging: false) == "battery.50")
         #expect(BatteryDetailSampler.menuBarSymbolName(percent: 75, charging: false) == "battery.75")
         #expect(BatteryDetailSampler.menuBarSymbolName(percent: 100, charging: false) == "battery.100")
-        #expect(BatteryDetailSampler.menuBarSymbolName(percent: 80, charging: true) == "battery.75.bolt")
+        #expect(BatteryDetailSampler.menuBarSymbolName(percent: 80, charging: true) == "battery.100.bolt")
         #expect(BatteryDetailSampler.menuBarSymbolName(percent: 100, charging: true) == "battery.100.bolt")
     }
 
@@ -411,5 +433,56 @@ struct BatteryAccuracyTests {
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         process.waitUntilExit()
         return String(data: data, encoding: .utf8) ?? ""
+    }
+}
+
+@Suite("Low battery rescue gate")
+struct LowBatteryRescueGateTests {
+    @Test("Requires arm and sustained low-battery intervals")
+    func sustainedLowBattery() {
+        let armedAt = Date(timeIntervalSince1970: 1_000)
+        var gate = LowBatteryRescueGate()
+
+        let beforeArm = gate.evaluate(
+            percent: 20, threshold: 20, armedAt: armedAt, now: armedAt.addingTimeInterval(14)
+        )
+        let startsLowInterval = gate.evaluate(
+            percent: 20, threshold: 20, armedAt: armedAt, now: armedAt.addingTimeInterval(15)
+        )
+        let beforeSustained = gate.evaluate(
+            percent: 20, threshold: 20, armedAt: armedAt, now: armedAt.addingTimeInterval(29)
+        )
+        let sustained = gate.evaluate(
+            percent: 20, threshold: 20, armedAt: armedAt, now: armedAt.addingTimeInterval(30)
+        )
+
+        #expect(!beforeArm)
+        #expect(!startsLowInterval)
+        #expect(!beforeSustained)
+        #expect(sustained)
+    }
+
+    @Test("Recovery clears sustained low-battery state")
+    func recoveryResetsState() {
+        let armedAt = Date(timeIntervalSince1970: 1_000)
+        var gate = LowBatteryRescueGate()
+
+        let startsFirstInterval = gate.evaluate(
+            percent: 20, threshold: 20, armedAt: armedAt, now: armedAt.addingTimeInterval(15)
+        )
+        let recovered = gate.evaluate(
+            percent: 26, threshold: 20, armedAt: armedAt, now: armedAt.addingTimeInterval(20)
+        )
+        let startsSecondInterval = gate.evaluate(
+            percent: 20, threshold: 20, armedAt: armedAt, now: armedAt.addingTimeInterval(30)
+        )
+        let sustained = gate.evaluate(
+            percent: 20, threshold: 20, armedAt: armedAt, now: armedAt.addingTimeInterval(45)
+        )
+
+        #expect(!startsFirstInterval)
+        #expect(!recovered)
+        #expect(!startsSecondInterval)
+        #expect(sustained)
     }
 }

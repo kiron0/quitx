@@ -335,10 +335,15 @@ final class AppListService {
         if reportedPid > 0 { return reportedPid }
         guard let executablePath, !executablePath.isEmpty else { return nil }
         let target = URL(fileURLWithPath: executablePath).standardizedFileURL.path
-        return processPaths
-            .filter { URL(fileURLWithPath: $0.value).standardizedFileURL.path == target }
-            .map(\.key)
-            .min()
+        var resolved: pid_t?
+        for (pid, path) in processPaths where URL(fileURLWithPath: path).standardizedFileURL.path == target {
+            if let current = resolved {
+                if pid < current { resolved = pid }
+            } else {
+                resolved = pid
+            }
+        }
+        return resolved
     }
 
     private static func runningProcessPaths() -> [pid_t: String] {

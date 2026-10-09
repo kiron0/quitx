@@ -113,7 +113,9 @@ final class StatsDetailModel: ObservableObject {
         swapUsed = swap.used
         swapTotal = swap.total
 
-        battery = BatteryDetailSampler.snapshot()
+        battery = ConfigStore.shared.config.batteryMenuBarEnabled
+            ? BatteryDetailSampler.snapshot()
+            : nil
 
         appendHistory(&cpuHistory, value: cpu)
         if memTotal > 0 {
