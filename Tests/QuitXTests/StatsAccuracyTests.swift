@@ -105,6 +105,7 @@ struct StatsAccuracyTests {
 
     @Test("Memory breakdown matches vm_stat ground truth")
     func testMemoryBreakdownGroundTruth() throws {
+        let groundBefore = shellOutput("/usr/bin/vm_stat", [])
         let breakdown = try #require(SystemUsage.memoryBreakdown())
         #expect(breakdown.total == ProcessInfo.processInfo.physicalMemory)
         #expect(breakdown.used == breakdown.app + breakdown.wired + breakdown.compressed)
@@ -116,23 +117,38 @@ struct StatsAccuracyTests {
         let pageSize = try #require(UInt64(pageSizeDigits))
         #expect(UInt64(vm_page_size) == pageSize)
 
-        let wiredPages = try #require(vmStatValue(vmStat, label: "Pages wired down:"))
-        let freePages = try #require(vmStatValue(vmStat, label: "Pages free:"))
-        let compressedPages = try #require(vmStatValue(vmStat, label: "Pages occupied by compressor:"))
-        let purgeablePages = try #require(vmStatValue(vmStat, label: "Pages purgeable:"))
-        let anonymousPages = try #require(vmStatValue(vmStat, label: "Anonymous pages:"))
-        let fileBackedPages = try #require(vmStatValue(vmStat, label: "File-backed pages:"))
+        func pages(_ text: String, _ label: String) throws -> UInt64 {
+            try #require(vmStatValue(text, label: label))
+        }
+
+        let wiredBefore = try pages(groundBefore, "Pages wired down:")
+        let wiredPages = try pages(vmStat, "Pages wired down:")
+        let freeBefore = try pages(groundBefore, "Pages free:")
+        let freePages = try pages(vmStat, "Pages free:")
+        let compressedBefore = try pages(groundBefore, "Pages occupied by compressor:")
+        let compressedPages = try pages(vmStat, "Pages occupied by compressor:")
+        let purgeableBefore = try pages(groundBefore, "Pages purgeable:")
+        let purgeablePages = try pages(vmStat, "Pages purgeable:")
+        let anonymousBefore = try pages(groundBefore, "Anonymous pages:")
+        let anonymousPages = try pages(vmStat, "Anonymous pages:")
+        let fileBackedBefore = try pages(groundBefore, "File-backed pages:")
+        let fileBackedPages = try pages(vmStat, "File-backed pages:")
 
         let driftAllowance = max(breakdown.total / 32, 256 * 1024 * 1024)
-        #expect(abs(Int64(breakdown.wired) - Int64(wiredPages * pageSize)) <= Int64(driftAllowance))
-        #expect(abs(Int64(breakdown.free) - Int64(freePages * pageSize)) <= Int64(driftAllowance))
-        #expect(abs(Int64(breakdown.compressed) - Int64(compressedPages * pageSize)) <= Int64(driftAllowance))
-        let expectedAppPages = anonymousPages >= purgeablePages ? anonymousPages - purgeablePages : 0
-        #expect(abs(Int64(breakdown.app) - Int64(expectedAppPages * pageSize)) <= Int64(driftAllowance))
-        #expect(
-            abs(Int64(breakdown.cached) - Int64((fileBackedPages + purgeablePages) * pageSize))
-                <= Int64(driftAllowance)
-        )
+
+        func near(_ value: UInt64, _ before: UInt64, _ after: UInt64) -> Bool {
+            let lower = Int64(min(before, after)) * Int64(pageSize) - Int64(driftAllowance)
+            let upper = Int64(max(before, after)) * Int64(pageSize) + Int64(driftAllowance)
+            return Int64(value) >= lower && Int64(value) <= upper
+        }
+
+        #expect(near(breakdown.wired, wiredBefore, wiredPages))
+        #expect(near(breakdown.free, freeBefore, freePages))
+        #expect(near(breakdown.compressed, compressedBefore, compressedPages))
+        let appBefore = anonymousBefore >= purgeableBefore ? anonymousBefore - purgeableBefore : 0
+        let appAfter = anonymousPages >= purgeablePages ? anonymousPages - purgeablePages : 0
+        #expect(near(breakdown.app, appBefore, appAfter))
+        #expect(near(breakdown.cached, fileBackedBefore + purgeableBefore, fileBackedPages + purgeablePages))
         #expect(breakdown.app > 0)
         #expect(breakdown.cached > 0)
         #expect(breakdown.free > 0)
