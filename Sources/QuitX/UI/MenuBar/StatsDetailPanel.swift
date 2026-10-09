@@ -337,11 +337,11 @@ private struct DetailRow: View {
     var dotColor: Color? = nil
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 7) {
             if let dotColor {
-                Circle()
+                RoundedRectangle(cornerRadius: 2.5)
                     .fill(dotColor)
-                    .frame(width: 6.5, height: 6.5)
+                    .frame(width: 10, height: 10)
             }
             Text(title)
                 .font(.system(size: 11))
