@@ -765,7 +765,8 @@ struct StatsDetailView: View {
                                     .foregroundStyle(Color.secondary)
                             }
                             if battery.isACPower, let limit = battery.chargingLimitPercent {
-                                Text("Charged to \(limit)% Limit")
+                                let reachedLimit = battery.percent >= limit
+                                Text("\(reachedLimit ? "Charged to" : "Charging to") \(limit)% Limit")
                                     .font(.system(size: 11))
                                     .foregroundStyle(Color.secondary)
                             }
