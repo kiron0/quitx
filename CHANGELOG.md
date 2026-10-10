@@ -2,6 +2,23 @@
 
 All notable changes to QuitX macOS App will be documented in this file.
 
+## 1.1.2
+
+### Added
+
+- Independent menu bar stat popovers: modularized menu bar stats so clicking CPU, Memory, or Battery directly opens a dedicated popover window anchored precisely beneath that individual stat segment, removing the previous tabbed container.
+
+### Changed
+
+- Consistent terminology: replaced all remaining "RAM" labels and headers with "Memory" across stats views.
+- Dynamic charging limit status: adjusted battery charging limit description to show "Charging to X%" while battery percentage is below limit, and "Charged to X%" once limit is reached or exceeded.
+- Popover layout styling: standardized uniform 10pt content padding across stats panels to eliminate top offset and card overflow issues.
+
+### Fixed
+
+- Menu bar popover switching stability: resolved premature dismissal when switching between stats segments by safely tearing down observers before window reuse and avoiding focus-loss race conditions.
+- General settings radio button hit testing: added full rectangular content shape to appearance option radio buttons for reliable click detection.
+
 ## 1.1.1
 
 ### Added
