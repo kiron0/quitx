@@ -794,7 +794,7 @@ struct StatsDetailView: View {
                                     .foregroundStyle(Color.secondary)
                             }
                             if let limit = battery.chargingLimitPercent {
-                                Text("Charging Limit: \(limit)%")
+                                Text("Charged to \(limit)% Limit")
                                     .font(.system(size: 11))
                                     .foregroundStyle(Color.secondary)
                             }

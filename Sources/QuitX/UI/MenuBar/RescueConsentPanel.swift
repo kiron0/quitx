@@ -51,7 +51,6 @@ final class RescueConsentController {
     private var window: ArrowPopoverWindow?
     private var lastPromptDate: Date = .distantPast
     private var frontmostAtShow: NSRunningApplication?
-    private var pendingTargets: [AppInfo] = []
     private var lastPayload: (targets: [AppInfo], reason: RescueReason)?
 
     private init() {}
@@ -74,12 +73,11 @@ final class RescueConsentController {
         present(targets: targets, reason: reason)
     }
 
-    func confirm() {
-        let targets = pendingTargets
+    func confirm(selected: [AppInfo]) {
         close()
-        guard !targets.isEmpty else { return }
+        guard !selected.isEmpty else { return }
         Task {
-            await AppListViewModel.shared.quitSilently(targets: targets, force: true)
+            await AppListViewModel.shared.quitSilently(targets: selected, force: true)
         }
     }
 
@@ -103,7 +101,6 @@ final class RescueConsentController {
 
     private func close() {
         window?.orderOut(nil)
-        pendingTargets = []
         restoreFrontmost()
     }
 
@@ -120,7 +117,6 @@ final class RescueConsentController {
     }
 
     private func present(targets: [AppInfo], reason: RescueReason) {
-        pendingTargets = targets
         lastPayload = (targets, reason)
         StatusItemController.shared?.closePopover()
 
@@ -147,7 +143,7 @@ final class RescueConsentController {
             rootView: RescueConsentView(
                 reason: reason,
                 targets: targets,
-                onConfirm: { [weak self] in self?.confirm() },
+                onConfirm: { [weak self] selected in self?.confirm(selected: selected) },
                 onCancel: { [weak self] in self?.cancel() },
                 arrowX: arrowX
             )
@@ -189,15 +185,47 @@ final class ConsentButtonHover: ObservableObject {
     @Published var hovered: String?
 }
 
+@MainActor
+final class ConsentSelection: ObservableObject {
+    @Published var selectedIDs: Set<AppInfo.ID>
+
+    init(targets: [AppInfo]) {
+        selectedIDs = Set(targets.map(\.id))
+    }
+
+    func toggle(_ id: AppInfo.ID) {
+        if selectedIDs.contains(id) {
+            selectedIDs.remove(id)
+        } else {
+            selectedIDs.insert(id)
+        }
+    }
+}
+
 struct RescueConsentView: View {
     let reason: RescueReason
     let targets: [AppInfo]
-    let onConfirm: () -> Void
+    let onConfirm: ([AppInfo]) -> Void
     let onCancel: () -> Void
     var arrowX: CGFloat? = nil
 
     @StateObject private var hover = ConsentButtonHover()
-    @ObservedObject private var configStore: ConfigStore = ConfigStore.shared
+    @StateObject private var selection: ConsentSelection
+
+    init(
+        reason: RescueReason,
+        targets: [AppInfo],
+        onConfirm: @escaping ([AppInfo]) -> Void,
+        onCancel: @escaping () -> Void,
+        arrowX: CGFloat? = nil
+    ) {
+        self.reason = reason
+        self.targets = targets
+        self.onConfirm = onConfirm
+        self.onCancel = onCancel
+        self.arrowX = arrowX
+        _selection = StateObject(wrappedValue: ConsentSelection(targets: targets))
+    }
 
     private var listedTargets: [AppInfo] {
         Array(targets.prefix(RescueConsentController.maxListedTargets))
@@ -207,14 +235,19 @@ struct RescueConsentView: View {
         max(0, targets.count - RescueConsentController.maxListedTargets)
     }
 
+    private var selectedTargets: [AppInfo] {
+        targets.filter { selection.selectedIDs.contains($0.id) }
+    }
+
     private var confirmTitle: String {
-        targets.count == 1 ? "Quit 1 app" : "Quit \(targets.count) apps"
+        let count = selectedTargets.count
+        return count == 1 ? "Quit 1 app" : "Quit \(count) apps"
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             Color.clear
-                .frame(height: 12)
+                .frame(height: 14)
 
             HStack(spacing: 7) {
                 Image(systemName: reason.symbolName)
@@ -224,33 +257,23 @@ struct RescueConsentView: View {
                     .font(.system(size: 12.5, weight: .semibold))
                     .foregroundStyle(Color.primary)
             }
-            .padding(.horizontal, 8)
+            .padding(.horizontal, 12)
 
             Text(reason.detail)
                 .font(.system(size: 11))
                 .foregroundStyle(Color.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 8)
+                .padding(.horizontal, 12)
 
             VStack(alignment: .leading, spacing: 2) {
                 ForEach(listedTargets) { app in
-                    HStack(spacing: 5) {
-                        AppIconView(bundleId: app.bundleId, pid: app.pid, size: 18, cornerRadius: 3)
-                        Text(app.name)
-                            .font(.system(size: 12.5, weight: .regular))
-                            .foregroundStyle(Color.primary)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                        Spacer(minLength: 4)
-                    }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3.5)
+                    consentAppRow(app)
                 }
                 if overflowCount > 0 {
                     Text("+\(overflowCount) more")
                         .font(.system(size: 10))
                         .foregroundStyle(Color.secondary)
-                        .padding(.horizontal, 8)
+                        .padding(.horizontal, 12)
                 }
             }
             .padding(.vertical, 2)
@@ -258,13 +281,37 @@ struct RescueConsentView: View {
             HStack(spacing: 8) {
                 Spacer()
                 consentButton(title: "Cancel", style: .neutral, action: onCancel)
-                consentButton(title: confirmTitle, style: .destructive, action: onConfirm)
+                consentButton(title: confirmTitle, style: .destructive, action: {
+                    onConfirm(selectedTargets)
+                }, disabled: selectedTargets.isEmpty)
             }
-            .padding(.horizontal, 8)
+            .padding(.horizontal, 12)
         }
-        .padding(.bottom, 14)
+        .padding(.bottom, 16)
         .frame(width: StatusItemController.popoverWidth)
         .arrowPopoverChrome(arrowX: arrowX)
+    }
+
+    private func consentAppRow(_ app: AppInfo) -> some View {
+        let isSelected = selection.selectedIDs.contains(app.id)
+        return Button {
+            selection.toggle(app.id)
+        } label: {
+            HStack(spacing: 7) {
+                QuitXSelectionCheckbox(isSelected: isSelected)
+                AppIconView(bundleId: app.bundleId, pid: app.pid, size: 18, cornerRadius: 3)
+                Text(app.name)
+                    .font(.system(size: 12.5, weight: .regular))
+                    .foregroundStyle(Color.primary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                Spacer(minLength: 4)
+            }
+            .contentShape(Rectangle())
+            .padding(.horizontal, 12)
+            .padding(.vertical, 3.5)
+        }
+        .buttonStyle(.plain)
     }
 
     private enum ButtonStyle {
@@ -272,8 +319,13 @@ struct RescueConsentView: View {
         case destructive
     }
 
-    private func consentButton(title: String, style: ButtonStyle, action: @escaping () -> Void) -> some View {
-        let isHovered = hover.hovered == title
+    private func consentButton(
+        title: String,
+        style: ButtonStyle,
+        action: @escaping () -> Void,
+        disabled: Bool = false
+    ) -> some View {
+        let isHovered = hover.hovered == title && !disabled
         return Button(action: action) {
             Text(title)
                 .font(.system(size: 11, weight: .medium))
@@ -282,12 +334,18 @@ struct RescueConsentView: View {
                 .frame(minWidth: 56)
         }
         .buttonStyle(.plain)
-        .foregroundStyle(style == .destructive ? Color.white : (isHovered ? Color.primary : Color.secondary))
+        .disabled(disabled)
+        .foregroundStyle(
+            disabled
+                ? Color.secondary.opacity(0.5)
+                : (style == .destructive ? Color.white : (isHovered ? Color.primary : Color.secondary))
+        )
         .background {
             Capsule()
                 .fill(
                     style == .destructive
-                        ? Color(red: 240/255, green: 70/255, blue: 50/255).opacity(isHovered ? 1.0 : 0.88)
+                        ? Color(red: 240/255, green: 70/255, blue: 50/255)
+                            .opacity(disabled ? 0.35 : (isHovered ? 1.0 : 0.88))
                         : Color.primary.opacity(isHovered ? 0.18 : 0.1)
                 )
         }

@@ -185,6 +185,25 @@ struct ProductivityFeaturesTests {
         )
     }
 
+    @Test("Consent selection defaults to all selected and toggles per app")
+    @MainActor
+    func testConsentSelectionDefaults() {
+        let apps = [
+            AppInfo(id: "a", name: "Alpha"),
+            AppInfo(id: "b", name: "Beta"),
+            AppInfo(id: "c", name: "Gamma")
+        ]
+        let selection = ConsentSelection(targets: apps)
+        #expect(selection.selectedIDs == Set(["a", "b", "c"]))
+        selection.toggle("b")
+        #expect(selection.selectedIDs == Set(["a", "c"]))
+        selection.toggle("b")
+        #expect(selection.selectedIDs == Set(["a", "b", "c"]))
+        selection.toggle("a")
+        selection.toggle("c")
+        #expect(selection.selectedIDs == Set(["b"]))
+    }
+
     @Test("Battery detection parses power descriptions")
     func testBatteryDetection() {
         let battery = [[kIOPSPowerSourceStateKey as String: kIOPSBatteryPowerValue as String]]
