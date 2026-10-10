@@ -252,7 +252,7 @@ private struct MemoryUsageGauge: View {
                         .position(center)
                 }
             }
-            Text("RAM used")
+            Text("Memory used")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.secondary)
         }
