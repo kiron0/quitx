@@ -793,8 +793,8 @@ struct StatsDetailView: View {
                                     .font(.system(size: 11))
                                     .foregroundStyle(Color.secondary)
                             }
-                            if let limit = battery.chargingLimitPercent {
-                                Text("Charged to \(limit)% Limit")
+                            if battery.isACPower, let limit = battery.chargingLimitPercent {
+                                Text("Charging to \(limit)% Limit")
                                     .font(.system(size: 11))
                                     .foregroundStyle(Color.secondary)
                             }
@@ -861,11 +861,11 @@ struct StatsDetailView: View {
 
     private func batteryNativeTimeText(_ battery: BatterySnapshot) -> String? {
         if battery.isCharging {
-            return BatteryDetailSampler.formatClock(minutes: battery.timeToFullMin ?? 0)
+            return BatteryDetailSampler.formatDuration(minutes: battery.timeToFullMin ?? 0)
                 .map { "Time to Full: \($0)" }
         }
         if !battery.isACPower {
-            return BatteryDetailSampler.formatClock(minutes: battery.timeToEmptyMin ?? 0)
+            return BatteryDetailSampler.formatDuration(minutes: battery.timeToEmptyMin ?? 0)
                 .map { "Remaining: \($0)" }
         }
         return nil

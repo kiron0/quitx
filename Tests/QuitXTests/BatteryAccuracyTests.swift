@@ -134,9 +134,9 @@ struct BatteryAccuracyTests {
 
     @Test("Duration format uses hours and minutes")
     func durationFormat() {
-        #expect(BatteryDetailSampler.formatDuration(minutes: 83) == "1h 23m")
-        #expect(BatteryDetailSampler.formatDuration(minutes: 120) == "2h")
-        #expect(BatteryDetailSampler.formatDuration(minutes: 45) == "45m")
+        #expect(BatteryDetailSampler.formatDuration(minutes: 83) == "1 hr 23 min")
+        #expect(BatteryDetailSampler.formatDuration(minutes: 120) == "2 hr")
+        #expect(BatteryDetailSampler.formatDuration(minutes: 45) == "45 min")
         #expect(BatteryDetailSampler.formatDuration(minutes: 0) == nil)
     }
 
@@ -391,13 +391,6 @@ struct BatteryAccuracyTests {
         )
         #expect(invalidVoltage?.voltageMV == nil)
         #expect(invalidVoltage?.powerW == nil)
-    }
-
-    @Test("Clock format matches native h:mm")
-    func clockFormat() {
-        #expect(BatteryDetailSampler.formatClock(minutes: 43) == "0:43")
-        #expect(BatteryDetailSampler.formatClock(minutes: 125) == "2:05")
-        #expect(BatteryDetailSampler.formatClock(minutes: 0) == nil)
     }
 
     @Test("Menu bar symbol buckets follow system icon levels")

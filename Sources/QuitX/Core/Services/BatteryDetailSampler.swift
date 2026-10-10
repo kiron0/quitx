@@ -119,14 +119,9 @@ enum BatteryDetailSampler {
         let hours = minutes / 60
         let mins = minutes % 60
         if hours > 0 {
-            return mins > 0 ? "\(hours)h \(mins)m" : "\(hours)h"
+            return mins > 0 ? "\(hours) hr \(mins) min" : "\(hours) hr"
         }
-        return "\(mins)m"
-    }
-
-    static func formatClock(minutes: Int) -> String? {
-        guard minutes > 0 else { return nil }
-        return "\(minutes / 60):\(String(format: "%02d", minutes % 60))"
+        return "\(mins) min"
     }
 
     static func menuBarSymbolName(percent: Int, charging: Bool) -> String {
