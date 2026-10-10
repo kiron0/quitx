@@ -459,6 +459,31 @@ struct StatsDetailView: View {
         (NSScreen.main?.visibleFrame.height ?? 800) - 140
     }
 
+    private func statsTabFooterButton(title: String, symbol: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: symbol)
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(QuitXTheme.accent)
+                Text(title)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Color.primary)
+                Spacer()
+                Image(systemName: "arrow.up.right")
+                    .font(.system(size: 9.5, weight: .semibold))
+                    .foregroundStyle(Color.secondary)
+            }
+            .padding(.horizontal, 9)
+            .frame(height: 26)
+            .background(QuitXTheme.cardBackground, in: RoundedRectangle(cornerRadius: 6))
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
     private func pct(_ value: Double) -> String {
         String(format: "%.0f%%", value)
     }
@@ -667,6 +692,15 @@ struct StatsDetailView: View {
                     ProcessList(procs: model.cpuTop, showCpu: true, onCopy: { model.toast($0) })
                 }
             }
+
+            statsTabFooterButton(
+                title: "Open Activity Monitor",
+                symbol: "gauge.with.dots.needle.67percent"
+            ) {
+                NSWorkspace.shared.open(
+                    URL(fileURLWithPath: "/System/Applications/Utilities/Activity Monitor.app")
+                )
+            }
         }
     }
 
@@ -738,32 +772,14 @@ struct StatsDetailView: View {
                 }
             }
 
-            Button {
+            statsTabFooterButton(
+                title: "Open Activity Monitor",
+                symbol: "waveform.path.ecg"
+            ) {
                 NSWorkspace.shared.open(
                     URL(fileURLWithPath: "/System/Applications/Utilities/Activity Monitor.app")
                 )
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "waveform.path.ecg")
-                        .font(.system(size: 10.5))
-                        .foregroundStyle(QuitXTheme.accent)
-                    Text("Open Activity Monitor")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(Color.primary)
-                    Spacer()
-                    Image(systemName: "arrow.up.right")
-                        .font(.system(size: 9.5, weight: .semibold))
-                        .foregroundStyle(Color.secondary)
-                }
-                .padding(.horizontal, 9)
-                .frame(height: 26)
-                .background(QuitXTheme.cardBackground, in: RoundedRectangle(cornerRadius: 6))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 6)
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
-                )
             }
-            .buttonStyle(.plain)
         }
     }
 
@@ -794,7 +810,7 @@ struct StatsDetailView: View {
                                     .foregroundStyle(Color.secondary)
                             }
                             if battery.isACPower, let limit = battery.chargingLimitPercent {
-                                Text("Charging to \(limit)% Limit")
+                                Text("Charged to \(limit)% Limit")
                                     .font(.system(size: 11))
                                     .foregroundStyle(Color.secondary)
                             }
@@ -842,6 +858,15 @@ struct StatsDetailView: View {
                                 }
                             }
                         }
+                    }
+
+                    statsTabFooterButton(
+                        title: "Open Battery Settings",
+                        symbol: "batteryblock"
+                    ) {
+                        NSWorkspace.shared.open(
+                            URL(string: "x-apple.systempreferences:com.apple.Battery-Settings.extension")!
+                        )
                     }
                 }
             } else {
