@@ -98,6 +98,7 @@ fileprivate func appearanceRadio(_ title: String, selected: Bool, action: @escap
                 .font(.system(size: 12, weight: .regular))
                 .foregroundStyle(Color.primary)
         }
+        .contentShape(Rectangle())
     }
     .buttonStyle(.plain)
 }
