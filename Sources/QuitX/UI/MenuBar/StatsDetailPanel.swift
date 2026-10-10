@@ -12,7 +12,7 @@ final class StatsDetailModel: ObservableObject {
 
     @Published var mode: Mode = .cpu
     @Published var arrowX: CGFloat? = nil
-    @Published var contentHeight: CGFloat = 520
+    @Published var contentHeight: CGFloat = 380
 
     @Published var cpu: Double = 0
     @Published var systemPct: Double = 0
@@ -454,7 +454,7 @@ struct StatsDetailView: View {
     @ObservedObject private var configStore: ConfigStore = ConfigStore.shared
 
     private let panelWidth: CGFloat = 270
-    private let headerHeight: CGFloat = 47
+    private let headerHeight: CGFloat = 12
     private var maxHeight: CGFloat {
         (NSScreen.main?.visibleFrame.height ?? 800) - 140
     }
@@ -517,56 +517,10 @@ struct StatsDetailView: View {
             )
     }
 
-    private var visibleModes: [StatsDetailModel.Mode] {
-        StatsDetailModel.Mode.allCases.filter { mode in
-            mode != .battery || configStore.config.batteryMenuBarEnabled
-        }
-    }
-
-    private var tabSelector: some View {
-        HStack(spacing: 2) {
-            ForEach(visibleModes, id: \.self) { mode in
-                let isSelected = model.mode == mode
-                Button {
-                    withAnimation(.easeInOut(duration: 0.16)) {
-                        model.mode = mode
-                    }
-                } label: {
-                    HStack(spacing: 5) {
-                        Image(systemName: mode == .cpu ? "cpu" : mode == .memory ? "memorychip" : "batteryblock")
-                            .font(.system(size: 10.5, weight: isSelected ? .semibold : .regular))
-                        Text(mode.rawValue)
-                            .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
-                    }
-                    .foregroundStyle(isSelected ? Color.primary : Color.secondary)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 22)
-                    .background(
-                        RoundedRectangle(cornerRadius: 5)
-                            .fill(isSelected ? Color.primary.opacity(0.12) : Color.primary.opacity(0.0001))
-                    )
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .contentShape(Rectangle())
-            }
-        }
-        .padding(2)
-        .background(
-            RoundedRectangle(cornerRadius: 6.5)
-                .fill(Color.primary.opacity(0.05))
-        )
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Color.clear
                 .frame(height: 12)
-
-            tabSelector
-                .padding(.horizontal, 10)
-                .padding(.top, 3)
-                .padding(.bottom, 6)
 
             ScrollView(.vertical, showsIndicators: false) {
                 Group {
@@ -576,15 +530,10 @@ struct StatsDetailView: View {
                     case .memory:
                         memoryContent
                     case .battery:
-                        if configStore.config.batteryMenuBarEnabled {
-                            batteryContent
-                        } else {
-                            cpuContent
-                        }
+                        batteryContent
                     }
                 }
-                .padding(.horizontal, 10)
-                .padding(.bottom, 12)
+                .padding(10)
                 .background(
                     GeometryReader { geometry in
                         Color.clear.preference(
@@ -609,17 +558,10 @@ struct StatsDetailView: View {
             if model.showToast {
                 ToastView(message: model.toastMessage, isError: model.toastIsError)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .padding(.bottom, 12)
+                    .padding(.bottom, 10)
             }
         }
         .animation(.easeInOut(duration: 0.2), value: model.showToast)
-        .onChange(of: configStore.config.batteryMenuBarEnabled) { _, enabled in
-            if !enabled, model.mode == .battery {
-                withAnimation(.easeInOut(duration: 0.16)) {
-                    model.mode = .cpu
-                }
-            }
-        }
     }
 
     private var cpuContent: some View {
@@ -938,27 +880,34 @@ final class StatsDetailController {
     private var resignObserver: NSObjectProtocol?
     private var lastCloseTimestamp: Date = .distantPast
     private var frontmostAtShow: NSRunningApplication?
+    private weak var currentAnchorButton: NSStatusBarButton?
 
     private init() {}
 
     var isVisible: Bool { window?.isVisible ?? false }
 
-    func toggle(from button: NSStatusBarButton) {
+    func toggle(from button: NSStatusBarButton, mode: StatsDetailModel.Mode, anchorScreenX: CGFloat? = nil) {
         if isVisible {
-            close()
+            if model?.mode == mode && currentAnchorButton == button {
+                close()
+            } else {
+                show(from: button, mode: mode, anchorScreenX: anchorScreenX)
+            }
         } else {
             if Date().timeIntervalSince(lastCloseTimestamp) < 0.25 {
                 return
             }
-            show(from: button)
+            show(from: button, mode: mode, anchorScreenX: anchorScreenX)
         }
     }
 
-    func show(from button: NSStatusBarButton) {
+    func show(from button: NSStatusBarButton, mode: StatsDetailModel.Mode, anchorScreenX: CGFloat? = nil) {
         guard let buttonWindow = button.window else { return }
         StatusItemController.shared?.closePopover()
+        currentAnchorButton = button
 
         let model = self.model ?? StatsDetailModel()
+        model.mode = mode
         self.model = model
 
         let hostView = NSHostingView(rootView: StatsDetailView(model: model))
@@ -977,14 +926,15 @@ final class StatsDetailController {
         win.setContentSize(size)
 
         let buttonScreenRect = buttonWindow.convertToScreen(button.bounds)
-        var originX = buttonScreenRect.midX - size.width / 2
+        let targetMidX = anchorScreenX ?? buttonScreenRect.midX
+        var originX = targetMidX - size.width / 2
         if let screen = buttonWindow.screen ?? NSScreen.main {
             originX = max(screen.visibleFrame.minX + 4,
                           min(originX, screen.visibleFrame.maxX - size.width - 4))
         }
 
         let originY = buttonScreenRect.minY - size.height - 2
-        model.arrowX = buttonScreenRect.midX - originX
+        model.arrowX = targetMidX - originX
         win.setFrame(NSRect(x: originX, y: originY, width: size.width, height: size.height), display: true)
         win.invalidateShadow()
 
@@ -1036,6 +986,7 @@ final class StatsDetailController {
         window?.orderOut(nil)
         model?.stop()
         heightObserver = nil
+        currentAnchorButton = nil
         removeMonitors()
         if let resignObserver {
             NotificationCenter.default.removeObserver(resignObserver)

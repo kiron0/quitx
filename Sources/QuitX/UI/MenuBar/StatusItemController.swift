@@ -8,6 +8,13 @@ final class StatusItemController: NSObject {
 
     private var statusItem: NSStatusItem
     private var statsStatusItem: NSStatusItem?
+    private struct SegmentMetrics {
+        var cpuWidth: CGFloat = 0
+        var sepWidth: CGFloat = 0
+        var memWidth: CGFloat = 0
+        var batWidth: CGFloat? = nil
+    }
+    private var segmentMetrics = SegmentMetrics()
     private var window: ArrowPopoverWindow?
     private var hostingController: NSHostingController<AnyView>?
     private var globalEventMonitor: Any?
@@ -41,9 +48,7 @@ final class StatusItemController: NSObject {
         liveMonitoringTask?.cancel()
         backgroundRefreshTask?.cancel()
         menuStatsTask?.cancel()
-        if let statsStatusItem {
-            NSStatusBar.system.removeStatusItem(statsStatusItem)
-        }
+        if let statsStatusItem { NSStatusBar.system.removeStatusItem(statsStatusItem) }
         let center = NSWorkspace.shared.notificationCenter
         workspaceObservers.forEach { center.removeObserver($0) }
         if let g = globalEventMonitor { NSEvent.removeMonitor(g) }
@@ -327,55 +332,24 @@ final class StatusItemController: NSObject {
         return nil
     }
 
-    private static func statsTitle(
-        cpu: Double,
-        memoryUsed: UInt64,
-        unit: QuitXConfig.MenuBarMemoryUnit,
-        style: QuitXConfig.MenuBarStatStyle = .icon,
-        battery: BatterySnapshot? = nil
+    private static func statSegmentTitle(
+        symbolNames: [String],
+        fallback: String,
+        text: String,
+        style: QuitXConfig.MenuBarStatStyle
     ) -> NSAttributedString {
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.menuBarFont(ofSize: 0),
             .foregroundColor: NSColor.labelColor
         ]
-        let title = NSMutableAttributedString()
-        func appendSegment(symbolNames: [String], fallback: String, text: String) {
-            if style == .icon, let attachment = menuBarAttachment(symbolNames: symbolNames) {
-                title.append(NSAttributedString(attachment: attachment))
-                title.append(NSAttributedString(string: " \(text)", attributes: attributes))
-            } else {
-                title.append(NSAttributedString(string: "\(fallback) \(text)", attributes: attributes))
-            }
+        let result = NSMutableAttributedString()
+        if style == .icon, let attachment = menuBarAttachment(symbolNames: symbolNames) {
+            result.append(NSAttributedString(attachment: attachment))
+            result.append(NSAttributedString(string: " \(text)", attributes: attributes))
+        } else {
+            result.append(NSAttributedString(string: "\(fallback) \(text)", attributes: attributes))
         }
-        appendSegment(symbolNames: ["cpu"], fallback: "CPU", text: BatterySaver.percentText(cpu))
-        title.append(NSAttributedString(string: "   ", attributes: attributes))
-        appendSegment(
-            symbolNames: ["memorychip", "internaldrive"],
-            fallback: "MEM",
-            text: BatterySaver.compactMemoryText(bytes: memoryUsed, unit: unit)
-        )
-        if let battery {
-            title.append(NSAttributedString(string: "   ", attributes: attributes))
-            let batterySymbols: [String]
-            if battery.isCharging {
-                batterySymbols = [
-                    BatteryDetailSampler.menuBarSymbolName(percent: battery.percent, charging: true),
-                    "bolt.fill"
-                ]
-            } else if battery.isACPower {
-                batterySymbols = ["powercord", "power.plug"]
-            } else {
-                batterySymbols = [
-                    BatteryDetailSampler.menuBarSymbolName(percent: battery.percent, charging: false)
-                ]
-            }
-            appendSegment(
-                symbolNames: batterySymbols,
-                fallback: battery.isACPower && !battery.isCharging ? "AC" : "BAT",
-                text: "\(battery.percent)%"
-            )
-        }
-        return title
+        return result
     }
 
     var statsButton: NSStatusBarButton? {
@@ -392,25 +366,86 @@ final class StatusItemController: NSObject {
             removeStatsItem()
             return
         }
+
         let item = statsStatusItem ?? NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statsStatusItem = item
         guard let button = item.button else { return }
+
         if button.action == nil {
-            button.sendAction(on: [.leftMouseDown, .rightMouseDown])
-            button.action = #selector(handleStatsItemClick(_:))
             button.target = self
+            button.action = #selector(handleStatsItemClick(_:))
+            button.sendAction(on: [.leftMouseDown, .rightMouseDown])
             button.toolTip = "QuitX monitor — click for details"
+            button.imagePosition = .imageLeading
         }
-        button.imagePosition = .imageLeading
+
         let cpu = SystemUsage.cpuPercent(consumer: "menuBar")
         let memoryUsed = SystemUsage.memoryUsedBytes()
         let battery = cfg.batteryMenuBarEnabled ? BatteryDetailSampler.snapshot() : nil
-        button.attributedTitle = Self.statsTitle(
-            cpu: cpu,
-            memoryUsed: memoryUsed,
-            unit: cfg.menuBarMemoryUnit,
-            style: cfg.menuBarStatStyle,
-            battery: battery
+
+        let cpuAttr = Self.statSegmentTitle(
+            symbolNames: ["cpu"],
+            fallback: "CPU",
+            text: BatterySaver.percentText(cpu),
+            style: cfg.menuBarStatStyle
+        )
+
+        let memAttr = Self.statSegmentTitle(
+            symbolNames: ["memorychip", "internaldrive"],
+            fallback: "MEM",
+            text: BatterySaver.compactMemoryText(bytes: memoryUsed, unit: cfg.menuBarMemoryUnit),
+            style: cfg.menuBarStatStyle
+        )
+
+        let batAttr: NSAttributedString?
+        if let battery {
+            let batterySymbols: [String]
+            if battery.isCharging {
+                batterySymbols = [
+                    BatteryDetailSampler.menuBarSymbolName(percent: battery.percent, charging: true),
+                    "bolt.fill"
+                ]
+            } else if battery.isACPower {
+                batterySymbols = ["powercord", "power.plug"]
+            } else {
+                batterySymbols = [
+                    BatteryDetailSampler.menuBarSymbolName(percent: battery.percent, charging: false)
+                ]
+            }
+            batAttr = Self.statSegmentTitle(
+                symbolNames: batterySymbols,
+                fallback: battery.isACPower && !battery.isCharging ? "AC" : "BAT",
+                text: "\(battery.percent)%",
+                style: cfg.menuBarStatStyle
+            )
+        } else {
+            batAttr = nil
+        }
+
+        let sepAttr = NSAttributedString(
+            string: "   ",
+            attributes: [
+                .font: NSFont.menuBarFont(ofSize: 0),
+                .foregroundColor: NSColor.labelColor
+            ]
+        )
+
+        let fullTitle = NSMutableAttributedString()
+        fullTitle.append(cpuAttr)
+        fullTitle.append(sepAttr)
+        fullTitle.append(memAttr)
+        if let batAttr {
+            fullTitle.append(sepAttr)
+            fullTitle.append(batAttr)
+        }
+
+        button.attributedTitle = fullTitle
+
+        segmentMetrics = SegmentMetrics(
+            cpuWidth: cpuAttr.size().width,
+            sepWidth: sepAttr.size().width,
+            memWidth: memAttr.size().width,
+            batWidth: batAttr?.size().width
         )
     }
 
@@ -421,13 +456,63 @@ final class StatusItemController: NSObject {
         statsStatusItem = nil
     }
 
-    @objc private func handleStatsItemClick(_ sender: Any?) {
-        guard let button = statsStatusItem?.button else { return }
+    private var isRightClick: Bool {
         if let event = NSApp.currentEvent, event.type == .rightMouseDown || event.type == .rightMouseUp {
+            return true
+        }
+        return false
+    }
+
+    @objc private func handleStatsItemClick(_ sender: Any?) {
+        guard let button = statsStatusItem?.button, let buttonWindow = button.window else { return }
+        if isRightClick {
             showContextMenu()
             return
         }
-        StatsDetailController.shared.toggle(from: button)
+
+        let (mode, anchorX) = resolveClickedStat(on: button, window: buttonWindow)
+        StatsDetailController.shared.toggle(from: button, mode: mode, anchorScreenX: anchorX)
+    }
+
+    private func resolveClickedStat(on button: NSStatusBarButton, window: NSWindow) -> (StatsDetailModel.Mode, CGFloat) {
+        let buttonScreenRect = window.convertToScreen(button.bounds)
+        let fullWidth = button.attributedTitle.size().width
+        let titleInsetX = max(0, (button.bounds.width - fullWidth) / 2)
+        let contentScreenStartX = buttonScreenRect.minX + titleInsetX
+
+        let m = segmentMetrics
+        let cpuStartX = contentScreenStartX
+        let cpuMidX = cpuStartX + m.cpuWidth / 2
+        let cpuEndX = cpuStartX + m.cpuWidth
+
+        let memStartX = cpuEndX + m.sepWidth
+        let memMidX = memStartX + m.memWidth / 2
+        let memEndX = memStartX + m.memWidth
+
+        let clickScreenX = NSEvent.mouseLocation.x
+
+        if let batWidth = m.batWidth {
+            let batStartX = memEndX + m.sepWidth
+            let batMidX = batStartX + batWidth / 2
+
+            let cpuMemBoundary = cpuEndX + m.sepWidth / 2
+            let memBatBoundary = memEndX + m.sepWidth / 2
+
+            if clickScreenX < cpuMemBoundary {
+                return (.cpu, cpuMidX)
+            } else if clickScreenX > memBatBoundary {
+                return (.battery, batMidX)
+            } else {
+                return (.memory, memMidX)
+            }
+        } else {
+            let cpuMemBoundary = cpuEndX + m.sepWidth / 2
+            if clickScreenX < cpuMemBoundary {
+                return (.cpu, cpuMidX)
+            } else {
+                return (.memory, memMidX)
+            }
+        }
     }
 
     func startMenuBarStats() {
