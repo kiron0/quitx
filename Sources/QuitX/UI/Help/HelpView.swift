@@ -218,14 +218,6 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                     body: "Click the menu bar stats item to open a liquid glass detail panel showing live CPU, memory, and battery data. Battery details include power source, charge time, power draw, voltage, temperature, capacity, and cycle count when macOS reports them. Click the stats item again, click anywhere outside, or press Esc to dismiss it."
                 ),
                 QuitXHelpSection(
-                    title: "Low-battery rescue",
-                    body: "Enable Rescue apps on low battery in Settings > Automation and choose a charge limit. After charge stays at or below that limit for 15 seconds, QuitX asks before force quitting inactive apps. The frontmost app and protected apps remain safe."
-                ),
-                QuitXHelpSection(
-                    title: "Sleep low-battery guard",
-                    body: "Enable Skip sleep quit on low battery to avoid an app-quit pass while the Mac enters sleep at or below your selected charge level. This option applies only when Quit apps when Mac sleeps is enabled."
-                ),
-                QuitXHelpSection(
                     title: "Battery saver mode",
                     body: "Enable Save power on battery to reduce power consumption when unplugged. Inactivity auto-quit timeouts automatically halve (e.g. 60m to 30m), and live stats refresh slows from 2 seconds to 10 seconds."
                 ),

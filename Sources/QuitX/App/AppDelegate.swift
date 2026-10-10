@@ -58,18 +58,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         AutoQuitService.shared.startTracking()
         SleepService.shared.start()
         MemoryPressureService.shared.start()
-        BatteryTriggerService.shared.start()
         QuitTimerService.shared.start()
         HogMonitor.shared.startBackgroundMonitoring()
         statusItemController?.startMenuBarStats()
+        UpdateChecker.shared.startAutomaticChecks()
         _ = ShortcutManager.shared
         WelcomeWindowController.shared.showIfFirstLaunch()
-
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 2_000_000_000)
-            guard ConfigStore.shared.config.autoUpdate else { return }
-            await UpdateChecker.shared.checkForUpdates(isUserInitiated: false)
-        }
     }
 
     private var distributedNotificationObservers: [NSObjectProtocol] = []
@@ -82,9 +76,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         AutoQuitService.shared.stopTracking()
         SleepService.shared.stop()
         MemoryPressureService.shared.stop()
-        BatteryTriggerService.shared.stop()
         QuitTimerService.shared.stop()
         HogMonitor.shared.stopBackgroundMonitoring()
+        UpdateChecker.shared.stopAutomaticChecks()
         SingleInstanceService.shared.stopMonitoring()
         statusItemController = nil
         ConfigStore.shared.flush()

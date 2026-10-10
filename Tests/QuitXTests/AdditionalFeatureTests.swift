@@ -213,7 +213,7 @@ struct SettingsTabTests {
         } else {
             #expect(SettingsTab.general.contentHeight == 301)
         }
-        #expect(SettingsTab.automation.contentHeight == 481)
+        #expect(SettingsTab.automation.contentHeight == 361)
         #expect(SettingsTab.advanced.contentHeight == 271)
         #expect(SettingsTab.exclude.contentHeight == 306)
         #expect(SettingsTab.shortcuts.contentHeight == 221)
@@ -471,4 +471,3 @@ struct WelcomeGuideLaunchTests {
         #expect(!WelcomeWindowController.shared.isOpen)
     }
 }
-

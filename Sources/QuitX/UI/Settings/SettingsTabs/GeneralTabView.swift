@@ -304,26 +304,6 @@ struct AutomationTabCloneView: View {
         )
     }
 
-    private var batteryQuitThreshold: Binding<Int> {
-        Binding(
-            get: { configStore.config.effectiveBatteryQuitThreshold },
-            set: {
-                configStore.config.batteryQuitThreshold = min(90, max(5, $0))
-                configStore.save()
-            }
-        )
-    }
-
-    private var batterySleepGuardThreshold: Binding<Int> {
-        Binding(
-            get: { configStore.config.effectiveBatterySleepGuardThreshold },
-            set: {
-                configStore.config.batterySleepGuardThreshold = min(90, max(5, $0))
-                configStore.save()
-            }
-        )
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
 
@@ -334,37 +314,6 @@ struct AutomationTabCloneView: View {
                 ))
             } help: {
                 HelpPopoverButton(text: "Sip power like fine wine! Auto-quit timers cut in half and CPU checks slow to 10s to spare your battery. 🔋🍷")
-            }
-
-            row(label: "") {
-                toggle("Rescue apps on low battery", isOn: Binding(
-                    get: { configStore.config.batteryQuitEnabled },
-                    set: { configStore.config.batteryQuitEnabled = $0; configStore.save() }
-                ))
-            } help: {
-                HelpPopoverButton(text: "When battery stays at or below your limit for 15 seconds, QuitX asks before force quitting inactive apps. Frontmost, excluded, music, and Never apps stay safe. 🔋🛟")
-            }
-
-            row(label: "") {
-                HStack(spacing: 6) {
-                    Text("Battery at")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color.primary)
-
-                    Text("\(batteryQuitThreshold.wrappedValue)")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color.primary)
-                        .frame(minWidth: 20, alignment: .trailing)
-
-                    Stepper("", value: batteryQuitThreshold, in: 5...90, step: 5)
-                        .labelsHidden()
-
-                    Text("%")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color.primary)
-                }
-                .disabled(!configStore.config.batteryQuitEnabled)
-                .opacity(configStore.config.batteryQuitEnabled ? 1.0 : 0.42)
             }
 
             let sleepOn = configStore.config.quitOnSleep
@@ -407,39 +356,6 @@ struct AutomationTabCloneView: View {
                 }
                 .disabled(!subsOn)
                 .opacity(subsOn ? 1.0 : 0.42)
-            }
-
-            row(label: "") {
-                toggle("Skip sleep quit on low battery", isOn: Binding(
-                    get: { configStore.config.batterySleepGuardEnabled },
-                    set: { configStore.config.batterySleepGuardEnabled = $0; configStore.save() }
-                ))
-                .disabled(!sleepOn)
-                .opacity(sleepOn ? 1.0 : 0.42)
-            } help: {
-                HelpPopoverButton(text: "Avoids spending battery on an app-quit pass while your Mac is entering sleep at or below the selected charge level. 💤🔋")
-            }
-
-            row(label: "") {
-                HStack(spacing: 6) {
-                    Text("Battery at")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color.primary)
-
-                    Text("\(batterySleepGuardThreshold.wrappedValue)")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color.primary)
-                        .frame(minWidth: 20, alignment: .trailing)
-
-                    Stepper("", value: batterySleepGuardThreshold, in: 5...90, step: 5)
-                        .labelsHidden()
-
-                    Text("% or below")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color.primary)
-                }
-                .disabled(!sleepOn || !configStore.config.batterySleepGuardEnabled)
-                .opacity(sleepOn && configStore.config.batterySleepGuardEnabled ? 1.0 : 0.42)
             }
 
             row(label: "") {

@@ -123,15 +123,6 @@ struct BatteryAccuracyTests {
         #expect(snapshot?.timeToFullMin == 45)
     }
 
-    @Test("Battery threshold computed props clamp to 5-90")
-    func batteryThresholdClamps() {
-        var config = QuitXConfig.default
-        config.batteryQuitThreshold = 0
-        config.batterySleepGuardThreshold = 200
-        #expect(config.effectiveBatteryQuitThreshold == 5)
-        #expect(config.effectiveBatterySleepGuardThreshold == 90)
-    }
-
     @Test("Duration format uses hours and minutes")
     func durationFormat() {
         #expect(BatteryDetailSampler.formatDuration(minutes: 83) == "1 hr 23 min")
@@ -426,56 +417,5 @@ struct BatteryAccuracyTests {
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         process.waitUntilExit()
         return String(data: data, encoding: .utf8) ?? ""
-    }
-}
-
-@Suite("Low battery rescue gate")
-struct LowBatteryRescueGateTests {
-    @Test("Requires arm and sustained low-battery intervals")
-    func sustainedLowBattery() {
-        let armedAt = Date(timeIntervalSince1970: 1_000)
-        var gate = LowBatteryRescueGate()
-
-        let beforeArm = gate.evaluate(
-            percent: 20, threshold: 20, armedAt: armedAt, now: armedAt.addingTimeInterval(14)
-        )
-        let startsLowInterval = gate.evaluate(
-            percent: 20, threshold: 20, armedAt: armedAt, now: armedAt.addingTimeInterval(15)
-        )
-        let beforeSustained = gate.evaluate(
-            percent: 20, threshold: 20, armedAt: armedAt, now: armedAt.addingTimeInterval(29)
-        )
-        let sustained = gate.evaluate(
-            percent: 20, threshold: 20, armedAt: armedAt, now: armedAt.addingTimeInterval(30)
-        )
-
-        #expect(!beforeArm)
-        #expect(!startsLowInterval)
-        #expect(!beforeSustained)
-        #expect(sustained)
-    }
-
-    @Test("Recovery clears sustained low-battery state")
-    func recoveryResetsState() {
-        let armedAt = Date(timeIntervalSince1970: 1_000)
-        var gate = LowBatteryRescueGate()
-
-        let startsFirstInterval = gate.evaluate(
-            percent: 20, threshold: 20, armedAt: armedAt, now: armedAt.addingTimeInterval(15)
-        )
-        let recovered = gate.evaluate(
-            percent: 26, threshold: 20, armedAt: armedAt, now: armedAt.addingTimeInterval(20)
-        )
-        let startsSecondInterval = gate.evaluate(
-            percent: 20, threshold: 20, armedAt: armedAt, now: armedAt.addingTimeInterval(30)
-        )
-        let sustained = gate.evaluate(
-            percent: 20, threshold: 20, armedAt: armedAt, now: armedAt.addingTimeInterval(45)
-        )
-
-        #expect(!startsFirstInterval)
-        #expect(!recovered)
-        #expect(!startsSecondInterval)
-        #expect(sustained)
     }
 }

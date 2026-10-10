@@ -6,16 +6,20 @@ All notable changes to QuitX macOS App will be documented in this file.
 
 ### Added
 
-- Battery monitoring: optional menu bar charge status, detailed power and health metrics, configurable low-battery rescue, and a low-battery guard for sleep-triggered quits.
+- Battery monitoring: optional menu bar charge status plus detailed power, capacity, health, and charging metrics.
 
 ### Changed
 
+- Automatic update checks now run when due after launch and repeat every 24 hours while QuitX remains open, with the last attempt persisted to avoid redundant checks after relaunch.
+- Smart Rescue consent now supports selecting individual targets and scrolling through long target lists.
 - Refined system app protection rules: permit quitting safe, user-facing Apple utilities and document tools (Preview, System Settings, Activity Monitor, Console, Disk Utility, Archive Utility) while keeping core system UI (Dock, WindowManager, SystemUIServer, loginwindow) strictly guarded.
 - Stats detail metric indicators: updated detail row status color indicators from circular dots to 10x10 rounded squares (`cornerRadius: 2.5`) to match the optical weight of process app icons.
 - Centralized constants and bundle identities: consolidated primary bundle ID, supported bundle identifiers, system bundle IDs, and UserDefaults keys into `QuitXConstants`.
 
 ### Fixed
 
+- Smart Rescue no longer refreshes its candidate list while the consent panel is visible, preserving the user's selections and keeping every target accessible.
+- Stats detail actions resolve Activity Monitor by bundle identifier and open Battery Settings without force-unwrapping its URL.
 - PID recovery for workspace apps: resolved process IDs via executable path matching against `proc_pidpath` when macOS LaunchServices returns an invalid PID (`-1`), ensuring apps like Preview are discovered and listed reliably.
 - Termination tracking for recovered PIDs: updated `QuitService` to monitor process exit via raw PID verification when `NSRunningApplication.processIdentifier` is non-positive.
 - Settings tooltip arrow and border synchronization: replaced native `NSPopover` with custom `ArrowPopoverWindow` and `arrowPopoverChrome` in `SettingsView`, unifying tooltip styling with menu bar popovers and removing the extra inner border below the arrow.

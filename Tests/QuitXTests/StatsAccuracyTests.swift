@@ -122,7 +122,7 @@ struct StatsAccuracyTests {
         }
 
         func pagesOrZero(_ text: String, _ label: String) -> UInt64 {
-            (try? vmStatValue(text, label: label)) ?? 0
+            vmStatValue(text, label: label) ?? 0
         }
 
         let wiredBefore = try pages(groundBefore, "Pages wired down:")

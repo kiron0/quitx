@@ -4,13 +4,11 @@ import SwiftUI
 enum RescueReason {
     case cpu(value: Double, limit: Double)
     case memory
-    case battery(percent: Double, threshold: Double)
 
     var title: String {
         switch self {
         case .cpu: return "High CPU usage"
         case .memory: return "Memory pressure"
-        case .battery: return "Low battery"
         }
     }
 
@@ -24,12 +22,6 @@ enum RescueReason {
             )
         case .memory:
             return "Memory is running out. QuitX wants to quit high-memory inactive apps. Your call."
-        case .battery(let percent, let threshold):
-            return String(
-                format: "Battery is at %.0f%% (limit %.0f%%). QuitX wants to quit inactive apps to save power. Your call.",
-                percent,
-                threshold
-            )
         }
     }
 
@@ -37,7 +29,6 @@ enum RescueReason {
         switch self {
         case .cpu: return "gauge.with.dots.needle.67percent"
         case .memory: return "memorychip"
-        case .battery: return "batterymedium"
         }
     }
 }
@@ -46,7 +37,7 @@ enum RescueReason {
 final class RescueConsentController {
     static let shared = RescueConsentController()
     nonisolated static let promptCooldown: TimeInterval = 60
-    fileprivate static let maxListedTargets = 6
+    fileprivate static let maxVisibleTargets = 6
 
     private var window: ArrowPopoverWindow?
     private var lastPromptDate: Date = .distantPast
@@ -58,17 +49,18 @@ final class RescueConsentController {
     var isVisible: Bool { window?.isVisible ?? false }
 
     nonisolated static func shouldPrompt(
+        isVisible: Bool = false,
         lastPrompt: Date,
         now: Date,
         cooldown: TimeInterval = RescueConsentController.promptCooldown
     ) -> Bool {
-        now.timeIntervalSince(lastPrompt) >= cooldown
+        !isVisible && now.timeIntervalSince(lastPrompt) >= cooldown
     }
 
     func request(targets: [AppInfo], reason: RescueReason) {
         guard !targets.isEmpty else { return }
         let now = Date()
-        guard isVisible || Self.shouldPrompt(lastPrompt: lastPromptDate, now: now) else { return }
+        guard Self.shouldPrompt(isVisible: isVisible, lastPrompt: lastPromptDate, now: now) else { return }
         lastPromptDate = now
         present(targets: targets, reason: reason)
     }
@@ -200,6 +192,14 @@ final class ConsentSelection: ObservableObject {
             selectedIDs.insert(id)
         }
     }
+
+    func selectAll(_ ids: Set<AppInfo.ID>) {
+        selectedIDs = ids
+    }
+
+    func deselectAll() {
+        selectedIDs.removeAll()
+    }
 }
 
 struct RescueConsentView: View {
@@ -227,16 +227,17 @@ struct RescueConsentView: View {
         _selection = StateObject(wrappedValue: ConsentSelection(targets: targets))
     }
 
-    private var listedTargets: [AppInfo] {
-        Array(targets.prefix(RescueConsentController.maxListedTargets))
-    }
-
-    private var overflowCount: Int {
-        max(0, targets.count - RescueConsentController.maxListedTargets)
+    private var targetListHeight: CGFloat {
+        let visibleCount = min(targets.count, RescueConsentController.maxVisibleTargets)
+        return CGFloat(visibleCount) * 29
     }
 
     private var selectedTargets: [AppInfo] {
         targets.filter { selection.selectedIDs.contains($0.id) }
+    }
+
+    private var allTargetIDs: Set<AppInfo.ID> {
+        Set(targets.map(\.id))
     }
 
     private var confirmTitle: String {
@@ -265,17 +266,34 @@ struct RescueConsentView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 12)
 
-            VStack(alignment: .leading, spacing: 2) {
-                ForEach(listedTargets) { app in
-                    consentAppRow(app)
+            if targets.count > 1 {
+                HStack(spacing: 10) {
+                    Button("Select All") {
+                        selection.selectAll(allTargetIDs)
+                    }
+                    .disabled(selection.selectedIDs == allTargetIDs)
+
+                    Button("Deselect All") {
+                        selection.deselectAll()
+                    }
+                    .disabled(selection.selectedIDs.isEmpty)
+
+                    Spacer()
                 }
-                if overflowCount > 0 {
-                    Text("+\(overflowCount) more")
-                        .font(.system(size: 10))
-                        .foregroundStyle(Color.secondary)
-                        .padding(.horizontal, 12)
+                .buttonStyle(.plain)
+                .font(.system(size: 10.5, weight: .medium))
+                .foregroundStyle(QuitXTheme.accent)
+                .padding(.horizontal, 12)
+            }
+
+            ScrollView(.vertical, showsIndicators: targets.count > RescueConsentController.maxVisibleTargets) {
+                LazyVStack(alignment: .leading, spacing: 2) {
+                    ForEach(targets) { app in
+                        consentAppRow(app)
+                    }
                 }
             }
+            .frame(height: targetListHeight)
             .padding(.vertical, 2)
 
             HStack(spacing: 8) {

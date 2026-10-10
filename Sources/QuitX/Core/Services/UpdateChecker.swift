@@ -24,6 +24,9 @@ enum UpdateCheckState: Equatable {
 @MainActor
 final class UpdateChecker: ObservableObject {
     static let shared = UpdateChecker()
+    nonisolated static let automaticCheckInterval: TimeInterval = 24 * 60 * 60
+    private static let disabledPollInterval: TimeInterval = 60 * 60
+    private static let initialCheckDelay: TimeInterval = 2
 
     private var updateWorkerURL: URL {
         QuitXConstants.updateWorkerURL
@@ -31,6 +34,7 @@ final class UpdateChecker: ObservableObject {
 
     @Published var isChecking = false
     @Published var checkState: UpdateCheckState = .idle
+    private var automaticCheckTask: Task<Void, Never>?
 
     var currentVersion: String {
         QuitXConstants.appVersion
@@ -38,6 +42,63 @@ final class UpdateChecker: ObservableObject {
 
     func resetState() {
         checkState = .idle
+    }
+
+    nonisolated static func automaticCheckDelay(
+        lastCheck: Date?,
+        now: Date,
+        interval: TimeInterval = automaticCheckInterval
+    ) -> TimeInterval {
+        guard let lastCheck, lastCheck <= now else { return 0 }
+        return max(0, interval - now.timeIntervalSince(lastCheck))
+    }
+
+    func startAutomaticChecks() {
+        stopAutomaticChecks()
+        automaticCheckTask = Task { @MainActor [weak self] in
+            guard await Self.sleep(seconds: Self.initialCheckDelay) else { return }
+            while !Task.isCancelled, let self {
+                guard ConfigStore.shared.config.autoUpdate else {
+                    guard await Self.sleep(seconds: Self.disabledPollInterval) else { return }
+                    continue
+                }
+
+                let now = Date()
+                let lastCheck = UserDefaults.standard.object(
+                    forKey: QuitXConstants.UserDefaultsKeys.lastAutomaticUpdateCheck
+                ) as? Date
+                let delay = Self.automaticCheckDelay(lastCheck: lastCheck, now: now)
+                if delay > 0 {
+                    guard await Self.sleep(seconds: delay) else { return }
+                    continue
+                }
+                if self.isChecking {
+                    guard await Self.sleep(seconds: 60) else { return }
+                    continue
+                }
+
+                UserDefaults.standard.set(
+                    now,
+                    forKey: QuitXConstants.UserDefaultsKeys.lastAutomaticUpdateCheck
+                )
+                await self.checkForUpdates(isUserInitiated: false)
+            }
+        }
+    }
+
+    func stopAutomaticChecks() {
+        automaticCheckTask?.cancel()
+        automaticCheckTask = nil
+    }
+
+    private nonisolated static func sleep(seconds: TimeInterval) async -> Bool {
+        guard seconds > 0 else { return !Task.isCancelled }
+        do {
+            try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+            return !Task.isCancelled
+        } catch {
+            return false
+        }
     }
 
     func checkForUpdates(isUserInitiated: Bool = true) async {

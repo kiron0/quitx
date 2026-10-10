@@ -183,6 +183,14 @@ struct ProductivityFeaturesTests {
                 cooldown: 60
             )
         )
+        #expect(
+            !RescueConsentController.shouldPrompt(
+                isVisible: true,
+                lastPrompt: .distantPast,
+                now: now,
+                cooldown: 60
+            )
+        )
     }
 
     @Test("Consent selection defaults to all selected and toggles per app")
@@ -202,6 +210,10 @@ struct ProductivityFeaturesTests {
         selection.toggle("a")
         selection.toggle("c")
         #expect(selection.selectedIDs == Set(["b"]))
+        selection.deselectAll()
+        #expect(selection.selectedIDs.isEmpty)
+        selection.selectAll(Set(["a", "c"]))
+        #expect(selection.selectedIDs == Set(["a", "c"]))
     }
 
     @Test("Battery detection parses power descriptions")

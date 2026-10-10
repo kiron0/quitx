@@ -43,6 +43,32 @@ struct AppUpdateTests {
         #expect(UpdateChecker.secureDownloadURL(from: "not a URL") == nil)
     }
 
+    @Test("Automatic update checks run once per day")
+    func testAutomaticUpdateCheckDelay() {
+        let now = Date(timeIntervalSince1970: 2_000_000_000)
+        let hour: TimeInterval = 60 * 60
+
+        #expect(UpdateChecker.automaticCheckDelay(lastCheck: nil, now: now) == 0)
+        #expect(
+            UpdateChecker.automaticCheckDelay(
+                lastCheck: now.addingTimeInterval(-23 * hour),
+                now: now
+            ) == hour
+        )
+        #expect(
+            UpdateChecker.automaticCheckDelay(
+                lastCheck: now.addingTimeInterval(-24 * hour),
+                now: now
+            ) == 0
+        )
+        #expect(
+            UpdateChecker.automaticCheckDelay(
+                lastCheck: now.addingTimeInterval(hour),
+                now: now
+            ) == 0
+        )
+    }
+
     @Test("Relaunch Script Generation Syntax and Safety")
     func testRelaunchScriptGeneration() {
         let script = UpdateDownloadService.generateRelaunchScript()

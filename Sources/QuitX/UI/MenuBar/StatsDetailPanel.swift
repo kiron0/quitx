@@ -484,6 +484,23 @@ struct StatsDetailView: View {
         .buttonStyle(.plain)
     }
 
+    private func openActivityMonitor() {
+        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.ActivityMonitor") {
+            NSWorkspace.shared.open(url)
+            return
+        }
+        NSWorkspace.shared.open(
+            URL(fileURLWithPath: "/System/Applications/Utilities/Activity Monitor.app")
+        )
+    }
+
+    private func openBatterySettings() {
+        guard let url = URL(
+            string: "x-apple.systempreferences:com.apple.Battery-Settings.extension"
+        ) else { return }
+        NSWorkspace.shared.open(url)
+    }
+
     private func pct(_ value: Double) -> String {
         String(format: "%.0f%%", value)
     }
@@ -697,9 +714,7 @@ struct StatsDetailView: View {
                 title: "Open Activity Monitor",
                 symbol: "gauge.with.dots.needle.67percent"
             ) {
-                NSWorkspace.shared.open(
-                    URL(fileURLWithPath: "/System/Applications/Utilities/Activity Monitor.app")
-                )
+                openActivityMonitor()
             }
         }
     }
@@ -776,9 +791,7 @@ struct StatsDetailView: View {
                 title: "Open Activity Monitor",
                 symbol: "waveform.path.ecg"
             ) {
-                NSWorkspace.shared.open(
-                    URL(fileURLWithPath: "/System/Applications/Utilities/Activity Monitor.app")
-                )
+                openActivityMonitor()
             }
         }
     }
@@ -864,9 +877,7 @@ struct StatsDetailView: View {
                         title: "Open Battery Settings",
                         symbol: "batteryblock"
                     ) {
-                        NSWorkspace.shared.open(
-                            URL(string: "x-apple.systempreferences:com.apple.Battery-Settings.extension")!
-                        )
+                        openBatterySettings()
                     }
                 }
             } else {
