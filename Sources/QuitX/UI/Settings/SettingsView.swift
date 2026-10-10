@@ -158,11 +158,12 @@ final class HelpPopoverState: NSObject, ObservableObject {
                 self.close()
                 return event
             }
-            var hit: NSView? = anchorWindow.contentView?.hitTest(event.locationInWindow)
-            var onAnchor = false
-            while let current = hit {
-                if current === anchor { onAnchor = true; break }
-                hit = current.superview
+            let onAnchor: Bool
+            if let superview = anchor.superview {
+                let point = superview.convert(event.locationInWindow, from: nil)
+                onAnchor = anchor.frame.contains(point)
+            } else {
+                onAnchor = false
             }
             self.close()
             return onAnchor ? nil : event
