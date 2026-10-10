@@ -517,6 +517,28 @@ struct StatsDetailView: View {
             )
     }
 
+    private func windowTitleHeader(title: String, symbol: String) -> some View {
+        HStack(spacing: 7) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(QuitXTheme.accent.opacity(0.14))
+                Image(systemName: symbol)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(QuitXTheme.accent)
+            }
+            .frame(width: 20, height: 20)
+
+            Text(title)
+                .font(.system(size: 12.5, weight: .semibold))
+                .foregroundStyle(Color.primary)
+
+            Spacer()
+        }
+        .padding(.horizontal, 2)
+        .padding(.top, 1)
+        .padding(.bottom, 1)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Color.clear
@@ -566,6 +588,8 @@ struct StatsDetailView: View {
 
     private var cpuContent: some View {
         VStack(alignment: .leading, spacing: 10) {
+            windowTitleHeader(title: "CPU Usage", symbol: "cpu")
+
             card {
                 HStack(spacing: 16) {
                     SegmentedRing(
@@ -664,6 +688,11 @@ struct StatsDetailView: View {
     private var memoryContent: some View {
         let usedFraction = model.memTotal > 0 ? Double(model.memUsed) / Double(model.memTotal) : 0
         return VStack(alignment: .leading, spacing: 10) {
+            windowTitleHeader(
+                title: "Memory Usage",
+                symbol: "memorychip"
+            )
+
             card {
                 HStack(alignment: .center, spacing: 16) {
                     MemoryUsageGauge(fraction: usedFraction)
@@ -742,6 +771,11 @@ struct StatsDetailView: View {
         Group {
             if let battery = model.battery {
                 VStack(alignment: .leading, spacing: 10) {
+                    windowTitleHeader(
+                        title: "Battery Status",
+                        symbol: battery.isCharging ? "bolt.fill" : "battery.100"
+                    )
+
                     card {
                         VStack(alignment: .leading, spacing: 6) {
                             HStack(alignment: .center, spacing: 10) {
