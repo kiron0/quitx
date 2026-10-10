@@ -122,7 +122,7 @@ struct GeneralTabCloneView: View {
                     set: { configStore.config.playSounds = $0; configStore.save() }
                 ))
             } help: {
-                HelpPopoverButton(text: "A deeply satisfying laser sound will play when quitting apps. 👾🔫")
+                HelpPopoverButton(text: "PEW PEW! A deeply satisfying arcade laser blast fires whenever you vaporize an app. 👾🔫")
             }
 
             row(label: "Menu Bar:") {
@@ -135,7 +135,7 @@ struct GeneralTabCloneView: View {
                     }
                 ))
             } help: {
-                HelpPopoverButton(text: "Live pulse of your machine: a separate usage item beside the QuitX icon shows whole-system CPU percent and memory use in GB or percentage. Click it for a blurred detail panel. Refreshes every second (5 seconds on battery saver). 🏎️💨")
+                HelpPopoverButton(text: "Your Mac's vital signs on blast! Shows live CPU, memory, and battery in your menu bar. Click any stat for its own dedicated window. 🏎️⚡")
             }
 
             row(label: "") {
@@ -150,7 +150,7 @@ struct GeneralTabCloneView: View {
                 .disabled(!configStore.config.showMenuBarStats)
                 .opacity(configStore.config.showMenuBarStats ? 1.0 : 0.42)
             } help: {
-                HelpPopoverButton(text: "Battery peek without the click! Adds charge percent beside your CPU and memory stats, with a charging bolt icon when you're plugged in. 🔋⚡")
+                HelpPopoverButton(text: "Battery status on display so you know the exact millisecond your charger falls out and doom approaches. 🔋⚡")
             }
 
             row(label: "") {
@@ -237,7 +237,7 @@ struct GeneralTabCloneView: View {
                 .frame(width: 175, alignment: .leading)
                 .labelsHidden()
             } help: {
-                HelpPopoverButton(text: "Keep your apps in line: sort alphabetically, by heavy CPU hogs, or by memory gobblers. 📊🧭")
+                HelpPopoverButton(text: "Line up the suspects: alphabetical roll call, sizzling CPU hogs roasting your lap, or greedy memory munchers. 📊🧭")
             }
 
             row(label: "Default:") {
@@ -251,7 +251,7 @@ struct GeneralTabCloneView: View {
                 .frame(width: 175, alignment: .leading)
                 .labelsHidden()
             } help: {
-                HelpPopoverButton(text: "Choose how aggressive QuitX should be by default. Tip: hold ⌥ (Option) anytime to flip modes on the fly. ⚡️")
+                HelpPopoverButton(text: "Choose your default vibe: polite 'please quit' or ruthless force quit. Pro tip: hold ⌥ (Option) anytime to swap modes on the fly! ⚡️")
             }
 
             row(label: "Reset:") {
@@ -391,7 +391,7 @@ struct AutomationTabCloneView: View {
                     set: { configStore.config.hogAlertEnabled = $0; configStore.save() }
                 ))
             } help: {
-                HelpPopoverButton(text: "Catch runaway apps roasting your lap! Watches whole-system CPU. After you flip this on, QuitX waits 15 seconds to arm, then acts only when load stays over your limit 15 seconds. No instant ambush. Force quits inactive apps only. 🔥🍳")
+                HelpPopoverButton(text: "Keep your Mac cool and responsive! Watches CPU hogs and memory pressure, gently evicting background freeloaders when limits trip. 🔥🧠")
             }
 
             row(label: "") {
@@ -422,7 +422,7 @@ struct AutomationTabCloneView: View {
                     set: { configStore.config.memoryPressureQuitEnabled = $0; configStore.save() }
                 ))
             } help: {
-                HelpPopoverButton(text: "When memory runs dry past your limit, QuitX force quits inactive apps only — never the one you're using. Change your mind? Reopen from the gear menu. 🧠🚪")
+                HelpPopoverButton(text: "When greedy apps eat all your RAM, QuitX gently escorts background freeloaders to the exit — never the app in front of you. Regret it? Reopen from the gear menu. 🧠🚪")
             }
 
             row(label: "") {
@@ -634,6 +634,8 @@ struct AdvancedTabCloneView: View {
                     get: { configStore.config.groupBackground },
                     set: { configStore.config.groupBackground = $0; configStore.save(refreshAppList: true) }
                 ))
+            } help: {
+                HelpPopoverButton(text: "Stacks clone processes like pancakes so you don't scroll past 47 identical helper daemons. 🥞📚")
             }
 
             row(label: "Protection:") {
@@ -655,7 +657,7 @@ struct AdvancedTabCloneView: View {
                     }
                 ))
             } help: {
-                HelpPopoverButton(text: "Some like 'em all checked, some like a clean slate. You do you — pick your starting flavor! 🍦🙌")
+                HelpPopoverButton(text: "Tweak default app selection, rotating tips, and confirmation guardrails. You do you! 🍦🛡️")
             }
 
             row(label: "") {
@@ -682,7 +684,7 @@ struct AdvancedTabCloneView: View {
                     set: { configStore.config.includeFinder = $0; configStore.save(refreshAppList: true) }
                 ))
             } help: {
-                HelpPopoverButton(text: "Find yourself finding Finder windows too often? Close every single one in one fell swoop. 📁🗂️")
+                HelpPopoverButton(text: "Bonus cleanup powers! Close all open Finder windows or empty the Trash right alongside your apps. 📁🗑️")
             }
 
             row(label: "") {
