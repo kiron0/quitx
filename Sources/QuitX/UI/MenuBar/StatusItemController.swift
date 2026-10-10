@@ -693,6 +693,13 @@ final class StatusItemController: NSObject {
                     return
                 }
             }
+            if let statsButton = self.statsButton, let buttonWindow = statsButton.window {
+                let mouseLoc = NSEvent.mouseLocation
+                let buttonScreenFrame = buttonWindow.convertToScreen(statsButton.bounds)
+                if buttonScreenFrame.contains(mouseLoc) {
+                    return
+                }
+            }
 
             Task { @MainActor in
                 self.closePopover()

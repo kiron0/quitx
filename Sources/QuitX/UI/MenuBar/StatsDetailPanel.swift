@@ -879,8 +879,10 @@ final class StatsDetailController {
     private var localMonitor: Any?
     private var resignObserver: NSObjectProtocol?
     private var lastCloseTimestamp: Date = .distantPast
+    private var lastClosedMode: StatsDetailModel.Mode?
     private var frontmostAtShow: NSRunningApplication?
     private weak var currentAnchorButton: NSStatusBarButton?
+    private var isSwitchingWindow = false
 
     private init() {}
 
@@ -889,21 +891,61 @@ final class StatsDetailController {
     func toggle(from button: NSStatusBarButton, mode: StatsDetailModel.Mode, anchorScreenX: CGFloat? = nil) {
         if isVisible {
             if model?.mode == mode && currentAnchorButton == button {
-                close()
+                // Same stat re-clicked: close
+                closeAndReset()
             } else {
-                show(from: button, mode: mode, anchorScreenX: anchorScreenX)
+                // Different stat clicked while a window is open: switch directly
+                switchTo(button: button, mode: mode, anchorScreenX: anchorScreenX)
             }
         } else {
-            if Date().timeIntervalSince(lastCloseTimestamp) < 0.25 {
+            // Debounce only when the exact same mode was just closed
+            if lastClosedMode == mode && Date().timeIntervalSince(lastCloseTimestamp) < 0.25 {
+                lastClosedMode = nil
                 return
             }
             show(from: button, mode: mode, anchorScreenX: anchorScreenX)
         }
     }
 
+    /// Close previous window and immediately open new one without firing resign handler
+    private func switchTo(button: NSStatusBarButton, mode: StatsDetailModel.Mode, anchorScreenX: CGFloat?) {
+        isSwitchingWindow = true
+        // Teardown cleanly but don't call restoreFrontmost
+        if let obs = resignObserver {
+            NotificationCenter.default.removeObserver(obs)
+            resignObserver = nil
+        }
+        removeMonitors()
+        heightObserver = nil
+        window?.orderOut(nil)
+        model?.stop()
+        currentAnchorButton = nil
+        lastClosedMode = nil
+        isSwitchingWindow = false
+
+        show(from: button, mode: mode, anchorScreenX: anchorScreenX)
+    }
+
+    private func closeAndReset() {
+        isSwitchingWindow = false
+        lastCloseTimestamp = Date()
+        lastClosedMode = model?.mode
+        window?.orderOut(nil)
+        model?.stop()
+        heightObserver = nil
+        currentAnchorButton = nil
+        removeMonitors()
+        if let obs = resignObserver {
+            NotificationCenter.default.removeObserver(obs)
+            resignObserver = nil
+        }
+        restoreFrontmost()
+    }
+
     func show(from button: NSStatusBarButton, mode: StatsDetailModel.Mode, anchorScreenX: CGFloat? = nil) {
         guard let buttonWindow = button.window else { return }
         StatusItemController.shared?.closePopover()
+        lastClosedMode = nil
         currentAnchorButton = button
 
         let model = self.model ?? StatsDetailModel()
@@ -938,15 +980,31 @@ final class StatsDetailController {
         win.setFrame(NSRect(x: originX, y: originY, width: size.width, height: size.height), display: true)
         win.invalidateShadow()
 
-        if resignObserver == nil {
-            resignObserver = NotificationCenter.default.addObserver(
-                forName: NSWindow.didResignKeyNotification,
-                object: win,
-                queue: .main
-            ) { [weak self] _ in
-                Task { @MainActor in
-                    self?.close()
+        // Always re-register resignObserver on fresh show
+        if let obs = resignObserver {
+            NotificationCenter.default.removeObserver(obs)
+            resignObserver = nil
+        }
+        resignObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.didResignKeyNotification,
+            object: win,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, !self.isSwitchingWindow, self.isVisible else { return }
+                // Ignore resign if user clicked a stats/main menu bar button
+                let mouseLoc = NSEvent.mouseLocation
+                if let statsBtn = StatusItemController.shared?.statsButton,
+                   let btnWin = statsBtn.window,
+                   btnWin.convertToScreen(statsBtn.bounds).contains(mouseLoc) {
+                    return
                 }
+                if let statusBtn = StatusItemController.shared?.statusBarButton,
+                   let btnWin = statusBtn.window,
+                   btnWin.convertToScreen(statusBtn.bounds).contains(mouseLoc) {
+                    return
+                }
+                self.close()
             }
         }
 
@@ -983,14 +1041,15 @@ final class StatsDetailController {
     func close() {
         guard isVisible else { return }
         lastCloseTimestamp = Date()
+        lastClosedMode = model?.mode
         window?.orderOut(nil)
         model?.stop()
         heightObserver = nil
         currentAnchorButton = nil
         removeMonitors()
-        if let resignObserver {
-            NotificationCenter.default.removeObserver(resignObserver)
-            self.resignObserver = nil
+        if let obs = resignObserver {
+            NotificationCenter.default.removeObserver(obs)
+            resignObserver = nil
         }
         restoreFrontmost()
     }
