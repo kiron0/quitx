@@ -583,7 +583,7 @@ struct ProductivityFeaturesTests {
         #expect(SleepLockRange.overlaps(
             sleepStart: date(day: 10, hour: 22, minute: 0),
             sleepEnd: date(day: 11, hour: 7, minute: 0),
-            startMinutes: 1320,
+            startMinutes: 1380,
             endMinutes: 360,
             calendar: cal
         ))
@@ -591,7 +591,7 @@ struct ProductivityFeaturesTests {
         #expect(!SleepLockRange.overlaps(
             sleepStart: date(day: 10, hour: 22, minute: 0),
             sleepEnd: date(day: 10, hour: 22, minute: 30),
-            startMinutes: 1320,
+            startMinutes: 1380,
             endMinutes: 360,
             calendar: cal
         ))
@@ -599,7 +599,7 @@ struct ProductivityFeaturesTests {
         #expect(!SleepLockRange.overlaps(
             sleepStart: date(day: 10, hour: 14, minute: 0),
             sleepEnd: date(day: 10, hour: 15, minute: 0),
-            startMinutes: 1320,
+            startMinutes: 1380,
             endMinutes: 360,
             calendar: cal
         ))

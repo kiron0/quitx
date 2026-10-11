@@ -56,11 +56,8 @@ enum SleepLockRange {
         if startMinutes == endMinutes { return true }
         if sleepEnd.timeIntervalSince(sleepStart) >= 86400 { return true }
 
-        if active(now: sleepStart, startMinutes: startMinutes, endMinutes: endMinutes, calendar: calendar) {
-            return true
-        }
-        if active(now: sleepEnd, startMinutes: startMinutes, endMinutes: endMinutes, calendar: calendar) {
-            return true
+        if sleepStart == sleepEnd {
+            return active(now: sleepStart, startMinutes: startMinutes, endMinutes: endMinutes, calendar: calendar)
         }
 
         let startOfDay = calendar.startOfDay(for: sleepStart)
