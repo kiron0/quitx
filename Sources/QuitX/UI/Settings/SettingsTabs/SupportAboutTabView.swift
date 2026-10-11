@@ -10,7 +10,7 @@ struct AboutTabCloneView: View {
     @StateObject private var state = AboutTabState()
 
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 0) {
             HStack(alignment: .center, spacing: 20) {
                 QuitXAppIconView(size: 70, cornerRadius: 14)
 
@@ -50,20 +50,28 @@ struct AboutTabCloneView: View {
 
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 30)
+            .padding(.horizontal, 24)
 
-            HStack(spacing: 11) {
-                Image(systemName: "envelope.badge.fill")
-                    .font(.system(size: 14))
-                    .foregroundStyle(QuitXTheme.accent)
+            Spacer(minLength: 12)
+
+            HStack(spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(QuitXTheme.accent.opacity(0.12))
+                        .frame(width: 32, height: 32)
+
+                    Image(systemName: "envelope.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(QuitXTheme.accent)
+                }
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Questions, feedback or ideas?")
-                        .font(.system(size: 11.5, weight: .medium))
+                        .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(Color.primary)
 
                     Text("We'd love to hear from you. Get in touch with us.")
-                        .font(.system(size: 10.5))
+                        .font(.system(size: 11))
                         .foregroundStyle(Color.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -77,13 +85,13 @@ struct AboutTabCloneView: View {
                 } label: {
                     HStack(spacing: 4) {
                         Text("Contact")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(size: 11.5, weight: .medium))
                         Image(systemName: "arrow.up.right")
-                            .font(.system(size: 8.5, weight: .bold))
+                            .font(.system(size: 9, weight: .bold))
                     }
                     .foregroundStyle(state.isContactHovered ? QuitXTheme.accent : Color.primary)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
+                    .padding(.horizontal, 11)
+                    .padding(.vertical, 5.5)
                     .background(
                         RoundedRectangle(cornerRadius: 6)
                             .fill(state.isContactHovered ? QuitXTheme.accent.opacity(0.14) : Color.primary.opacity(0.06))
@@ -97,16 +105,16 @@ struct AboutTabCloneView: View {
                 .onHover { state.isContactHovered = $0 }
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(QuitXTheme.cardBackground, in: RoundedRectangle(cornerRadius: 8))
+            .padding(.vertical, 9)
+            .background(QuitXTheme.cardBackground, in: RoundedRectangle(cornerRadius: 10))
             .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color.primary.opacity(0.09), lineWidth: 0.5)
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
             )
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 24)
         }
         .padding(.top, 16)
-        .padding(.bottom, 14)
+        .padding(.bottom, 16)
         .frame(width: 480, height: 186, alignment: .topLeading)
         .background(QuitXTheme.paneBackground)
     }
