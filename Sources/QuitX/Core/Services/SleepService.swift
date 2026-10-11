@@ -44,6 +44,42 @@ enum SleepLockRange {
         }
         return nowMinutes >= startMinutes || nowMinutes < endMinutes
     }
+
+    static func overlaps(
+        sleepStart: Date,
+        sleepEnd: Date,
+        startMinutes: Int,
+        endMinutes: Int,
+        calendar: Calendar = .current
+    ) -> Bool {
+        guard sleepStart <= sleepEnd else { return false }
+        if startMinutes == endMinutes { return true }
+        if sleepEnd.timeIntervalSince(sleepStart) >= 86400 { return true }
+
+        if active(now: sleepStart, startMinutes: startMinutes, endMinutes: endMinutes, calendar: calendar) {
+            return true
+        }
+        if active(now: sleepEnd, startMinutes: startMinutes, endMinutes: endMinutes, calendar: calendar) {
+            return true
+        }
+
+        let startOfDay = calendar.startOfDay(for: sleepStart)
+        let durationMinutes = startMinutes < endMinutes
+            ? (endMinutes - startMinutes)
+            : (1440 - startMinutes + endMinutes)
+
+        for dayOffset in -1...2 {
+            guard let day = calendar.date(byAdding: .day, value: dayOffset, to: startOfDay),
+                  let windowStart = calendar.date(byAdding: .minute, value: startMinutes, to: day),
+                  let windowEnd = calendar.date(byAdding: .minute, value: durationMinutes, to: windowStart) else {
+                continue
+            }
+            if max(sleepStart, windowStart) < min(sleepEnd, windowEnd) {
+                return true
+            }
+        }
+        return false
+    }
 }
 
 @MainActor
@@ -51,6 +87,9 @@ final class SleepService {
     static let shared = SleepService()
 
     private var sleepObserver: NSObjectProtocol?
+    private var wakeObserver: NSObjectProtocol?
+    private(set) var sleepStartDate: Date?
+    private(set) var didQuitOnCurrentSleep = false
 
     private init() {}
 
@@ -62,7 +101,16 @@ final class SleepService {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
-                await self?.handleTrigger()
+                await self?.handleSleep()
+            }
+        }
+        wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                await self?.handleWake()
             }
         }
     }
@@ -72,18 +120,52 @@ final class SleepService {
             NSWorkspace.shared.notificationCenter.removeObserver(sleepObserver)
             self.sleepObserver = nil
         }
+        if let wakeObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver)
+            self.wakeObserver = nil
+        }
     }
 
-    private func handleTrigger() async {
+    func handleSleep(now: Date = Date()) async {
         guard ConfigStore.shared.config.quitOnSleep else { return }
+        sleepStartDate = now
+        didQuitOnCurrentSleep = false
+
         let config = ConfigStore.shared.config
-        if !SleepLockRange.active(
-            now: Date(),
+        if SleepLockRange.active(
+            now: now,
             startMinutes: config.sleepLockStartMinutes,
             endMinutes: config.sleepLockEndMinutes
         ) {
+            didQuitOnCurrentSleep = true
+            await executeQuit(config: config)
+        }
+    }
+
+    func handleWake(wakeDate: Date = Date()) async {
+        guard ConfigStore.shared.config.quitOnSleep else {
+            sleepStartDate = nil
+            didQuitOnCurrentSleep = false
             return
         }
+        defer {
+            sleepStartDate = nil
+            didQuitOnCurrentSleep = false
+        }
+
+        guard !didQuitOnCurrentSleep, let sleepStart = sleepStartDate else { return }
+        let config = ConfigStore.shared.config
+        if SleepLockRange.overlaps(
+            sleepStart: sleepStart,
+            sleepEnd: wakeDate,
+            startMinutes: config.sleepLockStartMinutes,
+            endMinutes: config.sleepLockEndMinutes
+        ) {
+            await executeQuit(config: config)
+        }
+    }
+
+    private func executeQuit(config: QuitXConfig) async {
         StatusItemController.shared?.closePopover()
         let vm = AppListViewModel.shared
 

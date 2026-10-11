@@ -533,4 +533,111 @@ struct ProductivityFeaturesTests {
 
         #expect(SleepLockRange.active(now: date(12, 0), startMinutes: 999, endMinutes: 999, calendar: cal))
     }
+
+    @Test("Sleep lock range detects overlap across sleep session")
+    func testSleepLockRangeOverlaps() throws {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = try #require(TimeZone(secondsFromGMT: 0))
+        func date(day: Int = 10, hour: Int, minute: Int) -> Date {
+            var c = DateComponents()
+            c.year = 2026
+            c.month = 1
+            c.day = day
+            c.hour = hour
+            c.minute = minute
+            return cal.date(from: c)!
+        }
+
+        // Scenario: Schedule 3:00 AM - 5:00 AM (180 to 300 minutes)
+        // Slept at 2:00 AM, woke at 8:00 AM -> covered schedule window
+        #expect(SleepLockRange.overlaps(
+            sleepStart: date(hour: 2, minute: 0),
+            sleepEnd: date(hour: 8, minute: 0),
+            startMinutes: 180,
+            endMinutes: 300,
+            calendar: cal
+        ))
+
+        // Slept at 2:00 AM, woke at 4:00 AM -> woke inside schedule window
+        #expect(SleepLockRange.overlaps(
+            sleepStart: date(hour: 2, minute: 0),
+            sleepEnd: date(hour: 4, minute: 0),
+            startMinutes: 180,
+            endMinutes: 300,
+            calendar: cal
+        ))
+
+        // Short nap: Slept at 2:00 AM, woke at 2:30 AM -> does not reach schedule
+        #expect(!SleepLockRange.overlaps(
+            sleepStart: date(hour: 2, minute: 0),
+            sleepEnd: date(hour: 2, minute: 30),
+            startMinutes: 180,
+            endMinutes: 300,
+            calendar: cal
+        ))
+
+        // Afternoon nap: Slept 6:00 AM, woke 7:00 AM -> outside schedule
+        #expect(!SleepLockRange.overlaps(
+            sleepStart: date(hour: 6, minute: 0),
+            sleepEnd: date(hour: 7, minute: 0),
+            startMinutes: 180,
+            endMinutes: 300,
+            calendar: cal
+        ))
+
+        // Overnight schedule: 11:00 PM - 6:00 AM (1320 to 360 minutes)
+        // Slept at 10:00 PM (day 10), woke at 7:00 AM (day 11) -> covered schedule
+        #expect(SleepLockRange.overlaps(
+            sleepStart: date(day: 10, hour: 22, minute: 0),
+            sleepEnd: date(day: 11, hour: 7, minute: 0),
+            startMinutes: 1320,
+            endMinutes: 360,
+            calendar: cal
+        ))
+
+        // Short evening sleep: Slept 10:00 PM, woke 10:30 PM -> does not reach 11:00 PM
+        #expect(!SleepLockRange.overlaps(
+            sleepStart: date(day: 10, hour: 22, minute: 0),
+            sleepEnd: date(day: 10, hour: 22, minute: 30),
+            startMinutes: 1320,
+            endMinutes: 360,
+            calendar: cal
+        ))
+
+        // Daytime sleep: 2:00 PM to 3:00 PM with overnight schedule
+        #expect(!SleepLockRange.overlaps(
+            sleepStart: date(day: 10, hour: 14, minute: 0),
+            sleepEnd: date(day: 10, hour: 15, minute: 0),
+            startMinutes: 1320,
+            endMinutes: 360,
+            calendar: cal
+        ))
+
+        // 24-hour schedule (start == end)
+        #expect(SleepLockRange.overlaps(
+            sleepStart: date(hour: 14, minute: 0),
+            sleepEnd: date(hour: 15, minute: 0),
+            startMinutes: 500,
+            endMinutes: 500,
+            calendar: cal
+        ))
+
+        // Long sleep (> 24 hours)
+        #expect(SleepLockRange.overlaps(
+            sleepStart: date(day: 10, hour: 2, minute: 0),
+            sleepEnd: date(day: 12, hour: 2, minute: 0),
+            startMinutes: 180,
+            endMinutes: 300,
+            calendar: cal
+        ))
+
+        // Invalid range
+        #expect(!SleepLockRange.overlaps(
+            sleepStart: date(day: 10, hour: 5, minute: 0),
+            sleepEnd: date(day: 10, hour: 2, minute: 0),
+            startMinutes: 180,
+            endMinutes: 300,
+            calendar: cal
+        ))
+    }
 }
