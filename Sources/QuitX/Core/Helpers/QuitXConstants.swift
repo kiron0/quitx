@@ -18,6 +18,7 @@ enum QuitXConstants {
         static let showPreferences = Notification.Name("\(QuitXConstants.primaryBundleId).showPreferences")
         static let showPopover = Notification.Name("\(QuitXConstants.primaryBundleId).showPopover")
         static let dismissSettingsTooltips = Notification.Name("\(QuitXConstants.primaryBundleId).dismissSettingsTooltips")
+        static let devPreview = Notification.Name("\(QuitXConstants.primaryBundleId).devPreview")
     }
 
     enum UserDefaultsKeys {

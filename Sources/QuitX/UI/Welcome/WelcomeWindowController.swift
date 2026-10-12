@@ -20,6 +20,10 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         }
     }
 
+    func showPreview() {
+        show()
+    }
+
     private static var isRunningTests: Bool {
         NSClassFromString("XCTestCase") != nil
             || ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil

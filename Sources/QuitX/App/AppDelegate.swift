@@ -48,7 +48,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.statusItemController?.showPopover()
             }
         }
-        distributedNotificationObservers = [obs1, obs2, obs3]
+        let obs4 = DistributedNotificationCenter.default().addObserver(
+            forName: QuitXConstants.Notifications.devPreview,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            let action = notification.userInfo?["action"] as? String
+            Task { @MainActor in
+                self?.handleDevPreview(action)
+            }
+        }
+        distributedNotificationObservers = [obs1, obs2, obs3, obs4]
+    }
+
+    private func handleDevPreview(_ action: String?) {
+        switch action {
+        case "welcome":
+            WelcomeWindowController.shared.showPreview()
+        case "cpu":
+            RescueConsentController.shared.showPreview(reason: .cpu(value: 93, limit: 80))
+        case "memory":
+            RescueConsentController.shared.showPreview(reason: .memory)
+        case "stats-cpu":
+            statusItemController?.showStatsPreview(mode: .cpu)
+        case "stats-memory":
+            statusItemController?.showStatsPreview(mode: .memory)
+        case "stats-battery":
+            statusItemController?.showStatsPreview(mode: .battery)
+        case "popover":
+            statusItemController?.showPopover()
+        case "settings":
+            SettingsWindowController.shared.show()
+        default:
+            break
+        }
     }
 
     private func finishLaunching() {

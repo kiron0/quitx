@@ -77,6 +77,48 @@ final class RescueConsentController {
         close()
     }
 
+    func showPreview(reason: RescueReason) {
+        lastPromptDate = .distantPast
+        request(targets: Self.previewTargets(), reason: reason)
+    }
+
+    private static func previewTargets() -> [AppInfo] {
+        let config = ConfigStore.shared.config
+        let excluded = Set(config.exclude.map { $0.lowercased() })
+        return NSWorkspace.shared.runningApplications
+            .filter { $0.activationPolicy == .regular && $0.bundleIdentifier != Bundle.main.bundleIdentifier }
+            .filter { app in
+                let bid = app.bundleIdentifier
+                if bid == QuitXConstants.SystemBundleIds.finder { return false }
+                if bid == QuitXConstants.SystemBundleIds.trash { return false }
+                if let bid, QuitXConstants.supportedBundleIdentifiers.contains(bid) { return false }
+                let lowerBid = bid?.lowercased()
+                let lowerName = (app.localizedName ?? "").lowercased()
+                if let lowerBid, excluded.contains(lowerBid) { return false }
+                if excluded.contains(lowerName) { return false }
+                if let bid,
+                   let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid),
+                   SystemAppProtection.isSystemProtected(
+                       bundleIdentifier: bid,
+                       isBackground: false,
+                       bundleURL: url
+                   ) { return false }
+                return true
+            }
+            .prefix(6)
+            .enumerated()
+            .map { index, app in
+                AppInfo(
+                    name: app.localizedName ?? "App",
+                    bundleId: app.bundleIdentifier,
+                    pid: app.processIdentifier,
+                    windowCount: 1,
+                    memoryBytes: UInt64(350 + index * 420) * 1_048_576,
+                    cpuUsage: Double(6 + index * 9)
+                )
+            }
+    }
+
     func reopenFromNotification() {
         if isVisible {
             NSApp.activate(ignoringOtherApps: true)
@@ -296,7 +338,7 @@ struct RescueConsentView: View {
                             .font(.system(size: 11))
                             .foregroundStyle(Color.secondary)
                     }
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, 12)
                     .frame(height: 27)
                     .contentShape(Rectangle())
                 }
@@ -312,12 +354,12 @@ struct RescueConsentView: View {
                 }
                 .frame(height: targetListHeight)
             }
-            .padding(.horizontal, 12)
             .background(QuitXTheme.cardBackground, in: RoundedRectangle(cornerRadius: 7))
             .overlay(
                 RoundedRectangle(cornerRadius: 7)
                     .stroke(Color.primary.opacity(0.09), lineWidth: 0.5)
             )
+            .padding(.horizontal, 12)
 
             HStack(spacing: 8) {
                 consentButton(title: "Cancel", style: .neutral, action: onCancel)
@@ -346,12 +388,28 @@ struct RescueConsentView: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
                 Spacer(minLength: 4)
+                Text(rowStatText(for: app))
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Color.secondary)
+                    .monospacedDigit()
             }
             .contentShape(Rectangle())
             .padding(.horizontal, 12)
             .padding(.vertical, 3.5)
         }
         .buttonStyle(.plain)
+    }
+
+    private func rowStatText(for app: AppInfo) -> String {
+        switch reason {
+        case .cpu:
+            return app.cpuFormatted
+        case .memory:
+            return BatterySaver.compactMemoryText(
+                bytes: app.memoryBytes,
+                unit: ConfigStore.shared.config.menuBarMemoryUnit
+            )
+        }
     }
 
     private enum ButtonStyle {
