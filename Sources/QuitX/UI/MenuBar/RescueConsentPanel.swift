@@ -240,6 +240,15 @@ struct RescueConsentView: View {
         Set(targets.map(\.id))
     }
 
+    private var allSelected: Bool {
+        !allTargetIDs.isEmpty && allTargetIDs.isSubset(of: selection.selectedIDs)
+    }
+
+    private var partiallySelected: Bool {
+        let intersection = selection.selectedIDs.intersection(allTargetIDs)
+        return !intersection.isEmpty && intersection.count < allTargetIDs.count
+    }
+
     private var confirmTitle: String {
         let count = selectedTargets.count
         return count == 1 ? "Quit 1 app" : "Quit \(count) apps"
@@ -266,40 +275,53 @@ struct RescueConsentView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 12)
 
-            if targets.count > 1 {
-                HStack(spacing: 10) {
-                    Button("Select All") {
+            VStack(spacing: 0) {
+                Button {
+                    if allSelected {
+                        selection.deselectAll()
+                    } else {
                         selection.selectAll(allTargetIDs)
                     }
-                    .disabled(selection.selectedIDs == allTargetIDs)
-
-                    Button("Deselect All") {
-                        selection.deselectAll()
+                } label: {
+                    HStack(spacing: 8) {
+                        QuitXSelectionCheckbox(
+                            isSelected: allSelected,
+                            isPartial: partiallySelected
+                        )
+                        Text(allSelected ? "Deselect All" : "Select All")
+                            .font(.system(size: 11.5, weight: .medium))
+                            .foregroundStyle(Color.primary)
+                        Spacer()
+                        Text("\(targets.count) apps")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.secondary)
                     }
-                    .disabled(selection.selectedIDs.isEmpty)
-
-                    Spacer()
+                    .padding(.horizontal, 8)
+                    .frame(height: 27)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .font(.system(size: 10.5, weight: .medium))
-                .foregroundStyle(QuitXTheme.accent)
-                .padding(.horizontal, 12)
-            }
 
-            ScrollView(.vertical, showsIndicators: targets.count > RescueConsentController.maxVisibleTargets) {
-                LazyVStack(alignment: .leading, spacing: 2) {
-                    ForEach(targets) { app in
-                        consentAppRow(app)
+                ScrollView(.vertical, showsIndicators: targets.count > RescueConsentController.maxVisibleTargets) {
+                    LazyVStack(alignment: .leading, spacing: 2) {
+                        ForEach(targets) { app in
+                            consentAppRow(app)
+                        }
                     }
+                    .padding(.vertical, 2)
                 }
+                .frame(height: targetListHeight)
             }
-            .frame(height: targetListHeight)
-            .padding(.vertical, 2)
+            .padding(.horizontal, 12)
+            .background(QuitXTheme.cardBackground, in: RoundedRectangle(cornerRadius: 7))
+            .overlay(
+                RoundedRectangle(cornerRadius: 7)
+                    .stroke(Color.primary.opacity(0.09), lineWidth: 0.5)
+            )
 
             HStack(spacing: 8) {
-                Spacer()
                 consentButton(title: "Cancel", style: .neutral, action: onCancel)
-                consentButton(title: confirmTitle, style: .destructive, action: {
+                consentButton(title: confirmTitle, style: .confirm, action: {
                     onConfirm(selectedTargets)
                 }, disabled: selectedTargets.isEmpty)
             }
@@ -334,7 +356,7 @@ struct RescueConsentView: View {
 
     private enum ButtonStyle {
         case neutral
-        case destructive
+        case confirm
     }
 
     private func consentButton(
@@ -346,27 +368,44 @@ struct RescueConsentView: View {
         let isHovered = hover.hovered == title && !disabled
         return Button(action: action) {
             Text(title)
-                .font(.system(size: 11, weight: .medium))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .frame(minWidth: 56)
+                .font(.system(size: 11.5, weight: style == .confirm ? .bold : .medium))
+                .foregroundStyle(
+                    style == .confirm
+                        ? (disabled ? Color.secondary : Color.black.opacity(0.88))
+                        : Color.primary.opacity(isHovered ? 1.0 : 0.85)
+                )
+                .frame(maxWidth: .infinity)
+                .frame(height: 24)
+                .background {
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(
+                            style == .confirm
+                                ? (disabled
+                                    ? AnyShapeStyle(QuitXTheme.accent.opacity(0.35))
+                                    : AnyShapeStyle(LinearGradient(
+                                        colors: [QuitXTheme.accent, Color(red: 232/255, green: 155/255, blue: 0/255)],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )))
+                                : AnyShapeStyle(Color.primary.opacity(disabled ? 0.04 : (isHovered ? 0.12 : 0.07)))
+                        )
+                }
+                .overlay {
+                    if style == .neutral {
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color.primary.opacity(disabled ? 0.06 : 0.12), lineWidth: 0.5)
+                    }
+                }
+                .shadow(
+                    color: style == .confirm && !disabled
+                        ? QuitXTheme.accent.opacity(isHovered ? 0.35 : 0.15)
+                        : .clear,
+                    radius: 2,
+                    y: 1
+                )
         }
         .buttonStyle(.plain)
         .disabled(disabled)
-        .foregroundStyle(
-            disabled
-                ? Color.secondary.opacity(0.5)
-                : (style == .destructive ? Color.white : (isHovered ? Color.primary : Color.secondary))
-        )
-        .background {
-            Capsule()
-                .fill(
-                    style == .destructive
-                        ? Color(red: 240/255, green: 70/255, blue: 50/255)
-                            .opacity(disabled ? 0.35 : (isHovered ? 1.0 : 0.88))
-                        : Color.primary.opacity(isHovered ? 0.18 : 0.1)
-                )
-        }
         .onHover { hover.hovered = $0 ? title : nil }
     }
 }
