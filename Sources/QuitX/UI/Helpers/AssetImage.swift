@@ -61,6 +61,7 @@ enum MenuHelper {
         keyEquivalentModifierMask: NSEvent.ModifierFlags = [.command],
         assetName: String? = nil,
         systemSymbolName: String? = nil,
+        customImage: NSImage? = nil,
         isEnabled: Bool = true
     ) -> NSMenuItem {
         let item = NSMenuItem(title: title, action: action, keyEquivalent: keyEquivalent)
@@ -71,7 +72,11 @@ enum MenuHelper {
         }
 
         var image: NSImage?
-        if let assetName = assetName, let loaded = AssetImages.load(assetName) {
+        if let customImage = customImage {
+            let copy = customImage.copy() as? NSImage ?? customImage
+            copy.size = NSSize(width: 16, height: 16)
+            image = copy
+        } else if let assetName = assetName, let loaded = AssetImages.load(assetName) {
             let copy = loaded.copy() as? NSImage ?? loaded
             copy.size = NSSize(width: 15, height: 15)
             copy.isTemplate = true
@@ -120,6 +125,7 @@ enum MenuHelper {
         keyEquivalentModifierMask: NSEvent.ModifierFlags = [.command],
         assetName: String? = nil,
         systemSymbolName: String? = nil,
+        customImage: NSImage? = nil,
         isEnabled: Bool = true,
         action: @escaping () -> Void
     ) -> NSMenuItem {
@@ -130,7 +136,11 @@ enum MenuHelper {
         }
 
         var image: NSImage?
-        if let assetName = assetName, let loaded = AssetImages.load(assetName) {
+        if let customImage = customImage {
+            let copy = customImage.copy() as? NSImage ?? customImage
+            copy.size = NSSize(width: 16, height: 16)
+            image = copy
+        } else if let assetName = assetName, let loaded = AssetImages.load(assetName) {
             let copy = loaded.copy() as? NSImage ?? loaded
             copy.size = NSSize(width: 15, height: 15)
             copy.isTemplate = true

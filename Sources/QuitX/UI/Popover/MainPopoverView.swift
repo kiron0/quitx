@@ -341,8 +341,25 @@ struct MainPopoverView: View {
             let reopenMenu = reopenItem.submenu ?? NSMenu()
             for entry in recentEntries.prefix(10) {
                 let canReopen = entry.bundleId != nil
+                let icon: NSImage = {
+                    var raw: NSImage?
+                    if let bid = entry.bundleId {
+                        raw = AppIconCache.icon(for: bid)
+                    }
+                    if raw == nil {
+                        let path = "/Applications/\(entry.name).app"
+                        if FileManager.default.fileExists(atPath: path) {
+                            raw = NSWorkspace.shared.icon(forFile: path)
+                        }
+                    }
+                    let img = raw ?? NSWorkspace.shared.icon(for: .applicationBundle)
+                    let copy = img.copy() as? NSImage ?? img
+                    copy.size = NSSize(width: 16, height: 16)
+                    return copy
+                }()
                 reopenMenu.addItem(MenuHelper.makeItem(
                     title: entry.name,
+                    customImage: icon,
                     isEnabled: canReopen,
                     action: {
                         StatusItemController.shared?.closePopover()
@@ -353,6 +370,7 @@ struct MainPopoverView: View {
             reopenMenu.addItem(.separator())
             reopenMenu.addItem(MenuHelper.makeItem(
                 title: "Clear List",
+                systemSymbolName: "trash",
                 action: {
                     RecentlyQuitService.shared.clear()
                 }
