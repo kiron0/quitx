@@ -312,7 +312,16 @@ struct MainPopoverView: View {
         let menu = NSMenu()
         menu.autoenablesItems = false
 
-        let bgTitle = vm.showBackgroundApps ? "Hide background apps" : "View background apps"
+        menu.addItem(MenuHelper.makeItem(
+            title: "Refresh Apps",
+            keyEquivalent: "r",
+            systemSymbolName: "arrow.clockwise",
+            action: {
+                Task { await vm.refresh() }
+            }
+        ))
+
+        let bgTitle = vm.showBackgroundApps ? "Hide Background Apps" : "View Background Apps"
         let bgAsset = vm.showBackgroundApps ? "settings-background-apps-hide" : "settings-background-apps-show"
         let bgSymbol = vm.showBackgroundApps ? "eye.slash" : "eye"
 
@@ -325,6 +334,34 @@ struct MainPopoverView: View {
                 vm.showBackgroundApps.toggle()
             }
         ))
+
+        let recentEntries = RecentlyQuitService.shared.entries
+        if !recentEntries.isEmpty {
+            let reopenItem = MenuHelper.makeSubmenuItem(title: "Reopen Recently Quit", systemSymbolName: "arrow.uturn.backward")
+            let reopenMenu = reopenItem.submenu ?? NSMenu()
+            for entry in recentEntries.prefix(10) {
+                let canReopen = entry.bundleId != nil
+                reopenMenu.addItem(MenuHelper.makeItem(
+                    title: entry.name,
+                    isEnabled: canReopen,
+                    action: {
+                        StatusItemController.shared?.closePopover()
+                        RecentlyQuitService.shared.reopen(entry)
+                    }
+                ))
+            }
+            reopenMenu.addItem(.separator())
+            reopenMenu.addItem(MenuHelper.makeItem(
+                title: "Clear List",
+                action: {
+                    RecentlyQuitService.shared.clear()
+                }
+            ))
+            reopenItem.submenu = reopenMenu
+            menu.addItem(reopenItem)
+        }
+
+        menu.addItem(.separator())
 
         menu.addItem(MenuHelper.makeItem(
             title: "Settings",
@@ -370,32 +407,6 @@ struct MainPopoverView: View {
                 SettingsWindowController.shared.show(tab: .about)
             }
         ))
-
-        let recentEntries = RecentlyQuitService.shared.entries
-        if !recentEntries.isEmpty {
-            let reopenItem = MenuHelper.makeSubmenuItem(title: "Reopen Recently Quit", systemSymbolName: "arrow.uturn.backward")
-            let reopenMenu = reopenItem.submenu ?? NSMenu()
-            for entry in recentEntries.prefix(10) {
-                let canReopen = entry.bundleId != nil
-                reopenMenu.addItem(MenuHelper.makeItem(
-                    title: entry.name,
-                    isEnabled: canReopen,
-                    action: {
-                        StatusItemController.shared?.closePopover()
-                        RecentlyQuitService.shared.reopen(entry)
-                    }
-                ))
-            }
-            reopenMenu.addItem(.separator())
-            reopenMenu.addItem(MenuHelper.makeItem(
-                title: "Clear List",
-                action: {
-                    RecentlyQuitService.shared.clear()
-                }
-            ))
-            reopenItem.submenu = reopenMenu
-            menu.addItem(reopenItem)
-        }
 
         menu.addItem(.separator())
 
