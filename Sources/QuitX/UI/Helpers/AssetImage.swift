@@ -2,32 +2,53 @@ import SwiftUI
 import AppKit
 
 enum AssetImages {
+    private static let cache = NSCache<NSString, NSImage>()
+
     static func load(_ name: String) -> NSImage? {
+        if let cached = cache.object(forKey: name as NSString) {
+            return cached
+        }
+        var img: NSImage?
         if let url = Bundle.main.url(forResource: name, withExtension: "png"),
-           let img = NSImage(contentsOf: url) {
-            return img
+           let loaded = NSImage(contentsOf: url) {
+            img = loaded
+        } else {
+            let localPath = "Support/Icons/\(name).png"
+            if FileManager.default.fileExists(atPath: localPath),
+               let loaded = NSImage(contentsOfFile: localPath) {
+                img = loaded
+            }
         }
-        let localPath = "Support/Icons/\(name).png"
-        if FileManager.default.fileExists(atPath: localPath),
-           let img = NSImage(contentsOfFile: localPath) {
-            return img
+        if let img {
+            cache.setObject(img, forKey: name as NSString)
         }
-        return nil
+        return img
     }
 
+    private static var appIconMemo: NSImage??
+    private static var didMemoAppIcon = false
+
     static var appIcon: NSImage? {
+        if didMemoAppIcon {
+            return appIconMemo ?? nil
+        }
+        let resolved: NSImage?
         if let img = load("icon_128x128") ?? load("icon_256x256") ?? load("icon_512x512") {
-            return img
+            resolved = img
+        } else if let bundleImage = Bundle.main.image(forResource: "AppIcon") {
+            resolved = bundleImage
+        } else {
+            let localPath = "Support/Icons/icon_128x128.png"
+            if FileManager.default.fileExists(atPath: localPath),
+               let img = NSImage(contentsOfFile: localPath) {
+                resolved = img
+            } else {
+                resolved = NSApp.applicationIconImage
+            }
         }
-        if let bundleImage = Bundle.main.image(forResource: "AppIcon") {
-            return bundleImage
-        }
-        let localPath = "Support/Icons/icon_128x128.png"
-        if FileManager.default.fileExists(atPath: localPath),
-           let img = NSImage(contentsOfFile: localPath) {
-            return img
-        }
-        return NSApp.applicationIconImage
+        appIconMemo = .some(resolved)
+        didMemoAppIcon = true
+        return resolved
     }
 }
 

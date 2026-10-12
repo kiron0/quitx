@@ -17,6 +17,8 @@ final class ArrowPopoverWindow: NSPanel {
         isMovable = false
         isMovableByWindowBackground = false
         acceptsMouseMovedEvents = true
+        hidesOnDeactivate = false
+        isReleasedWhenClosed = false
     }
 
     override var canBecomeKey: Bool { true }

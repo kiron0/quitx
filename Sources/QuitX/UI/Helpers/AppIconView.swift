@@ -81,14 +81,18 @@ enum AppIconCache {
 @MainActor
 final class AppIconLoader: ObservableObject {
     @Published var icon: NSImage?
+    private var loadGeneration = 0
 
     func load(bundleId: String?, pid: pid_t? = nil, url: URL? = nil) {
+        loadGeneration += 1
+        let generation = loadGeneration
         if let cached = AppIconCache.cachedIcon(for: bundleId, pid: pid, url: url) {
             self.icon = cached
             return
         }
         AppIconCache.loadIcon(for: bundleId, pid: pid, url: url) { [weak self] loaded in
-            self?.icon = loaded
+            guard let self, generation == self.loadGeneration else { return }
+            self.icon = loaded
         }
     }
 }

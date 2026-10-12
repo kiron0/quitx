@@ -24,7 +24,9 @@ enum BatteryDetailSampler {
     private static let batteryType = "InternalBattery"
     private static let chargingLimitDomain = "com.apple.batteryui.charging.mac"
     private static let chargingLimitKey = "com.apple.batteryui.charging.mac.prior.limit"
-    private static var systemHealthCache: (percent: Int, timestamp: Date)?
+    private static var systemHealthCache: (percent: Int?, timestamp: Date)?
+    private static let healthLock = NSLock()
+    private static var healthRefreshInFlight = false
 
     static func snapshot(
         descriptions: [[String: Any]]? = nil,
@@ -125,20 +127,54 @@ enum BatteryDetailSampler {
     }
 
     static func systemInformationHealthPercent() -> Int? {
-        if let cache = systemHealthCache, Date().timeIntervalSince(cache.timestamp) < 60 {
+        healthLock.lock()
+        let cache = systemHealthCache
+        healthLock.unlock()
+
+        if let cache, Date().timeIntervalSince(cache.timestamp) < 60 {
             return cache.percent
         }
+        if cache == nil {
+            // Cold start: one synchronous load so first caller sees the real value.
+            let value = loadSystemHealthPercent()
+            healthLock.lock()
+            systemHealthCache = (value, Date())
+            healthLock.unlock()
+            return value
+        }
+        // Stale: refresh off the calling thread; serve last known value.
+        scheduleHealthRefresh()
+        return cache?.percent
+    }
+
+    private static func scheduleHealthRefresh() {
+        healthLock.lock()
+        if healthRefreshInFlight {
+            healthLock.unlock()
+            return
+        }
+        healthRefreshInFlight = true
+        healthLock.unlock()
+        Task.detached(priority: .utility) {
+            let value = loadSystemHealthPercent()
+            healthLock.lock()
+            systemHealthCache = (value, Date())
+            healthRefreshInFlight = false
+            healthLock.unlock()
+        }
+    }
+
+    private static func loadSystemHealthPercent() -> Int? {
         guard let output = shellOutput("/usr/sbin/system_profiler", arguments: ["SPPowerDataType"]) else {
-            return systemHealthCache?.percent
+            return nil
         }
         let regex = try? NSRegularExpression(pattern: "Maximum Capacity:\\s*(\\d+)%")
         let range = NSRange(output.startIndex..., in: output)
         guard let match = regex?.firstMatch(in: output, range: range),
               let valueRange = Range(match.range(at: 1), in: output),
               let percent = Int(output[valueRange]) else {
-            return systemHealthCache?.percent
+            return nil
         }
-        systemHealthCache = (percent, Date())
         return percent
     }
 

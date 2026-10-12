@@ -27,6 +27,7 @@ final class StatusItemController: NSObject {
     private var liveTickCount = 0
     private var lastThrottled = false
     private var menuStatsTask: Task<Void, Never>?
+    private var resignKeyObserver: NSObjectProtocol?
 
     var isShown: Bool {
         window?.isVisible ?? false
@@ -51,6 +52,9 @@ final class StatusItemController: NSObject {
         if let statsStatusItem { NSStatusBar.system.removeStatusItem(statsStatusItem) }
         let center = NSWorkspace.shared.notificationCenter
         workspaceObservers.forEach { center.removeObserver($0) }
+        if let resignKeyObserver {
+            NotificationCenter.default.removeObserver(resignKeyObserver)
+        }
         if let g = globalEventMonitor { NSEvent.removeMonitor(g) }
         if let l = localEventMonitor { NSEvent.removeMonitor(l) }
     }
@@ -133,6 +137,17 @@ final class StatusItemController: NSObject {
         let win = ArrowPopoverWindow(level: .popUpMenu)
         win.contentViewController = hosting
         self.window = win
+
+        resignKeyObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.didResignKeyNotification,
+            object: win,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, self.isShown else { return }
+                self.closePopover()
+            }
+        }
 
         updatePopoverSize()
 
@@ -278,6 +293,7 @@ final class StatusItemController: NSObject {
             win.makeKeyAndOrderFront(nil)
             win.makeFirstResponder(nil)
             win.invalidateShadow()
+            AppListViewModel.shared.syncOptionKey()
             refreshVisibleApps()
             installOutsideClickMonitor()
             startLiveMonitoring()
@@ -317,8 +333,13 @@ final class StatusItemController: NSObject {
         }
     }
 
+    private static var attachmentCache: [String: NSTextAttachment] = [:]
+
     private static func menuBarAttachment(symbolNames: [String]) -> NSTextAttachment? {
         for name in symbolNames {
+            if let cached = attachmentCache[name] {
+                return cached
+            }
             guard let image = NSImage(systemSymbolName: name, accessibilityDescription: nil) else { continue }
             let configuration = NSImage.SymbolConfiguration(pointSize: 11, weight: .regular)
             let sized = image.withSymbolConfiguration(configuration) ?? image
@@ -327,6 +348,7 @@ final class StatusItemController: NSObject {
             attachment.image = sized
             let size = sized.size
             attachment.bounds = NSRect(x: 0, y: -2, width: size.width, height: size.height)
+            attachmentCache[name] = attachment
             return attachment
         }
         return nil
@@ -383,17 +405,25 @@ final class StatusItemController: NSObject {
         let memoryUsed = SystemUsage.memoryUsedBytes()
         let battery = cfg.batteryMenuBarEnabled ? BatteryDetailSampler.snapshot() : nil
 
+        let cpuText = BatterySaver.percentText(cpu)
+        let memText = BatterySaver.compactMemoryText(bytes: memoryUsed, unit: cfg.menuBarMemoryUnit)
+        let batteryKey = battery.map { "\($0.percent)-\($0.isCharging)-\($0.isACPower)" } ?? "none"
+        let titleKey = "\(cfg.menuBarStatStyle.rawValue)|\(cpuText)|\(memText)|\(batteryKey)"
+        if titleKey == lastStatTitleKey {
+            return
+        }
+
         let cpuAttr = Self.statSegmentTitle(
             symbolNames: ["cpu"],
             fallback: "CPU",
-            text: BatterySaver.percentText(cpu),
+            text: cpuText,
             style: cfg.menuBarStatStyle
         )
 
         let memAttr = Self.statSegmentTitle(
             symbolNames: ["memorychip", "internaldrive"],
             fallback: "MEM",
-            text: BatterySaver.compactMemoryText(bytes: memoryUsed, unit: cfg.menuBarMemoryUnit),
+            text: memText,
             style: cfg.menuBarStatStyle
         )
 
@@ -440,6 +470,7 @@ final class StatusItemController: NSObject {
         }
 
         button.attributedTitle = fullTitle
+        lastStatTitleKey = titleKey
 
         segmentMetrics = SegmentMetrics(
             cpuWidth: cpuAttr.size().width,
@@ -449,8 +480,11 @@ final class StatusItemController: NSObject {
         )
     }
 
+    private var lastStatTitleKey: String?
+
     private func removeStatsItem() {
         StatsDetailController.shared.close()
+        lastStatTitleKey = nil
         guard let item = statsStatusItem else { return }
         NSStatusBar.system.removeStatusItem(item)
         statsStatusItem = nil

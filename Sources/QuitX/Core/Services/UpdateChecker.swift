@@ -27,6 +27,7 @@ final class UpdateChecker: ObservableObject {
     nonisolated static let automaticCheckInterval: TimeInterval = 24 * 60 * 60
     private static let disabledPollInterval: TimeInterval = 60 * 60
     private static let initialCheckDelay: TimeInterval = 2
+    private static let failureRetryInterval: TimeInterval = 15 * 60
 
     private var updateWorkerURL: URL {
         QuitXConstants.updateWorkerURL
@@ -67,7 +68,12 @@ final class UpdateChecker: ObservableObject {
                 let lastCheck = UserDefaults.standard.object(
                     forKey: QuitXConstants.UserDefaultsKeys.lastAutomaticUpdateCheck
                 ) as? Date
-                let delay = Self.automaticCheckDelay(lastCheck: lastCheck, now: now)
+                var delay = Self.automaticCheckDelay(lastCheck: lastCheck, now: now)
+                if let failedAt = UserDefaults.standard.object(
+                    forKey: QuitXConstants.UserDefaultsKeys.lastAutomaticUpdateCheckFailed
+                ) as? Date {
+                    delay = min(delay, max(0, Self.failureRetryInterval - now.timeIntervalSince(failedAt)))
+                }
                 if delay > 0 {
                     guard await Self.sleep(seconds: delay) else { return }
                     continue
@@ -81,7 +87,17 @@ final class UpdateChecker: ObservableObject {
                     now,
                     forKey: QuitXConstants.UserDefaultsKeys.lastAutomaticUpdateCheck
                 )
-                await self.checkForUpdates(isUserInitiated: false)
+                let succeeded = await self.checkForUpdates(isUserInitiated: false)
+                if succeeded {
+                    UserDefaults.standard.removeObject(
+                        forKey: QuitXConstants.UserDefaultsKeys.lastAutomaticUpdateCheckFailed
+                    )
+                } else {
+                    UserDefaults.standard.set(
+                        Date(),
+                        forKey: QuitXConstants.UserDefaultsKeys.lastAutomaticUpdateCheckFailed
+                    )
+                }
             }
         }
     }
@@ -101,11 +117,12 @@ final class UpdateChecker: ObservableObject {
         }
     }
 
-    func checkForUpdates(isUserInitiated: Bool = true) async {
+    @discardableResult
+    func checkForUpdates(isUserInitiated: Bool = true) async -> Bool {
         if isUserInitiated {
             AppUpdateWindowController.shared.showCheckWindow()
         }
-        guard !isChecking else { return }
+        guard !isChecking else { return false }
         isChecking = true
         checkState = .checking
         defer { isChecking = false }
@@ -119,17 +136,17 @@ final class UpdateChecker: ObservableObject {
             let (data, response) = try await URLSession.shared.data(for: request)
             guard let httpResponse = response as? HTTPURLResponse else {
                 handleError(message: "Invalid response from server", isUserInitiated: isUserInitiated)
-                return
+                return false
             }
 
             if httpResponse.statusCode == 404 {
                 handleUpToDate(isUserInitiated: isUserInitiated)
-                return
+                return true
             }
 
             guard httpResponse.statusCode == 200 else {
                 handleError(message: "Server returned status code \(httpResponse.statusCode)", isUserInitiated: isUserInitiated)
-                return
+                return false
             }
 
             let release = try JSONDecoder().decode(GatekeeperRelease.self, from: data)
@@ -142,21 +159,21 @@ final class UpdateChecker: ObservableObject {
                         message: "Update metadata contains an invalid or insecure download URL.",
                         isUserInitiated: isUserInitiated
                     )
-                    return
+                    return false
                 }
                 guard let digest = release.digest, !digest.isEmpty else {
                     handleError(
                         message: "Update metadata is missing its checksum digest.",
                         isUserInitiated: isUserInitiated
                     )
-                    return
+                    return false
                 }
                 guard let edSignature = release.edSignature, !edSignature.isEmpty else {
                     handleError(
                         message: "Update metadata is missing its publisher signature.",
                         isUserInitiated: isUserInitiated
                     )
-                    return
+                    return false
                 }
                 handleUpdateAvailable(
                     latestVersion: latestVersionRaw,
@@ -165,11 +182,14 @@ final class UpdateChecker: ObservableObject {
                     edSignature: edSignature,
                     isUserInitiated: isUserInitiated
                 )
+                return true
             } else {
                 handleUpToDate(isUserInitiated: isUserInitiated)
+                return true
             }
         } catch {
             handleError(message: "Could not check for updates. Please check your internet connection and try again.", isUserInitiated: isUserInitiated)
+            return false
         }
     }
 

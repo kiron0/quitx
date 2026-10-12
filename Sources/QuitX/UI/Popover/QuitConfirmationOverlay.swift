@@ -56,7 +56,7 @@ struct QuitConfirmationOverlay: View {
         }
         self.init(
             title: computedTitle,
-            subtitle: "This will close \(count) applications.",
+            subtitle: "This will close \(count) \(count == 1 ? "application." : "applications.")",
             confirmTitle: computedConfirmTitle,
             systemImage: isForced ? "bolt.trianglebadge.exclamationmark.fill" : "questionmark.circle.fill",
             isForced: isForced,

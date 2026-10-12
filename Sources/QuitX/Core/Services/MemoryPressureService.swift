@@ -14,7 +14,7 @@ enum MemoryPressureTargets {
             if app.bundleId == QuitXConstants.SystemBundleIds.finder { return false }
             if app.bundleId == QuitXConstants.SystemBundleIds.trash { return false }
             if let bid = app.bundleId,
-               let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid),
+               let url = AppURLCache.url(bundleId: bid),
                SystemAppProtection.isSystemProtected(
                    bundleIdentifier: bid,
                    isBackground: app.isBackground,
@@ -70,6 +70,9 @@ final class MemoryPressureService {
     private func handlePressure() async {
         let config = ConfigStore.shared.config
         guard config.memoryPressureQuitEnabled else { return }
+        guard Date().timeIntervalSince(lastRescueDate) >= 60 else { return }
+        // Stamp before the expensive scan so sustained pressure cannot rescan every event.
+        lastRescueDate = Date()
         let vm = AppListViewModel.shared
         if Date().timeIntervalSince(vm.lastRefreshDate) > 2.0 {
             await vm.refresh()
@@ -79,7 +82,6 @@ final class MemoryPressureService {
             config: config
         )
         guard !trigger.isEmpty else { return }
-        guard Date().timeIntervalSince(lastRescueDate) >= 60 else { return }
         let targets = InactiveRescueTargets.select(
             apps: vm.apps,
             config: config,
@@ -87,7 +89,6 @@ final class MemoryPressureService {
             ownPid: ProcessInfo.processInfo.processIdentifier
         )
         guard !targets.isEmpty else { return }
-        lastRescueDate = Date()
         RescueConsentController.shared.request(targets: targets, reason: .memory)
     }
 }

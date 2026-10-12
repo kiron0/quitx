@@ -204,11 +204,19 @@ final class AppListViewModel: ObservableObject {
 
     private func startModifierMonitor() {
         flagsMonitor = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
+            guard let self, StatusItemController.shared?.isShown == true else { return event }
             let optionPressed = event.modifierFlags.contains(.option)
-            if let self, optionPressed != self.isOptionKeyPressed {
+            if optionPressed != self.isOptionKeyPressed {
                 self.isOptionKeyPressed = optionPressed
             }
             return event
+        }
+    }
+
+    func syncOptionKey() {
+        let pressed = NSEvent.modifierFlags.contains(.option)
+        if pressed != isOptionKeyPressed {
+            isOptionKeyPressed = pressed
         }
     }
 
@@ -292,6 +300,7 @@ final class AppListViewModel: ObservableObject {
         defer {
             if generation == scanGeneration { isLoading = false }
         }
+        let selectedBeforeRefresh = selected
         let selectedAllBeforeRefresh = isAllSelected
         let cfg = activeScanConfig
         let fetched = await AppListService.shared.fetchApps(config: cfg)
@@ -309,6 +318,9 @@ final class AppListViewModel: ObservableObject {
         if !hasInitializedSelection || configSettingChanged {
             newSelection = cfg.defaultSelectAll ? visibleIds : []
             hasInitializedSelection = true
+        } else if selected != selectedBeforeRefresh {
+            // User toggled selection while the scan was in flight — keep their change.
+            newSelection = selected.intersection(appIdSet)
         } else if selectedAllBeforeRefresh {
             newSelection = visibleIds
         } else {
@@ -323,6 +335,7 @@ final class AppListViewModel: ObservableObject {
         guard !isLoading else { return }
         liveStatsGeneration += 1
         let generation = liveStatsGeneration
+        let selectedBeforeRefresh = selected
         let selectedAllBeforeRefresh = isAllSelected
         let cfg = activeScanConfig
         let usages = await Task.detached(priority: .userInitiated) {
@@ -368,9 +381,15 @@ final class AppListViewModel: ObservableObject {
         if apps != flagged {
             apps = flagged
         }
-        let newSelection = selectedAllBeforeRefresh
-            ? visibleIds
-            : selected.intersection(appIdSet)
+        let newSelection: Set<String>
+        if selected != selectedBeforeRefresh {
+            // User toggled selection while stats were loading — keep their change.
+            newSelection = selected.intersection(appIdSet)
+        } else if selectedAllBeforeRefresh {
+            newSelection = visibleIds
+        } else {
+            newSelection = selected.intersection(appIdSet)
+        }
         if selected != newSelection {
             selected = newSelection
         }
@@ -453,6 +472,7 @@ final class AppListViewModel: ObservableObject {
     }
 
     func runBackgroundHogRescue(cpu: Double, limit: Double) async {
+        guard RescueConsentController.shared.canPrompt else { return }
         guard Date().timeIntervalSince(lastHogRescueDate) >= 5 else { return }
         if Date().timeIntervalSince(lastRefreshDate) > 2.0 {
             await refresh()

@@ -23,7 +23,8 @@ enum BatterySaver {
     }
 
     static func isSaverActive(config: QuitXConfig) -> Bool {
-        isSaverActive(config: config, descriptions: currentDescriptions())
+        guard config.batterySaverEnabled else { return false }
+        return isSaverActive(config: config, descriptions: currentDescriptions())
     }
 
     static func effectiveTimeout(minutes: Int, saverActive: Bool) -> Int {

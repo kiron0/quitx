@@ -71,7 +71,10 @@ final class StatsDetailModel: ObservableObject {
         cpuLevels = SystemUsage.cpuTopology().levels
         tick()
         let timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.tick() }
+            guard let self else { return }
+            MainActor.assumeIsolated {
+                self.tick()
+            }
         }
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
@@ -379,18 +382,7 @@ private struct ProcessRow: View {
 
     var body: some View {
         HStack(spacing: 7) {
-            if let icon = AppIconCache.icon(for: nil, pid: proc.id) {
-                Image(nsImage: icon)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 14, height: 14)
-            } else {
-                Image(systemName: "app.dashed")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 14, height: 14)
-                    .foregroundStyle(Color.secondary)
-            }
+            AppIconView(bundleId: nil, pid: proc.id, size: 14, cornerRadius: 2)
             Text(proc.name)
                 .font(.system(size: 11))
                 .lineLimit(1)

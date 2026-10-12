@@ -183,7 +183,12 @@ final class HogMonitor {
             cpuByPid: cpuByPid,
             threshold: threshold
         )
-        notifiedPids = notifiedPids.intersection(hogs)
+        // Keep a pid "notified" until CPU drops below threshold minus hysteresis,
+        // so oscillation around the threshold does not re-fire notifications.
+        let floor = threshold - HogRescueGate.hysteresis
+        notifiedPids = notifiedPids.filter { pid in
+            (cpuByPid[pid] ?? 0) >= floor
+        }
         let fresh = hogs.subtracting(notifiedPids)
         if !fresh.isEmpty {
             notifyHogs(pids: fresh, apps: apps)
@@ -208,13 +213,12 @@ final class HogMonitor {
     private func postNotification(title: String, body: String) {
         Task { [weak self] in
             let center = UNUserNotificationCenter.current()
-            let settings = await center.notificationSettings()
-            guard settings.authorizationStatus == .authorized else {
-                if settings.authorizationStatus == .notDetermined {
-                    _ = try? await center.requestAuthorization(options: [.alert, .sound])
-                }
-                return
+            var status = (await center.notificationSettings()).authorizationStatus
+            if status == .notDetermined {
+                _ = try? await center.requestAuthorization(options: [.alert, .sound])
+                status = (await center.notificationSettings()).authorizationStatus
             }
+            guard status == .authorized else { return }
             guard self != nil else { return }
             let content = UNMutableNotificationContent()
             content.title = title

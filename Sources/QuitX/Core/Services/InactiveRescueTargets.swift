@@ -1,6 +1,25 @@
 import AppKit
 import Foundation
 
+enum AppURLCache {
+    private static var storage: [String: URL?] = [:]
+    private static let lock = NSLock()
+
+    static func url(bundleId: String) -> URL? {
+        lock.lock()
+        if let cached = storage[bundleId] {
+            lock.unlock()
+            return cached
+        }
+        lock.unlock()
+        let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId)
+        lock.lock()
+        storage[bundleId] = .some(url)
+        lock.unlock()
+        return url
+    }
+}
+
 enum InactiveRescueTargets {
     static func select(
         apps: [AppInfo],
@@ -21,7 +40,7 @@ enum InactiveRescueTargets {
             if app.bundleId == QuitXConstants.SystemBundleIds.finder { return false }
             if app.bundleId == QuitXConstants.SystemBundleIds.trash { return false }
             if let bid = app.bundleId,
-               let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid),
+               let url = AppURLCache.url(bundleId: bid),
                SystemAppProtection.isSystemProtected(
                    bundleIdentifier: bid,
                    isBackground: app.isBackground,

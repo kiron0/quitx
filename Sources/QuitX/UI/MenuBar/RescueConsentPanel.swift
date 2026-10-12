@@ -48,6 +48,10 @@ final class RescueConsentController {
 
     var isVisible: Bool { window?.isVisible ?? false }
 
+    var canPrompt: Bool {
+        Self.shouldPrompt(isVisible: isVisible, lastPrompt: lastPromptDate, now: Date())
+    }
+
     nonisolated static func shouldPrompt(
         isVisible: Bool = false,
         lastPrompt: Date,
@@ -92,8 +96,36 @@ final class RescueConsentController {
     }
 
     private func close() {
+        removeMonitors()
         window?.orderOut(nil)
         restoreFrontmost()
+    }
+
+    private var escapeMonitor: Any?
+    private var outsideMonitor: Any?
+
+    private func installMonitors() {
+        removeMonitors()
+        escapeMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self, self.isVisible, event.keyCode == 53 else { return event }
+            self.cancel()
+            return nil
+        }
+        outsideMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+            guard let self, self.isVisible else { return }
+            self.cancel()
+        }
+    }
+
+    private func removeMonitors() {
+        if let m = escapeMonitor {
+            NSEvent.removeMonitor(m)
+            escapeMonitor = nil
+        }
+        if let m = outsideMonitor {
+            NSEvent.removeMonitor(m)
+            outsideMonitor = nil
+        }
     }
 
     private func restoreFrontmost() {
@@ -169,6 +201,7 @@ final class RescueConsentController {
         NSApp.activate(ignoringOtherApps: true)
 
         win.makeKeyAndOrderFront(nil)
+        installMonitors()
     }
 }
 
