@@ -24,6 +24,7 @@ enum BatteryDetailSampler {
     private static let batteryType = "InternalBattery"
     private static let chargingLimitDomain = "com.apple.batteryui.charging.mac"
     private static let chargingLimitKey = "com.apple.batteryui.charging.mac.prior.limit"
+    private static var systemHealthCache: (percent: Int, timestamp: Date)?
 
     static func snapshot(
         descriptions: [[String: Any]]? = nil,
@@ -82,7 +83,9 @@ enum BatteryDetailSampler {
             maxCapacityMAh: intValue(batteryData, "FullChargeCapacity") ?? maxCapacity,
             cycleCount: intValue(smart, "CycleCount"),
             condition: healthCondition(smart: smart, batteryData: batteryData, battery: battery),
-            healthPercent: Self.healthPercent(smart: smart, batteryData: batteryData),
+            healthPercent: smartBattery == nil
+                ? (Self.systemInformationHealthPercent() ?? Self.healthPercent(smart: smart, batteryData: batteryData))
+                : Self.healthPercent(smart: smart, batteryData: batteryData),
             chargingLimitPercent: chargingLimitPercent ?? Self.readChargingLimit()
         )
     }
@@ -102,16 +105,55 @@ enum BatteryDetailSampler {
         let design = intValue(batteryData, "DesignCapacity")
             ?? intValue(smart, "DesignCapacity")
         guard let design, design > 0 else { return nil }
-        if let nominal = intValue(batteryData, "NominalChargeCapacity"), nominal > 0 {
+        let nominal = intValue(batteryData, "NominalChargeCapacity")
+        let fullCharge = intValue(batteryData, "FullChargeCapacity")
+        let rawMax = intValue(smart, "AppleRawMaxCapacity")
+        if let nominal, let fullCharge, nominal > 0, fullCharge > 0 {
+            let blend = Double(nominal + fullCharge) / 2
+            return Int((blend / Double(design) * 100).rounded())
+        }
+        if let nominal, nominal > 0 {
             return Int((Double(nominal) / Double(design) * 100).rounded())
         }
-        if let fullCharge = intValue(batteryData, "FullChargeCapacity"), fullCharge > 0 {
+        if let fullCharge, fullCharge > 0 {
             return Int((Double(fullCharge) / Double(design) * 100).rounded())
         }
-        if let rawMax = intValue(smart, "AppleRawMaxCapacity"), rawMax > 0 {
+        if let rawMax, rawMax > 0 {
             return Int((Double(rawMax) / Double(design) * 100).rounded())
         }
         return nil
+    }
+
+    static func systemInformationHealthPercent() -> Int? {
+        if let cache = systemHealthCache, Date().timeIntervalSince(cache.timestamp) < 60 {
+            return cache.percent
+        }
+        guard let output = shellOutput("/usr/sbin/system_profiler", arguments: ["SPPowerDataType"]) else {
+            return systemHealthCache?.percent
+        }
+        let regex = try? NSRegularExpression(pattern: "Maximum Capacity:\\s*(\\d+)%")
+        let range = NSRange(output.startIndex..., in: output)
+        guard let match = regex?.firstMatch(in: output, range: range),
+              let valueRange = Range(match.range(at: 1), in: output),
+              let percent = Int(output[valueRange]) else {
+            return systemHealthCache?.percent
+        }
+        systemHealthCache = (percent, Date())
+        return percent
+    }
+
+    private static func shellOutput(_ path: String, arguments: [String]) -> String? {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: path)
+        process.arguments = arguments
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = FileHandle.nullDevice
+        guard (try? process.run()) != nil else { return nil }
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else { return nil }
+        return String(data: data, encoding: .utf8)
     }
 
     static func formatDuration(minutes: Int) -> String? {

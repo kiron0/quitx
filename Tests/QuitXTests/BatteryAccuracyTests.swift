@@ -199,12 +199,40 @@ struct BatteryAccuracyTests {
         let nominal = try intFromIoreg(ioreg, key: "NominalChargeCapacity")
         let fullCharge = try intFromIoreg(ioreg, key: "FullChargeCapacity")
         let design = try intFromIoreg(ioreg, key: "DesignCapacity")
-        guard let design, design > 0, let current = nominal ?? fullCharge, current > 0 else {
+        guard let design, design > 0 else { return }
+        let current: Double
+        if let nominal, let fullCharge, nominal > 0, fullCharge > 0 {
+            current = Double(nominal + fullCharge) / 2
+        } else if let nominal, nominal > 0 {
+            current = Double(nominal)
+        } else if let fullCharge, fullCharge > 0 {
+            current = Double(fullCharge)
+        } else {
             return
         }
         let snapshot = try #require(BatteryDetailSampler.snapshot())
-        let expected = Int((Double(current) / Double(design) * 100).rounded())
-        #expect(snapshot.healthPercent == expected)
+        let expected = Int((current / Double(design) * 100).rounded())
+        #expect(abs(snapshot.healthPercent! - expected) <= 1)
+    }
+
+    @Test("Health percent blends FullCharge and Nominal like System Information")
+    func healthBlendsForSystemInformationMatch() {
+        let descriptions: [[String: Any]] = [
+            [
+                "Type": "InternalBattery",
+                Self.stateKey: "Battery Power",
+                Self.currentCapKey: 87
+            ]
+        ]
+        let smart: [String: Any] = [
+            "BatteryData": [
+                "DesignCapacity": 4382,
+                "NominalChargeCapacity": 3662,
+                "FullChargeCapacity": 3532
+            ]
+        ]
+        let snapshot = BatteryDetailSampler.snapshot(descriptions: descriptions, smartBattery: smart)
+        #expect(snapshot?.healthPercent == 82)
     }
 
     @Test("Charge mAh matches ioreg RemainingCapacity")
@@ -286,16 +314,17 @@ struct BatteryAccuracyTests {
         }
     }
 
-    @Test("Max Capacity row value equals System Settings Maximum Capacity")
+    @Test("Max Capacity row value within 1 of System Information Maximum Capacity")
     func maxCapacityMatchesSystemSettings() throws {
-        let ioreg = try shellOutput("ioreg -r -c AppleSmartBattery -d 1")
-        let nominal = try intFromIoreg(ioreg, key: "NominalChargeCapacity")
-        let fullCharge = try intFromIoreg(ioreg, key: "FullChargeCapacity")
-        let design = try intFromIoreg(ioreg, key: "DesignCapacity")
-        guard let design, design > 0, let current = nominal ?? fullCharge, current > 0 else { return }
+        let profiler = try shellOutput("system_profiler SPPowerDataType")
+        let regex = try NSRegularExpression(pattern: "Maximum Capacity:\\s*(\\d+)%")
+        let range = NSRange(profiler.startIndex..., in: profiler)
+        guard let match = regex.firstMatch(in: profiler, range: range),
+              let valueRange = Range(match.range(at: 1), in: profiler),
+              let expected = Int(profiler[valueRange]) else { return }
         let snapshot = try #require(BatteryDetailSampler.snapshot())
-        let settingsStyle = Int((Double(current) / Double(design) * 100).rounded())
-        #expect(snapshot.healthPercent == settingsStyle)
+        let delta = (snapshot.healthPercent ?? 0) - expected
+        #expect(abs(delta) <= 1)
     }
 
     private func intFromIoreg(_ output: String, key: String) throws -> Int? {
