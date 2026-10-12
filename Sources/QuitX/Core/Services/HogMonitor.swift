@@ -183,8 +183,7 @@ final class HogMonitor {
             cpuByPid: cpuByPid,
             threshold: threshold
         )
-        // Keep a pid "notified" until CPU drops below threshold minus hysteresis,
-        // so oscillation around the threshold does not re-fire notifications.
+
         let floor = threshold - HogRescueGate.hysteresis
         notifiedPids = notifiedPids.filter { pid in
             (cpuByPid[pid] ?? 0) >= floor

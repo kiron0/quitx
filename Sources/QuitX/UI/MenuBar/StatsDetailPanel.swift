@@ -918,14 +918,14 @@ final class StatsDetailController {
     func toggle(from button: NSStatusBarButton, mode: StatsDetailModel.Mode, anchorScreenX: CGFloat? = nil) {
         if isVisible {
             if model?.mode == mode && currentAnchorButton == button {
-                // Same stat re-clicked: close
+
                 closeAndReset()
             } else {
-                // Different stat clicked while a window is open: switch directly
+
                 switchTo(button: button, mode: mode, anchorScreenX: anchorScreenX)
             }
         } else {
-            // Debounce only when the exact same mode was just closed
+
             if lastClosedMode == mode && Date().timeIntervalSince(lastCloseTimestamp) < 0.25 {
                 lastClosedMode = nil
                 return
@@ -934,10 +934,9 @@ final class StatsDetailController {
         }
     }
 
-    /// Close previous window and immediately open new one without firing resign handler
     private func switchTo(button: NSStatusBarButton, mode: StatsDetailModel.Mode, anchorScreenX: CGFloat?) {
         isSwitchingWindow = true
-        // Teardown cleanly but don't call restoreFrontmost
+
         if let obs = resignObserver {
             NotificationCenter.default.removeObserver(obs)
             resignObserver = nil
@@ -1007,7 +1006,6 @@ final class StatsDetailController {
         win.setFrame(NSRect(x: originX, y: originY, width: size.width, height: size.height), display: true)
         win.invalidateShadow()
 
-        // Always re-register resignObserver on fresh show
         if let obs = resignObserver {
             NotificationCenter.default.removeObserver(obs)
             resignObserver = nil
@@ -1019,7 +1017,7 @@ final class StatsDetailController {
         ) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self, !self.isSwitchingWindow, self.isVisible else { return }
-                // Ignore resign if user clicked a stats/main menu bar button
+
                 let mouseLoc = NSEvent.mouseLocation
                 if let statsBtn = StatusItemController.shared?.statsButton,
                    let btnWin = statsBtn.window,

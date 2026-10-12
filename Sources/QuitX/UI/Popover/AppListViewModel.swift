@@ -319,7 +319,7 @@ final class AppListViewModel: ObservableObject {
             newSelection = cfg.defaultSelectAll ? visibleIds : []
             hasInitializedSelection = true
         } else if selected != selectedBeforeRefresh {
-            // User toggled selection while the scan was in flight — keep their change.
+
             newSelection = selected.intersection(appIdSet)
         } else if selectedAllBeforeRefresh {
             newSelection = visibleIds
@@ -383,7 +383,7 @@ final class AppListViewModel: ObservableObject {
         }
         let newSelection: Set<String>
         if selected != selectedBeforeRefresh {
-            // User toggled selection while stats were loading — keep their change.
+
             newSelection = selected.intersection(appIdSet)
         } else if selectedAllBeforeRefresh {
             newSelection = visibleIds

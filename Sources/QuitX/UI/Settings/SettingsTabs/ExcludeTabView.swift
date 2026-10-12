@@ -316,4 +316,3 @@ private final class ExcludedAppRowState: ObservableObject {
         }
     }
 }
-

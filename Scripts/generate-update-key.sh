@@ -1,12 +1,6 @@
 #!/usr/bin/env bash
-# Generate an Ed25519 key pair for QuitX update signing.
-#
-# Output:
-#   UPDATE_ED25519_PRIVATE_KEY=<base64>   (goes to CI secret, never into the repo)
-#   compiledEdPublicKey=<base64>          (embed in QuitXConstants.swift)
 set -euo pipefail
 
-# Ed25519 needs OpenSSL 3 (macOS ships LibreSSL without Ed25519).
 find_openssl() {
     if [ -n "${OPENSSL:-}" ]; then
         echo "$OPENSSL"

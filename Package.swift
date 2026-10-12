@@ -1,11 +1,7 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 5.10
 import PackageDescription
 import Foundation
 
-// On machines with only the Command Line Tools installed, Swift Testing lives in
-// /Library/Developer/CommandLineTools/Library/Developer/Frameworks instead of the
-// toolchain's default search path. Xcode installations do not need (and must not
-// get) these flags, so add them only when that layout is actually detected.
 let cltTestingFrameworkPath = "/Library/Developer/CommandLineTools/Library/Developer/Frameworks"
 let needsCLTTestingSearchPath = FileManager.default.fileExists(
     atPath: cltTestingFrameworkPath + "/Testing.framework"

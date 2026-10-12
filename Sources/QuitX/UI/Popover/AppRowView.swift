@@ -255,4 +255,3 @@ struct AppRowView: View {
         return item
     }
 }
-

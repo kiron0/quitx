@@ -61,4 +61,3 @@ struct VisualEffectBlur: NSViewRepresentable {
         nsView.blendingMode = blendingMode
     }
 }
-

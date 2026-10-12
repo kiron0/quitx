@@ -1,11 +1,4 @@
 #!/usr/bin/env bash
-# Sign a release DMG with Ed25519 and write updates.json metadata.
-#
-# Usage:
-#   UPDATE_ED25519_PRIVATE_KEY=<base64> \
-#     ./Scripts/sign-update.sh <dmg-path> <version> <output-json>
-#
-# UPDATE_ED25519_PRIVATE_KEY: base64 of 32 raw Ed25519 seed bytes.
 set -euo pipefail
 
 if [ "$#" -ne 3 ]; then
@@ -27,7 +20,6 @@ if [ ! -f "$DMG_PATH" ]; then
     exit 1
 fi
 
-# Ed25519 needs OpenSSL 3 (macOS ships LibreSSL without Ed25519).
 find_openssl() {
     if [ -n "${OPENSSL:-}" ]; then
         echo "$OPENSSL"
@@ -72,7 +64,6 @@ if [ "${#SEED_HEX}" -ne 64 ]; then
     exit 1
 fi
 
-# Wrap raw seed in fixed PKCS#8 header for Ed25519 private keys.
 printf '%s' "302e020100300506032b657004220420${SEED_HEX}" | xxd -r -p > "$TMP_DIR/key.der"
 "$OPENSSL_BIN" pkey -inform DER -in "$TMP_DIR/key.der" -out "$TMP_DIR/key.pem" >/dev/null 2>&1
 

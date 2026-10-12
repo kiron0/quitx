@@ -135,14 +135,14 @@ enum BatteryDetailSampler {
             return cache.percent
         }
         if cache == nil {
-            // Cold start: one synchronous load so first caller sees the real value.
+
             let value = loadSystemHealthPercent()
             healthLock.lock()
             systemHealthCache = (value, Date())
             healthLock.unlock()
             return value
         }
-        // Stale: refresh off the calling thread; serve last known value.
+
         scheduleHealthRefresh()
         return cache?.percent
     }

@@ -71,7 +71,7 @@ final class MemoryPressureService {
         let config = ConfigStore.shared.config
         guard config.memoryPressureQuitEnabled else { return }
         guard Date().timeIntervalSince(lastRescueDate) >= 60 else { return }
-        // Stamp before the expensive scan so sustained pressure cannot rescan every event.
+
         lastRescueDate = Date()
         let vm = AppListViewModel.shared
         if Date().timeIntervalSince(vm.lastRefreshDate) > 2.0 {

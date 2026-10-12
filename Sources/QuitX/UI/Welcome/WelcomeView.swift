@@ -160,4 +160,3 @@ private struct WelcomePrimaryButtonStyle: ButtonStyle {
             .clipShape(RoundedRectangle(cornerRadius: 7))
     }
 }
-
