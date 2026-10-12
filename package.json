@@ -11,14 +11,6 @@
     "open": "open \"$HOME/Applications/QuitX.app\"",
     "ship": "./Scripts/ship.sh",
     "bump": "./Scripts/bump-version.sh",
-    "start": "npm run ship",
-    "dev:preview": "./Scripts/dev-preview.sh",
-    "dev:welcome": "./Scripts/dev-preview.sh welcome",
-    "dev:cpu": "./Scripts/dev-preview.sh cpu",
-    "dev:memory": "./Scripts/dev-preview.sh memory",
-    "dev:stats-cpu": "./Scripts/dev-preview.sh stats-cpu",
-    "dev:stats-memory": "./Scripts/dev-preview.sh stats-memory",
-    "dev:stats-battery": "./Scripts/dev-preview.sh stats-battery",
-    "dev:settings": "./Scripts/dev-preview.sh settings"
+    "start": "npm run ship"
   }
 }

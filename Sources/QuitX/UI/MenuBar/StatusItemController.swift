@@ -356,13 +356,6 @@ final class StatusItemController: NSObject {
         statsStatusItem?.button
     }
 
-    func showStatsPreview(mode: StatsDetailModel.Mode) {
-        updateMenuBarStats()
-        guard let button = statsButton else { return }
-        let anchorX = button.window?.convertToScreen(button.bounds).midX
-        StatsDetailController.shared.show(from: button, mode: mode, anchorScreenX: anchorX)
-    }
-
     var statusBarButton: NSStatusBarButton? {
         statusItem.button
     }
