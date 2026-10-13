@@ -565,8 +565,6 @@ final class StatusItemController: NSObject {
                 try? await Task.sleep(nanoseconds: interval)
                 guard !Task.isCancelled, let self else { break }
                 let cfg = ConfigStore.shared.config
-                // One power-source query per tick, shared by the throttle decision
-                // and the battery segment of the title.
                 let powerSources = (cfg.batterySaverEnabled || cfg.batteryMenuBarEnabled)
                     ? BatterySaver.currentDescriptions()
                     : nil

@@ -22,9 +22,6 @@ final class AppListService {
         let needsPidRecovery = workspaceApps.contains {
             !$0.isTerminated && $0.processIdentifier <= 0 && $0.executableURL != nil
         }
-        // Build the path -> pid index once instead of rescanning every process for
-        // every app that needs recovery (previously O(apps * processes) with a URL
-        // allocation per pair).
         let pidsByPath = needsPidRecovery ? Self.pidsByNormalizedPath(Self.runningProcessPaths()) : [:]
         var seenPids = Set<pid_t>()
 
@@ -330,7 +327,6 @@ final class AppListService {
         return errno == EPERM
     }
 
-    /// Collapses a raw `pid -> executable path` map into `normalized path -> lowest pid`.
     static func pidsByNormalizedPath(_ processPaths: [pid_t: String]) -> [String: pid_t] {
         var index: [String: pid_t] = [:]
         index.reserveCapacity(processPaths.count)
@@ -379,7 +375,6 @@ final class AppListService {
 
         var paths: [pid_t: String] = [:]
         paths.reserveCapacity(Int(actualCount))
-        // One shared buffer: re-allocating 4 KiB per process churned megabytes per scan.
         var buffer = [CChar](repeating: 0, count: 4096)
         for pid in pids.prefix(Int(actualCount)) where pid > 0 {
             let length = proc_pidpath(pid, &buffer, UInt32(buffer.count))

@@ -21,9 +21,6 @@ struct BatterySnapshot: Equatable, Sendable {
     let chargingLimitPercent: Int?
 }
 
-/// The subset of battery state the menu bar title actually renders. Reading only
-/// this avoids the AppleSmartBattery registry walk, the foreign preference-domain
-/// read, and the `system_profiler` health lookup that the full snapshot performs.
 struct BatteryMenuBarSnapshot: Equatable, Sendable {
     let percent: Int
     let isCharging: Bool
@@ -107,9 +104,6 @@ enum BatteryDetailSampler {
         )
     }
 
-    /// Cheap read for the once-per-second menu bar refresh. Reuses an already
-    /// fetched power-source list when the caller has one so a tick costs at most
-    /// a single `IOPSCopyPowerSourcesInfo`.
     static func menuBarSnapshot(descriptions: [[String: Any]]? = nil) -> BatteryMenuBarSnapshot? {
         let descs = descriptions ?? BatterySaver.currentDescriptions()
         guard let battery = descs.first(where: { ($0["Type"] as? String) == batteryType }),
@@ -218,7 +212,6 @@ enum BatteryDetailSampler {
         process.standardOutput = pipe
         process.standardError = FileHandle.nullDevice
 
-        // `system_profiler` can wedge. Without this the calling thread blocks forever.
         let watchdog = DispatchWorkItem { [weak process] in
             if let process, process.isRunning { process.terminate() }
         }
