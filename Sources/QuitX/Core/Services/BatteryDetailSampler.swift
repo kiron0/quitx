@@ -1,5 +1,6 @@
 import Foundation
 import IOKit.ps
+import os
 
 struct BatterySnapshot: Equatable, Sendable {
     let percent: Int
@@ -20,13 +21,27 @@ struct BatterySnapshot: Equatable, Sendable {
     let chargingLimitPercent: Int?
 }
 
+/// The subset of battery state the menu bar title actually renders. Reading only
+/// this avoids the AppleSmartBattery registry walk, the foreign preference-domain
+/// read, and the `system_profiler` health lookup that the full snapshot performs.
+struct BatteryMenuBarSnapshot: Equatable, Sendable {
+    let percent: Int
+    let isCharging: Bool
+    let isACPower: Bool
+}
+
 enum BatteryDetailSampler {
     private static let batteryType = "InternalBattery"
     private static let chargingLimitDomain = "com.apple.batteryui.charging.mac"
     private static let chargingLimitKey = "com.apple.batteryui.charging.mac.prior.limit"
-    private static var systemHealthCache: (percent: Int?, timestamp: Date)?
-    private static let healthLock = NSLock()
-    private static var healthRefreshInFlight = false
+
+    private struct HealthCacheState: Sendable {
+        var percent: Int?
+        var loadedAt: Date?
+        var refreshInFlight = false
+    }
+
+    private static let healthState = OSAllocatedUnfairLock(initialState: HealthCacheState())
 
     static func snapshot(
         descriptions: [[String: Any]]? = nil,
@@ -92,6 +107,22 @@ enum BatteryDetailSampler {
         )
     }
 
+    /// Cheap read for the once-per-second menu bar refresh. Reuses an already
+    /// fetched power-source list when the caller has one so a tick costs at most
+    /// a single `IOPSCopyPowerSourcesInfo`.
+    static func menuBarSnapshot(descriptions: [[String: Any]]? = nil) -> BatteryMenuBarSnapshot? {
+        let descs = descriptions ?? BatterySaver.currentDescriptions()
+        guard let battery = descs.first(where: { ($0["Type"] as? String) == batteryType }),
+              let rawPercent = intValue(battery[kIOPSCurrentCapacityKey as String]) else {
+            return nil
+        }
+        return BatteryMenuBarSnapshot(
+            percent: max(0, min(100, rawPercent)),
+            isCharging: boolValue(battery, kIOPSIsChargingKey as String) ?? false,
+            isACPower: !BatterySaver.isOnBattery(descriptions: descs)
+        )
+    }
+
     static func readChargingLimit(
         persistentDomain: [String: Any]? = UserDefaults.standard.persistentDomain(
             forName: chargingLimitDomain
@@ -127,50 +158,51 @@ enum BatteryDetailSampler {
     }
 
     static func systemInformationHealthPercent() -> Int? {
-        healthLock.lock()
-        let cache = systemHealthCache
-        healthLock.unlock()
+        let state = healthState.withLock { $0 }
 
-        if let cache, Date().timeIntervalSince(cache.timestamp) < 60 {
-            return cache.percent
-        }
-        if cache == nil {
-
+        guard let loadedAt = state.loadedAt else {
             let value = loadSystemHealthPercent()
-            healthLock.lock()
-            systemHealthCache = (value, Date())
-            healthLock.unlock()
+            healthState.withLock {
+                $0.percent = value
+                $0.loadedAt = Date()
+            }
             return value
         }
-
+        if Date().timeIntervalSince(loadedAt) < 60 {
+            return state.percent
+        }
         scheduleHealthRefresh()
-        return cache?.percent
+        return state.percent
     }
 
     private static func scheduleHealthRefresh() {
-        healthLock.lock()
-        if healthRefreshInFlight {
-            healthLock.unlock()
-            return
+        let shouldStart = healthState.withLock { state -> Bool in
+            if state.refreshInFlight { return false }
+            state.refreshInFlight = true
+            return true
         }
-        healthRefreshInFlight = true
-        healthLock.unlock()
+        guard shouldStart else { return }
         Task.detached(priority: .utility) {
             let value = loadSystemHealthPercent()
-            healthLock.lock()
-            systemHealthCache = (value, Date())
-            healthRefreshInFlight = false
-            healthLock.unlock()
+            healthState.withLock { state in
+                state.percent = value
+                state.loadedAt = Date()
+                state.refreshInFlight = false
+            }
         }
     }
 
+    private static let maximumCapacityRegex = try? NSRegularExpression(
+        pattern: "Maximum Capacity:\\s*(\\d+)%"
+    )
+
     private static func loadSystemHealthPercent() -> Int? {
-        guard let output = shellOutput("/usr/sbin/system_profiler", arguments: ["SPPowerDataType"]) else {
+        guard let output = shellOutput("/usr/sbin/system_profiler", arguments: ["SPPowerDataType"]),
+              let regex = maximumCapacityRegex else {
             return nil
         }
-        let regex = try? NSRegularExpression(pattern: "Maximum Capacity:\\s*(\\d+)%")
         let range = NSRange(output.startIndex..., in: output)
-        guard let match = regex?.firstMatch(in: output, range: range),
+        guard let match = regex.firstMatch(in: output, range: range),
               let valueRange = Range(match.range(at: 1), in: output),
               let percent = Int(output[valueRange]) else {
             return nil
@@ -185,9 +217,20 @@ enum BatteryDetailSampler {
         let pipe = Pipe()
         process.standardOutput = pipe
         process.standardError = FileHandle.nullDevice
-        guard (try? process.run()) != nil else { return nil }
+
+        // `system_profiler` can wedge. Without this the calling thread blocks forever.
+        let watchdog = DispatchWorkItem { [weak process] in
+            if let process, process.isRunning { process.terminate() }
+        }
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 8, execute: watchdog)
+
+        guard (try? process.run()) != nil else {
+            watchdog.cancel()
+            return nil
+        }
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         process.waitUntilExit()
+        watchdog.cancel()
         guard process.terminationStatus == 0 else { return nil }
         return String(data: data, encoding: .utf8)
     }

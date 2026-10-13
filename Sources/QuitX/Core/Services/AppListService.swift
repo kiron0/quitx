@@ -22,7 +22,10 @@ final class AppListService {
         let needsPidRecovery = workspaceApps.contains {
             !$0.isTerminated && $0.processIdentifier <= 0 && $0.executableURL != nil
         }
-        let processPaths = needsPidRecovery ? Self.runningProcessPaths() : [:]
+        // Build the path -> pid index once instead of rescanning every process for
+        // every app that needs recovery (previously O(apps * processes) with a URL
+        // allocation per pair).
+        let pidsByPath = needsPidRecovery ? Self.pidsByNormalizedPath(Self.runningProcessPaths()) : [:]
         var seenPids = Set<pid_t>()
 
         let running = workspaceApps.compactMap { app -> RunningAppSnapshot? in
@@ -30,7 +33,7 @@ final class AppListService {
             guard let pid = Self.resolvedProcessIdentifier(
                 reportedPid: app.processIdentifier,
                 executablePath: app.executableURL?.path,
-                processPaths: processPaths
+                pidsByNormalizedPath: pidsByPath
             ), Self.processIsRunning(pid), seenPids.insert(pid).inserted else { return nil }
             let rawName = app.localizedName
                 ?? app.bundleURL?.deletingPathExtension().lastPathComponent
@@ -327,23 +330,42 @@ final class AppListService {
         return errno == EPERM
     }
 
+    /// Collapses a raw `pid -> executable path` map into `normalized path -> lowest pid`.
+    static func pidsByNormalizedPath(_ processPaths: [pid_t: String]) -> [String: pid_t] {
+        var index: [String: pid_t] = [:]
+        index.reserveCapacity(processPaths.count)
+        for (pid, path) in processPaths where pid > 0 {
+            let key = URL(fileURLWithPath: path).standardizedFileURL.path
+            if let existing = index[key] {
+                if pid < existing { index[key] = pid }
+            } else {
+                index[key] = pid
+            }
+        }
+        return index
+    }
+
+    static func resolvedProcessIdentifier(
+        reportedPid: pid_t,
+        executablePath: String?,
+        pidsByNormalizedPath: [String: pid_t]
+    ) -> pid_t? {
+        if reportedPid > 0 { return reportedPid }
+        guard let executablePath, !executablePath.isEmpty else { return nil }
+        let target = URL(fileURLWithPath: executablePath).standardizedFileURL.path
+        return pidsByNormalizedPath[target]
+    }
+
     static func resolvedProcessIdentifier(
         reportedPid: pid_t,
         executablePath: String?,
         processPaths: [pid_t: String]
     ) -> pid_t? {
-        if reportedPid > 0 { return reportedPid }
-        guard let executablePath, !executablePath.isEmpty else { return nil }
-        let target = URL(fileURLWithPath: executablePath).standardizedFileURL.path
-        var resolved: pid_t?
-        for (pid, path) in processPaths where URL(fileURLWithPath: path).standardizedFileURL.path == target {
-            if let current = resolved {
-                if pid < current { resolved = pid }
-            } else {
-                resolved = pid
-            }
-        }
-        return resolved
+        resolvedProcessIdentifier(
+            reportedPid: reportedPid,
+            executablePath: executablePath,
+            pidsByNormalizedPath: pidsByNormalizedPath(processPaths)
+        )
     }
 
     private static func runningProcessPaths() -> [pid_t: String] {
@@ -356,9 +378,12 @@ final class AppListService {
         guard actualCount > 0 else { return [:] }
 
         var paths: [pid_t: String] = [:]
+        paths.reserveCapacity(Int(actualCount))
+        // One shared buffer: re-allocating 4 KiB per process churned megabytes per scan.
+        var buffer = [CChar](repeating: 0, count: 4096)
         for pid in pids.prefix(Int(actualCount)) where pid > 0 {
-            var buffer = [CChar](repeating: 0, count: 4096)
-            guard proc_pidpath(pid, &buffer, UInt32(buffer.count)) > 0 else { continue }
+            let length = proc_pidpath(pid, &buffer, UInt32(buffer.count))
+            guard length > 0 else { continue }
             paths[pid] = String(cString: buffer)
         }
         return paths

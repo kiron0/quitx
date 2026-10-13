@@ -316,8 +316,12 @@ final class StatusItemController: NSObject {
             while let self = self, self.isShown {
                 try? await Task.sleep(nanoseconds: 2_000_000_000)
                 guard !Task.isCancelled, self.isShown else { break }
-                let throttled = ConfigStore.shared.config.batterySaverEnabled
-                    && BatterySaver.isOnBattery(descriptions: BatterySaver.currentDescriptions())
+                let cfg = ConfigStore.shared.config
+                let powerSources = (cfg.batterySaverEnabled || cfg.batteryMenuBarEnabled)
+                    ? BatterySaver.currentDescriptions()
+                    : nil
+                let throttled = cfg.batterySaverEnabled
+                    && BatterySaver.isOnBattery(descriptions: powerSources ?? [])
                 if throttled != self.lastThrottled {
                     self.liveTickCount = 0
                     self.lastThrottled = throttled
@@ -326,7 +330,7 @@ final class StatusItemController: NSObject {
                 let skip = throttled && self.liveTickCount % 5 != 0
                 if !skip {
                     await AppListViewModel.shared.updateLiveStats()
-                    self.updateMenuBarStats()
+                    self.updateMenuBarStats(powerSources: powerSources)
                     self.updatePopoverSize()
                 }
             }
@@ -382,7 +386,7 @@ final class StatusItemController: NSObject {
         statusItem.button
     }
 
-    func updateMenuBarStats() {
+    func updateMenuBarStats(powerSources: [[String: Any]]? = nil) {
         let cfg = ConfigStore.shared.config
         guard cfg.showMenuBarStats else {
             removeStatsItem()
@@ -403,7 +407,9 @@ final class StatusItemController: NSObject {
 
         let cpu = SystemUsage.cpuPercent(consumer: "menuBar")
         let memoryUsed = SystemUsage.memoryUsedBytes()
-        let battery = cfg.batteryMenuBarEnabled ? BatteryDetailSampler.snapshot() : nil
+        let battery = cfg.batteryMenuBarEnabled
+            ? BatteryDetailSampler.menuBarSnapshot(descriptions: powerSources)
+            : nil
 
         let cpuText = BatterySaver.percentText(cpu)
         let memText = BatterySaver.compactMemoryText(bytes: memoryUsed, unit: cfg.menuBarMemoryUnit)
@@ -554,14 +560,20 @@ final class StatusItemController: NSObject {
         SystemUsage.prime()
         updateMenuBarStats()
         menuStatsTask = Task { @MainActor [weak self] in
-            while let self = self {
-                let cfg = ConfigStore.shared.config
-                let onBattery = cfg.batterySaverEnabled
-                    && BatterySaver.isOnBattery(descriptions: BatterySaver.currentDescriptions())
-                let interval: UInt64 = onBattery ? 5_000_000_000 : 1_000_000_000
+            var interval: UInt64 = 1_000_000_000
+            while true {
                 try? await Task.sleep(nanoseconds: interval)
-                guard !Task.isCancelled else { break }
-                self.updateMenuBarStats()
+                guard !Task.isCancelled, let self else { break }
+                let cfg = ConfigStore.shared.config
+                // One power-source query per tick, shared by the throttle decision
+                // and the battery segment of the title.
+                let powerSources = (cfg.batterySaverEnabled || cfg.batteryMenuBarEnabled)
+                    ? BatterySaver.currentDescriptions()
+                    : nil
+                let onBattery = cfg.batterySaverEnabled
+                    && BatterySaver.isOnBattery(descriptions: powerSources ?? [])
+                interval = onBattery ? 5_000_000_000 : 1_000_000_000
+                self.updateMenuBarStats(powerSources: powerSources)
             }
         }
     }
