@@ -2,6 +2,14 @@
 
 All notable changes to QuitX macOS App will be documented in this file.
 
+## 1.1.3
+
+### Changed
+
+- App list service performance: indexed PID-to-path resolution to replace O(apps × processes) scans with O(1) lookups, and reused 4 KiB buffers during `proc_pidpath` queries to eliminate memory allocation churn.
+- Battery sampler efficiency: added an 8-second watchdog timer to `system_profiler` child processes to prevent thread hangs, cached system health queries with background refreshes, and precompiled capacity regex matching.
+- Status bar polling optimization: unified power-source sampling so battery throttle checks and menu bar status updates share a single query per tick.
+
 ## 1.1.2
 
 ### Added

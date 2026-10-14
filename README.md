@@ -52,7 +52,15 @@
 
 ## Install
 
-1. Download the latest `.dmg` above.
+### Terminal
+
+```bash
+curl -fsSL https://quitx.js.org/install | bash
+```
+
+### Manual
+
+1. Download the latest `.dmg` from [Releases](https://github.com/kiron0/quitx/releases/latest).
 2. Drag **QuitX** into `/Applications`.
 3. Launch from Applications or Spotlight. It lives in your menu bar.
 
