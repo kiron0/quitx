@@ -2,6 +2,19 @@
 
 All notable changes to QuitX macOS App will be documented in this file.
 
+## 1.1.4
+
+### Changed
+
+- Background battery sampling: offloaded battery detail snapshots in stats popovers to a detached utility task with generation and cancellation tracking, preventing UI stalls on the main thread during power queries.
+- Menu bar stats polling lifecycle: backs off polling interval to 5 seconds and tears down the status item when menu bar stats are disabled, and removed redundant status updates from the live stats loop.
+
+### Fixed
+
+- Process identity verification: enforced exact bundle ID matching to prevent prefix overlap collisions with child or helper processes, falling back to sanitized name matching only when bundle ID is absent.
+- Helper process containment validation: verified executable paths reside strictly within the parent app bundle's `Contents` directory using resolved, standardized file URLs.
+- Auto-quit PID recovery: resolved running process IDs from executable paths when LaunchServices reports invalid or non-positive PIDs, ensuring unparented or recovered apps are tracked and idled out reliably.
+
 ## 1.1.3
 
 ### Changed
