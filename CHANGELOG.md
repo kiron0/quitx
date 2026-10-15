@@ -4,9 +4,14 @@ All notable changes to QuitX macOS App will be documented in this file.
 
 ## 1.1.4
 
+### Added
+
+- Battery loading state: added an inline progress indicator and status message in the battery detail popover while async hardware metrics are being gathered.
+
 ### Changed
 
-- Background battery sampling: offloaded battery detail snapshots in stats popovers to a detached utility task with generation and cancellation tracking, preventing UI stalls on the main thread during power queries.
+- Background battery sampling: offloaded battery detail snapshots in stats popovers to a detached utility task scoped exclusively to battery mode, with generation and cancellation tracking to prevent UI stalls.
+- Popover display preparation: standardized layout flushing, display synchronization, and shadow invalidation via `prepareForDisplay()` across menu bar popovers, stats panels, rescue dialogs, and settings tooltips to eliminate visual compositing flicker.
 - Menu bar stats polling lifecycle: backs off polling interval to 5 seconds and tears down the status item when menu bar stats are disabled, and removed redundant status updates from the live stats loop.
 
 ### Fixed
