@@ -139,7 +139,7 @@ final class HelpPopoverState: NSObject, ObservableObject {
         win.contentView = hostView
         win.setContentSize(size)
         win.setFrame(NSRect(x: originX, y: originY, width: size.width, height: size.height), display: true)
-        win.invalidateShadow()
+        win.prepareForDisplay()
 
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .keyDown]) { [weak self] event in
             guard let self, self.isShowing else { return event }

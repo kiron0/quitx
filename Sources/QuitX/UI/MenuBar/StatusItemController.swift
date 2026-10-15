@@ -286,13 +286,12 @@ final class StatusItemController: NSObject {
             StatsDetailController.shared.close()
             guard let win = window else { return }
             updatePopoverSize()
-            win.contentView?.layoutSubtreeIfNeeded()
+            win.prepareForDisplay()
             if !NSApp.isActive {
                 NSApp.activate(ignoringOtherApps: true)
             }
             win.makeKeyAndOrderFront(nil)
             win.makeFirstResponder(nil)
-            win.invalidateShadow()
             AppListViewModel.shared.syncOptionKey()
             refreshVisibleApps()
             installOutsideClickMonitor()

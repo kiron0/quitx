@@ -39,6 +39,7 @@ final class StatsDetailModel: ObservableObject {
     @Published var swapUsed: UInt64 = 0
     @Published var swapTotal: UInt64 = 0
     @Published var battery: BatterySnapshot?
+    @Published private(set) var isBatteryLoading = false
 
     @Published var showToast: Bool = false
     @Published private(set) var toastMessage: String = ""
@@ -89,6 +90,7 @@ final class StatsDetailModel: ObservableObject {
         topProcessTask = nil
         batteryTask?.cancel()
         batteryTask = nil
+        isBatteryLoading = false
     }
 
     private func tick() {
@@ -119,8 +121,9 @@ final class StatsDetailModel: ObservableObject {
         swapUsed = swap.used
         swapTotal = swap.total
 
-        if ConfigStore.shared.config.batteryMenuBarEnabled {
+        if ConfigStore.shared.config.batteryMenuBarEnabled, mode == .battery {
             if batteryTask == nil {
+                isBatteryLoading = battery == nil
                 batteryTask = Task { [weak self] in
                     let snapshot = await Task.detached(priority: .utility) {
                         BatteryDetailSampler.snapshot()
@@ -129,6 +132,7 @@ final class StatsDetailModel: ObservableObject {
                     defer {
                         if self.sampleGeneration == generation {
                             self.batteryTask = nil
+                            self.isBatteryLoading = false
                         }
                     }
                     guard !Task.isCancelled, self.sampleGeneration == generation else { return }
@@ -138,7 +142,10 @@ final class StatsDetailModel: ObservableObject {
         } else {
             batteryTask?.cancel()
             batteryTask = nil
-            battery = nil
+            isBatteryLoading = false
+            if !ConfigStore.shared.config.batteryMenuBarEnabled {
+                battery = nil
+            }
         }
 
         appendHistory(&cpuHistory, value: cpu)
@@ -870,17 +877,39 @@ struct StatsDetailView: View {
                         openBatterySettings()
                     }
                 }
-            } else {
+            } else if model.isBatteryLoading {
                 VStack(spacing: 8) {
-                    Image(systemName: "batteryblock.slash")
-                        .font(.system(size: 26))
-                        .foregroundStyle(Color.secondary)
-                    Text("No battery detected")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color.secondary)
+                    windowTitleHeader(title: "Battery Status", symbol: "battery.100")
+                    card {
+                        HStack(spacing: 9) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("Loading battery details…")
+                                .font(.system(size: 12))
+                                .foregroundStyle(Color.secondary)
+                            Spacer()
+                        }
+                        .frame(minHeight: 56)
+                    }
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.top, 30)
+            } else {
+                VStack(alignment: .leading, spacing: 10) {
+                    windowTitleHeader(title: "Battery Status", symbol: "batteryblock.slash")
+                    card {
+                        HStack(spacing: 9) {
+                            Image(systemName: "batteryblock.slash")
+                                .font(.system(size: 20))
+                                .foregroundStyle(Color.secondary)
+                            Text("No battery detected")
+                                .font(.system(size: 12))
+                                .foregroundStyle(Color.secondary)
+                            Spacer()
+                        }
+                        .frame(minHeight: 56)
+                    }
+                }
+                .frame(maxWidth: .infinity)
             }
         }
     }
@@ -998,6 +1027,7 @@ final class StatsDetailController {
         let model = self.model ?? StatsDetailModel()
         model.mode = mode
         self.model = model
+        model.start()
 
         let hostView = NSHostingView(rootView: StatsDetailView(model: model))
         self.hostView = hostView
@@ -1025,7 +1055,7 @@ final class StatsDetailController {
         let originY = buttonScreenRect.minY - size.height - 2
         model.arrowX = targetMidX - originX
         win.setFrame(NSRect(x: originX, y: originY, width: size.width, height: size.height), display: true)
-        win.invalidateShadow()
+        win.prepareForDisplay()
 
         if let obs = resignObserver {
             NotificationCenter.default.removeObserver(obs)
@@ -1063,7 +1093,6 @@ final class StatsDetailController {
                 }
             }
 
-        model.start()
         frontmostAtShow = NSWorkspace.shared.frontmostApplication
         NSApp.activate(ignoringOtherApps: true)
         win.makeKeyAndOrderFront(nil)

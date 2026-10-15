@@ -181,6 +181,7 @@ final class RescueConsentController {
             window = win
         }
 
+        win.contentView = hostView
         let size = hostView.fittingSize
         win.setContentSize(size)
 
@@ -195,7 +196,7 @@ final class RescueConsentController {
             }
         }
         win.setFrame(NSRect(x: originX, y: originY, width: size.width, height: size.height), display: true)
-        win.contentView = hostView
+        win.prepareForDisplay()
 
         frontmostAtShow = NSWorkspace.shared.frontmostApplication
         NSApp.activate(ignoringOtherApps: true)

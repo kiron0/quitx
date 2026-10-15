@@ -73,7 +73,6 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         guard !Self.isRunningTests else { return }
 
         WindowActivationCoordinator.update()
-        win.orderFrontRegardless()
 
         let targetFrame: NSRect
         if let screen = WindowPositioner.targetScreen {

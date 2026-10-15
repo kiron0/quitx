@@ -23,6 +23,12 @@ final class ArrowPopoverWindow: NSPanel {
 
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
+
+    func prepareForDisplay() {
+        contentView?.layoutSubtreeIfNeeded()
+        displayIfNeeded()
+        invalidateShadow()
+    }
 }
 
 func popoverShape(arrowX: CGFloat?) -> PopoverContainerShape {
