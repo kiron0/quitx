@@ -317,7 +317,7 @@ final class StatusItemController: NSObject {
                 try? await Task.sleep(nanoseconds: 2_000_000_000)
                 guard !Task.isCancelled, self.isShown else { break }
                 let cfg = ConfigStore.shared.config
-                let powerSources = (cfg.batterySaverEnabled || cfg.batteryMenuBarEnabled)
+                let powerSources = cfg.batterySaverEnabled
                     ? BatterySaver.currentDescriptions()
                     : nil
                 let throttled = cfg.batterySaverEnabled
@@ -330,7 +330,6 @@ final class StatusItemController: NSObject {
                 let skip = throttled && self.liveTickCount % 5 != 0
                 if !skip {
                     await AppListViewModel.shared.updateLiveStats()
-                    self.updateMenuBarStats(powerSources: powerSources)
                     self.updatePopoverSize()
                 }
             }
@@ -565,6 +564,11 @@ final class StatusItemController: NSObject {
                 try? await Task.sleep(nanoseconds: interval)
                 guard !Task.isCancelled, let self else { break }
                 let cfg = ConfigStore.shared.config
+                guard cfg.showMenuBarStats else {
+                    self.removeStatsItem()
+                    interval = 5_000_000_000
+                    continue
+                }
                 let powerSources = (cfg.batterySaverEnabled || cfg.batteryMenuBarEnabled)
                     ? BatterySaver.currentDescriptions()
                     : nil

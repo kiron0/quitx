@@ -574,6 +574,51 @@ struct QuitServiceTests {
         #expect(!QuitService.processIsRunning(pid_t.max))
     }
 
+    @Test("Quit identity rejects bundle mismatch even when names match")
+    func testQuitIdentityRequiresBundleMatch() {
+        #expect(QuitService.identityMatches(
+            expectedBundleId: "com.example.editor",
+            expectedName: "Editor",
+            runningBundleId: "com.example.editor",
+            runningName: "Editor"
+        ))
+        #expect(!QuitService.identityMatches(
+            expectedBundleId: "com.example.editor",
+            expectedName: "Editor",
+            runningBundleId: "com.attacker.editor",
+            runningName: "Editor"
+        ))
+        #expect(!QuitService.identityMatches(
+            expectedBundleId: "com.example.editor",
+            expectedName: "Editor",
+            runningBundleId: "com.example.editor.helper",
+            runningName: "Editor"
+        ))
+        #expect(QuitService.identityMatches(
+            expectedBundleId: nil,
+            expectedName: "Editor (Renderer)",
+            runningBundleId: nil,
+            runningName: "Editor"
+        ))
+    }
+
+    @Test("Quit helper containment accepts only bundle Contents executables")
+    func testQuitHelperPathContainment() {
+        let root = URL(fileURLWithPath: "/Applications/Editor.app")
+        #expect(QuitService.isExecutablePath(
+            "/Applications/Editor.app/Contents/Frameworks/Editor Helper.app/Contents/MacOS/Editor Helper",
+            insideContentsOf: root
+        ))
+        #expect(!QuitService.isExecutablePath(
+            "/Applications/Editor.app/Contents-Evil/MacOS/Editor Helper",
+            insideContentsOf: root
+        ))
+        #expect(!QuitService.isExecutablePath(
+            "/Applications/Other.app/Contents/MacOS/Editor Helper",
+            insideContentsOf: root
+        ))
+    }
+
     @Test("App discovery rejects pseudo and exited process identifiers")
     func testAppDiscoveryPidValidation() {
         #expect(!AppListService.processIsRunning(-1))

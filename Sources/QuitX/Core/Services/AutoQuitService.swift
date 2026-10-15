@@ -13,9 +13,9 @@ final class AutoQuitService {
         guard timer == nil else { return }
 
         let now = Date()
-        for app in NSWorkspace.shared.runningApplications
-        where app.activationPolicy == .regular && QuitService.processIsRunning(app.processIdentifier) {
-            lastActiveTimestamps[app.processIdentifier] = now
+        for (app, pid) in runningApplicationsWithResolvedPids()
+        where app.activationPolicy == .regular {
+            lastActiveTimestamps[pid] = now
         }
 
         NSWorkspace.shared.notificationCenter.addObserver(
@@ -61,8 +61,7 @@ final class AutoQuitService {
 
     @objc private func appDidActivate(_ notification: Notification) {
         guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else { return }
-        let pid = app.processIdentifier
-        guard QuitService.processIsRunning(pid) else { return }
+        guard let pid = resolvedPid(for: app) else { return }
         lastActiveTimestamps[pid] = Date()
     }
 
@@ -87,13 +86,47 @@ final class AutoQuitService {
         return cachedExcludeSet
     }
 
+    private func resolvedPid(
+        for app: NSRunningApplication,
+        pidsByPath: [String: pid_t]? = nil
+    ) -> pid_t? {
+        let index: [String: pid_t]
+        if let pidsByPath {
+            index = pidsByPath
+        } else if app.processIdentifier <= 0 {
+            index = AppListService.pidsByNormalizedPath(AppListService.runningProcessPaths())
+        } else {
+            index = [:]
+        }
+        guard let pid = AppListService.resolvedProcessIdentifier(
+            reportedPid: app.processIdentifier,
+            executablePath: app.executableURL?.path,
+            pidsByNormalizedPath: index
+        ), QuitService.processIsRunning(pid) else { return nil }
+        return pid
+    }
+
+    private func runningApplicationsWithResolvedPids() -> [(NSRunningApplication, pid_t)] {
+        let applications = NSWorkspace.shared.runningApplications.filter { !$0.isTerminated }
+        let needsRecovery = applications.contains {
+            $0.processIdentifier <= 0 && $0.executableURL != nil
+        }
+        let index = needsRecovery
+            ? AppListService.pidsByNormalizedPath(AppListService.runningProcessPaths())
+            : [:]
+        var seen = Set<pid_t>()
+        return applications.compactMap { app in
+            guard let pid = resolvedPid(for: app, pidsByPath: index),
+                  seen.insert(pid).inserted else { return nil }
+            return (app, pid)
+        }
+    }
+
     private func checkInactiveApps() async {
         let config = ConfigStore.shared.config
 
-        let running = NSWorkspace.shared.runningApplications.filter {
-            QuitService.processIsRunning($0.processIdentifier)
-        }
-        let runningPids = Set(running.map(\.processIdentifier))
+        let running = runningApplicationsWithResolvedPids()
+        let runningPids = Set(running.map { $0.1 })
         lastActiveTimestamps = lastActiveTimestamps.filter { runningPids.contains($0.key) }
         quittingPids = quittingPids.intersection(runningPids)
 
@@ -104,14 +137,15 @@ final class AutoQuitService {
         let now = Date()
         let excluded = getExcludedSet(from: config.exclude)
         let protectedMusicApps = config.musicApps.map { $0.lowercased() }
-        let frontmostPid = NSWorkspace.shared.frontmostApplication?.processIdentifier
+        let frontmostPid = NSWorkspace.shared.frontmostApplication.flatMap { frontmost in
+            running.first(where: { $0.0 == frontmost })?.1 ?? resolvedPid(for: frontmost)
+        }
 
         var appsToQuit: [AppInfo] = []
 
-        for app in running {
+        for (app, pid) in running {
             guard app.activationPolicy == .regular else { continue }
 
-            let pid = app.processIdentifier
             if pid == ProcessInfo.processInfo.processIdentifier || pid == frontmostPid {
                 lastActiveTimestamps[pid] = now
                 continue

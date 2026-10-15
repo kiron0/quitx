@@ -61,8 +61,8 @@ final class QuitService {
                 guard !running.isTerminated else { continue }
                 guard let bid = running.bundleIdentifier else { continue }
                 guard bid == bundleId || bid.hasPrefix(prefix) else { continue }
-                guard let url = running.bundleURL?.standardizedFileURL else { continue }
-                guard url.path.hasPrefix(rootURL.path + "/Contents/") else { continue }
+                guard let path = running.executableURL?.path ?? running.bundleURL?.path,
+                      Self.isExecutablePath(path, insideContentsOf: rootURL) else { continue }
                 let pid = running.processIdentifier
                 guard Self.processIsRunning(pid) else { continue }
                 guard !knownPids.contains(pid) else { continue }
@@ -77,8 +77,21 @@ final class QuitService {
         var allSucceeded = true
         var firstError: String?
 
-        var pendingApps: [(app: NSRunningApplication, wasForced: Bool, isHelper: Bool)] = []
-        var pendingRawPids: [(pid: pid_t, wasForced: Bool, isHelper: Bool)] = []
+        var pendingApps: [(pid: pid_t, isHelper: Bool)] = []
+        var pendingRawPids: [(pid: pid_t, isHelper: Bool)] = []
+
+        func targetIsRunning(_ pid: pid_t, isHelper: Bool) -> Bool {
+            guard Self.processIsRunning(pid) else { return false }
+            if isHelper {
+                guard let rootURL, let path = Self.executablePath(pid: pid) else { return false }
+                return Self.isExecutablePath(path, insideContentsOf: rootURL)
+            }
+            if let running = NSRunningApplication(processIdentifier: pid) {
+                return Self.matches(running: running, app: app)
+            }
+            guard let rootURL, let path = Self.executablePath(pid: pid) else { return false }
+            return Self.isExecutablePath(path, insideContentsOf: rootURL)
+        }
 
         func terminatePid(_ pid: pid_t, isHelper: Bool) {
             if let running = NSRunningApplication(processIdentifier: pid) {
@@ -88,38 +101,41 @@ final class QuitService {
                         firstError = firstError ?? "Process identity changed"
                         return
                     }
-                } else if let rootURL {
-                    let runningPath = running.bundleURL?.standardizedFileURL.path ?? ""
-                    guard running.bundleIdentifier == app.bundleId
-                        || runningPath.hasPrefix(rootURL.path + "/Contents/") else {
-                        return
-                    }
+                } else {
+                    guard let rootURL,
+                          let path = running.executableURL?.path ?? running.bundleURL?.path,
+                          Self.isExecutablePath(path, insideContentsOf: rootURL) else { return }
                 }
                 guard Self.processIsRunning(pid) else { return }
                 let accepted = force ? running.forceTerminate() : running.terminate()
                 if accepted {
                     if running.processIdentifier > 0 {
-                        pendingApps.append((running, force, isHelper))
+                        pendingApps.append((pid, isHelper))
                     } else {
-                        pendingRawPids.append((pid, force, isHelper))
+                        pendingRawPids.append((pid, isHelper))
                     }
                 } else {
-                    if force {
-                        Darwin.kill(pid, SIGKILL)
-                    } else {
-                        Darwin.kill(pid, SIGTERM)
+                    if targetIsRunning(pid, isHelper: isHelper) {
+                        if force {
+                            Darwin.kill(pid, SIGKILL)
+                        } else {
+                            Darwin.kill(pid, SIGTERM)
+                        }
                     }
-                    pendingRawPids.append((pid, force, isHelper))
+                    pendingRawPids.append((pid, isHelper))
                 }
             } else if Self.processIsRunning(pid) {
                 if let rootURL, let path = Self.executablePath(pid: pid),
-                   path.hasPrefix(rootURL.path + "/") {
+                   Self.isExecutablePath(path, insideContentsOf: rootURL) {
                     if force {
                         Darwin.kill(pid, SIGKILL)
                     } else {
                         Darwin.kill(pid, SIGTERM)
                     }
-                    pendingRawPids.append((pid, force, isHelper))
+                    pendingRawPids.append((pid, isHelper))
+                } else if !isHelper {
+                    allSucceeded = false
+                    firstError = firstError ?? "Process identity could not be verified"
                 }
             }
         }
@@ -134,8 +150,8 @@ final class QuitService {
             if Task.isCancelled {
                 return QuitResult(app: app, success: false, forced: false, error: "Cancelled")
             }
-            let appsDone = pendingApps.allSatisfy { !Self.processIsRunning($0.app.processIdentifier) }
-            let pidsDone = pendingRawPids.allSatisfy { !Self.processIsRunning($0.pid) }
+            let appsDone = pendingApps.allSatisfy { !targetIsRunning($0.pid, isHelper: $0.isHelper) }
+            let pidsDone = pendingRawPids.allSatisfy { !targetIsRunning($0.pid, isHelper: $0.isHelper) }
             if appsDone && pidsDone { break }
             try? await Task.sleep(nanoseconds: pollNs)
         }
@@ -145,11 +161,11 @@ final class QuitService {
         }
 
         if !force {
-            for entry in pendingApps where Self.processIsRunning(entry.app.processIdentifier) && !entry.isHelper {
+            for entry in pendingApps where targetIsRunning(entry.pid, isHelper: entry.isHelper) && !entry.isHelper {
                 allSucceeded = false
                 firstError = firstError ?? "App did not quit gracefully"
             }
-            for entry in pendingRawPids where Self.processIsRunning(entry.pid) && !entry.isHelper {
+            for entry in pendingRawPids where targetIsRunning(entry.pid, isHelper: entry.isHelper) && !entry.isHelper {
                 allSucceeded = false
                 firstError = firstError ?? "Process did not quit gracefully"
             }
@@ -161,37 +177,39 @@ final class QuitService {
             )
         }
 
-        var forceApps: [(app: NSRunningApplication, isHelper: Bool)] = []
-        for entry in pendingApps where Self.processIsRunning(entry.app.processIdentifier) {
-            _ = entry.app.forceTerminate()
-            Darwin.kill(entry.app.processIdentifier, SIGKILL)
-            forceApps.append((entry.app, entry.isHelper))
+        var forceApps: [(pid: pid_t, isHelper: Bool)] = []
+        for entry in pendingApps where targetIsRunning(entry.pid, isHelper: entry.isHelper) {
+            _ = NSRunningApplication(processIdentifier: entry.pid)?.forceTerminate()
+            if targetIsRunning(entry.pid, isHelper: entry.isHelper) {
+                Darwin.kill(entry.pid, SIGKILL)
+            }
+            forceApps.append((entry.pid, entry.isHelper))
         }
 
         var forceRawPids: [(pid: pid_t, isHelper: Bool)] = []
-        for entry in pendingRawPids where Self.processIsRunning(entry.pid) {
+        for entry in pendingRawPids where targetIsRunning(entry.pid, isHelper: entry.isHelper) {
             Darwin.kill(entry.pid, SIGKILL)
             forceRawPids.append((entry.pid, entry.isHelper))
         }
 
         if !forceApps.isEmpty || !forceRawPids.isEmpty {
             for _ in 0..<20 where !Task.isCancelled {
-                let appsDone = forceApps.allSatisfy { !Self.processIsRunning($0.app.processIdentifier) }
-                let pidsDone = forceRawPids.allSatisfy { !Self.processIsRunning($0.pid) }
+                let appsDone = forceApps.allSatisfy { !targetIsRunning($0.pid, isHelper: $0.isHelper) }
+                let pidsDone = forceRawPids.allSatisfy { !targetIsRunning($0.pid, isHelper: $0.isHelper) }
                 if appsDone && pidsDone { break }
                 try? await Task.sleep(nanoseconds: pollNs)
             }
         }
 
-        for entry in pendingApps where Self.processIsRunning(entry.app.processIdentifier) {
-            Darwin.kill(entry.app.processIdentifier, SIGKILL)
-            if !entry.isHelper && Self.processIsRunning(entry.app.processIdentifier) {
+        for entry in pendingApps where targetIsRunning(entry.pid, isHelper: entry.isHelper) {
+            Darwin.kill(entry.pid, SIGKILL)
+            if !entry.isHelper && targetIsRunning(entry.pid, isHelper: entry.isHelper) {
                 allSucceeded = false
                 firstError = firstError ?? "App did not terminate"
             }
         }
 
-        for entry in pendingRawPids where Self.processIsRunning(entry.pid) {
+        for entry in pendingRawPids where targetIsRunning(entry.pid, isHelper: entry.isHelper) {
             if !entry.isHelper {
                 allSucceeded = false
                 firstError = firstError ?? "Process did not terminate"
@@ -224,6 +242,17 @@ final class QuitService {
         return String(cString: buffer)
     }
 
+    static func isExecutablePath(_ path: String, insideContentsOf rootURL: URL) -> Bool {
+        let candidate = URL(fileURLWithPath: path)
+            .resolvingSymlinksInPath()
+            .standardizedFileURL.path
+        let contents = rootURL
+            .resolvingSymlinksInPath()
+            .standardizedFileURL
+            .appendingPathComponent("Contents", isDirectory: true).path
+        return candidate.hasPrefix(contents + "/")
+    }
+
     static func processIsRunning(_ pid: pid_t) -> Bool {
         guard pid > 0 else { return false }
         errno = 0
@@ -243,25 +272,32 @@ final class QuitService {
     }
 
     static func matches(running: NSRunningApplication, app: AppInfo) -> Bool {
-        if app.isBackground && app.pids.contains(running.processIdentifier) {
-            return true
-        }
-
-        if let expectedBundleId = app.bundleId {
-            if running.bundleIdentifier == expectedBundleId {
-                return true
-            }
-            if let runningBid = running.bundleIdentifier, runningBid.hasPrefix(expectedBundleId + ".") {
-                return true
-            }
-        }
-
         let runningName = running.localizedName
             ?? running.bundleURL?.deletingPathExtension().lastPathComponent
             ?? running.executableURL?.lastPathComponent
+        return identityMatches(
+            expectedBundleId: app.bundleId,
+            expectedName: app.name,
+            runningBundleId: running.bundleIdentifier,
+            runningName: runningName
+        )
+    }
+
+    static func identityMatches(
+        expectedBundleId: String?,
+        expectedName: String,
+        runningBundleId: String?,
+        runningName: String?
+    ) -> Bool {
+        if let expectedBundleId {
+            guard let runningBundleId else { return false }
+            let expected = expectedBundleId.lowercased()
+            let actual = runningBundleId.lowercased()
+            return actual == expected
+        }
         guard let runningName else { return false }
         let cleanRunningName = SystemAppProtection.cleanGroupedName(SystemAppProtection.cleanAppName(runningName))
-        let cleanAppName = SystemAppProtection.cleanGroupedName(SystemAppProtection.cleanAppName(app.name))
+        let cleanAppName = SystemAppProtection.cleanGroupedName(SystemAppProtection.cleanAppName(expectedName))
         return cleanRunningName.caseInsensitiveCompare(cleanAppName) == .orderedSame
     }
 }

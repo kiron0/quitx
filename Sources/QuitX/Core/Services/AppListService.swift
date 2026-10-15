@@ -364,7 +364,7 @@ final class AppListService {
         )
     }
 
-    private static func runningProcessPaths() -> [pid_t: String] {
+    static func runningProcessPaths() -> [pid_t: String] {
         let estimatedCount = max(0, Int(proc_listallpids(nil, 0)))
         guard estimatedCount > 0 else { return [:] }
 

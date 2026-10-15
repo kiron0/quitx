@@ -49,6 +49,7 @@ final class StatsDetailModel: ObservableObject {
     private var timer: Timer?
     private var sampleGeneration = 0
     private var topProcessTask: Task<Void, Never>?
+    private var batteryTask: Task<Void, Never>?
     private var sampleFailureToastShown = false
     private var toastTask: Task<Void, Never>?
     private static let historyLimit = 180
@@ -86,6 +87,8 @@ final class StatsDetailModel: ObservableObject {
         sampleGeneration += 1
         topProcessTask?.cancel()
         topProcessTask = nil
+        batteryTask?.cancel()
+        batteryTask = nil
     }
 
     private func tick() {
@@ -116,9 +119,27 @@ final class StatsDetailModel: ObservableObject {
         swapUsed = swap.used
         swapTotal = swap.total
 
-        battery = ConfigStore.shared.config.batteryMenuBarEnabled
-            ? BatteryDetailSampler.snapshot()
-            : nil
+        if ConfigStore.shared.config.batteryMenuBarEnabled {
+            if batteryTask == nil {
+                batteryTask = Task { [weak self] in
+                    let snapshot = await Task.detached(priority: .utility) {
+                        BatteryDetailSampler.snapshot()
+                    }.value
+                    guard let self else { return }
+                    defer {
+                        if self.sampleGeneration == generation {
+                            self.batteryTask = nil
+                        }
+                    }
+                    guard !Task.isCancelled, self.sampleGeneration == generation else { return }
+                    self.battery = snapshot
+                }
+            }
+        } else {
+            batteryTask?.cancel()
+            batteryTask = nil
+            battery = nil
+        }
 
         appendHistory(&cpuHistory, value: cpu)
         if memTotal > 0 {
