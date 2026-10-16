@@ -9,9 +9,9 @@ final class StatusItemController: NSObject {
     private var statusItem: NSStatusItem
     private var statsStatusItem: NSStatusItem?
     private struct SegmentMetrics {
-        var cpuWidth: CGFloat = 0
+        var cpuWidth: CGFloat? = nil
         var sepWidth: CGFloat = 0
-        var memWidth: CGFloat = 0
+        var memWidth: CGFloat? = nil
         var batWidth: CGFloat? = nil
     }
     private var segmentMetrics = SegmentMetrics()
@@ -386,7 +386,7 @@ final class StatusItemController: NSObject {
 
     func updateMenuBarStats(powerSources: [[String: Any]]? = nil) {
         let cfg = ConfigStore.shared.config
-        guard cfg.showMenuBarStats else {
+        guard cfg.menuBarStatsEnabled else {
             removeStatsItem()
             return
         }
@@ -409,27 +409,27 @@ final class StatusItemController: NSObject {
             ? BatteryDetailSampler.menuBarSnapshot(descriptions: powerSources)
             : nil
 
-        let cpuText = BatterySaver.percentText(cpu)
-        let memText = BatterySaver.compactMemoryText(bytes: memoryUsed, unit: cfg.menuBarMemoryUnit)
+        let cpuText = cfg.menuBarShowCpu ? BatterySaver.percentText(cpu) : "off"
+        let memText = cfg.menuBarShowMemory ? BatterySaver.compactMemoryText(bytes: memoryUsed, unit: cfg.menuBarMemoryUnit) : "off"
         let batteryKey = battery.map { "\($0.percent)-\($0.isCharging)-\($0.isACPower)" } ?? "none"
-        let titleKey = "\(cfg.menuBarStatStyle.rawValue)|\(cpuText)|\(memText)|\(batteryKey)"
+        let titleKey = "\(cfg.menuBarStatStyle.rawValue)|\(cfg.menuBarShowCpu)|\(cfg.menuBarShowMemory)|\(cpuText)|\(memText)|\(batteryKey)"
         if titleKey == lastStatTitleKey {
             return
         }
 
-        let cpuAttr = Self.statSegmentTitle(
+        let cpuAttr: NSAttributedString? = cfg.menuBarShowCpu ? Self.statSegmentTitle(
             symbolNames: ["cpu"],
             fallback: "CPU",
             text: cpuText,
             style: cfg.menuBarStatStyle
-        )
+        ) : nil
 
-        let memAttr = Self.statSegmentTitle(
+        let memAttr: NSAttributedString? = cfg.menuBarShowMemory ? Self.statSegmentTitle(
             symbolNames: ["memorychip", "internaldrive"],
             fallback: "MEM",
             text: memText,
             style: cfg.menuBarStatStyle
-        )
+        ) : nil
 
         let batAttr: NSAttributedString?
         if let battery {
@@ -465,21 +465,33 @@ final class StatusItemController: NSObject {
         )
 
         let fullTitle = NSMutableAttributedString()
-        fullTitle.append(cpuAttr)
-        fullTitle.append(sepAttr)
-        fullTitle.append(memAttr)
+        var didAppend = false
+        if let cpuAttr {
+            fullTitle.append(cpuAttr)
+            didAppend = true
+        }
+        if let memAttr {
+            if didAppend { fullTitle.append(sepAttr) }
+            fullTitle.append(memAttr)
+            didAppend = true
+        }
         if let batAttr {
-            fullTitle.append(sepAttr)
+            if didAppend { fullTitle.append(sepAttr) }
             fullTitle.append(batAttr)
+            didAppend = true
+        }
+        guard didAppend else {
+            removeStatsItem()
+            return
         }
 
         button.attributedTitle = fullTitle
         lastStatTitleKey = titleKey
 
         segmentMetrics = SegmentMetrics(
-            cpuWidth: cpuAttr.size().width,
+            cpuWidth: cpuAttr?.size().width,
             sepWidth: sepAttr.size().width,
-            memWidth: memAttr.size().width,
+            memWidth: memAttr?.size().width,
             batWidth: batAttr?.size().width
         )
     }
@@ -519,38 +531,31 @@ final class StatusItemController: NSObject {
         let contentScreenStartX = buttonScreenRect.minX + titleInsetX
 
         let m = segmentMetrics
-        let cpuStartX = contentScreenStartX
-        let cpuMidX = cpuStartX + m.cpuWidth / 2
-        let cpuEndX = cpuStartX + m.cpuWidth
-
-        let memStartX = cpuEndX + m.sepWidth
-        let memMidX = memStartX + m.memWidth / 2
-        let memEndX = memStartX + m.memWidth
+        var segments: [(mode: StatsDetailModel.Mode, midX: CGFloat, endX: CGFloat)] = []
+        var cursorX = contentScreenStartX
+        if let w = m.cpuWidth {
+            segments.append((.cpu, cursorX + w / 2, cursorX + w))
+            cursorX += w + m.sepWidth
+        }
+        if let w = m.memWidth {
+            segments.append((.memory, cursorX + w / 2, cursorX + w))
+            cursorX += w + m.sepWidth
+        }
+        if let w = m.batWidth {
+            segments.append((.battery, cursorX + w / 2, cursorX + w))
+        }
+        guard let first = segments.first else { return (.cpu, contentScreenStartX) }
+        guard segments.count > 1 else { return (first.mode, first.midX) }
 
         let clickScreenX = NSEvent.mouseLocation.x
-
-        if let batWidth = m.batWidth {
-            let batStartX = memEndX + m.sepWidth
-            let batMidX = batStartX + batWidth / 2
-
-            let cpuMemBoundary = cpuEndX + m.sepWidth / 2
-            let memBatBoundary = memEndX + m.sepWidth / 2
-
-            if clickScreenX < cpuMemBoundary {
-                return (.cpu, cpuMidX)
-            } else if clickScreenX > memBatBoundary {
-                return (.battery, batMidX)
-            } else {
-                return (.memory, memMidX)
-            }
-        } else {
-            let cpuMemBoundary = cpuEndX + m.sepWidth / 2
-            if clickScreenX < cpuMemBoundary {
-                return (.cpu, cpuMidX)
-            } else {
-                return (.memory, memMidX)
+        for index in 0..<(segments.count - 1) {
+            let boundary = segments[index].endX + m.sepWidth / 2
+            if clickScreenX < boundary {
+                return (segments[index].mode, segments[index].midX)
             }
         }
+        guard let last = segments.last else { return (first.mode, first.midX) }
+        return (last.mode, last.midX)
     }
 
     func startMenuBarStats() {
@@ -563,7 +568,7 @@ final class StatusItemController: NSObject {
                 try? await Task.sleep(nanoseconds: interval)
                 guard !Task.isCancelled, let self else { break }
                 let cfg = ConfigStore.shared.config
-                guard cfg.showMenuBarStats else {
+                guard cfg.menuBarStatsEnabled else {
                     self.removeStatsItem()
                     interval = 5_000_000_000
                     continue

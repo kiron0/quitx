@@ -24,6 +24,8 @@ struct QuitXConfig: Codable, Equatable, Sendable {
     var sleepLockEndMinutes: Int = 360
     var sleepLockUse24Hour: Bool = true
     var showMenuBarStats: Bool = false
+    var menuBarShowCpu: Bool = false
+    var menuBarShowMemory: Bool = false
     var batteryMenuBarEnabled: Bool = false
     var menuBarStatStyle: MenuBarStatStyle = .icon
     var menuBarMemoryUnit: MenuBarMemoryUnit = .gb
@@ -39,7 +41,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         case exclude, force, includeFinder, includeTrash, includeBackground, groupBackground
         case defaultSelectAll, neverQuitMusic, musicApps, autoUpdate, confirmQuitAll, confirmIndividualAction, playSounds
         case quitInactiveAfterMinutes, disableQuitTips, sortBy, perAppQuitRules
-        case quitOnSleep, quitOnScreenLock, showMenuBarStats, batteryMenuBarEnabled, menuBarStatStyle, menuBarMemoryUnit
+        case quitOnSleep, quitOnScreenLock, showMenuBarStats, menuBarShowCpu, menuBarShowMemory, batteryMenuBarEnabled, menuBarStatStyle, menuBarMemoryUnit
         case sleepLockStartMinutes, sleepLockEndMinutes, sleepLockUse24Hour
         case hogAlertEnabled, hogCpuThreshold
         case memoryPressureQuitEnabled, memoryPressureThresholdMB, batterySaverEnabled
@@ -70,6 +72,8 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         sleepLockEndMinutes: Int = 360,
         sleepLockUse24Hour: Bool = true,
         showMenuBarStats: Bool = false,
+        menuBarShowCpu: Bool = false,
+        menuBarShowMemory: Bool = false,
         batteryMenuBarEnabled: Bool = false,
         menuBarStatStyle: MenuBarStatStyle = .icon,
         menuBarMemoryUnit: MenuBarMemoryUnit = .gb,
@@ -104,6 +108,8 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         self.sleepLockEndMinutes = min(1439, max(0, sleepLockEndMinutes))
         self.sleepLockUse24Hour = sleepLockUse24Hour
         self.showMenuBarStats = showMenuBarStats
+        self.menuBarShowCpu = menuBarShowCpu
+        self.menuBarShowMemory = menuBarShowMemory
         self.batteryMenuBarEnabled = batteryMenuBarEnabled
         self.menuBarStatStyle = menuBarStatStyle
         self.menuBarMemoryUnit = menuBarMemoryUnit
@@ -142,6 +148,8 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         sleepLockEndMinutes = min(1439, max(0, Self.dec(container, .sleepLockEndMinutes, defaults.sleepLockEndMinutes)))
         sleepLockUse24Hour = Self.dec(container, .sleepLockUse24Hour, defaults.sleepLockUse24Hour)
         showMenuBarStats = Self.dec(container, .showMenuBarStats, defaults.showMenuBarStats)
+        menuBarShowCpu = (try? container.decodeIfPresent(Bool.self, forKey: .menuBarShowCpu)) ?? showMenuBarStats
+        menuBarShowMemory = (try? container.decodeIfPresent(Bool.self, forKey: .menuBarShowMemory)) ?? showMenuBarStats
         batteryMenuBarEnabled = Self.dec(container, .batteryMenuBarEnabled, defaults.batteryMenuBarEnabled)
         menuBarStatStyle = Self.dec(container, .menuBarStatStyle, defaults.menuBarStatStyle)
         menuBarMemoryUnit = Self.dec(container, .menuBarMemoryUnit, defaults.menuBarMemoryUnit)
@@ -160,6 +168,10 @@ struct QuitXConfig: Codable, Equatable, Sendable {
 
     var effectiveHogCpuThreshold: Double {
         max(80, min(100, hogCpuThreshold))
+    }
+
+    var menuBarStatsEnabled: Bool {
+        showMenuBarStats && (menuBarShowCpu || menuBarShowMemory || batteryMenuBarEnabled)
     }
 
     enum MenuBarStatStyle: String, Codable, Equatable, CaseIterable, Sendable {

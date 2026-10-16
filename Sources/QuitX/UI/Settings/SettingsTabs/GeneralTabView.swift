@@ -126,10 +126,13 @@ struct GeneralTabCloneView: View {
             }
 
             row(label: "Menu Bar:") {
-                toggle("Show CPU & memory in menu bar", isOn: Binding(
+                toggle("Show stats in menu bar", isOn: Binding(
                     get: { configStore.config.showMenuBarStats },
                     set: {
                         configStore.config.showMenuBarStats = $0
+                        configStore.config.menuBarShowCpu = $0
+                        configStore.config.menuBarShowMemory = $0
+                        configStore.config.batteryMenuBarEnabled = $0
                         configStore.save()
                         StatusItemController.shared?.updateMenuBarStats()
                     }
@@ -139,18 +142,36 @@ struct GeneralTabCloneView: View {
             }
 
             row(label: "") {
-                toggle("Show battery in menu bar", isOn: Binding(
-                    get: { configStore.config.batteryMenuBarEnabled },
-                    set: {
-                        configStore.config.batteryMenuBarEnabled = $0
-                        configStore.save()
-                        StatusItemController.shared?.updateMenuBarStats()
-                    }
-                ))
+                HStack(spacing: 16) {
+                    toggle("CPU", isOn: Binding(
+                        get: { configStore.config.menuBarShowCpu },
+                        set: {
+                            configStore.config.menuBarShowCpu = $0
+                            configStore.save()
+                            StatusItemController.shared?.updateMenuBarStats()
+                        }
+                    ))
+                    toggle("Memory", isOn: Binding(
+                        get: { configStore.config.menuBarShowMemory },
+                        set: {
+                            configStore.config.menuBarShowMemory = $0
+                            configStore.save()
+                            StatusItemController.shared?.updateMenuBarStats()
+                        }
+                    ))
+                    toggle("Battery", isOn: Binding(
+                        get: { configStore.config.batteryMenuBarEnabled },
+                        set: {
+                            configStore.config.batteryMenuBarEnabled = $0
+                            configStore.save()
+                            StatusItemController.shared?.updateMenuBarStats()
+                        }
+                    ))
+                }
                 .disabled(!configStore.config.showMenuBarStats)
                 .opacity(configStore.config.showMenuBarStats ? 1.0 : 0.42)
             } help: {
-                HelpPopoverButton(text: "Battery status on display so you know the exact millisecond your charger falls out and doom approaches. 🔋⚡")
+                HelpPopoverButton(text: "Pick which stats stay visible. Master switch turns all on or off.")
             }
 
             row(label: "") {
@@ -173,8 +194,8 @@ struct GeneralTabCloneView: View {
                         }
                     }
                 }
-                .disabled(!configStore.config.showMenuBarStats)
-                .opacity(configStore.config.showMenuBarStats ? 1.0 : 0.42)
+                .disabled(!configStore.config.menuBarStatsEnabled)
+                .opacity(configStore.config.menuBarStatsEnabled ? 1.0 : 0.42)
             }
 
             row(label: "") {
@@ -197,8 +218,8 @@ struct GeneralTabCloneView: View {
                         }
                     }
                 }
-                .disabled(!configStore.config.showMenuBarStats)
-                .opacity(configStore.config.showMenuBarStats ? 1.0 : 0.42)
+                .disabled(!configStore.config.menuBarStatsEnabled)
+                .opacity(configStore.config.menuBarStatsEnabled ? 1.0 : 0.42)
             }
 
             if #available(macOS 26.0, *) {
