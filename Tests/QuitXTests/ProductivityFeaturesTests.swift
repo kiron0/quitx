@@ -385,6 +385,61 @@ struct ProductivityFeaturesTests {
         #expect(decoded.menuBarStatStyle == .text)
     }
 
+    @Test("Menu bar stats enabled computed property gates by master and individual toggles")
+    func testMenuBarStatsTogglesAndEnabled() throws {
+        var cfg = QuitXConfig.default
+        #expect(!cfg.showMenuBarStats)
+        #expect(!cfg.menuBarStatsEnabled)
+
+        cfg.showMenuBarStats = true
+        cfg.menuBarShowCpu = false
+        cfg.menuBarShowMemory = false
+        cfg.batteryMenuBarEnabled = false
+        #expect(!cfg.menuBarStatsEnabled)
+
+        cfg.menuBarShowCpu = true
+        #expect(cfg.menuBarStatsEnabled)
+
+        cfg.menuBarShowCpu = false
+        cfg.menuBarShowMemory = true
+        #expect(cfg.menuBarStatsEnabled)
+
+        cfg.menuBarShowMemory = false
+        cfg.batteryMenuBarEnabled = true
+        #expect(cfg.menuBarStatsEnabled)
+
+        cfg.showMenuBarStats = false
+        cfg.batteryMenuBarEnabled = true
+        cfg.menuBarShowCpu = true
+        cfg.menuBarShowMemory = true
+        #expect(!cfg.menuBarStatsEnabled)
+    }
+
+    @Test("Legacy config decoding falls back to showMenuBarStats for granular toggles")
+    func testMenuBarLegacyConfigDecoding() throws {
+        let legacyJsonEnabled = """
+        {
+            "showMenuBarStats": true
+        }
+        """.data(using: .utf8)!
+        let decodedEnabled = try JSONDecoder().decode(QuitXConfig.self, from: legacyJsonEnabled)
+        #expect(decodedEnabled.showMenuBarStats)
+        #expect(decodedEnabled.menuBarShowCpu)
+        #expect(decodedEnabled.menuBarShowMemory)
+        #expect(decodedEnabled.menuBarStatsEnabled)
+
+        let legacyJsonDisabled = """
+        {
+            "showMenuBarStats": false
+        }
+        """.data(using: .utf8)!
+        let decodedDisabled = try JSONDecoder().decode(QuitXConfig.self, from: legacyJsonDisabled)
+        #expect(!decodedDisabled.showMenuBarStats)
+        #expect(!decodedDisabled.menuBarShowCpu)
+        #expect(!decodedDisabled.menuBarShowMemory)
+        #expect(!decodedDisabled.menuBarStatsEnabled)
+    }
+
     @Test("Sleep lock range gates by time window")
     func testSleepLockRange() {
         #expect(SleepLockRange.active(nowMinutes: 600, startMinutes: 540, endMinutes: 1020))
@@ -462,6 +517,8 @@ struct ProductivityFeaturesTests {
         cfg.sleepLockEndMinutes = 420
         cfg.sleepLockUse24Hour = false
         cfg.showMenuBarStats = true
+        cfg.menuBarShowCpu = true
+        cfg.menuBarShowMemory = true
         cfg.menuBarMemoryUnit = .percentage
         cfg.hogAlertEnabled = true
         cfg.hogCpuThreshold = 95
@@ -497,6 +554,8 @@ struct ProductivityFeaturesTests {
         #expect(decoded.sleepLockEndMinutes == cfg.sleepLockEndMinutes)
         #expect(decoded.sleepLockUse24Hour == cfg.sleepLockUse24Hour)
         #expect(decoded.showMenuBarStats == cfg.showMenuBarStats)
+        #expect(decoded.menuBarShowCpu == cfg.menuBarShowCpu)
+        #expect(decoded.menuBarShowMemory == cfg.menuBarShowMemory)
         #expect(decoded.menuBarStatStyle == cfg.menuBarStatStyle)
         #expect(decoded.menuBarMemoryUnit == cfg.menuBarMemoryUnit)
         #expect(decoded.hogAlertEnabled == cfg.hogAlertEnabled)
