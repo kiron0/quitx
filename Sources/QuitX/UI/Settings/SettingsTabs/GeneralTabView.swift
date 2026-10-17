@@ -147,6 +147,7 @@ struct GeneralTabCloneView: View {
                         get: { configStore.config.menuBarShowCpu },
                         set: {
                             configStore.config.menuBarShowCpu = $0
+                            configStore.config.showMenuBarStats = configStore.config.menuBarStatsEnabled
                             configStore.save()
                             StatusItemController.shared?.updateMenuBarStats()
                         }
@@ -155,6 +156,7 @@ struct GeneralTabCloneView: View {
                         get: { configStore.config.menuBarShowMemory },
                         set: {
                             configStore.config.menuBarShowMemory = $0
+                            configStore.config.showMenuBarStats = configStore.config.menuBarStatsEnabled
                             configStore.save()
                             StatusItemController.shared?.updateMenuBarStats()
                         }
@@ -163,6 +165,7 @@ struct GeneralTabCloneView: View {
                         get: { configStore.config.batteryMenuBarEnabled },
                         set: {
                             configStore.config.batteryMenuBarEnabled = $0
+                            configStore.config.showMenuBarStats = configStore.config.menuBarStatsEnabled
                             configStore.save()
                             StatusItemController.shared?.updateMenuBarStats()
                         }
