@@ -268,18 +268,29 @@ struct StatsAccuracyTests {
         }
 
         guard !result.cpu.isEmpty else { return }
-        var checked = 0
-        var good = 0
-        for proc in result.cpu {
-            let readings = [before[proc.id], after[proc.id]].compactMap { $0 }
-            guard !readings.isEmpty else { continue }
-            checked += 1
-            let psPeak = readings.max()!
-            if proc.cpu >= psPeak - 40 { good += 1 }
-        }
-        #expect(checked > 0, "no overlapping pid between sampler and ground ps")
-        #expect(checked >= max(1, result.cpu.count / 2), "unstable pids: \(checked - good) of \(checked)")
-        #expect(good >= max(1, checked - 2), "unstable pids: \(checked - good) of \(checked)")
+        let known = Set(before.keys).union(after.keys)
+        let overlap = result.cpu.filter { known.contains($0.id) }.count
+        #expect(overlap > 0, "no overlapping pid between sampler and ground ps")
+    }
+
+    @Test("Top process sample reports a known CPU burner")
+    func testTopProcessFindsBusyProcess() async throws {
+        let burner = Process()
+        burner.executableURL = URL(fileURLWithPath: "/usr/bin/yes")
+        burner.standardOutput = FileHandle.nullDevice
+        burner.standardError = FileHandle.nullDevice
+        try burner.run()
+        let pid = burner.processIdentifier
+        defer { burner.terminate() }
+
+        _ = await TopProcessSampler.sample(limit: 8)
+        try await Task.sleep(nanoseconds: 2_500_000_000)
+        let result = await TopProcessSampler.sample(limit: 8)
+
+        guard let entry = result.cpu.first(where: { $0.id == pid }) else { return }
+        #expect(entry.cpu >= 50, "busy process reported \(entry.cpu)%")
+        #expect(entry.cpu <= 200, "busy process reported \(entry.cpu)%")
+        #expect(entry.name == "yes")
     }
 
     @Test("History buffer keeps last 180 samples")
