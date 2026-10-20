@@ -33,16 +33,16 @@ final class ConfigStore: ObservableObject {
             config = decoded
             normalizedExcludedSet = Set(decoded.exclude.map { $0.lowercased() })
         } catch {
-            UserDefaults.standard.set(data, forKey: Self.userDefaultsKey + ".backup")
             NSLog("QuitX: config decode failed, raw blob backed up: \(error)")
+            UserDefaults.standard.set(data, forKey: Self.userDefaultsKey + ".backup")
+            UserDefaults.standard.removeObject(forKey: Self.userDefaultsKey)
             normalizedExcludedSet = Set(config.exclude.map { $0.lowercased() })
         }
         normalizeThresholds()
     }
 
     private func normalizeThresholds() {
-        let systemMaxGB = max(1, Int(ProcessInfo.processInfo.physicalMemory / 1_073_741_824))
-        let minMemoryGB = max(1, min(systemMaxGB, Int((Double(systemMaxGB) * 0.8).rounded())))
+        let systemMaxMB = max(128, Int(ProcessInfo.processInfo.physicalMemory / 1_048_576))
         var mutated = false
         if config.hogCpuThreshold < 80 {
             config.hogCpuThreshold = 80
@@ -52,12 +52,12 @@ final class ConfigStore: ObservableObject {
             config.hogCpuThreshold = 100
             mutated = true
         }
-        if (config.memoryPressureThresholdMB + 512) / 1024 < minMemoryGB {
-            config.memoryPressureThresholdMB = minMemoryGB * 1024
+        if config.memoryPressureThresholdMB < 128 {
+            config.memoryPressureThresholdMB = 128
             mutated = true
         }
-        if config.memoryPressureThresholdMB > systemMaxGB * 1024 {
-            config.memoryPressureThresholdMB = systemMaxGB * 1024
+        if config.memoryPressureThresholdMB > systemMaxMB {
+            config.memoryPressureThresholdMB = systemMaxMB
             mutated = true
         }
         var seen = Set<String>()

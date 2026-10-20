@@ -39,6 +39,7 @@ enum BatteryDetailSampler {
     }
 
     private static let healthState = OSAllocatedUnfairLock(initialState: HealthCacheState())
+    private static let healthLoadQueue = DispatchQueue(label: "quitx.battery.health")
 
     static func snapshot(
         descriptions: [[String: Any]]? = nil,
@@ -155,18 +156,28 @@ enum BatteryDetailSampler {
         let state = healthState.withLock { $0 }
 
         guard let loadedAt = state.loadedAt else {
-            let value = loadSystemHealthPercent()
-            healthState.withLock {
-                $0.percent = value
-                $0.loadedAt = Date()
-            }
-            return value
+            return loadHealthPercent()
         }
         if Date().timeIntervalSince(loadedAt) < 60 {
             return state.percent
         }
         scheduleHealthRefresh()
         return state.percent
+    }
+
+    private static func loadHealthPercent() -> Int? {
+        healthLoadQueue.sync {
+            let state = healthState.withLock { $0 }
+            if let loadedAt = state.loadedAt, Date().timeIntervalSince(loadedAt) < 60 {
+                return state.percent
+            }
+            let value = loadSystemHealthPercent()
+            healthState.withLock { state in
+                state.percent = value
+                state.loadedAt = Date()
+            }
+            return value
+        }
     }
 
     private static func scheduleHealthRefresh() {
@@ -177,7 +188,7 @@ enum BatteryDetailSampler {
         }
         guard shouldStart else { return }
         Task.detached(priority: .utility) {
-            let value = loadSystemHealthPercent()
+            let value = healthLoadQueue.sync { loadSystemHealthPercent() }
             healthState.withLock { state in
                 state.percent = value
                 state.loadedAt = Date()

@@ -12,12 +12,14 @@ final class StatusItemController: NSObject {
         var cpuWidth: CGFloat? = nil
         var sepWidth: CGFloat = 0
         var memWidth: CGFloat? = nil
+        var gpuWidth: CGFloat? = nil
         var batWidth: CGFloat? = nil
     }
     private var segmentMetrics = SegmentMetrics()
     private var window: ArrowPopoverWindow?
     private var hostingController: NSHostingController<AnyView>?
     private var globalEventMonitor: Any?
+    private var resignAppObserver: NSObjectProtocol?
     private var localEventMonitor: Any?
     private var refreshTask: Task<Void, Never>?
     private var liveMonitoringTask: Task<Void, Never>?
@@ -54,6 +56,9 @@ final class StatusItemController: NSObject {
         workspaceObservers.forEach { center.removeObserver($0) }
         if let resignKeyObserver {
             NotificationCenter.default.removeObserver(resignKeyObserver)
+        }
+        if let resignAppObserver {
+            NotificationCenter.default.removeObserver(resignAppObserver)
         }
         if let g = globalEventMonitor { NSEvent.removeMonitor(g) }
         if let l = localEventMonitor { NSEvent.removeMonitor(l) }
@@ -408,11 +413,14 @@ final class StatusItemController: NSObject {
         let battery = cfg.batteryMenuBarEnabled
             ? BatteryDetailSampler.menuBarSnapshot(descriptions: powerSources)
             : nil
+        let gpu = cfg.menuBarShowGpu ? GpuUsageService.snapshot() : nil
 
         let cpuText = cfg.menuBarShowCpu ? BatterySaver.percentText(cpu) : "off"
         let memText = cfg.menuBarShowMemory ? BatterySaver.compactMemoryText(bytes: memoryUsed, unit: cfg.menuBarMemoryUnit) : "off"
+        let gpuText = gpu.map { BatterySaver.percentText($0.deviceUtilization) } ?? "off"
         let batteryKey = battery.map { "\($0.percent)-\($0.isCharging)-\($0.isACPower)" } ?? "none"
-        let titleKey = "\(cfg.menuBarStatStyle.rawValue)|\(cfg.menuBarShowCpu)|\(cfg.menuBarShowMemory)|\(cpuText)|\(memText)|\(batteryKey)"
+        let gpuKey = gpu.map { "\(Int($0.deviceUtilization.rounded()))-\($0.memoryUsedBytes)" } ?? "none"
+        let titleKey = "\(cfg.menuBarStatStyle.rawValue)|\(cfg.menuBarShowCpu)|\(cfg.menuBarShowMemory)|\(cfg.menuBarShowGpu)|\(cpuText)|\(memText)|\(gpuKey)|\(batteryKey)"
         if titleKey == lastStatTitleKey {
             return
         }
@@ -430,6 +438,15 @@ final class StatusItemController: NSObject {
             text: memText,
             style: cfg.menuBarStatStyle
         ) : nil
+
+        let gpuAttr: NSAttributedString? = gpu.map { _ in
+            Self.statSegmentTitle(
+                symbolNames: ["cube.transparent", "square.grid.2x2"],
+                fallback: "GPU",
+                text: gpuText,
+                style: cfg.menuBarStatStyle
+            )
+        }
 
         let batAttr: NSAttributedString?
         if let battery {
@@ -470,6 +487,11 @@ final class StatusItemController: NSObject {
             fullTitle.append(cpuAttr)
             didAppend = true
         }
+        if let gpuAttr {
+            if didAppend { fullTitle.append(sepAttr) }
+            fullTitle.append(gpuAttr)
+            didAppend = true
+        }
         if let memAttr {
             if didAppend { fullTitle.append(sepAttr) }
             fullTitle.append(memAttr)
@@ -492,6 +514,7 @@ final class StatusItemController: NSObject {
             cpuWidth: cpuAttr?.size().width,
             sepWidth: sepAttr.size().width,
             memWidth: memAttr?.size().width,
+            gpuWidth: gpuAttr?.size().width,
             batWidth: batAttr?.size().width
         )
     }
@@ -535,6 +558,10 @@ final class StatusItemController: NSObject {
         var cursorX = contentScreenStartX
         if let w = m.cpuWidth {
             segments.append((.cpu, cursorX + w / 2, cursorX + w))
+            cursorX += w + m.sepWidth
+        }
+        if let w = m.gpuWidth {
+            segments.append((.gpu, cursorX + w / 2, cursorX + w))
             cursorX += w + m.sepWidth
         }
         if let w = m.memWidth {
@@ -732,6 +759,17 @@ final class StatusItemController: NSObject {
     }
 
     private func installOutsideClickMonitor() {
+        if resignAppObserver == nil {
+            resignAppObserver = NotificationCenter.default.addObserver(
+                forName: NSApplication.didResignActiveNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in
+                    self?.closePopover()
+                }
+            }
+        }
         guard globalEventMonitor == nil else { return }
         globalEventMonitor = NSEvent.addGlobalMonitorForEvents(
             matching: [.leftMouseDown, .rightMouseDown]
@@ -763,6 +801,10 @@ final class StatusItemController: NSObject {
         if let monitor = globalEventMonitor {
             NSEvent.removeMonitor(monitor)
             globalEventMonitor = nil
+        }
+        if let observer = resignAppObserver {
+            NotificationCenter.default.removeObserver(observer)
+            resignAppObserver = nil
         }
     }
 }

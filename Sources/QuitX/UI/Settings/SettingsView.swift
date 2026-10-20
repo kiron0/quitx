@@ -64,6 +64,7 @@ enum SettingsTab: String, CaseIterable {
     }
 }
 
+@MainActor
 final class HelpPopoverState: NSObject, ObservableObject {
     private static var activeStates = NSHashTable<HelpPopoverState>.weakObjects()
 
@@ -82,6 +83,7 @@ final class HelpPopoverState: NSObject, ObservableObject {
     override init() {
         super.init()
         dismissObserver = NotificationCenter.default.publisher(for: QuitXConstants.Notifications.dismissSettingsTooltips)
+            .receive(on: RunLoop.main)
             .sink { [weak self] notification in
                 guard let self else { return }
                 if let obj = notification.object as? NSObject, obj === self { return }
@@ -92,7 +94,18 @@ final class HelpPopoverState: NSObject, ObservableObject {
     deinit {
         if let localMonitor { NSEvent.removeMonitor(localMonitor) }
         if let globalMonitor { NSEvent.removeMonitor(globalMonitor) }
-        window?.orderOut(nil)
+        Self.orderOut(window)
+    }
+
+    nonisolated private static func orderOut(_ window: ArrowPopoverWindow?) {
+        guard let window else { return }
+        if Thread.isMainThread {
+            MainActor.assumeIsolated { window.orderOut(nil) }
+        } else {
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated { window.orderOut(nil) }
+            }
+        }
     }
 
     func toggle(text: String) {
@@ -169,7 +182,7 @@ final class HelpPopoverState: NSObject, ObservableObject {
             return onAnchor ? nil : event
         }
         globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown]) { [weak self] _ in
-            Task { @MainActor in self?.close() }
+            self?.close()
         }
 
         NSApp.activate(ignoringOtherApps: true)

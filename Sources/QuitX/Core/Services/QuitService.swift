@@ -25,14 +25,18 @@ final class QuitService {
 
         if app.name.lowercased() == "trash" || app.bundleId == QuitXConstants.SystemBundleIds.trash {
             let script = """
-            ignoring application responses
-                tell application "Finder"
-                    try
-                        set warns before emptying to false
-                        empty the trash
-                    end try
-                end tell
-            end ignoring
+            with timeout of 15 seconds
+                ignoring application responses
+                    tell application "Finder"
+                        try
+                            set previousWarn to warns before emptying
+                            set warns before emptying to false
+                            empty the trash
+                            set warns before emptying to previousWarn
+                        end try
+                    end tell
+                end ignoring
+            end timeout
             """
             return await Self.runAppleScript(script, app: app, label: "Trash")
         }
@@ -261,14 +265,14 @@ final class QuitService {
     }
 
     private static func runAppleScript(_ source: String, app: AppInfo, label: String) async -> QuitResult {
-        await MainActor.run {
+        await Task.detached(priority: .userInitiated) {
             var error: NSDictionary?
             guard let appleScript = NSAppleScript(source: source) else {
                 return QuitResult(app: app, success: false, forced: false, error: "Could not create \(label) AppleScript")
             }
             appleScript.executeAndReturnError(&error)
             return QuitResult(app: app, success: error == nil, forced: false, error: error?.description)
-        }
+        }.value
     }
 
     static func matches(running: NSRunningApplication, app: AppInfo) -> Bool {

@@ -77,7 +77,7 @@ struct MainPopoverView: View {
             if vm.showConfirmQuitAll {
                 QuitConfirmationOverlay(
                     count: vm.confirmationTargetCount,
-                    isAll: vm.confirmationTargetsAreAllVisible,
+                    isAll: vm.confirmationTargetsAreEverything,
                     isForced: vm.isConfirmQuitAllForced,
                     onConfirm: {
                         vm.confirmQuitAllAction()
@@ -138,8 +138,8 @@ struct MainPopoverView: View {
 
     private var quitAllButton: some View {
         let isForced = vm.isOptionKeyPressed ? (configStore.config.force != .force) : (configStore.config.force == .force)
-        let count = vm.selectedVisibleCount
-        let isAll = vm.isAllSelected
+        let count = vm.selectedTotalCount
+        let isAll = vm.isEverythingSelected
         let title: String
         if isForced {
             title = isAll ? "Force Quit All" : "Force Quit Selected"
@@ -158,7 +158,7 @@ struct MainPopoverView: View {
             }
 
             if shouldConfirm {
-                if count == 1, let singleApp = vm.filteredApps.first(where: { vm.selected.contains($0.id) }) ?? vm.apps.first(where: { vm.selected.contains($0.id) }) {
+                if count == 1, let singleApp = vm.apps.first(where: { vm.selected.contains($0.id) }) ?? vm.filteredApps.first(where: { vm.selected.contains($0.id) }) {
                     withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                         vm.pendingIndividualAction = .quit(app: singleApp, force: isForced)
                     }

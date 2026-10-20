@@ -70,7 +70,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDeleg
             if let tab = tab {
                 switchToTab(tab)
             }
-            if let screen = WindowPositioner.targetScreen {
+            if let screen = WindowPositioner.targetScreen, !win.frame.intersects(screen.visibleFrame) {
                 let targetFrame = targetFrameFor(win, tab: activeTab, screen: screen)
                 win.setFrame(targetFrame, display: true)
             }

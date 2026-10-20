@@ -22,10 +22,8 @@ final class AppListViewModel: ObservableObject {
     @Published var showBackgroundApps: Bool {
         didSet {
             guard oldValue != showBackgroundApps else { return }
-            if configStore.config.includeBackground != showBackgroundApps {
-                configStore.config.includeBackground = showBackgroundApps
-                configStore.save()
-            }
+            configStore.config.includeBackground = showBackgroundApps
+            configStore.save()
             updateFilteredApps()
             Task { [weak self] in
                 await self?.refresh()
@@ -35,8 +33,10 @@ final class AppListViewModel: ObservableObject {
     @Published private(set) var filteredApps: [AppInfo] = []
     private(set) var visibleIds: Set<String> = []
     @Published private(set) var isAllSelected: Bool = false
+    @Published private(set) var isEverythingSelected: Bool = false
     @Published private(set) var isPartiallySelected: Bool = false
     @Published private(set) var selectedVisibleCount: Int = 0
+    @Published private(set) var selectedTotalCount: Int = 0
     @Published var isOptionKeyPressed: Bool = false
     private var resistantPids = [String: pid_t]()
 
@@ -97,10 +97,14 @@ final class AppListViewModel: ObservableObject {
     @Published var isConfirmQuitAllForced: Bool = false
     private var pendingQuitAllTargets: [AppInfo]?
     var confirmationTargetCount: Int {
-        pendingQuitAllTargets?.count ?? selectedVisibleCount
+        pendingQuitAllTargets?.count ?? selectedTotalCount
     }
-    var confirmationTargetsAreAllVisible: Bool {
-        pendingQuitAllTargets == nil && isAllSelected
+    var confirmationTargetsAreEverything: Bool {
+        if let targets = pendingQuitAllTargets {
+            let targetIds = Set(targets.map(\.id))
+            return !targetIds.isEmpty && targetIds == appIdSet
+        }
+        return isEverythingSelected
     }
     @Published var pendingIndividualAction: IndividualAction? = nil {
         didSet {
@@ -117,7 +121,7 @@ final class AppListViewModel: ObservableObject {
         showConfirmQuitAll = false
         let force = isConfirmQuitAllForced
         isConfirmQuitAllForced = false
-        let targets = pendingQuitAllTargets ?? filteredApps.filter { selected.contains($0.id) }
+        let targets = pendingQuitAllTargets ?? apps.filter { selected.contains($0.id) }
         pendingQuitAllTargets = nil
         Task {
             await performQuit(targets: targets, force: force)
@@ -186,6 +190,10 @@ final class AppListViewModel: ObservableObject {
     private var toastTask: Task<Void, Never>?
     private var scanGeneration = 0
     private var liveStatsGeneration = 0
+    private var scanInFlightConfig: QuitXConfig?
+    private var lastScannedConfig: QuitXConfig?
+    private var lastScanCompletedAt: Date = .distantPast
+    private static let scanCoalesceWindow: TimeInterval = 0.6
     private(set) var lastRefreshDate: Date = .distantPast
     private var lastHogRescueDate: Date = .distantPast
 
@@ -249,6 +257,9 @@ final class AppListViewModel: ObservableObject {
         selectedVisibleCount = intersectionCount
         isAllSelected = !visibleIds.isEmpty && intersectionCount == visibleIds.count
         isPartiallySelected = !visibleIds.isEmpty && intersectionCount > 0 && intersectionCount < visibleIds.count
+        let totalCount = selected.intersection(appIdSet).count
+        selectedTotalCount = totalCount
+        isEverythingSelected = !appIdSet.isEmpty && totalCount == appIdSet.count
     }
 
     var hasPendingOperations: Bool {
@@ -267,7 +278,7 @@ final class AppListViewModel: ObservableObject {
         hasInitializedSelection = true
         lastConfigDefaultSelectAll = configStore.config.defaultSelectAll
         if configStore.config.defaultSelectAll {
-            selected = visibleIds
+            selected = appIdSet
         } else {
             selected = []
         }
@@ -293,16 +304,29 @@ final class AppListViewModel: ObservableObject {
         return cfg
     }
 
-    func refresh() async {
+    func refresh(force: Bool = false) async {
+        let cfg = activeScanConfig
+        if !force {
+            if scanInFlightConfig == cfg { return }
+            if lastScannedConfig == cfg,
+               Date().timeIntervalSince(lastScanCompletedAt) < Self.scanCoalesceWindow {
+                return
+            }
+        }
+        scanInFlightConfig = cfg
         scanGeneration += 1
         let generation = scanGeneration
         isLoading = true
         defer {
-            if generation == scanGeneration { isLoading = false }
+            if generation == scanGeneration {
+                isLoading = false
+                scanInFlightConfig = nil
+                lastScannedConfig = cfg
+                lastScanCompletedAt = Date()
+            }
         }
         let selectedBeforeRefresh = selected
-        let selectedAllBeforeRefresh = isAllSelected
-        let cfg = activeScanConfig
+        let everythingSelectedBeforeRefresh = isEverythingSelected
         let fetched = await AppListService.shared.fetchApps(config: cfg)
         guard !Task.isCancelled, generation == scanGeneration else { return }
         let flagged = applyResistantFlags(fetched)
@@ -316,13 +340,13 @@ final class AppListViewModel: ObservableObject {
 
         let newSelection: Set<String>
         if !hasInitializedSelection || configSettingChanged {
-            newSelection = cfg.defaultSelectAll ? visibleIds : []
+            newSelection = cfg.defaultSelectAll ? appIdSet : []
             hasInitializedSelection = true
         } else if selected != selectedBeforeRefresh {
 
             newSelection = selected.intersection(appIdSet)
-        } else if selectedAllBeforeRefresh {
-            newSelection = visibleIds
+        } else if everythingSelectedBeforeRefresh {
+            newSelection = appIdSet
         } else {
             newSelection = selected.intersection(appIdSet)
         }
@@ -336,7 +360,7 @@ final class AppListViewModel: ObservableObject {
         liveStatsGeneration += 1
         let generation = liveStatsGeneration
         let selectedBeforeRefresh = selected
-        let selectedAllBeforeRefresh = isAllSelected
+        let everythingSelectedBeforeRefresh = isEverythingSelected
         let cfg = activeScanConfig
         let usages = await Task.detached(priority: .userInitiated) {
             AppListService.fetchCpuUsages()
@@ -355,6 +379,21 @@ final class AppListViewModel: ObservableObject {
         let updated = await AppListService.shared.fetchLiveStats(currentApps: apps, config: cfg, hogPids: hogPids, cpuUsages: usages)
         guard !Task.isCancelled, !isLoading, generation == liveStatsGeneration else { return }
         let flagged = applyResistantFlags(updated)
+        if apps != flagged {
+            apps = flagged
+        }
+        let newSelection: Set<String>
+        if selected != selectedBeforeRefresh {
+
+            newSelection = selected.intersection(appIdSet)
+        } else if everythingSelectedBeforeRefresh {
+            newSelection = appIdSet
+        } else {
+            newSelection = selected.intersection(appIdSet)
+        }
+        if selected != newSelection {
+            selected = newSelection
+        }
         if cfg.hogAlertEnabled {
             let sysCpu = SystemUsage.cpuPercent(consumer: "popover")
             if HogMonitor.shared.popoverRescueEligible(
@@ -374,30 +413,14 @@ final class AppListViewModel: ObservableObject {
                         targets: rescueTargets,
                         reason: .cpu(value: sysCpu, limit: cfg.effectiveHogCpuThreshold)
                     )
-                    return
                 }
             }
-        }
-        if apps != flagged {
-            apps = flagged
-        }
-        let newSelection: Set<String>
-        if selected != selectedBeforeRefresh {
-
-            newSelection = selected.intersection(appIdSet)
-        } else if selectedAllBeforeRefresh {
-            newSelection = visibleIds
-        } else {
-            newSelection = selected.intersection(appIdSet)
-        }
-        if selected != newSelection {
-            selected = newSelection
         }
     }
 
     func quitAllFromShortcut(force: Bool) async {
         guard !hasPendingOperations else { return }
-        await refresh()
+        await refresh(force: true)
 
         let targets = apps
         guard !targets.isEmpty else { return }
@@ -425,7 +448,7 @@ final class AppListViewModel: ObservableObject {
             selected.remove(app.id)
         }
         lastQuitCount = succeeded ? 1 : 0
-        await refresh()
+        await refresh(force: true)
         if succeeded {
             triggerToast(message: "\(app.name) quit", isError: false)
         } else if !force {
@@ -443,7 +466,7 @@ final class AppListViewModel: ObservableObject {
     }
 
     func quitAll(force: Bool) async {
-        let targets = filteredApps.filter { selected.contains($0.id) }
+        let targets = apps.filter { selected.contains($0.id) }
         guard !targets.isEmpty else { return }
         await performQuit(targets: targets, force: force)
     }
@@ -475,7 +498,7 @@ final class AppListViewModel: ObservableObject {
         guard RescueConsentController.shared.canPrompt else { return }
         guard Date().timeIntervalSince(lastHogRescueDate) >= 5 else { return }
         if Date().timeIntervalSince(lastRefreshDate) > 2.0 {
-            await refresh()
+            await refresh(force: true)
         }
         let cfg = ConfigStore.shared.config
         let targets = InactiveRescueTargets.select(
@@ -511,7 +534,7 @@ final class AppListViewModel: ObservableObject {
         let failureCount = targets.count - successfulIds.count
         lastQuitCount = successfulIds.count
         selected.subtract(successfulIds)
-        await refresh()
+        await refresh(force: true)
         randomizeQuote()
         if failureCount == 0 {
             let noun = successfulIds.count == 1 ? "app" : "apps"
@@ -541,7 +564,7 @@ final class AppListViewModel: ObservableObject {
         defer { pendingAppIds.remove(app.id) }
 
         let succeeded = await RestartService.shared.restart(app: app)
-        await refresh()
+        await refresh(force: true)
         if !succeeded {
             triggerToast(message: "Couldn’t restart \(app.name). Try force quit.", isError: true)
         }

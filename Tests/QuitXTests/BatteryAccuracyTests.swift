@@ -210,9 +210,17 @@ struct BatteryAccuracyTests {
         } else {
             return
         }
-        let snapshot = try #require(BatteryDetailSampler.snapshot())
+        let smart: [String: Any] = [
+            "BatteryData": [
+                "DesignCapacity": design,
+                "NominalChargeCapacity": nominal ?? 0,
+                "FullChargeCapacity": fullCharge ?? 0
+            ]
+        ]
+        let batteryData = smart["BatteryData"] as? [String: Any]
+        let blend = try #require(BatteryDetailSampler.healthPercent(smart: smart, batteryData: batteryData))
         let expected = Int((current / Double(design) * 100).rounded())
-        #expect(abs(snapshot.healthPercent! - expected) <= 1)
+        #expect(abs(blend - expected) <= 1)
     }
 
     @Test("Health percent blends FullCharge and Nominal like System Information")

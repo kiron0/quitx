@@ -7,12 +7,14 @@ final class StatsDetailModel: ObservableObject {
     enum Mode: String, CaseIterable {
         case cpu = "CPU"
         case memory = "Memory"
+        case gpu = "GPU"
         case battery = "Battery"
     }
 
     @Published var mode: Mode = .cpu
     @Published var arrowX: CGFloat? = nil
     @Published var contentHeight: CGFloat = 380
+    @Published var maxContentHeight: CGFloat = 640
 
     @Published var cpu: Double = 0
     @Published var systemPct: Double = 0
@@ -28,6 +30,8 @@ final class StatsDetailModel: ObservableObject {
     @Published var cpuHistory: [Double] = []
     @Published var memHistory: [Double] = []
     @Published var cpuTop: [TopProcessSampler.Proc] = []
+    @Published var gpuHistory: [Double] = []
+    @Published var gpu: GpuUsageService.Snapshot = GpuUsageService.Snapshot()
     @Published var memTop: [TopProcessSampler.Proc] = []
 
     @Published var memTotal: UInt64 = ProcessInfo.processInfo.physicalMemory
@@ -50,9 +54,11 @@ final class StatsDetailModel: ObservableObject {
     private var timer: Timer?
     private var sampleGeneration = 0
     private var topProcessTask: Task<Void, Never>?
+    private var gpuTask: Task<Void, Never>?
     private var batteryTask: Task<Void, Never>?
     private var sampleFailureToastShown = false
     private var toastTask: Task<Void, Never>?
+    private var lastBatterySample: Date = .distantPast
     private static let historyLimit = 180
 
     func toast(_ message: String, isError: Bool = false) {
@@ -88,6 +94,8 @@ final class StatsDetailModel: ObservableObject {
         sampleGeneration += 1
         topProcessTask?.cancel()
         topProcessTask = nil
+        gpuTask?.cancel()
+        gpuTask = nil
         batteryTask?.cancel()
         batteryTask = nil
         isBatteryLoading = false
@@ -122,7 +130,9 @@ final class StatsDetailModel: ObservableObject {
         swapTotal = swap.total
 
         if ConfigStore.shared.config.batteryMenuBarEnabled, mode == .battery {
-            if batteryTask == nil {
+            let now = Date()
+            if batteryTask == nil, now.timeIntervalSince(lastBatterySample) >= 10 {
+                lastBatterySample = now
                 isBatteryLoading = battery == nil
                 batteryTask = Task { [weak self] in
                     let snapshot = await Task.detached(priority: .utility) {
@@ -145,6 +155,23 @@ final class StatsDetailModel: ObservableObject {
             isBatteryLoading = false
             if !ConfigStore.shared.config.batteryMenuBarEnabled {
                 battery = nil
+            }
+        }
+
+        if mode == .gpu, gpuTask == nil {
+            gpuTask = Task { [weak self] in
+                let snapshot = await Task.detached(priority: .utility) {
+                    GpuUsageService.snapshot()
+                }.value
+                guard let self else { return }
+                defer {
+                    if self.sampleGeneration == generation {
+                        self.gpuTask = nil
+                    }
+                }
+                guard !Task.isCancelled, self.sampleGeneration == generation else { return }
+                self.gpu = snapshot
+                self.appendHistory(&self.gpuHistory, value: snapshot.deviceUtilization)
             }
         }
 
@@ -476,7 +503,7 @@ struct StatsDetailView: View {
     private let panelWidth: CGFloat = 270
     private let headerHeight: CGFloat = 12
     private var maxHeight: CGFloat {
-        (NSScreen.main?.visibleFrame.height ?? 800) - 140
+        model.maxContentHeight
     }
 
     private func statsTabFooterButton(title: String, symbol: String, action: @escaping () -> Void) -> some View {
@@ -571,6 +598,8 @@ struct StatsDetailView: View {
                         cpuContent
                     case .memory:
                         memoryContent
+                    case .gpu:
+                        gpuContent
                     case .battery:
                         batteryContent
                     }
@@ -679,17 +708,6 @@ struct StatsDetailView: View {
             }
 
             VStack(alignment: .leading, spacing: 5) {
-                SectionHeader(title: "Average Load")
-                card {
-                    VStack(alignment: .leading, spacing: 4.5) {
-                        DetailRow(title: "1 minute:", value: String(format: "%.2f", model.load1))
-                        DetailRow(title: "5 minutes:", value: String(format: "%.2f", model.load5))
-                        DetailRow(title: "15 minutes:", value: String(format: "%.2f", model.load15))
-                    }
-                }
-            }
-
-            VStack(alignment: .leading, spacing: 5) {
                 SectionHeader(title: "Top Processes")
                 card {
                     ProcessList(procs: model.cpuTop, showCpu: true, onCopy: { model.toast($0) })
@@ -781,6 +799,113 @@ struct StatsDetailView: View {
             statsTabFooterButton(
                 title: "Open Activity Monitor",
                 symbol: "waveform.path.ecg"
+            ) {
+                openActivityMonitor()
+            }
+        }
+    }
+
+    private var gpuContent: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            windowTitleHeader(title: "GPU Usage", symbol: "cube.transparent")
+
+            card {
+                HStack(spacing: 16) {
+                    SegmentedRing(
+                        segments: [
+                            (model.gpu.deviceUtilization / 100, StatsTheme.pink)
+                        ],
+                        centerText: pct(model.gpu.deviceUtilization),
+                        size: 78,
+                        lineWidth: 8.5
+                    )
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(model.gpu.deviceName.isEmpty ? "GPU" : model.gpu.deviceName)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Color.primary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        if model.gpu.coreCount > 0 {
+                            Text("\(model.gpu.coreCount) cores")
+                                .font(.system(size: 10))
+                                .foregroundStyle(Color.secondary)
+                        }
+                        Text("In use: \(model.gpu.memoryUsedFormatted)")
+                            .font(.system(size: 10))
+                            .foregroundStyle(Color.secondary)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 3)
+            }
+
+            VStack(alignment: .leading, spacing: 5) {
+                SectionHeader(title: "Usage History")
+                card {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ZStack {
+                            StatsHistoryChart(values: model.gpuHistory, maxValue: 100, color: StatsTheme.pink)
+                            if model.gpuHistory.count < 2 {
+                                Text("Collecting samples…")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(Color.secondary)
+                            }
+                        }
+                    }
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 5) {
+                SectionHeader(title: "Details")
+                card {
+                    VStack(alignment: .leading, spacing: 4.5) {
+                        DetailRow(
+                            title: "Utilization:",
+                            value: pct(model.gpu.deviceUtilization),
+                            dotColor: StatsTheme.pink
+                        )
+                        DetailRow(
+                            title: "Renderer:",
+                            value: pct(model.gpu.rendererUtilization),
+                            dotColor: StatsTheme.pink
+                        )
+                        DetailRow(
+                            title: "Tiler:",
+                            value: pct(model.gpu.tilerUtilization),
+                            dotColor: StatsTheme.pink
+                        )
+                        DetailRow(
+                            title: "Memory in use:",
+                            value: model.gpu.memoryUsedFormatted,
+                            dotColor: StatsTheme.blue
+                        )
+                        if model.gpu.allocatedBytes > 0 {
+                            DetailRow(
+                                title: "Allocated:",
+                                value: model.gpu.allocatedFormatted,
+                                dotColor: StatsTheme.blue
+                            )
+                        }
+                        if model.gpu.coreCount > 0 {
+                            DetailRow(title: "Cores:", value: "\(model.gpu.coreCount)")
+                        }
+                        if !model.gpu.deviceName.isEmpty {
+                            DetailRow(title: "Device:", value: model.gpu.deviceName)
+                        }
+                    }
+                }
+            }
+
+            if !model.gpu.isAvailable {
+                Text("GPU telemetry unavailable on this Mac")
+                    .font(.system(size: 10))
+                    .foregroundStyle(Color.secondary)
+            }
+
+            statsTabFooterButton(
+                title: "Open Activity Monitor",
+                symbol: "gauge.with.dots.needle.67percent"
             ) {
                 openActivityMonitor()
             }
@@ -959,6 +1084,7 @@ final class StatsDetailController {
     private var lastClosedMode: StatsDetailModel.Mode?
     private var frontmostAtShow: NSRunningApplication?
     private weak var currentAnchorButton: NSStatusBarButton?
+    private var anchorScreen: NSScreen?
     private var isSwitchingWindow = false
 
     private init() {}
@@ -1023,10 +1149,12 @@ final class StatsDetailController {
         StatusItemController.shared?.closePopover()
         lastClosedMode = nil
         currentAnchorButton = button
+        anchorScreen = button.window?.screen ?? NSScreen.main
 
         let model = self.model ?? StatsDetailModel()
         model.mode = mode
         self.model = model
+        model.maxContentHeight = max(240, (anchorScreen?.visibleFrame.height ?? 800) - 140)
         model.start()
 
         let hostView = NSHostingView(rootView: StatsDetailView(model: model))
@@ -1109,6 +1237,12 @@ final class StatsDetailController {
         }
         frame.origin.y -= (size.height - frame.height)
         frame.size = size
+        let screen = anchorScreen ?? win.screen ?? NSScreen.main
+        if let visible = screen?.visibleFrame {
+            frame.size.height = min(frame.size.height, visible.height)
+            frame.origin.y = min(frame.origin.y, visible.maxY - frame.size.height)
+            frame.origin.y = max(frame.origin.y, visible.minY)
+        }
         win.setFrame(frame, display: win.isVisible, animate: false)
         win.invalidateShadow()
     }

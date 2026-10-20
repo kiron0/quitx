@@ -366,21 +366,21 @@ final class UpdateDownloadService: NSObject, ObservableObject {
     nonisolated static func resolveDestinationAppURL() -> URL {
         let mainBundle = Bundle.main.bundleURL
         if mainBundle.pathExtension == "app" {
-            return mainBundle
+            return mainBundle.deletingLastPathComponent()
         }
 
         let systemApp = URL(fileURLWithPath: "/Applications/QuitX.app")
         if FileManager.default.fileExists(atPath: systemApp.path) {
-            return systemApp
+            return systemApp.deletingLastPathComponent()
         }
 
         let userApp = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Applications/QuitX.app")
         if FileManager.default.fileExists(atPath: userApp.path) {
-            return userApp
+            return userApp.deletingLastPathComponent()
         }
 
-        return systemApp
+        return URL(fileURLWithPath: "/Applications", isDirectory: true)
     }
 
     nonisolated static func generateRelaunchScript() -> String {
@@ -438,13 +438,13 @@ final class UpdateDownloadService: NSObject, ObservableObject {
 
         stagedDirURL = nil
 
-        var destURL = Self.resolveDestinationAppURL()
-        let parentDir = destURL.deletingLastPathComponent()
+        let parentDir = Self.resolveDestinationAppURL()
+        let destURL = parentDir.appendingPathComponent("QuitX.app")
 
-        if !FileManager.default.isWritableFile(atPath: parentDir.path) {
-            let userApps = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Applications")
-            try? FileManager.default.createDirectory(at: userApps, withIntermediateDirectories: true)
-            destURL = userApps.appendingPathComponent("QuitX.app")
+        guard FileManager.default.isWritableFile(atPath: parentDir.path) else {
+            let error = UpdateError.destinationNotWritable(parentDir.path)
+            state = .failed(message: error.localizedDescription)
+            return
         }
 
         let scriptURL = URL(fileURLWithPath: NSTemporaryDirectory())

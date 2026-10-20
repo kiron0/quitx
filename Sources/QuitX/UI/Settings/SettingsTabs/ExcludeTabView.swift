@@ -185,6 +185,7 @@ struct ExcludeRemovalRequest: Identifiable {
 
     var id: String { identifiers.map { $0.lowercased() }.sorted().joined(separator: "|") }
 
+    @MainActor
     static func appDisplayName(for identifier: String) -> String {
         guard let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: identifier),
               let bundle = Bundle(url: appURL),
@@ -218,6 +219,7 @@ struct ExcludeRemovalRequest: Identifiable {
         return "These \(identifiers.count) apps will no longer be protected from quit actions and Auto Quit."
     }
 
+    @MainActor
     init(identifiers: [String], totalCount: Int) {
         self.identifiers = identifiers
         self.removesAll = !identifiers.isEmpty && identifiers.count == totalCount
@@ -303,14 +305,19 @@ private struct ExcludedAppRow: View {
     }
 }
 
+@MainActor
 private final class ExcludedAppRowState: ObservableObject {
     @Published var isHovered = false
     @Published var isRemoveHovered = false
     @Published var icon: NSImage?
-    let displayName: String
+    @Published var displayName: String
 
     init(identifier: String) {
-        displayName = ExcludeRemovalRequest.appDisplayName(for: identifier)
+        displayName = identifier
+        Task { @MainActor [weak self] in
+            let resolved = ExcludeRemovalRequest.appDisplayName(for: identifier)
+            self?.displayName = resolved
+        }
         AppIconCache.loadIcon(for: identifier) { [weak self] loaded in
             self?.icon = loaded
         }

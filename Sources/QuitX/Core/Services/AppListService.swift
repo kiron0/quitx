@@ -22,9 +22,15 @@ final class AppListService {
         let needsPidRecovery = workspaceApps.contains {
             !$0.isTerminated && $0.processIdentifier <= 0 && $0.executableURL != nil
         }
-        let pidsByPath = needsPidRecovery ? Self.pidsByNormalizedPath(Self.runningProcessPaths()) : [:]
+        let pidsByPath: [String: pid_t]
+        if needsPidRecovery {
+            pidsByPath = await Task.detached(priority: .utility) {
+                Self.pidsByNormalizedPath(Self.runningProcessPaths())
+            }.value
+        } else {
+            pidsByPath = [:]
+        }
         var seenPids = Set<pid_t>()
-
         let running = workspaceApps.compactMap { app -> RunningAppSnapshot? in
             guard !app.isTerminated else { return nil }
             guard let pid = Self.resolvedProcessIdentifier(
@@ -48,9 +54,9 @@ final class AppListService {
                 isBackground: app.activationPolicy == .accessory
             )
         }
-        let windowCounts = Self.visibleWindowCounts()
         let scanTask = Task.detached(priority: .userInitiated) {
-            Self.buildApps(from: running, windowCounts: windowCounts, config: config)
+            let windowCounts = Self.visibleWindowCounts()
+            return Self.buildApps(from: running, windowCounts: windowCounts, config: config)
         }
         return await withTaskCancellationHandler {
             await scanTask.value
@@ -248,74 +254,9 @@ final class AppListService {
         }
     }
 
-    private struct CpuCacheState {
-        var usages: [pid_t: Double] = [:]
-        var lastFetchTime: Date = .distantPast
-        var isFetching: Bool = false
-    }
-
-    private static let cpuCache = OSAllocatedUnfairLock(initialState: CpuCacheState())
-
     static func fetchCpuUsages() -> [pid_t: Double] {
-        let cached: [pid_t: Double]? = cpuCache.withLock { state in
-            let fresh = Date().timeIntervalSince(state.lastFetchTime) < 1.0 && !state.usages.isEmpty
-            if fresh || state.isFetching { return state.usages }
-            state.isFetching = true
-            return nil
-        }
-        if let cached { return cached }
-
-        func finishFetch(with usages: [pid_t: Double]?) -> [pid_t: Double] {
-            cpuCache.withLock { state in
-                if let usages {
-                    state.usages = usages
-                    state.lastFetchTime = Date()
-                }
-                state.isFetching = false
-                return state.usages
-            }
-        }
-
-        let pipe = Pipe()
-        let proc = Process()
-        proc.executableURL = URL(fileURLWithPath: "/bin/ps")
-        proc.arguments = ["-c", "-A", "-o", "pid,%cpu"]
-        proc.standardOutput = pipe
-        proc.standardError = FileHandle.nullDevice
-
-        let watchdog = DispatchWorkItem { [weak proc] in
-            if let p = proc, p.isRunning {
-                p.terminate()
-            }
-        }
-        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 1.5, execute: watchdog)
-
-        do {
-            try proc.run()
-        } catch {
-            watchdog.cancel()
-            return finishFetch(with: nil)
-        }
-
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        proc.waitUntilExit()
-        watchdog.cancel()
-
-        guard let output = String(data: data, encoding: .utf8) else {
-            return finishFetch(with: nil)
-        }
-        var result: [pid_t: Double] = [:]
-        for line in output.split(separator: "\n").dropFirst() {
-            let trimmed = line.drop(while: { $0.isWhitespace })
-            guard let spaceIdx = trimmed.firstIndex(where: { $0.isWhitespace }) else { continue }
-            let pidStr = trimmed[..<spaceIdx]
-            let cpuStr = trimmed[spaceIdx...].drop(while: { $0.isWhitespace })
-            if let pid = pid_t(pidStr), let cpu = Double(cpuStr) {
-                result[pid] = cpu
-            }
-        }
-
-        return finishFetch(with: result)
+        CpuUsageSampler.start()
+        return CpuUsageSampler.usages()
     }
 
     private static let memoryCache = OSAllocatedUnfairLock(initialState: [pid_t: (bytes: UInt64, timestamp: Date)]())
@@ -397,15 +338,19 @@ final class AppListService {
 
         let now = Date()
         memoryCache.withLock { cache in
-            if cache.count > 500 {
-                cache = cache.filter { now.timeIntervalSince($0.value.timestamp) < 30 }
+            if cache.count >= 256 {
+                let cutoff = now.addingTimeInterval(-5)
+                cache = cache.filter { $0.value.timestamp >= cutoff }
+                if cache.count >= 256 {
+                    let newest = cache.sorted { $0.value.timestamp > $1.value.timestamp }.prefix(128)
+                    cache = Dictionary(uniqueKeysWithValues: newest.map { ($0.key, $0.value) })
+                }
             }
             cache[pid] = (bytes, now)
         }
         return bytes
     }
 
-    @MainActor
     private static func visibleWindowCounts() -> [pid_t: Int] {
         autoreleasepool {
             guard let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else {

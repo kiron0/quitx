@@ -155,8 +155,8 @@ struct AppUpdateTests {
     @Test("Resolve Destination Application URL")
     func testResolveDestinationAppURL() {
         let dest = UpdateDownloadService.resolveDestinationAppURL()
-        #expect(dest.pathExtension == "app")
-        #expect(dest.lastPathComponent == "QuitX.app")
+        #expect(dest.hasDirectoryPath)
+        #expect(FileManager.default.fileExists(atPath: dest.path))
     }
 
     @Test("DMG Mount, Extraction and Bundle Validation Pipeline")

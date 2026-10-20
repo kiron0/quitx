@@ -103,6 +103,7 @@ final class RescueConsentController {
 
     private var escapeMonitor: Any?
     private var outsideMonitor: Any?
+    private var resignActiveObserver: NSObjectProtocol?
 
     private func installMonitors() {
         removeMonitors()
@@ -115,6 +116,16 @@ final class RescueConsentController {
             guard let self, self.isVisible else { return }
             self.cancel()
         }
+        resignActiveObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didResignActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, self.isVisible else { return }
+                self.cancel()
+            }
+        }
     }
 
     private func removeMonitors() {
@@ -125,6 +136,10 @@ final class RescueConsentController {
         if let m = outsideMonitor {
             NSEvent.removeMonitor(m)
             outsideMonitor = nil
+        }
+        if let o = resignActiveObserver {
+            NotificationCenter.default.removeObserver(o)
+            resignActiveObserver = nil
         }
     }
 

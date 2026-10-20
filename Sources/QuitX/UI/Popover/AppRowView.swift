@@ -57,7 +57,9 @@ struct AppRowView: View {
             Text(usageText)
                 .font(.system(size: 10.5, design: .monospaced))
                 .foregroundStyle(Color.secondary)
-                .frame(width: 46, alignment: .trailing)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .frame(width: 52, alignment: .trailing)
 
             QuitXMenuButton(
                 assetName: "menu-options",

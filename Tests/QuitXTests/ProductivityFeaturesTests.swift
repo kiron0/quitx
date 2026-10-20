@@ -519,6 +519,7 @@ struct ProductivityFeaturesTests {
         cfg.showMenuBarStats = true
         cfg.menuBarShowCpu = true
         cfg.menuBarShowMemory = true
+        cfg.menuBarShowGpu = true
         cfg.menuBarMemoryUnit = .percentage
         cfg.hogAlertEnabled = true
         cfg.hogCpuThreshold = 95
@@ -554,6 +555,9 @@ struct ProductivityFeaturesTests {
         #expect(decoded.sleepLockEndMinutes == cfg.sleepLockEndMinutes)
         #expect(decoded.sleepLockUse24Hour == cfg.sleepLockUse24Hour)
         #expect(decoded.showMenuBarStats == cfg.showMenuBarStats)
+        #expect(decoded.menuBarShowCpu == cfg.menuBarShowCpu)
+        #expect(decoded.menuBarShowMemory == cfg.menuBarShowMemory)
+        #expect(decoded.menuBarShowGpu == cfg.menuBarShowGpu)
         #expect(decoded.menuBarShowCpu == cfg.menuBarShowCpu)
         #expect(decoded.menuBarShowMemory == cfg.menuBarShowMemory)
         #expect(decoded.menuBarStatStyle == cfg.menuBarStatStyle)

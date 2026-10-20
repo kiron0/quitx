@@ -97,8 +97,8 @@ final class SleepService {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                await self?.handleSleep()
+            MainActor.assumeIsolated {
+                self?.handleSleep()
             }
         }
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
@@ -123,7 +123,7 @@ final class SleepService {
         }
     }
 
-    func handleSleep(now: Date = Date()) async {
+    func handleSleep(now: Date = Date()) {
         guard ConfigStore.shared.config.quitOnSleep else { return }
         sleepStartDate = now
         didQuitOnCurrentSleep = false
@@ -135,7 +135,7 @@ final class SleepService {
             endMinutes: config.sleepLockEndMinutes
         ) {
             didQuitOnCurrentSleep = true
-            await executeQuit(config: config)
+            executeQuitBeforeSleep(config: config)
         }
     }
 
@@ -159,6 +159,34 @@ final class SleepService {
             endMinutes: config.sleepLockEndMinutes
         ) {
             await executeQuit(config: config)
+        }
+    }
+
+    private func executeQuitBeforeSleep(config: QuitXConfig) {
+        StatusItemController.shared?.closePopover()
+
+        var assertionID = IOPMAssertionID(0)
+        let assertOK = IOPMAssertionCreateWithName(
+            kIOPMAssertionTypePreventSystemSleep as CFString,
+            UInt32(kIOPMAssertionLevelOn),
+            "QuitX quitting apps on sleep" as CFString,
+            &assertionID
+        ) == kIOReturnSuccess
+        defer {
+            if assertOK {
+                IOPMAssertionRelease(assertionID)
+            }
+        }
+
+        let ownPid = ProcessInfo.processInfo.processIdentifier
+        let targets = SleepQuitTargets.select(
+            apps: AppListViewModel.shared.apps,
+            config: config
+        )
+        for app in targets {
+            for pid in app.pids where pid > 0 && pid != ownPid {
+                _ = NSRunningApplication(processIdentifier: pid)?.terminate()
+            }
         }
     }
 

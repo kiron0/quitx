@@ -132,13 +132,14 @@ struct GeneralTabCloneView: View {
                         configStore.config.showMenuBarStats = $0
                         configStore.config.menuBarShowCpu = $0
                         configStore.config.menuBarShowMemory = $0
+                        configStore.config.menuBarShowGpu = $0
                         configStore.config.batteryMenuBarEnabled = $0
                         configStore.save()
                         StatusItemController.shared?.updateMenuBarStats()
                     }
                 ))
             } help: {
-                HelpPopoverButton(text: "Your Mac's vital signs on blast! Shows live CPU, memory, and battery in your menu bar. Click any stat for its own dedicated window. 🏎️⚡")
+                HelpPopoverButton(text: "Your Mac's vital signs on blast! Shows live CPU, memory, GPU, and battery in your menu bar. Click any stat for its own dedicated window. 🏎️⚡")
             }
 
             row(label: "") {
@@ -156,6 +157,15 @@ struct GeneralTabCloneView: View {
                         get: { configStore.config.menuBarShowMemory },
                         set: {
                             configStore.config.menuBarShowMemory = $0
+                            configStore.config.showMenuBarStats = configStore.config.menuBarStatsEnabled
+                            configStore.save()
+                            StatusItemController.shared?.updateMenuBarStats()
+                        }
+                    ))
+                    toggle("GPU", isOn: Binding(
+                        get: { configStore.config.menuBarShowGpu },
+                        set: {
+                            configStore.config.menuBarShowGpu = $0
                             configStore.config.showMenuBarStats = configStore.config.menuBarStatsEnabled
                             configStore.save()
                             StatusItemController.shared?.updateMenuBarStats()
@@ -306,7 +316,7 @@ struct AutomationTabCloneView: View {
     }
 
     private var minMemoryGB: Int {
-        max(1, min(systemMaxGB, Int((Double(systemMaxGB) * 0.8).rounded())))
+        max(1, min(systemMaxGB, Int((Double(systemMaxGB) * 0.25).rounded())))
     }
 
     private var cpuThreshold: Binding<Int> {

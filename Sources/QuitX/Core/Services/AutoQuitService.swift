@@ -61,8 +61,28 @@ final class AutoQuitService {
 
     @objc private func appDidActivate(_ notification: Notification) {
         guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else { return }
-        guard let pid = resolvedPid(for: app) else { return }
-        lastActiveTimestamps[pid] = Date()
+        if app.processIdentifier > 0 {
+            guard let pid = resolvedPid(for: app) else { return }
+            lastActiveTimestamps[pid] = Date()
+            return
+        }
+        recordActivationOffMainThread(for: app)
+    }
+
+    private func recordActivationOffMainThread(for app: NSRunningApplication) {
+        let reportedPid = app.processIdentifier
+        let executablePath = app.executableURL?.path
+        Task.detached(priority: .userInitiated) {
+            let index = AppListService.pidsByNormalizedPath(AppListService.runningProcessPaths())
+            guard let pid = AppListService.resolvedProcessIdentifier(
+                reportedPid: reportedPid,
+                executablePath: executablePath,
+                pidsByNormalizedPath: index
+            ), QuitService.processIsRunning(pid) else { return }
+            await MainActor.run { [weak self] in
+                self?.lastActiveTimestamps[pid] = Date()
+            }
+        }
     }
 
     @objc private func appDidLaunch(_ notification: Notification) {

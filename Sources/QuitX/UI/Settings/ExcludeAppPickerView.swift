@@ -11,12 +11,35 @@ struct InstalledApplication: Identifiable, Hashable, Sendable {
 }
 
 enum InstalledApplicationScanner {
+    struct RunningApplicationInfo: Sendable {
+        let bundleIdentifier: String?
+        let isTerminated: Bool
+        let isBackground: Bool
+        let bundleURL: URL?
+        let executableURL: URL?
+        let localizedName: String?
+    }
+
     private static var cached: [InstalledApplication]?
     private static var cachedAt = Date.distantPast
     private static let cacheLifetime: TimeInterval = 60
     private static let lock = NSLock()
 
-    static func scan(forceRefresh: Bool = false) -> [InstalledApplication] {
+    @MainActor
+    static func runningApplicationInfos() -> [RunningApplicationInfo] {
+        NSWorkspace.shared.runningApplications.map { app in
+            RunningApplicationInfo(
+                bundleIdentifier: app.bundleIdentifier,
+                isTerminated: app.isTerminated,
+                isBackground: app.activationPolicy == .accessory,
+                bundleURL: app.bundleURL,
+                executableURL: app.executableURL,
+                localizedName: app.localizedName
+            )
+        }
+    }
+
+    static func scan(forceRefresh: Bool = false, runningApplications: [RunningApplicationInfo]) -> [InstalledApplication] {
         lock.lock()
 
         defer { lock.unlock() }
@@ -27,12 +50,12 @@ enum InstalledApplicationScanner {
         }
 
         var applicationsByIdentifier: [String: InstalledApplication] = [:]
-        for app in NSWorkspace.shared.runningApplications {
+        for app in runningApplications {
             if Task.isCancelled { return [] }
             guard !app.isTerminated else { continue }
             guard let bundleIdentifier = app.bundleIdentifier else { continue }
 
-            let isBackground = app.activationPolicy == .accessory
+            let isBackground = app.isBackground
             let bundleURL = app.bundleURL ?? (app.executableURL.map { URL(fileURLWithPath: $0.path) })
             let path = bundleURL?.path ?? ""
 
@@ -185,17 +208,21 @@ final class ExcludeAppPickerViewModel: ObservableObject {
         guard !hasLoaded else { return }
         hasLoaded = true
         isLoading = true
+        defer { isLoading = false }
+        let runningApplications = InstalledApplicationScanner.runningApplicationInfos()
         let scanTask = Task.detached(priority: .userInitiated) {
-            InstalledApplicationScanner.scan()
+            InstalledApplicationScanner.scan(runningApplications: runningApplications)
         }
         let result = await withTaskCancellationHandler {
             await scanTask.value
         } onCancel: {
             scanTask.cancel()
         }
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled else {
+            hasLoaded = false
+            return
+        }
         applications = result
-        isLoading = false
     }
 
     func toggle(_ application: InstalledApplication) {

@@ -164,13 +164,6 @@ final class ShortcutManager: ObservableObject {
         registrationError = failures.isEmpty
             ? nil
             : "Could not register shortcut:\n" + failures.joined(separator: "\n")
-
-        localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            if self?.handleKeyEvent(event) == true {
-                return nil
-            }
-            return event
-        }
     }
 
     func keys(for slot: Slot) -> [String] {
@@ -226,29 +219,6 @@ final class ShortcutManager: ObservableObject {
         default:
             break
         }
-    }
-
-    @discardableResult
-    func handleKeyEvent(_ event: NSEvent) -> Bool {
-        let pressedKeys = Self.eventToKeys(event)
-        guard !pressedKeys.isEmpty else { return false }
-
-        if activateMenuEnabled && pressedKeys == activateMenuKeys {
-            StatusItemController.shared?.togglePopover()
-            return true
-        }
-
-        if quitAllEnabled && pressedKeys == quitAllKeys {
-            Task { await AppListViewModel.shared.quitAllFromShortcut(force: false) }
-            return true
-        }
-
-        if forceQuitAllEnabled && pressedKeys == forceQuitAllKeys {
-            Task { await AppListViewModel.shared.quitAllFromShortcut(force: true) }
-            return true
-        }
-
-        return false
     }
 
     nonisolated static func keysToCarbon(keys: [String]) -> (keyCode: UInt32, modifiers: UInt32)? {

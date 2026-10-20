@@ -26,6 +26,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
     var showMenuBarStats: Bool = false
     var menuBarShowCpu: Bool = false
     var menuBarShowMemory: Bool = false
+    var menuBarShowGpu: Bool = false
     var batteryMenuBarEnabled: Bool = false
     var menuBarStatStyle: MenuBarStatStyle = .icon
     var menuBarMemoryUnit: MenuBarMemoryUnit = .gb
@@ -41,7 +42,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         case exclude, force, includeFinder, includeTrash, includeBackground, groupBackground
         case defaultSelectAll, neverQuitMusic, musicApps, autoUpdate, confirmQuitAll, confirmIndividualAction, playSounds
         case quitInactiveAfterMinutes, disableQuitTips, sortBy, perAppQuitRules
-        case quitOnSleep, quitOnScreenLock, showMenuBarStats, menuBarShowCpu, menuBarShowMemory, batteryMenuBarEnabled, menuBarStatStyle, menuBarMemoryUnit
+        case quitOnSleep, quitOnScreenLock, showMenuBarStats, menuBarShowCpu, menuBarShowMemory, menuBarShowGpu, batteryMenuBarEnabled, menuBarStatStyle, menuBarMemoryUnit
         case sleepLockStartMinutes, sleepLockEndMinutes, sleepLockUse24Hour
         case hogAlertEnabled, hogCpuThreshold
         case memoryPressureQuitEnabled, memoryPressureThresholdMB, batterySaverEnabled
@@ -74,6 +75,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         showMenuBarStats: Bool = false,
         menuBarShowCpu: Bool = false,
         menuBarShowMemory: Bool = false,
+        menuBarShowGpu: Bool = false,
         batteryMenuBarEnabled: Bool = false,
         menuBarStatStyle: MenuBarStatStyle = .icon,
         menuBarMemoryUnit: MenuBarMemoryUnit = .gb,
@@ -110,6 +112,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         self.showMenuBarStats = showMenuBarStats
         self.menuBarShowCpu = menuBarShowCpu
         self.menuBarShowMemory = menuBarShowMemory
+        self.menuBarShowGpu = menuBarShowGpu
         self.batteryMenuBarEnabled = batteryMenuBarEnabled
         self.menuBarStatStyle = menuBarStatStyle
         self.menuBarMemoryUnit = menuBarMemoryUnit
@@ -141,7 +144,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         quitInactiveAfterMinutes = Self.dec(container, .quitInactiveAfterMinutes, defaults.quitInactiveAfterMinutes)
         disableQuitTips = Self.dec(container, .disableQuitTips, defaults.disableQuitTips)
         sortBy = Self.dec(container, .sortBy, defaults.sortBy)
-        perAppQuitRules = Self.dec(container, .perAppQuitRules, defaults.perAppQuitRules)
+        perAppQuitRules = Self.decIntMap(container, .perAppQuitRules, defaults.perAppQuitRules)
         quitOnSleep = Self.dec(container, .quitOnSleep, defaults.quitOnSleep)
         quitOnScreenLock = Self.dec(container, .quitOnScreenLock, defaults.quitOnScreenLock)
         sleepLockStartMinutes = min(1439, max(0, Self.dec(container, .sleepLockStartMinutes, defaults.sleepLockStartMinutes)))
@@ -150,6 +153,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         showMenuBarStats = Self.dec(container, .showMenuBarStats, defaults.showMenuBarStats)
         menuBarShowCpu = (try? container.decodeIfPresent(Bool.self, forKey: .menuBarShowCpu)) ?? showMenuBarStats
         menuBarShowMemory = (try? container.decodeIfPresent(Bool.self, forKey: .menuBarShowMemory)) ?? showMenuBarStats
+        menuBarShowGpu = (try? container.decodeIfPresent(Bool.self, forKey: .menuBarShowGpu)) ?? showMenuBarStats
         batteryMenuBarEnabled = Self.dec(container, .batteryMenuBarEnabled, defaults.batteryMenuBarEnabled)
         menuBarStatStyle = Self.dec(container, .menuBarStatStyle, defaults.menuBarStatStyle)
         menuBarMemoryUnit = Self.dec(container, .menuBarMemoryUnit, defaults.menuBarMemoryUnit)
@@ -158,7 +162,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         memoryPressureQuitEnabled = Self.dec(container, .memoryPressureQuitEnabled, defaults.memoryPressureQuitEnabled)
         memoryPressureThresholdMB = Self.dec(container, .memoryPressureThresholdMB, defaults.memoryPressureThresholdMB)
         batterySaverEnabled = Self.dec(container, .batterySaverEnabled, defaults.batterySaverEnabled)
-        quitTimers = Self.dec(container, .quitTimers, defaults.quitTimers)
+        quitTimers = Self.decDoubleMap(container, .quitTimers, defaults.quitTimers)
         liquidGlassEnabled = Self.dec(container, .liquidGlassEnabled, defaults.liquidGlassEnabled)
     }
 
@@ -166,12 +170,68 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         ((try? container.decodeIfPresent(T.self, forKey: key)) ?? nil) ?? fallback
     }
 
+    private static func decIntMap(_ container: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys, _ fallback: [String: Int]) -> [String: Int] {
+        guard let raw = try? container.decodeIfPresent([String: LossyInt].self, forKey: key) else { return fallback }
+        var result: [String: Int] = [:]
+        for (identifier, value) in raw {
+            if let resolved = value.value {
+                result[identifier] = resolved
+            } else {
+                NSLog("QuitX: dropping malformed config entry %@.%@", key.stringValue, identifier)
+            }
+        }
+        return result
+    }
+
+    private static func decDoubleMap(_ container: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys, _ fallback: [String: Double]) -> [String: Double] {
+        guard let raw = try? container.decodeIfPresent([String: LossyDouble].self, forKey: key) else { return fallback }
+        var result: [String: Double] = [:]
+        for (identifier, value) in raw {
+            if let resolved = value.value {
+                result[identifier] = resolved
+            } else {
+                NSLog("QuitX: dropping malformed config entry %@.%@", key.stringValue, identifier)
+            }
+        }
+        return result
+    }
+
+    private struct LossyInt: Decodable {
+        let value: Int?
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            if let int = try? container.decode(Int.self) {
+                value = int
+            } else if let double = try? container.decode(Double.self) {
+                value = double.isFinite ? Int(double) : nil
+            } else {
+                value = nil
+            }
+        }
+    }
+
+    private struct LossyDouble: Decodable {
+        let value: Double?
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            if let double = try? container.decode(Double.self) {
+                value = double.isFinite ? double : nil
+            } else if let int = try? container.decode(Int.self) {
+                value = Double(int)
+            } else {
+                value = nil
+            }
+        }
+    }
+
     var effectiveHogCpuThreshold: Double {
         max(80, min(100, hogCpuThreshold))
     }
 
     var menuBarStatsEnabled: Bool {
-        showMenuBarStats && (menuBarShowCpu || menuBarShowMemory || batteryMenuBarEnabled)
+        showMenuBarStats && (menuBarShowCpu || menuBarShowMemory || menuBarShowGpu || batteryMenuBarEnabled)
     }
 
     enum MenuBarStatStyle: String, Codable, Equatable, CaseIterable, Sendable {

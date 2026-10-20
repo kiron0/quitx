@@ -53,6 +53,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func finishLaunching() {
         statusItemController = StatusItemController()
+        CpuUsageSampler.start()
         UNUserNotificationCenter.current().delegate = HogNotificationDelegate.shared
         SingleInstanceService.shared.startMonitoring()
         AutoQuitService.shared.startTracking()
@@ -80,6 +81,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         HogMonitor.shared.stopBackgroundMonitoring()
         UpdateChecker.shared.stopAutomaticChecks()
         SingleInstanceService.shared.stopMonitoring()
+        CpuUsageSampler.stop()
         statusItemController = nil
         ConfigStore.shared.flush()
     }

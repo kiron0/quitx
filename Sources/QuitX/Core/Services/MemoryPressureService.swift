@@ -82,12 +82,13 @@ final class MemoryPressureService {
             config: config
         )
         guard !trigger.isEmpty else { return }
+        let triggerIds = Set(trigger.map(\.id))
         let targets = InactiveRescueTargets.select(
             apps: vm.apps,
             config: config,
             frontmostPid: NSWorkspace.shared.frontmostApplication?.processIdentifier,
             ownPid: ProcessInfo.processInfo.processIdentifier
-        )
+        ).filter { triggerIds.contains($0.id) }
         guard !targets.isEmpty else { return }
         RescueConsentController.shared.request(targets: targets, reason: .memory)
     }

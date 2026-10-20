@@ -25,7 +25,8 @@ enum AppIconCache {
         cache.object(forKey: cacheKey(bundleId: bundleId, pid: pid, url: url) as NSString)
     }
 
-    nonisolated static func icon(for bundleId: String?, pid: pid_t? = nil, url: URL? = nil) -> NSImage? {
+    @MainActor
+    static func icon(for bundleId: String?, pid: pid_t? = nil, url: URL? = nil) -> NSImage? {
         let key = cacheKey(bundleId: bundleId, pid: pid, url: url) as NSString
         if let cached = cache.object(forKey: key) {
             return cached
@@ -33,7 +34,8 @@ enum AppIconCache {
         return resolveAndCache(bundleId: bundleId, pid: pid, url: url, key: key)
     }
 
-    nonisolated private static func resolveAndCache(bundleId: String?, pid: pid_t?, url: URL?, key: NSString) -> NSImage {
+    @MainActor
+    private static func resolveAndCache(bundleId: String?, pid: pid_t?, url: URL?, key: NSString) -> NSImage {
         if let existing = cache.object(forKey: key) {
             return existing
         }
@@ -62,18 +64,10 @@ enum AppIconCache {
         return resolved
     }
 
-    nonisolated static func loadIcon(for bundleId: String?, pid: pid_t? = nil, url: URL? = nil, completion: @escaping @MainActor (NSImage?) -> Void) {
-        if let existing = cachedIcon(for: bundleId, pid: pid, url: url) {
-            Task { @MainActor in
-                completion(existing)
-            }
-            return
-        }
-        DispatchQueue.global(qos: .userInitiated).async {
-            let img = icon(for: bundleId, pid: pid, url: url)
-            DispatchQueue.main.async {
-                completion(img)
-            }
+    @MainActor
+    static func loadIcon(for bundleId: String?, pid: pid_t? = nil, url: URL? = nil, completion: @escaping @MainActor (NSImage?) -> Void) {
+        Task { @MainActor in
+            completion(icon(for: bundleId, pid: pid, url: url))
         }
     }
 }
