@@ -104,6 +104,7 @@ final class RescueConsentController {
     private var escapeMonitor: Any?
     private var outsideMonitor: Any?
     private var resignActiveObserver: NSObjectProtocol?
+    private var pendingActiveObserver: NSObjectProtocol?
 
     private func installMonitors() {
         removeMonitors()
@@ -116,6 +117,30 @@ final class RescueConsentController {
             guard let self, self.isVisible else { return }
             self.cancel()
         }
+        armResignObserver()
+    }
+
+    private func armResignObserver() {
+        guard resignActiveObserver == nil else { return }
+        if NSApp.isActive {
+            installResignObserver()
+            return
+        }
+        pendingActiveObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.removePendingActiveObserver()
+                self.installResignObserver()
+            }
+        }
+    }
+
+    private func installResignObserver() {
+        guard resignActiveObserver == nil else { return }
         resignActiveObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didResignActiveNotification,
             object: nil,
@@ -128,6 +153,13 @@ final class RescueConsentController {
         }
     }
 
+    private func removePendingActiveObserver() {
+        if let o = pendingActiveObserver {
+            NotificationCenter.default.removeObserver(o)
+            pendingActiveObserver = nil
+        }
+    }
+
     private func removeMonitors() {
         if let m = escapeMonitor {
             NSEvent.removeMonitor(m)
@@ -137,6 +169,7 @@ final class RescueConsentController {
             NSEvent.removeMonitor(m)
             outsideMonitor = nil
         }
+        removePendingActiveObserver()
         if let o = resignActiveObserver {
             NotificationCenter.default.removeObserver(o)
             resignActiveObserver = nil

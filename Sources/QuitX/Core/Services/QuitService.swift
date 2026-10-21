@@ -28,12 +28,12 @@ final class QuitService {
             with timeout of 15 seconds
                 ignoring application responses
                     tell application "Finder"
+                        set previousWarn to warns before emptying
                         try
-                            set previousWarn to warns before emptying
                             set warns before emptying to false
                             empty the trash
-                            set warns before emptying to previousWarn
                         end try
+                        set warns before emptying to previousWarn
                     end tell
                 end ignoring
             end timeout
@@ -264,15 +264,30 @@ final class QuitService {
         return errno == EPERM
     }
 
+    private static let scriptQueue = DispatchQueue(label: "quitx.applescript", qos: .userInitiated)
+
     private static func runAppleScript(_ source: String, app: AppInfo, label: String) async -> QuitResult {
-        await Task.detached(priority: .userInitiated) {
-            var error: NSDictionary?
-            guard let appleScript = NSAppleScript(source: source) else {
-                return QuitResult(app: app, success: false, forced: false, error: "Could not create \(label) AppleScript")
+        await withCheckedContinuation { continuation in
+            scriptQueue.async {
+                var error: NSDictionary?
+                guard let appleScript = NSAppleScript(source: source) else {
+                    continuation.resume(returning: QuitResult(
+                        app: app,
+                        success: false,
+                        forced: false,
+                        error: "Could not create \(label) AppleScript"
+                    ))
+                    return
+                }
+                appleScript.executeAndReturnError(&error)
+                continuation.resume(returning: QuitResult(
+                    app: app,
+                    success: error == nil,
+                    forced: false,
+                    error: error?.description
+                ))
             }
-            appleScript.executeAndReturnError(&error)
-            return QuitResult(app: app, success: error == nil, forced: false, error: error?.description)
-        }.value
+        }
     }
 
     static func matches(running: NSRunningApplication, app: AppInfo) -> Bool {

@@ -4,9 +4,33 @@ All notable changes to QuitX macOS App will be documented in this file.
 
 ## 1.1.5
 
+### Added
+
+- GPU statistics: added a GPU menu bar stat and a dedicated GPU panel reporting device, renderer and tiler utilization, GPU memory in use, allocated memory, core count and device name, sourced from IOKit `IOAccelerator` telemetry.
+- Granular menu bar stats: added independent CPU, memory, GPU and battery toggles under a single master "Show stats in menu bar" switch, so any combination of stats can be shown and the master reflects whether anything is enabled.
+
 ### Changed
 
-- 
+- Menu bar stat ordering: CPU and GPU now sit together, followed by memory and battery.
+- CPU sampling: replaced the per-refresh `/bin/ps` subprocess with native `proc_taskinfo` deltas sampled once per second, cutting per-sample cost from roughly 90 ms to under 2 ms; Mach CPU counters are converted using a verified 24 ticks-per-microsecond factor with a runtime self-calibration fallback.
+- Process list sampling: top CPU and memory processes now read resident size and names natively, and fall back to `ps` only for processes the kernel refuses to expose to the current user.
+- App list performance: moved the window server query and PID recovery path off the main actor, and bounded the resident size cache to a fixed entry count.
+- Settings window placement: the window is only repositioned when it would otherwise be off-screen, preserving the user's manual placement between openings.
+- Stats panel sizing: panel height is now clamped to the display that actually hosts the menu bar item instead of the screen containing the key window.
+
+### Fixed
+
+- Corrupt settings recovery: an unreadable configuration is moved to a backup key instead of being left in place to fail on every launch, and malformed per-app quit rules or quit timers now drop only the offending entries instead of discarding the whole set.
+- Memory pressure rescue: the apps offered for quitting are now the ones actually exceeding the memory threshold, instead of an unrelated list of windowed apps.
+- Quit on sleep: terminations are dispatched synchronously before the system suspends and are verified before the machine sleeps, with a retry on wake if any app survived.
+- Trash emptying: Finder's "warn before emptying" preference is restored even when the empty operation fails, and AppleScript execution is serialised so concurrent quit batches cannot race.
+- Selection handling: live refresh no longer collapses the selection to the current search filter, and the "Quit All" action and its confirmation now match the full selection rather than only the visible rows.
+- Icon loading: `NSWorkspace` lookups moved back onto the main actor, removing the risk of AppKit crashes and the exclude-app picker stalling on its loading placeholder.
+- Rescue consent panel: the panel now dismisses when the app loses focus without being cancelled by the activation change that presented it.
+- Shortcut handling: removed the duplicate local key monitor so a configured shortcut fires once instead of twice.
+- Updater destination: updates replace the bundle that is actually running instead of silently installing a second copy in the user's Applications folder.
+- Memory pressure threshold: the stored threshold is no longer rewritten to a fixed fraction of system memory on every launch, which previously made the feature effectively unreachable.
+- Window counts and quit timers: window enumeration and per-app rule decoding no longer run on the main actor or discard unrelated configuration.
 
 ## 1.1.4
 

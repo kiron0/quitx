@@ -366,21 +366,21 @@ final class UpdateDownloadService: NSObject, ObservableObject {
     nonisolated static func resolveDestinationAppURL() -> URL {
         let mainBundle = Bundle.main.bundleURL
         if mainBundle.pathExtension == "app" {
-            return mainBundle.deletingLastPathComponent()
+            return mainBundle
         }
 
         let systemApp = URL(fileURLWithPath: "/Applications/QuitX.app")
         if FileManager.default.fileExists(atPath: systemApp.path) {
-            return systemApp.deletingLastPathComponent()
+            return systemApp
         }
 
         let userApp = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Applications/QuitX.app")
         if FileManager.default.fileExists(atPath: userApp.path) {
-            return userApp.deletingLastPathComponent()
+            return userApp
         }
 
-        return URL(fileURLWithPath: "/Applications", isDirectory: true)
+        return URL(fileURLWithPath: "/Applications/QuitX.app")
     }
 
     nonisolated static func generateRelaunchScript() -> String {
@@ -438,8 +438,8 @@ final class UpdateDownloadService: NSObject, ObservableObject {
 
         stagedDirURL = nil
 
-        let parentDir = Self.resolveDestinationAppURL()
-        let destURL = parentDir.appendingPathComponent("QuitX.app")
+        let destURL = Self.resolveDestinationAppURL()
+        let parentDir = destURL.deletingLastPathComponent()
 
         guard FileManager.default.isWritableFile(atPath: parentDir.path) else {
             let error = UpdateError.destinationNotWritable(parentDir.path)

@@ -23,8 +23,6 @@ final class StatsDetailModel: ObservableObject {
     @Published var perCore: [Double] = []
     @Published var cpuLevels: [SystemUsage.CpuLevel] = []
     @Published var load1: Double = 0
-    @Published var load5: Double = 0
-    @Published var load15: Double = 0
     @Published var uptime: String = ""
 
     @Published var cpuHistory: [Double] = []
@@ -111,10 +109,7 @@ final class StatsDetailModel: ObservableObject {
         idlePct = detail.idle
         perCore = detail.perCore
 
-        let load = SystemUsage.loadAverages()
-        load1 = load.0
-        load5 = load.1
-        load15 = load.2
+        load1 = SystemUsage.loadAverages().0
         uptime = SystemUsage.uptimeDescription()
 
         if let breakdown = SystemUsage.memoryBreakdown() {

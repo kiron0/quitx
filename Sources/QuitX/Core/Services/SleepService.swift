@@ -134,8 +134,7 @@ final class SleepService {
             startMinutes: config.sleepLockStartMinutes,
             endMinutes: config.sleepLockEndMinutes
         ) {
-            didQuitOnCurrentSleep = true
-            executeQuitBeforeSleep(config: config)
+            didQuitOnCurrentSleep = executeQuitBeforeSleep(config: config)
         }
     }
 
@@ -162,16 +161,15 @@ final class SleepService {
         }
     }
 
-    private func executeQuitBeforeSleep(config: QuitXConfig) {
+    private func executeQuitBeforeSleep(config: QuitXConfig) -> Bool {
         StatusItemController.shared?.closePopover()
 
         var assertionID = IOPMAssertionID(0)
-        let assertOK = IOPMAssertionCreateWithName(
-            kIOPMAssertionTypePreventSystemSleep as CFString,
-            UInt32(kIOPMAssertionLevelOn),
-            "QuitX quitting apps on sleep" as CFString,
-            &assertionID
-        ) == kIOReturnSuccess
+        let assertionProps = [
+            kIOPMAssertionTypeKey: kIOPMAssertionTypePreventUserIdleSystemSleep,
+            kIOPMAssertionNameKey: "QuitX quitting apps on sleep"
+        ] as CFDictionary
+        let assertOK = IOPMAssertionCreateWithProperties(assertionProps, &assertionID) == kIOReturnSuccess
         defer {
             if assertOK {
                 IOPMAssertionRelease(assertionID)
@@ -183,11 +181,25 @@ final class SleepService {
             apps: AppListViewModel.shared.apps,
             config: config
         )
+        var pending: [pid_t] = []
         for app in targets {
             for pid in app.pids where pid > 0 && pid != ownPid {
-                _ = NSRunningApplication(processIdentifier: pid)?.terminate()
+                guard let running = NSRunningApplication(processIdentifier: pid) else { continue }
+                if running.terminate() {
+                    pending.append(pid)
+                }
             }
         }
+        guard !pending.isEmpty else { return true }
+
+        let deadline = Date().addingTimeInterval(2.0)
+        while Date() < deadline {
+            let stillRunning = pending.filter { QuitService.processIsRunning($0) }
+            if stillRunning.isEmpty { return true }
+            pending = stillRunning
+            usleep(50_000)
+        }
+        return pending.isEmpty
     }
 
     private func executeQuit(config: QuitXConfig) async {

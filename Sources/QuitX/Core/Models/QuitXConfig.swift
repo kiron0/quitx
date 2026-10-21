@@ -204,7 +204,11 @@ struct QuitXConfig: Codable, Equatable, Sendable {
             if let int = try? container.decode(Int.self) {
                 value = int
             } else if let double = try? container.decode(Double.self) {
-                value = double.isFinite ? Int(double) : nil
+                if double.isFinite, double >= -9.223_372_036_854_775e18, double <= 9.223_372_036_854_775e18 {
+                    value = Int(double)
+                } else {
+                    value = nil
+                }
             } else {
                 value = nil
             }

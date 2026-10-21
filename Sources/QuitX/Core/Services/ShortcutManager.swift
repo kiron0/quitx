@@ -46,7 +46,6 @@ final class ShortcutManager: ObservableObject {
     @Published private(set) var shortcutError: String?
     @Published private(set) var registrationError: String?
 
-    private var localMonitor: Any?
     private var registeredHotKeys: [EventHotKeyRef] = []
     private var carbonHandlerInstalled = false
     private var eventHandlerRef: EventHandlerRef?
@@ -121,8 +120,6 @@ final class ShortcutManager: ObservableObject {
         }
         registeredHotKeys.removeAll()
         registrationError = nil
-
-        if let l = localMonitor { NSEvent.removeMonitor(l); localMonitor = nil }
 
         guard activateMenuEnabled || quitAllEnabled || forceQuitAllEnabled else { return }
 
