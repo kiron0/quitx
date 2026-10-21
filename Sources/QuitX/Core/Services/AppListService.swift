@@ -18,26 +18,59 @@ final class AppListService {
 
     @MainActor
     func fetchApps(config: QuitXConfig) async -> [AppInfo] {
+        let pidsByPath = await Self.pidRecoveryIndex()
+        let running = Self.runningSnapshots(pidsByPath: pidsByPath)
+        let scanTask = Task.detached(priority: .userInitiated) {
+            let windowCounts = Self.visibleWindowCounts()
+            return Self.buildApps(from: running, windowCounts: windowCounts, config: config)
+        }
+        return await withTaskCancellationHandler {
+            await scanTask.value
+        } onCancel: {
+            scanTask.cancel()
+        }
+    }
+
+    @MainActor
+    func fetchAppsSynchronously(config: QuitXConfig) -> [AppInfo] {
+        let pidsByPath = Self.pidRecoveryIndexSynchronously()
+        let running = Self.runningSnapshots(pidsByPath: pidsByPath)
+        let windowCounts = Self.visibleWindowCounts()
+        return Self.buildApps(from: running, windowCounts: windowCounts, config: config)
+    }
+
+    @MainActor
+    private static func pidRecoveryIndex() async -> [String: pid_t] {
         let workspaceApps = NSWorkspace.shared.runningApplications
-        let needsPidRecovery = workspaceApps.contains {
+        let needsRecovery = workspaceApps.contains {
             !$0.isTerminated && $0.processIdentifier <= 0 && $0.executableURL != nil
         }
-        let pidsByPath: [String: pid_t]
-        if needsPidRecovery {
-            pidsByPath = await Task.detached(priority: .utility) {
-                Self.pidsByNormalizedPath(Self.runningProcessPaths())
-            }.value
-        } else {
-            pidsByPath = [:]
+        guard needsRecovery else { return [:] }
+        return await Task.detached(priority: .utility) {
+            Self.pidsByNormalizedPath(Self.runningProcessPaths())
+        }.value
+    }
+
+    @MainActor
+    private static func pidRecoveryIndexSynchronously() -> [String: pid_t] {
+        let workspaceApps = NSWorkspace.shared.runningApplications
+        let needsRecovery = workspaceApps.contains {
+            !$0.isTerminated && $0.processIdentifier <= 0 && $0.executableURL != nil
         }
+        guard needsRecovery else { return [:] }
+        return pidsByNormalizedPath(runningProcessPaths())
+    }
+
+    @MainActor
+    private static func runningSnapshots(pidsByPath: [String: pid_t]) -> [RunningAppSnapshot] {
         var seenPids = Set<pid_t>()
-        let running = workspaceApps.compactMap { app -> RunningAppSnapshot? in
+        return NSWorkspace.shared.runningApplications.compactMap { app -> RunningAppSnapshot? in
             guard !app.isTerminated else { return nil }
-            guard let pid = Self.resolvedProcessIdentifier(
+            guard let pid = resolvedProcessIdentifier(
                 reportedPid: app.processIdentifier,
                 executablePath: app.executableURL?.path,
-                pidsByNormalizedPath: pidsByPath
-            ), Self.processIsRunning(pid), seenPids.insert(pid).inserted else { return nil }
+                pidsByPath: pidsByPath
+            ), processIsRunning(pid), seenPids.insert(pid).inserted else { return nil }
             let rawName = app.localizedName
                 ?? app.bundleURL?.deletingPathExtension().lastPathComponent
                 ?? app.executableURL?.lastPathComponent
@@ -53,15 +86,6 @@ final class AppListService {
                 isRegular: app.activationPolicy == .regular,
                 isBackground: app.activationPolicy == .accessory
             )
-        }
-        let scanTask = Task.detached(priority: .userInitiated) {
-            let windowCounts = Self.visibleWindowCounts()
-            return Self.buildApps(from: running, windowCounts: windowCounts, config: config)
-        }
-        return await withTaskCancellationHandler {
-            await scanTask.value
-        } onCancel: {
-            scanTask.cancel()
         }
     }
 

@@ -10,7 +10,6 @@ enum SleepQuitTargets {
             guard !app.isBackground else { return false }
             if let bid = app.bundleId,
                QuitXConstants.supportedBundleIdentifiers.contains(bid) { return false }
-            if app.bundleId == QuitXConstants.SystemBundleIds.finder { return false }
             if app.bundleId == QuitXConstants.SystemBundleIds.trash { return false }
             let lowerBid = app.bundleId?.lowercased()
             let lowerName = app.name.lowercased()
@@ -177,12 +176,18 @@ final class SleepService {
         }
 
         let ownPid = ProcessInfo.processInfo.processIdentifier
+        let snapshot = AppListService.shared.fetchAppsSynchronously(config: config)
+        AppListViewModel.shared.apps = snapshot
         let targets = SleepQuitTargets.select(
-            apps: AppListViewModel.shared.apps,
+            apps: snapshot,
             config: config
         )
         var pending: [pid_t] = []
         for app in targets {
+            if app.bundleId == QuitXConstants.SystemBundleIds.finder {
+                QuitService.closeFinderWindowsSynchronously()
+                continue
+            }
             for pid in app.pids where pid > 0 && pid != ownPid {
                 guard let running = NSRunningApplication(processIdentifier: pid) else { continue }
                 if running.terminate() {

@@ -83,6 +83,16 @@ struct ProductivityFeaturesTests {
             regularApp(name: QuitXConstants.appName, bundleId: QuitXConstants.primaryBundleId, pid: 106),
         ]
         let targets = SleepQuitTargets.select(apps: apps, config: baseConfig)
+        #expect(targets.map(\.name) == ["Slack", "Finder"])
+    }
+
+    @Test("Sleep targets never empty the trash")
+    func testSleepTargetsSkipTrash() {
+        let apps = [
+            regularApp(),
+            regularApp(name: "Trash", bundleId: QuitXConstants.SystemBundleIds.trash, pid: 107),
+        ]
+        let targets = SleepQuitTargets.select(apps: apps, config: baseConfig)
         #expect(targets.map(\.name) == ["Slack"])
     }
 

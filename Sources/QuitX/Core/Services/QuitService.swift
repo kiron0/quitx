@@ -266,6 +266,28 @@ final class QuitService {
 
     private static let scriptQueue = DispatchQueue(label: "quitx.applescript", qos: .userInitiated)
 
+    static func closeFinderWindowsSynchronously() {
+        let script = """
+        with timeout of 1 seconds
+            tell application "Finder"
+                close every window
+            end tell
+        end timeout
+        """
+        _ = runAppleScriptSynchronously(script)
+    }
+
+    private static func runAppleScriptSynchronously(_ source: String) -> (success: Bool, error: String?) {
+        scriptQueue.sync {
+            var error: NSDictionary?
+            guard let appleScript = NSAppleScript(source: source) else {
+                return (false, "Could not create AppleScript")
+            }
+            appleScript.executeAndReturnError(&error)
+            return (error == nil, error?.description)
+        }
+    }
+
     private static func runAppleScript(_ source: String, app: AppInfo, label: String) async -> QuitResult {
         await withCheckedContinuation { continuation in
             scriptQueue.async {
