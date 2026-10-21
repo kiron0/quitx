@@ -10,7 +10,6 @@ enum SleepQuitTargets {
             guard !app.isBackground else { return false }
             if let bid = app.bundleId,
                QuitXConstants.supportedBundleIdentifiers.contains(bid) { return false }
-            if app.bundleId == QuitXConstants.SystemBundleIds.trash { return false }
             let lowerBid = app.bundleId?.lowercased()
             let lowerName = app.name.lowercased()
             if let lowerBid, excluded.contains(lowerBid) { return false }
@@ -186,6 +185,10 @@ final class SleepService {
         for app in targets {
             if app.bundleId == QuitXConstants.SystemBundleIds.finder {
                 QuitService.closeFinderWindowsSynchronously()
+                continue
+            }
+            if app.bundleId == QuitXConstants.SystemBundleIds.trash {
+                QuitService.emptyTrashSynchronously()
                 continue
             }
             for pid in app.pids where pid > 0 && pid != ownPid {

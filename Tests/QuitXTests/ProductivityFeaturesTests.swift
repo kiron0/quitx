@@ -86,14 +86,14 @@ struct ProductivityFeaturesTests {
         #expect(targets.map(\.name) == ["Slack", "Finder"])
     }
 
-    @Test("Sleep targets never empty the trash")
-    func testSleepTargetsSkipTrash() {
+    @Test("Sleep targets include the trash when it is in the list")
+    func testSleepTargetsIncludeTrash() {
         let apps = [
             regularApp(),
             regularApp(name: "Trash", bundleId: QuitXConstants.SystemBundleIds.trash, pid: 107),
         ]
         let targets = SleepQuitTargets.select(apps: apps, config: baseConfig)
-        #expect(targets.map(\.name) == ["Slack"])
+        #expect(targets.map(\.name) == ["Slack", "Trash"])
     }
 
     @Test("Pressure targets need threshold bytes and allow rules")

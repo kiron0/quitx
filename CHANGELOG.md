@@ -23,6 +23,9 @@ All notable changes to QuitX macOS App will be documented in this file.
 - Corrupt settings recovery: an unreadable configuration is moved to a backup key instead of being left in place to fail on every launch, and malformed per-app quit rules or quit timers now drop only the offending entries instead of discarding the whole set.
 - Memory pressure rescue: the apps offered for quitting are now the ones actually exceeding the memory threshold, instead of an unrelated list of windowed apps.
 - Quit on sleep: terminations are dispatched synchronously before the system suspends and are verified before the machine sleeps, with a retry on wake if any app survived.
+- Quit on sleep target list: the running app list is now re-scanned synchronously before the sleep quit, so apps are no longer missed when the popover was never opened and the cached snapshot was empty or stale.
+- Quit on sleep and Finder: when "Include Finder Windows in list" is enabled, Finder is now part of the sleep quit targets and its windows are closed, matching the manual quit action.
+- Trash on sleep: when "Include Empty Trash in list" is enabled, the Trash is now emptied as part of the sleep quit, which is the user's explicit consent for permanent deletion.
 - Trash emptying: Finder's "warn before emptying" preference is restored even when the empty operation fails, and AppleScript execution is serialised so concurrent quit batches cannot race.
 - Selection handling: live refresh no longer collapses the selection to the current search filter, and the "Quit All" action and its confirmation now match the full selection rather than only the visible rows.
 - Icon loading: `NSWorkspace` lookups moved back onto the main actor, removing the risk of AppKit crashes and the exclude-app picker stalling on its loading placeholder.

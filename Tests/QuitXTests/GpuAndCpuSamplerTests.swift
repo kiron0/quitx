@@ -16,7 +16,8 @@ struct GpuAndCpuSamplerTests {
     }
 
     @Test("GPU snapshot is cached inside the sampling interval")
-    func gpuSnapshotIsCached() {
+    func gpuSnapshotIsCached() async throws {
+        try await Task.sleep(nanoseconds: 1_100_000_000)
         let first = GpuUsageService.snapshot()
         let second = GpuUsageService.snapshot()
         #expect(first == second)

@@ -277,6 +277,24 @@ final class QuitService {
         _ = runAppleScriptSynchronously(script)
     }
 
+    static func emptyTrashSynchronously() {
+        let script = """
+        with timeout of 10 seconds
+            ignoring application responses
+                tell application "Finder"
+                    set previousWarn to warns before emptying
+                    try
+                        set warns before emptying to false
+                        empty the trash
+                    end try
+                    set warns before emptying to previousWarn
+                end tell
+            end ignoring
+        end timeout
+        """
+        _ = runAppleScriptSynchronously(script)
+    }
+
     private static func runAppleScriptSynchronously(_ source: String) -> (success: Bool, error: String?) {
         scriptQueue.sync {
             var error: NSDictionary?
