@@ -560,15 +560,17 @@ struct StatsDetailView: View {
     }
 
     private func windowTitleHeader(title: String, symbol: String) -> some View {
-        HStack(spacing: 7) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 5)
-                    .fill(QuitXTheme.accent.opacity(0.14))
-                Image(systemName: symbol)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(QuitXTheme.accent)
-            }
-            .frame(width: 20, height: 20)
+        HStack(spacing: 8) {
+            Image(systemName: symbol)
+                .font(.system(size: 10.5, weight: .semibold))
+                .foregroundStyle(QuitXTheme.accent)
+                .padding(.horizontal, 4.5)
+                .frame(height: 20)
+                .frame(minWidth: 20)
+                .background(
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(QuitXTheme.accent.opacity(0.14))
+                )
 
             Text(title)
                 .font(.system(size: 12.5, weight: .semibold))

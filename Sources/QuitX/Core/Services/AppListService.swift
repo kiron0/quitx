@@ -69,7 +69,7 @@ final class AppListService {
             guard let pid = resolvedProcessIdentifier(
                 reportedPid: app.processIdentifier,
                 executablePath: app.executableURL?.path,
-                pidsByPath: pidsByPath
+                pidsByNormalizedPath: pidsByPath
             ), processIsRunning(pid), seenPids.insert(pid).inserted else { return nil }
             let rawName = app.localizedName
                 ?? app.bundleURL?.deletingPathExtension().lastPathComponent
