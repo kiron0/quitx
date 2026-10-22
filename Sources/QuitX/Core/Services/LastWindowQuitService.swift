@@ -204,6 +204,11 @@ final class LastWindowQuitService: ObservableObject {
             accessibilityTrusted = trusted
         }
 
+        if !trusted, ConfigStore.shared.config.quitWhenLastWindowClosed {
+            ConfigStore.shared.config.quitWhenLastWindowClosed = false
+            ConfigStore.shared.save()
+        }
+
         if ConfigStore.shared.config.quitWhenLastWindowClosed, trusted {
             startPolling()
         } else {

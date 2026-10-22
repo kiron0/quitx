@@ -148,18 +148,18 @@ struct AutomationTabView: View {
 
             row(label: "Windows:") {
                 toggle("Quit app when its last window closes", isOn: Binding(
-                    get: { configStore.config.quitWhenLastWindowClosed },
+                    get: {
+                        lastWindowQuitService.accessibilityTrusted && configStore.config.quitWhenLastWindowClosed
+                    },
                     set: { enabled in
                         lastWindowQuitService.refreshAccessibilityTrust()
-                        if enabled && !lastWindowQuitService.accessibilityTrusted {
-                            LastWindowQuitService.requestAccessibilityPermission()
-                            LastWindowQuitService.openAccessibilitySettings()
-                            return
-                        }
+                        guard lastWindowQuitService.accessibilityTrusted else { return }
                         configStore.config.quitWhenLastWindowClosed = enabled
                         configStore.save()
                     }
                 ))
+                .disabled(!lastWindowQuitService.accessibilityTrusted)
+                .opacity(lastWindowQuitService.accessibilityTrusted ? 1.0 : 0.42)
             } help: {
                 HelpPopoverButton(text: "Grant Accessibility below, then enable this option. QuitX directly force-quits an app after its last window closes via the red close button (x) or ⌘W. Minimized, hidden, and off-Space windows never trigger it. 🪟🔴")
             }
