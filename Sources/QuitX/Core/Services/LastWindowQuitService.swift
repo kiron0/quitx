@@ -86,6 +86,33 @@ enum LastWindowQuitWindowCounter {
         return windowIDs(from: list)
     }
 
+    static func hasMinimizedWindow(for pid: pid_t) -> Bool {
+        guard AXIsProcessTrusted() else { return false }
+        let application = AXUIElementCreateApplication(pid)
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(application, kAXWindowsAttribute as CFString, &value) == .success,
+              let windows = value as? [AXUIElement] else { return false }
+        for window in windows {
+            var minVal: CFTypeRef?
+            if AXUIElementCopyAttributeValue(window, kAXMinimizedAttribute as CFString, &minVal) == .success,
+               let minRef = minVal {
+                if let boolVal = minRef as? Bool, boolVal { return true }
+                if let num = minRef as? NSNumber, num.boolValue { return true }
+                if CFGetTypeID(minRef) == CFBooleanGetTypeID(), CFBooleanGetValue((minRef as! CFBoolean)) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
+    static func isElectronApp(bundleURL: URL?) -> Bool {
+        guard let bundleURL else { return false }
+        let electronFramework = bundleURL
+            .appendingPathComponent("Contents/Frameworks/Electron Framework.framework")
+        return FileManager.default.fileExists(atPath: electronFramework.path)
+    }
+
     static func accessibilityWindowCount(for pid: pid_t) -> Int? {
         guard AXIsProcessTrusted() else { return nil }
         let application = AXUIElementCreateApplication(pid)
@@ -97,6 +124,37 @@ enum LastWindowQuitWindowCounter {
         )
         guard result == .success, let windows = value as? [AXUIElement] else { return nil }
         return windows.count
+    }
+
+    static func windowCount(for pid: pid_t, visible: [pid_t: Set<CGWindowID>]? = nil) -> Int? {
+        guard AXIsProcessTrusted() else { return nil }
+
+        let axCount = accessibilityWindowCount(for: pid)
+        if let axCount, axCount == 0 {
+            return 0
+        }
+
+        let visibleMap = visible ?? visibleWindowIDs() ?? [:]
+        let visibleCount = visibleMap[pid]?.count ?? 0
+        if visibleCount > 0 {
+            return visibleCount
+        }
+
+        if hasMinimizedWindow(for: pid) {
+            return max(1, axCount ?? 1)
+        }
+
+        if let running = NSRunningApplication(processIdentifier: pid), running.isHidden {
+            let isElectron = isElectronApp(bundleURL: running.bundleURL)
+            let lowerBid = running.bundleIdentifier?.lowercased() ?? ""
+            let lowerName = (running.localizedName ?? "").lowercased()
+            let knownHidingApp = lowerBid.contains("discord") || lowerBid.contains("slack") || lowerBid.contains("spotify") || lowerName.contains("discord") || lowerName.contains("slack")
+            if !isElectron && !knownHidingApp {
+                return max(1, axCount ?? 1)
+            }
+        }
+
+        return 0
     }
 }
 
@@ -132,6 +190,7 @@ final class LastWindowQuitService: ObservableObject {
     private var tracked: [pid_t: TrackedApp] = [:]
     private var pendingQuits: Set<pid_t> = []
     private var configSubscription: AnyCancellable?
+    private var spaceObserver: NSObjectProtocol?
     private var pollTask: Task<Void, Never>?
     private let restrictedPID: pid_t?
     private let recordsRecentlyQuit: Bool
@@ -147,7 +206,7 @@ final class LastWindowQuitService: ObservableObject {
         recordsRecentlyQuit: Bool = true,
         requiresAccessibilityTrust: Bool = true,
         accessibilityTrust: @escaping () -> Bool = { LastWindowQuitService.isAccessibilityTrusted },
-        windowCount: @escaping (pid_t) -> Int? = LastWindowQuitWindowCounter.accessibilityWindowCount
+        windowCount: @escaping (pid_t) -> Int? = { pid in LastWindowQuitWindowCounter.windowCount(for: pid) }
     ) {
         self.restrictedPID = restrictedToPID
         self.recordsRecentlyQuit = recordsRecentlyQuit
@@ -164,11 +223,26 @@ final class LastWindowQuitService: ObservableObject {
             .sink { [weak self] _ in
                 MainActor.assumeIsolated { self?.syncTrackingState() }
             }
+        if spaceObserver == nil {
+            spaceObserver = NSWorkspace.shared.notificationCenter.addObserver(
+                forName: NSWorkspace.activeSpaceDidChangeNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    self?.handleSpaceChange()
+                }
+            }
+        }
         syncTrackingState()
     }
 
     func stop() {
         configSubscription = nil
+        if let spaceObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(spaceObserver)
+            self.spaceObserver = nil
+        }
         stopPolling()
         tracked.removeAll()
         pendingQuits.removeAll()
@@ -176,6 +250,12 @@ final class LastWindowQuitService: ObservableObject {
 
     func isTracking(_ pid: pid_t) -> Bool {
         tracked[pid] != nil
+    }
+
+    private func handleSpaceChange() {
+        for pid in tracked.keys {
+            tracked[pid]?.emptySamples = 0
+        }
     }
 
     func refreshAccessibilityTrust() {
@@ -337,7 +417,7 @@ final class LastWindowQuitService: ObservableObject {
 
         let app = AppInfo(name: entry.name, bundleId: entry.bundleId, pid: pid)
         Task { @MainActor [weak self] in
-            let results = await QuitService.shared.quit(apps: [app], force: true)
+            let results = await QuitService.shared.quit(apps: [app], force: false)
             if self?.recordsRecentlyQuit == true, results.first?.success == true {
                 RecentlyQuitService.shared.record(app: app)
             }
