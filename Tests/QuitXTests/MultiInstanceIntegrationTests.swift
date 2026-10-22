@@ -143,6 +143,11 @@ extension GUIIntegrationTests {
                     guard let url = states[requested] else { return 0 }
                     guard let state = try? String(contentsOf: url, encoding: .utf8) else { return nil }
                     return state == "closed" ? 0 : 1
+                },
+                allSpacesWindowCount: { requested in
+                    guard let url = states[requested] else { return 0 }
+                    guard let state = try? String(contentsOf: url, encoding: .utf8) else { return nil }
+                    return state == "closed" ? 0 : 1
                 }
             )
         }

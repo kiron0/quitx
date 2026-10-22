@@ -56,6 +56,82 @@ enum LastWindowQuitWindowState {
         guard let windowCount else { return 0 }
         return windowCount == 0 ? previous + 1 : 0
     }
+
+    static func remainingWindows(axCount: Int?, allSpacesCount: Int?, closedByUser: Bool, knownWindows: Int) -> Int? {
+        guard let axCount else { return nil }
+        guard axCount == 0 else { return axCount }
+        if closedByUser && knownWindows == 0 { return 0 }
+        return allSpacesCount
+    }
+}
+
+@MainActor
+final class AXWindowCloseObserver {
+    let pid: pid_t
+    private let observer: AXObserver
+    private let application: AXUIElement
+    private(set) var windows: [AXUIElement] = []
+    var onClosed: ((pid_t) -> Void)?
+
+    init?(pid: pid_t) {
+        var created: AXObserver?
+        guard AXObserverCreate(pid, axWindowCloseCallback, &created) == .success, let created else { return nil }
+        self.pid = pid
+        self.observer = created
+        self.application = AXUIElementCreateApplication(pid)
+        AXUIElementSetMessagingTimeout(application, 0.5)
+        CFRunLoopAddSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(created), .defaultMode)
+        AXObserverAddNotification(created, application, kAXWindowCreatedNotification as CFString, refcon)
+    }
+
+    private var refcon: UnsafeMutableRawPointer {
+        Unmanaged.passUnretained(self).toOpaque()
+    }
+
+    func invalidate() {
+        CFRunLoopRemoveSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(observer), .defaultMode)
+        windows.removeAll()
+        onClosed = nil
+    }
+
+    func refresh() {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(application, kAXWindowsAttribute as CFString, &value) == .success,
+              let current = value as? [AXUIElement] else { return }
+        for window in current { watch(window) }
+    }
+
+    func watch(_ window: AXUIElement) {
+        guard !windows.contains(where: { CFEqual($0, window) }) else { return }
+        guard AXObserverAddNotification(observer, window, kAXUIElementDestroyedNotification as CFString, refcon) == .success else { return }
+        windows.append(window)
+    }
+
+    fileprivate func handle(element: AXUIElement, notification: String) {
+        if notification == kAXWindowCreatedNotification as String {
+            watch(element)
+            return
+        }
+        guard notification == kAXUIElementDestroyedNotification as String else { return }
+        guard let index = windows.firstIndex(where: { CFEqual($0, element) }) else { return }
+        AXObserverRemoveNotification(observer, windows[index], kAXUIElementDestroyedNotification as CFString)
+        windows.remove(at: index)
+        onClosed?(pid)
+    }
+}
+
+private func axWindowCloseCallback(
+    _ observer: AXObserver,
+    _ element: AXUIElement,
+    _ notification: CFString,
+    _ refcon: UnsafeMutableRawPointer?
+) {
+    guard let refcon else { return }
+    let box = Unmanaged<AXWindowCloseObserver>.fromOpaque(refcon).takeUnretainedValue()
+    let name = notification as String
+    MainActor.assumeIsolated {
+        box.handle(element: element, notification: name)
+    }
 }
 
 enum LastWindowQuitWindowCounter {
@@ -93,6 +169,26 @@ enum LastWindowQuitWindowCounter {
         let now = ProcessInfo.processInfo.systemUptime
         visibleSnapshot.withLock { $0 = (ids, now) }
         return ids
+    }
+
+    private static let allSpacesSnapshot = OSAllocatedUnfairLock<(ids: [pid_t: Set<CGWindowID>], at: TimeInterval)?>(
+        initialState: nil
+    )
+
+    static func allSpacesWindowCount(for pid: pid_t) -> Int? {
+        let now = ProcessInfo.processInfo.systemUptime
+        if let cached = allSpacesSnapshot.withLock({ state -> [pid_t: Set<CGWindowID>]? in
+            guard let state, now - state.at <= visibleSnapshotMaxAge else { return nil }
+            return state.ids
+        }) {
+            return cached[pid]?.count ?? 0
+        }
+        guard let list = CGWindowListCopyWindowInfo([.optionAll, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else {
+            return nil
+        }
+        let ids = windowIDs(from: list)
+        allSpacesSnapshot.withLock { $0 = (ids, now) }
+        return ids[pid]?.count ?? 0
     }
 
     private static func recentVisibleWindowIDs() -> [pid_t: Set<CGWindowID>]? {
@@ -251,6 +347,7 @@ final class LastWindowQuitService: ObservableObject {
         let executableURL: URL?
         var owners: Set<pid_t>
         var emptySamples: Int
+        var closedByUser = false
     }
 
     private var tracked: [String: TrackedApp] = [:]
@@ -264,6 +361,8 @@ final class LastWindowQuitService: ObservableObject {
     private let requiresAccessibilityTrust: Bool
     private let accessibilityTrust: () -> Bool
     private let windowCount: (pid_t) -> Int?
+    private let allSpacesWindowCount: (pid_t) -> Int?
+    private var closeObservers: [pid_t: AXWindowCloseObserver] = [:]
 
     private let pollInterval: Duration = .seconds(1)
     private let requiredEmptySamples = 2
@@ -273,13 +372,15 @@ final class LastWindowQuitService: ObservableObject {
         recordsRecentlyQuit: Bool = true,
         requiresAccessibilityTrust: Bool = true,
         accessibilityTrust: @escaping () -> Bool = { LastWindowQuitService.isAccessibilityTrusted },
-        windowCount: @escaping (pid_t) -> Int? = { pid in LastWindowQuitWindowCounter.windowCount(for: pid) }
+        windowCount: @escaping (pid_t) -> Int? = { pid in LastWindowQuitWindowCounter.windowCount(for: pid) },
+        allSpacesWindowCount: @escaping (pid_t) -> Int? = { pid in LastWindowQuitWindowCounter.allSpacesWindowCount(for: pid) }
     ) {
         self.restrictedPID = restrictedToPID
         self.recordsRecentlyQuit = recordsRecentlyQuit
         self.requiresAccessibilityTrust = requiresAccessibilityTrust
         self.accessibilityTrust = accessibilityTrust
         self.windowCount = windowCount
+        self.allSpacesWindowCount = allSpacesWindowCount
         self.accessibilityTrusted = !requiresAccessibilityTrust || accessibilityTrust()
     }
 
@@ -312,6 +413,7 @@ final class LastWindowQuitService: ObservableObject {
         }
         stopPolling()
         tracked.removeAll()
+        removeCloseObservers()
         pendingQuits.removeAll()
     }
 
@@ -354,6 +456,7 @@ final class LastWindowQuitService: ObservableObject {
             stopPolling()
             tracked.removeAll()
             pendingQuits.removeAll()
+            removeCloseObservers()
         }
     }
 
@@ -370,6 +473,60 @@ final class LastWindowQuitService: ObservableObject {
                 }
             }
         }
+    }
+
+    private func removeCloseObservers(except keep: Set<pid_t> = []) {
+        for (pid, observer) in closeObservers where !keep.contains(pid) {
+            observer.invalidate()
+            closeObservers.removeValue(forKey: pid)
+        }
+    }
+
+    private func syncCloseObservers() {
+        let owners = tracked.values.reduce(into: Set<pid_t>()) { $0.formUnion($1.owners) }
+        removeCloseObservers(except: owners)
+        guard requiresAccessibilityTrust, AXIsProcessTrusted() else { return }
+        for pid in owners where QuitService.processIsRunning(pid) {
+            if let observer = closeObservers[pid] {
+                observer.refresh()
+                continue
+            }
+            guard let observer = AXWindowCloseObserver(pid: pid) else { continue }
+            observer.onClosed = { [weak self] closedPid in
+                self?.noteWindowClosed(pid: closedPid)
+            }
+            observer.refresh()
+            closeObservers[pid] = observer
+        }
+    }
+
+    func noteWindowClosed(pid: pid_t) {
+        for key in tracked.keys where tracked[key]?.owners.contains(pid) == true {
+            tracked[key]?.closedByUser = true
+        }
+    }
+
+    private func knownWindows(_ owners: Set<pid_t>) -> Int {
+        owners.reduce(0) { $0 + (closeObservers[$1]?.windows.count ?? 0) }
+    }
+
+    private func totalAllSpacesWindows(_ owners: Set<pid_t>) -> Int? {
+        var total = 0
+        for pid in owners where QuitService.processIsRunning(pid) {
+            guard let count = allSpacesWindowCount(pid) else { return nil }
+            total += count
+        }
+        return total
+    }
+
+    private func remainingWindows(_ entry: TrackedApp, owners: Set<pid_t>? = nil) -> Int? {
+        let scope = owners ?? entry.owners
+        return LastWindowQuitWindowState.remainingWindows(
+            axCount: totalWindows(scope),
+            allSpacesCount: totalAllSpacesWindows(scope),
+            closedByUser: entry.closedByUser,
+            knownWindows: knownWindows(scope)
+        )
     }
 
     private func stopPolling() {
@@ -433,10 +590,14 @@ final class LastWindowQuitService: ObservableObject {
             )
         }
 
+        syncCloseObservers()
+
         for key in Array(tracked.keys) {
             guard var entry = tracked[key] else { continue }
+            let remaining = remainingWindows(entry)
+            if let remaining, remaining > 0 { entry.closedByUser = false }
             entry.emptySamples = LastWindowQuitWindowState.nextEmptySamples(
-                windowCount: totalWindows(entry.owners),
+                windowCount: remaining,
                 previous: entry.emptySamples
             )
             tracked[key] = entry
@@ -479,7 +640,7 @@ final class LastWindowQuitService: ObservableObject {
             return
         }
         let owners = entry.owners.union(members.filter { $0.activationPolicy == .regular }.map(\.processIdentifier))
-        guard totalWindows(owners) == 0 else {
+        guard remainingWindows(entry, owners: owners) == 0 else {
             pendingQuits.remove(key)
             return
         }

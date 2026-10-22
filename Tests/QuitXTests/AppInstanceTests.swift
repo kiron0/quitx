@@ -289,4 +289,27 @@ struct AppInstanceTests {
         #expect(!AppRowView.showsWindowsMenu(trusted: false, axWindowCount: 0, visibleWindowCount: 1))
         #expect(AppRowView.showsWindowsMenu(trusted: false, axWindowCount: 0, visibleWindowCount: 2))
     }
+
+    @Test("Last-window quit ignores windows that only left the current Space")
+    func remainingWindowsDecision() {
+        #expect(LastWindowQuitWindowState.remainingWindows(axCount: 0, allSpacesCount: 3, closedByUser: false, knownWindows: 0) == 3)
+        #expect(LastWindowQuitWindowState.remainingWindows(axCount: 0, allSpacesCount: 0, closedByUser: false, knownWindows: 0) == 0)
+        #expect(LastWindowQuitWindowState.remainingWindows(axCount: 0, allSpacesCount: 2, closedByUser: true, knownWindows: 0) == 0)
+        #expect(LastWindowQuitWindowState.remainingWindows(axCount: 0, allSpacesCount: 2, closedByUser: true, knownWindows: 1) == 2)
+        #expect(LastWindowQuitWindowState.remainingWindows(axCount: 2, allSpacesCount: 0, closedByUser: true, knownWindows: 0) == 2)
+        #expect(LastWindowQuitWindowState.remainingWindows(axCount: nil, allSpacesCount: 0, closedByUser: true, knownWindows: 0) == nil)
+        #expect(LastWindowQuitWindowState.remainingWindows(axCount: 0, allSpacesCount: nil, closedByUser: false, knownWindows: 0) == nil)
+        var samples = 0
+        for _ in 0..<10 {
+            let remaining = LastWindowQuitWindowState.remainingWindows(axCount: 0, allSpacesCount: 1, closedByUser: false, knownWindows: 0)
+            samples = LastWindowQuitWindowState.nextEmptySamples(windowCount: remaining, previous: samples)
+        }
+        #expect(samples == 0, "full-screen Space switch must never count as closed")
+    }
+
+    @Test("All-Spaces window count is readable for this process and invalid PIDs")
+    func allSpacesCount() {
+        #expect(LastWindowQuitWindowCounter.allSpacesWindowCount(for: -1) == 0)
+        #expect(LastWindowQuitWindowCounter.allSpacesWindowCount(for: ProcessInfo.processInfo.processIdentifier) != nil)
+    }
 }
