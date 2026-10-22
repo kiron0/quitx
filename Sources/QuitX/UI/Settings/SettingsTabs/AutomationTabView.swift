@@ -171,7 +171,7 @@ struct AutomationTabView: View {
                             .font(.system(size: 11))
                             .foregroundStyle(Color.secondary)
 
-                        Button("Remove Access…") {
+                        Button("Remove Accessibility") {
                             configStore.config.quitWhenLastWindowClosed = false
                             configStore.save()
                             LastWindowQuitService.openAccessibilitySettings()
@@ -180,7 +180,7 @@ struct AutomationTabView: View {
                         .help("Disables this automation and opens macOS Accessibility settings. Turn off QuitX there to remove the system permission.")
                     }
                 } else {
-                    Button("Allow Accessibility…") {
+                    Button("Allow Accessibility") {
                         LastWindowQuitService.requestAccessibilityPermission()
                         LastWindowQuitService.openAccessibilitySettings()
                     }
