@@ -6,11 +6,30 @@ All notable changes to QuitX macOS App will be documented in this file.
 
 ### Added
 
+- Multi-instance application management: `AppInstanceService` detects and groups multiple running instances of the same app (`open -n`). Popover displays instance badges, collapsible instance rows with individual PID and memory stats, and individual or batch termination controls.
+- Multi-instance integration tests: added test suite (`AppInstanceTests`, `MultiInstanceIntegrationTests`, `RobustnessTests`) verifying detection, isolated quit, and helper process teardown across multiple app instances.
+- Space change detection: registered `NSWorkspace.activeSpaceDidChangeNotification` in `LastWindowQuitService` to track window state across Spaces and prevent false quits during Space switching.
 - Quit when the last window closes: added an opt-in Automation setting ("Quit app when its last window closes") that force-quits regular apps after their last window closes via the red close button (x) or ⌘W, so they do not keep running in the background. Minimized windows, hidden apps, and windows on other Spaces are preserved. Excludes Finder, background daemons, music apps, and user exclusions.
+
+### Changed
+
+- Performance & battery efficiency: offloaded menu bar stats sampling to background tasks to keep the main runloop responsive, and dynamically throttled `CpuUsageSampler` to 10-second idle intervals when stats popovers are closed.
+- Last-window quit optimization: cached WindowServer visible window queries (`OSAllocatedUnfairLock`, 0.5s max age) and web runtime detection paths (Electron, Chromium, Slack, Discord, Telegram, Docker), eliminating duplicate window list scans.
+- Quit timer precision: replaced fixed 60-second polling timer with dynamic one-shot timer targeting the earliest due deadline, eliminating execution delay drift.
+- Accessibility messaging timeout: enforced a 0.5-second timeout on accessibility queries in `LastWindowQuitService` to prevent UI thread hangs on unresponsive apps.
+- Settings tab views now live in purpose-named files with shared controls separated, replacing clone-style type names.
+- Removed unused duplicate and legacy PNG resources from the app bundle.
+
+### Removed
+
+- Top processes section: removed the CPU and memory "Top Processes" list and background `TopProcessSampler` task from the stats detail popover, cutting unnecessary subprocess and kernel task walks.
 
 ### Fixed
 
 - Quit when the last window closes: force-quits instead of sending a graceful request that background apps could ignore. It now detects AppKit-retained closed windows while preserving minimized, hidden, and off-Space windows.
+- Settings: quit-on-last-window option is strictly gated behind Accessibility permissions; revoking permission automatically disables the feature and resets configuration.
+- Quit timer execution: pending quit timers are retried if an existing quit operation is in-flight instead of silently dropping scheduled quits.
+- Web runtime app termination: properly handles helper process and window tracking for Electron and multi-process web apps during last-window quit.
 - Settings reset now asks for confirmation before restoring preferences, shortcuts, and launch-at-login defaults.
 - Reopening Settings, Welcome, Help, Exclude, or Update windows from the Dock restores a minimized window instead of leaving it hidden.
 - Help: Finder & Trash opens the Advanced tab, shortcut copy says "Quit all apps", menu-bar stats help includes GPU, and "Report an Issue" opens the GitHub issue tracker.
@@ -22,11 +41,6 @@ All notable changes to QuitX macOS App will be documented in this file.
 - Testing: added a real WindowServer integration test that opens a fixture window, performs its close-button action, and verifies automatic force termination.
 - Config: debounced saves can no longer overwrite a reset or a newer immediate save, and the memory-pressure threshold shown in Settings now matches the enforced value.
 - Updates: "Later" keeps the verified staged update, and failed installs no longer leak staged files.
-
-### Changed
-
-- Settings tab views now live in purpose-named files with shared controls separated, replacing clone-style type names.
-- Removed unused duplicate and legacy PNG resources from the app bundle.
 
 ## 1.1.5
 
