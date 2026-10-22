@@ -27,10 +27,8 @@ final class StatsDetailModel: ObservableObject {
 
     @Published var cpuHistory: [Double] = []
     @Published var memHistory: [Double] = []
-    @Published var cpuTop: [TopProcessSampler.Proc] = []
     @Published var gpuHistory: [Double] = []
     @Published var gpu: GpuUsageService.Snapshot = GpuUsageService.Snapshot()
-    @Published var memTop: [TopProcessSampler.Proc] = []
 
     @Published var memTotal: UInt64 = ProcessInfo.processInfo.physicalMemory
     @Published var memApp: UInt64 = 0
@@ -51,10 +49,8 @@ final class StatsDetailModel: ObservableObject {
 
     private var timer: Timer?
     private var sampleGeneration = 0
-    private var topProcessTask: Task<Void, Never>?
     private var gpuTask: Task<Void, Never>?
     private var batteryTask: Task<Void, Never>?
-    private var sampleFailureToastShown = false
     private var toastTask: Task<Void, Never>?
     private var lastBatterySample: Date = .distantPast
     private static let historyLimit = 180
@@ -73,7 +69,6 @@ final class StatsDetailModel: ObservableObject {
 
     func start() {
         stop()
-        sampleFailureToastShown = false
         cpuLevels = SystemUsage.cpuTopology().levels
         tick()
         let timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
@@ -90,8 +85,6 @@ final class StatsDetailModel: ObservableObject {
         timer?.invalidate()
         timer = nil
         sampleGeneration += 1
-        topProcessTask?.cancel()
-        topProcessTask = nil
         gpuTask?.cancel()
         gpuTask = nil
         batteryTask?.cancel()
@@ -176,24 +169,6 @@ final class StatsDetailModel: ObservableObject {
         appendHistory(&cpuHistory, value: cpu)
         if memTotal > 0 {
             appendHistory(&memHistory, value: Double(memUsed) / Double(memTotal) * 100)
-        }
-
-        guard topProcessTask == nil else { return }
-        topProcessTask = Task { [weak self] in
-            let top = await TopProcessSampler.sample()
-            guard let self else { return }
-            defer {
-                if self.sampleGeneration == generation {
-                    self.topProcessTask = nil
-                }
-            }
-            guard !Task.isCancelled, self.sampleGeneration == generation else { return }
-            self.cpuTop = top.cpu
-            self.memTop = top.mem
-            if top.cpu.isEmpty, top.mem.isEmpty, !self.sampleFailureToastShown {
-                self.sampleFailureToastShown = true
-                self.toast("Process list unavailable", isError: true)
-            }
         }
     }
 
@@ -418,81 +393,6 @@ private struct DetailRow: View {
     }
 }
 
-private final class ProcessRowHover: ObservableObject {
-    @Published var hovered = false
-}
-
-private struct ProcessRow: View {
-    let proc: TopProcessSampler.Proc
-    let showCpu: Bool
-    let onCopy: (String) -> Void
-
-    @StateObject private var hover = ProcessRowHover()
-
-    private var valueText: String {
-        showCpu ? String(format: "%.1f%%", proc.cpu) : MemoryFormatter.format(bytes: proc.bytes)
-    }
-
-    var body: some View {
-        HStack(spacing: 7) {
-            AppIconView(bundleId: nil, pid: proc.id, size: 14, cornerRadius: 2)
-            Text(proc.name)
-                .font(.system(size: 11))
-                .lineLimit(1)
-                .truncationMode(.middle)
-            Spacer(minLength: 6)
-            Text(valueText)
-                .font(.system(size: 11, weight: .semibold).monospacedDigit())
-        }
-        .padding(.horizontal, 5)
-        .frame(height: 21)
-        .contentShape(Rectangle())
-        .background(
-            RoundedRectangle(cornerRadius: 4)
-                .fill(hover.hovered ? Color.primary.opacity(0.06) : Color.clear)
-        )
-        .onHover { hover.hovered = $0 }
-        .help("Click to copy")
-        .onTapGesture {
-            let pasteboard = NSPasteboard.general
-            pasteboard.clearContents()
-            pasteboard.setString("\(proc.name) \(valueText)", forType: .string)
-            onCopy("Copied \(proc.name)")
-        }
-    }
-}
-
-private struct ProcessList: View {
-    let procs: [TopProcessSampler.Proc]
-    let showCpu: Bool
-    let onCopy: (String) -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text("Process")
-                    .font(.system(size: 10))
-                    .foregroundStyle(Color.secondary)
-                Spacer()
-                Text("Usage")
-                    .font(.system(size: 10))
-                    .foregroundStyle(Color.secondary)
-            }
-            .padding(.horizontal, 5)
-            if procs.isEmpty {
-                Text("Sampling...")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color.secondary)
-                    .frame(height: 40, alignment: .center)
-                    .frame(maxWidth: .infinity)
-            } else {
-                ForEach(procs) { proc in
-                    ProcessRow(proc: proc, showCpu: showCpu, onCopy: onCopy)
-                }
-            }
-        }
-    }
-}
 
 struct StatsDetailView: View {
     @ObservedObject var model: StatsDetailModel
@@ -707,13 +607,6 @@ struct StatsDetailView: View {
                 }
             }
 
-            VStack(alignment: .leading, spacing: 5) {
-                SectionHeader(title: "Top Processes")
-                card {
-                    ProcessList(procs: model.cpuTop, showCpu: true, onCopy: { model.toast($0) })
-                }
-            }
-
             statsTabFooterButton(
                 title: "Open Activity Monitor",
                 symbol: "gauge.with.dots.needle.67percent"
@@ -789,12 +682,6 @@ struct StatsDetailView: View {
                 }
             }
 
-            VStack(alignment: .leading, spacing: 5) {
-                SectionHeader(title: "Top Processes")
-                card {
-                    ProcessList(procs: model.memTop, showCpu: false, onCopy: { model.toast($0) })
-                }
-            }
 
             statsTabFooterButton(
                 title: "Open Activity Monitor",
