@@ -39,12 +39,12 @@ extension GUIIntegrationTests {
                     }
                     return state == "closed" ? 0 : 1
                 },
-                allSpacesWindowCount: { requestedPID in
+                allSpacesWindowIDs: { requestedPID in
                     guard requestedPID == pid,
                           let state = try? String(contentsOf: stateURL, encoding: .utf8) else {
                         return nil
                     }
-                    return state == "closed" ? 0 : 1
+                    return state == "closed" ? [] : [1]
                 }
             )
 

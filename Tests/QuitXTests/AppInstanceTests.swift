@@ -1,6 +1,7 @@
 import Testing
 import Foundation
 import Darwin
+import CoreGraphics
 @testable import QuitX
 
 @Suite("App Instance and Profile Tests")
@@ -197,24 +198,49 @@ struct AppInstanceTests {
 
     @Test("Last-window quit ignores windows that only left the current Space")
     func remainingWindowsDecision() {
-        #expect(LastWindowQuitWindowState.remainingWindows(axCount: 0, allSpacesCount: 3, closedByUser: false, knownWindows: 0) == 3)
-        #expect(LastWindowQuitWindowState.remainingWindows(axCount: 0, allSpacesCount: 0, closedByUser: false, knownWindows: 0) == 0)
-        #expect(LastWindowQuitWindowState.remainingWindows(axCount: 0, allSpacesCount: 2, closedByUser: true, knownWindows: 0) == 0)
-        #expect(LastWindowQuitWindowState.remainingWindows(axCount: 0, allSpacesCount: 2, closedByUser: true, knownWindows: 1) == 2)
-        #expect(LastWindowQuitWindowState.remainingWindows(axCount: 2, allSpacesCount: 0, closedByUser: true, knownWindows: 0) == 2)
-        #expect(LastWindowQuitWindowState.remainingWindows(axCount: nil, allSpacesCount: 0, closedByUser: true, knownWindows: 0) == nil)
-        #expect(LastWindowQuitWindowState.remainingWindows(axCount: 0, allSpacesCount: nil, closedByUser: false, knownWindows: 0) == nil)
+        func remaining(ax: Int?, all: Set<CGWindowID>?, seen: Set<CGWindowID> = [], closed: Set<CGWindowID> = [], user: Bool = false, known: Int = 0) -> Int? {
+            LastWindowQuitWindowState.remainingWindows(axCount: ax, allSpacesIDs: all, seenIDs: seen, closedIDs: closed, closedByUser: user, knownWindows: known)
+        }
+        #expect(remaining(ax: 0, all: [1, 2, 3]) == 3)
+        #expect(remaining(ax: 0, all: []) == 0)
+        #expect(remaining(ax: 0, all: [7], user: true, known: 0) == 0)
+        #expect(remaining(ax: 0, all: [7], user: true, known: 1) == 1)
+        #expect(remaining(ax: 2, all: [], user: true) == 2)
+        #expect(remaining(ax: nil, all: [], user: true) == nil)
+        #expect(remaining(ax: 0, all: nil) == nil)
         var samples = 0
         for _ in 0..<10 {
-            let remaining = LastWindowQuitWindowState.remainingWindows(axCount: 0, allSpacesCount: 1, closedByUser: false, knownWindows: 0)
-            samples = LastWindowQuitWindowState.nextEmptySamples(windowCount: remaining, previous: samples)
+            samples = LastWindowQuitWindowState.nextEmptySamples(windowCount: remaining(ax: 0, all: [1]), previous: samples)
         }
         #expect(samples == 0, "full-screen Space switch must never count as closed")
+    }
+
+    @Test("A window the user closed but the app only hid counts as closed")
+    func hiddenOnCloseDecision() {
+        func remaining(all: Set<CGWindowID>, seen: Set<CGWindowID>, closed: Set<CGWindowID>) -> Int? {
+            LastWindowQuitWindowState.remainingWindows(axCount: 0, allSpacesIDs: all, seenIDs: seen, closedIDs: closed, closedByUser: true, knownWindows: 1)
+        }
+        #expect(remaining(all: [10, 99], seen: [10], closed: [10]) == 0, "Discord-style hide plus a never-shown helper window")
+        #expect(remaining(all: [10, 11], seen: [10, 11], closed: [10]) == 1, "another real window remains")
+        #expect(remaining(all: [10], seen: [10], closed: []) == 1)
+        #expect(LastWindowQuitWindowState.remainingWindows(axCount: 1, allSpacesIDs: [10], seenIDs: [10], closedIDs: [10], closedByUser: true, knownWindows: 0) == 1)
+    }
+
+    @Test("Close-button hit testing is limited to the title bar's leading corner")
+    func closeButtonRegion() {
+        let window = CGRect(x: 100, y: 50, width: 800, height: 600)
+        #expect(LastWindowQuitWindowState.isCloseButtonRegion(point: CGPoint(x: 112, y: 62), windowBounds: window))
+        #expect(LastWindowQuitWindowState.isCloseButtonRegion(point: CGPoint(x: 196, y: 94), windowBounds: window))
+        #expect(!LastWindowQuitWindowState.isCloseButtonRegion(point: CGPoint(x: 197, y: 62), windowBounds: window))
+        #expect(!LastWindowQuitWindowState.isCloseButtonRegion(point: CGPoint(x: 112, y: 95), windowBounds: window))
+        #expect(!LastWindowQuitWindowState.isCloseButtonRegion(point: CGPoint(x: 90, y: 62), windowBounds: window))
+        #expect(!LastWindowQuitWindowCounter.isCloseButton(at: CGPoint(x: -10_000, y: -10_000)))
     }
 
     @Test("All-Spaces window count is readable for this process and invalid PIDs")
     func allSpacesCount() {
         #expect(LastWindowQuitWindowCounter.allSpacesWindowCount(for: -1) == 0)
+        #expect(LastWindowQuitWindowCounter.allSpacesWindowIDs(for: -1) == [])
         #expect(LastWindowQuitWindowCounter.allSpacesWindowCount(for: ProcessInfo.processInfo.processIdentifier) != nil)
     }
 }

@@ -92,6 +92,16 @@ static void WriteFixtureState(NSString *state) {
     WriteFixtureState(@"open");
 }
 
+- (BOOL)windowShouldClose:(NSWindow *)sender {
+    const char *hide = getenv("QUITX_FIXTURE_HIDE_ON_CLOSE");
+    if (hide != NULL && strcmp(hide, "1") == 0) {
+        [sender orderOut:nil];
+        WriteFixtureState(@"closed");
+        return NO;
+    }
+    return YES;
+}
+
 - (void)windowWillClose:(NSNotification *)notification {
     (void)notification;
     WriteFixtureState(@"closed");

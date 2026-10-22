@@ -5,6 +5,7 @@ extension ChangelogProvider {
         ReleaseChangelog("1.1.8", "Accessibility permission persistence & data access fixes", [
             ("Fixes", [
                 "**Accessibility Survives Updates**: QuitX keeps its Accessibility permission across updates. If macOS dropped it after updating from an older version, Settings ▸ Automation offers a one-click Repair.",
+                "**Discord & Electron Apps**: Apps that only hide their window when you click the red close button now quit as expected when that was their last window.",
                 "**No More Data Access Warnings**: QuitX no longer looks inside other apps' private data or your personal folders while detecting browser profiles."
             ])
         ]),

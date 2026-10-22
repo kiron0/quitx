@@ -23,6 +23,7 @@ extension GUIIntegrationTests {
             spawnBackend: Bool = false,
             accessoryOnClose: Bool = false,
             backgroundOnFirstQuit: Bool = false,
+            hideOnClose: Bool = false,
             stateFile: URL? = nil
         ) async throws -> pid_t {
             let config = NSWorkspace.OpenConfiguration()
@@ -36,6 +37,7 @@ extension GUIIntegrationTests {
             if spawnBackend { environment["QUITX_FIXTURE_SPAWN_BACKEND"] = "1" }
             if accessoryOnClose { environment["QUITX_FIXTURE_ACCESSORY_ON_CLOSE"] = "1" }
             if backgroundOnFirstQuit { environment["QUITX_FIXTURE_BACKGROUND_ON_FIRST_QUIT"] = "1" }
+            if hideOnClose { environment["QUITX_FIXTURE_HIDE_ON_CLOSE"] = "1" }
             if let stateFile { environment["QUITX_FIXTURE_STATE_FILE"] = stateFile.path }
             config.environment = environment
             let running = try await NSWorkspace.shared.openApplication(at: app, configuration: config)
@@ -144,10 +146,10 @@ extension GUIIntegrationTests {
                     guard let state = try? String(contentsOf: url, encoding: .utf8) else { return nil }
                     return state == "closed" ? 0 : 1
                 },
-                allSpacesWindowCount: { requested in
-                    guard let url = states[requested] else { return 0 }
+                allSpacesWindowIDs: { requested in
+                    guard let url = states[requested] else { return [] }
                     guard let state = try? String(contentsOf: url, encoding: .utf8) else { return nil }
-                    return state == "closed" ? 0 : 1
+                    return state == "closed" ? [] : [1]
                 }
             )
         }
@@ -208,6 +210,55 @@ extension GUIIntegrationTests {
             #expect(allGone, "the last window closed, so every instance quits")
             #expect(service.quitRequests.count == 1)
             #expect(Set(service.quitRequests.first ?? []) == [pidA, pidB])
+        }
+
+        @Test("App that only hides its window on close quits after a user close")
+        func hideOnCloseQuitsAfterUserClose() async throws {
+            let appURL = URL(fileURLWithPath: try #require(instanceFixtureApp))
+            let root = FileManager.default.temporaryDirectory.appendingPathComponent("quitx-hide-\(UUID().uuidString)")
+            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+            let state = root.appendingPathComponent("state")
+            let pid = try await launchInstance(app: appURL, dataDir: root.appendingPathComponent("H").path, hideOnClose: true, stateFile: state)
+            let service = LastWindowQuitService(
+                restrictedToPID: pid,
+                recordsRecentlyQuit: false,
+                requiresAccessibilityTrust: false,
+                windowCount: { requested in
+                    guard requested == pid, let value = try? String(contentsOf: state, encoding: .utf8) else { return nil }
+                    return value == "closed" ? 0 : 1
+                }
+            )
+            let original = enableLastWindowQuit()
+            defer {
+                service.stop()
+                ConfigStore.shared.config = original
+                kill([pid])
+                try? FileManager.default.removeItem(at: root)
+            }
+
+            var windowID: CGWindowID?
+            let visible = await waitUntil(timeout: 8) {
+                windowID = LastWindowQuitWindowCounter.visibleWindowIDs()?[pid]?.first
+                return windowID != nil
+            }
+            #expect(visible)
+            guard visible, let windowID else { return }
+            service.start()
+            let tracking = await waitUntil(timeout: 4) { service.isTracking(pid) }
+            #expect(tracking)
+            guard tracking else { return }
+
+            #expect(Darwin.kill(pid, SIGUSR1) == 0)
+            let hidden = await waitUntil(timeout: 4) { (try? String(contentsOf: state, encoding: .utf8)) == "closed" }
+            #expect(hidden)
+            try? await Task.sleep(for: .seconds(3))
+            #expect(service.quitRequests.isEmpty, "a hidden window without a user close stays an open app")
+            #expect(QuitService.processIsRunning(pid))
+
+            service.noteCloseIntent(pid: pid, windowIDs: [windowID])
+            let quit = await waitUntil(timeout: 8) { !QuitService.processIsRunning(pid) }
+            #expect(quit)
+            #expect(service.quitRequests.count == 1)
         }
 
         @Test("App that hides its Dock icon on close still quits with its backend")

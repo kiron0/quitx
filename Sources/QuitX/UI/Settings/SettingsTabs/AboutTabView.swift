@@ -37,11 +37,6 @@ struct AboutTabView: View {
                         }
                         .font(.system(size: 11.5))
 
-                        Button("What's New") {
-                            ChangelogWindowController.shared.show()
-                        }
-                        .font(.system(size: 11.5))
-
                         Button(updateChecker.isChecking ? "Checking..." : "Check Updates") {
                             Task {
                                 await updateChecker.checkForUpdates(isUserInitiated: true)

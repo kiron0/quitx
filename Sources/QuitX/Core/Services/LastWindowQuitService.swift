@@ -57,11 +57,28 @@ enum LastWindowQuitWindowState {
         return windowCount == 0 ? previous + 1 : 0
     }
 
-    static func remainingWindows(axCount: Int?, allSpacesCount: Int?, closedByUser: Bool, knownWindows: Int) -> Int? {
+    static func remainingWindows(
+        axCount: Int?,
+        allSpacesIDs: Set<CGWindowID>?,
+        seenIDs: Set<CGWindowID>,
+        closedIDs: Set<CGWindowID>,
+        closedByUser: Bool,
+        knownWindows: Int
+    ) -> Int? {
         guard let axCount else { return nil }
         guard axCount == 0 else { return axCount }
+        guard let allSpacesIDs else { return nil }
+        if allSpacesIDs.isEmpty { return 0 }
+        if !closedIDs.isEmpty {
+            return allSpacesIDs.intersection(seenIDs).subtracting(closedIDs).count
+        }
         if closedByUser && knownWindows == 0 { return 0 }
-        return allSpacesCount
+        return allSpacesIDs.count
+    }
+
+    static func isCloseButtonRegion(point: CGPoint, windowBounds: CGRect) -> Bool {
+        guard windowBounds.contains(point) else { return false }
+        return point.x - windowBounds.minX <= 96 && point.y - windowBounds.minY <= 44
     }
 }
 
@@ -175,20 +192,56 @@ enum LastWindowQuitWindowCounter {
         initialState: nil
     )
 
-    static func allSpacesWindowCount(for pid: pid_t) -> Int? {
+    static func allSpacesWindowIDs(for pid: pid_t) -> Set<CGWindowID>? {
         let now = ProcessInfo.processInfo.systemUptime
         if let cached = allSpacesSnapshot.withLock({ state -> [pid_t: Set<CGWindowID>]? in
             guard let state, now - state.at <= visibleSnapshotMaxAge else { return nil }
             return state.ids
         }) {
-            return cached[pid]?.count ?? 0
+            return cached[pid] ?? []
         }
         guard let list = CGWindowListCopyWindowInfo([.optionAll, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else {
             return nil
         }
         let ids = windowIDs(from: list)
         allSpacesSnapshot.withLock { $0 = (ids, now) }
-        return ids[pid]?.count ?? 0
+        return ids[pid] ?? []
+    }
+
+    static func allSpacesWindowCount(for pid: pid_t) -> Int? {
+        allSpacesWindowIDs(for: pid)?.count
+    }
+
+    struct OnScreenWindow: Equatable {
+        let id: CGWindowID
+        let pid: pid_t
+        let bounds: CGRect
+    }
+
+    static func onScreenWindowsFrontToBack() -> [OnScreenWindow] {
+        guard let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else {
+            return []
+        }
+        return list.compactMap { info -> OnScreenWindow? in
+            guard let owner = info[kCGWindowOwnerPID as String] as? NSNumber,
+                  let number = info[kCGWindowNumber as String] as? NSNumber,
+                  (info[kCGWindowLayer as String] as? NSNumber)?.intValue ?? 0 == 0,
+                  let boundsDict = info[kCGWindowBounds as String] as? NSDictionary,
+                  let bounds = CGRect(dictionaryRepresentation: boundsDict),
+                  bounds.width > 0, bounds.height > 0 else { return nil }
+            return OnScreenWindow(id: CGWindowID(number.uint32Value), pid: pid_t(owner.int32Value), bounds: bounds)
+        }
+    }
+
+    static func isCloseButton(at point: CGPoint) -> Bool {
+        let systemWide = AXUIElementCreateSystemWide()
+        AXUIElementSetMessagingTimeout(systemWide, 0.25)
+        var element: AXUIElement?
+        guard AXUIElementCopyElementAtPosition(systemWide, Float(point.x), Float(point.y), &element) == .success,
+              let element else { return false }
+        var subrole: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(element, kAXSubroleAttribute as CFString, &subrole) == .success else { return false }
+        return (subrole as? String) == (kAXCloseButtonSubrole as String)
     }
 
     private static func recentVisibleWindowIDs() -> [pid_t: Set<CGWindowID>]? {
@@ -332,6 +385,8 @@ final class LastWindowQuitService: ObservableObject {
         var owners: Set<pid_t>
         var emptySamples: Int
         var closedByUser = false
+        var seenWindowIDs: Set<CGWindowID> = []
+        var closedWindowIDs: [CGWindowID: TimeInterval] = [:]
     }
 
     private var tracked: [String: TrackedApp] = [:]
@@ -346,7 +401,9 @@ final class LastWindowQuitService: ObservableObject {
     private let accessibilityTrust: @MainActor () -> Bool
     private let windowCount: (pid_t) -> Int?
     private var permissionSubscription: AnyCancellable?
-    private let allSpacesWindowCount: (pid_t) -> Int?
+    private let allSpacesWindowIDs: (pid_t) -> Set<CGWindowID>?
+    private var closeIntentMonitors: [Any] = []
+    private let reopenGrace: TimeInterval = 1.5
     private var closeObservers: [pid_t: AXWindowCloseObserver] = [:]
 
     private let pollInterval: Duration = .seconds(1)
@@ -358,14 +415,14 @@ final class LastWindowQuitService: ObservableObject {
         requiresAccessibilityTrust: Bool = true,
         accessibilityTrust: @escaping @MainActor () -> Bool = { AccessibilityPermission.shared.refresh() },
         windowCount: @escaping (pid_t) -> Int? = { pid in LastWindowQuitWindowCounter.windowCount(for: pid) },
-        allSpacesWindowCount: @escaping (pid_t) -> Int? = { pid in LastWindowQuitWindowCounter.allSpacesWindowCount(for: pid) }
+        allSpacesWindowIDs: @escaping (pid_t) -> Set<CGWindowID>? = { pid in LastWindowQuitWindowCounter.allSpacesWindowIDs(for: pid) }
     ) {
         self.restrictedPID = restrictedToPID
         self.recordsRecentlyQuit = recordsRecentlyQuit
         self.requiresAccessibilityTrust = requiresAccessibilityTrust
         self.accessibilityTrust = accessibilityTrust
         self.windowCount = windowCount
-        self.allSpacesWindowCount = allSpacesWindowCount
+        self.allSpacesWindowIDs = allSpacesWindowIDs
         self.accessibilityTrusted = !requiresAccessibilityTrust || accessibilityTrust()
     }
 
@@ -448,6 +505,7 @@ final class LastWindowQuitService: ObservableObject {
 
     private func startPolling() {
         guard pollTask == nil else { return }
+        installCloseIntentMonitors()
         pollTask = Task { @MainActor [weak self] in
             while !Task.isCancelled {
                 guard let self else { return }
@@ -496,20 +554,22 @@ final class LastWindowQuitService: ObservableObject {
         owners.reduce(0) { $0 + (closeObservers[$1]?.windows.count ?? 0) }
     }
 
-    private func totalAllSpacesWindows(_ owners: Set<pid_t>) -> Int? {
-        var total = 0
+    private func allSpacesIDs(_ owners: Set<pid_t>) -> Set<CGWindowID>? {
+        var ids = Set<CGWindowID>()
         for pid in owners where QuitService.processIsRunning(pid) {
-            guard let count = allSpacesWindowCount(pid) else { return nil }
-            total += count
+            guard let windows = allSpacesWindowIDs(pid) else { return nil }
+            ids.formUnion(windows)
         }
-        return total
+        return ids
     }
 
     private func remainingWindows(_ entry: TrackedApp, owners: Set<pid_t>? = nil) -> Int? {
         let scope = owners ?? entry.owners
         return LastWindowQuitWindowState.remainingWindows(
             axCount: totalWindows(scope),
-            allSpacesCount: totalAllSpacesWindows(scope),
+            allSpacesIDs: allSpacesIDs(scope),
+            seenIDs: entry.seenWindowIDs,
+            closedIDs: Set(entry.closedWindowIDs.keys),
             closedByUser: entry.closedByUser,
             knownWindows: knownWindows(scope)
         )
@@ -518,6 +578,63 @@ final class LastWindowQuitService: ObservableObject {
     private func stopPolling() {
         pollTask?.cancel()
         pollTask = nil
+        removeCloseIntentMonitors()
+    }
+
+    private func installCloseIntentMonitors() {
+        guard closeIntentMonitors.isEmpty, requiresAccessibilityTrust else { return }
+        if let mouse = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown, handler: { [weak self] _ in
+            let location = NSEvent.mouseLocation
+            MainActor.assumeIsolated { self?.handleMouseDown(cocoaLocation: location) }
+        }) {
+            closeIntentMonitors.append(mouse)
+        }
+        if let keys = NSEvent.addGlobalMonitorForEvents(matching: .keyDown, handler: { [weak self] event in
+            let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+            let key = event.charactersIgnoringModifiers?.lowercased()
+            MainActor.assumeIsolated { self?.handleKeyDown(flags: flags, key: key) }
+        }) {
+            closeIntentMonitors.append(keys)
+        }
+    }
+
+    private func removeCloseIntentMonitors() {
+        closeIntentMonitors.forEach { NSEvent.removeMonitor($0) }
+        closeIntentMonitors.removeAll()
+    }
+
+    private var trackedOwners: Set<pid_t> {
+        tracked.values.reduce(into: Set<pid_t>()) { $0.formUnion($1.owners) }
+    }
+
+    private func handleMouseDown(cocoaLocation: CGPoint) {
+        guard !tracked.isEmpty, let primary = NSScreen.screens.first else { return }
+        let point = CGPoint(x: cocoaLocation.x, y: primary.frame.maxY - cocoaLocation.y)
+        let owners = trackedOwners
+        guard let window = LastWindowQuitWindowCounter.onScreenWindowsFrontToBack().first(where: { $0.bounds.contains(point) }),
+              owners.contains(window.pid),
+              LastWindowQuitWindowState.isCloseButtonRegion(point: point, windowBounds: window.bounds),
+              LastWindowQuitWindowCounter.isCloseButton(at: point) else { return }
+        noteCloseIntent(pid: window.pid, windowIDs: [window.id])
+    }
+
+    private func handleKeyDown(flags: NSEvent.ModifierFlags, key: String?) {
+        guard key == "w", flags.contains(.command), !flags.contains(.control), !tracked.isEmpty,
+              let pid = NSWorkspace.shared.frontmostApplication?.processIdentifier,
+              trackedOwners.contains(pid) else { return }
+        let windows = LastWindowQuitWindowCounter.onScreenWindowsFrontToBack().filter { $0.pid == pid }
+        let closing = flags.contains(.option) ? windows.map(\.id) : Array(windows.prefix(1).map(\.id))
+        noteCloseIntent(pid: pid, windowIDs: Set(closing))
+    }
+
+    func noteCloseIntent(pid: pid_t, windowIDs: Set<CGWindowID>) {
+        let now = ProcessInfo.processInfo.systemUptime
+        for key in tracked.keys where tracked[key]?.owners.contains(pid) == true {
+            tracked[key]?.closedByUser = true
+            for id in windowIDs {
+                tracked[key]?.closedWindowIDs[id] = now
+            }
+        }
     }
 
     private func poll() {
@@ -542,6 +659,12 @@ final class LastWindowQuitService: ObservableObject {
 
             if var entry = tracked[key] {
                 entry.owners = entry.owners.union(withWindows).union(regular).intersection(live)
+                let onScreen = entry.owners.reduce(into: Set<CGWindowID>()) { $0.formUnion(visible[$1] ?? []) }
+                entry.seenWindowIDs.formUnion(onScreen)
+                let now = ProcessInfo.processInfo.systemUptime
+                entry.closedWindowIDs = entry.closedWindowIDs.filter { id, closedAt in
+                    !(onScreen.contains(id) && now - closedAt > reopenGrace)
+                }
                 tracked[key] = entry
                 continue
             }
@@ -567,7 +690,8 @@ final class LastWindowQuitService: ObservableObject {
                 bundleURL: identity.bundleURL,
                 executableURL: identity.executableURL,
                 owners: owners,
-                emptySamples: 0
+                emptySamples: 0,
+                seenWindowIDs: owners.reduce(into: Set<CGWindowID>()) { $0.formUnion(visible[$1] ?? []) }
             )
         }
 
