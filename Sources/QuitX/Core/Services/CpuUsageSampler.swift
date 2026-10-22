@@ -16,17 +16,28 @@ enum CpuUsageSampler {
     private static let calibrationThreshold: UInt64 = 5_000_000
     private static let smoothing: Double = 0.5
 
+    private static let fastInterval: DispatchTimeInterval = .seconds(1)
+    private static let idleInterval: DispatchTimeInterval = .seconds(10)
+    private static let demandWindow: TimeInterval = 5
+
     private static let queue = DispatchQueue(label: "quitx.cpu.usage", qos: .utility)
     private static let lock = OSAllocatedUnfairLock(initialState: State())
     private static let timerLock = NSLock()
     nonisolated(unsafe) private static var timer: DispatchSourceTimer?
+    nonisolated(unsafe) private static var isFastCadence = false
+    nonisolated(unsafe) private static var lastDemand: TimeInterval = 0
 
     static func start() {
         timerLock.lock()
         defer { timerLock.unlock() }
         guard timer == nil else { return }
         let source = DispatchSource.makeTimerSource(queue: queue)
-        source.schedule(deadline: .now(), repeating: .seconds(1), leeway: .milliseconds(250))
+        isFastCadence = ProcessInfo.processInfo.systemUptime - lastDemand <= demandWindow
+        source.schedule(
+            deadline: .now(),
+            repeating: isFastCadence ? fastInterval : idleInterval,
+            leeway: isFastCadence ? .milliseconds(250) : .seconds(1)
+        )
         source.setEventHandler { tick() }
         timer = source
         source.resume()
@@ -36,6 +47,7 @@ enum CpuUsageSampler {
         timerLock.lock()
         let existing = timer
         timer = nil
+        isFastCadence = false
         timerLock.unlock()
         existing?.cancel()
         lock.withLock { state in
@@ -49,11 +61,30 @@ enum CpuUsageSampler {
     }
 
     static func usages() -> [pid_t: Double] {
-        lock.withLock { $0.usages }
+        noteDemand()
+        return lock.withLock { $0.usages }
+    }
+
+    private static func noteDemand() {
+        timerLock.lock()
+        defer { timerLock.unlock() }
+        lastDemand = ProcessInfo.processInfo.systemUptime
+        guard let timer, !isFastCadence else { return }
+        isFastCadence = true
+        timer.schedule(deadline: .now(), repeating: fastInterval, leeway: .milliseconds(250))
+    }
+
+    private static func relaxCadenceIfIdle(now: TimeInterval) {
+        timerLock.lock()
+        defer { timerLock.unlock() }
+        guard let timer, isFastCadence, now - lastDemand > demandWindow else { return }
+        isFastCadence = false
+        timer.schedule(deadline: .now() + idleInterval, repeating: idleInterval, leeway: .seconds(1))
     }
 
     private static func tick() {
         let now = ProcessInfo.processInfo.systemUptime
+        defer { relaxCadenceIfIdle(now: now) }
         let totals = readTotals()
         guard !totals.isEmpty else { return }
         let selfPid = ProcessInfo.processInfo.processIdentifier
@@ -111,10 +142,11 @@ enum CpuUsageSampler {
 
     private static func readTotals() -> [pid_t: UInt64] {
         var totals: [pid_t: UInt64] = [:]
-        totals.reserveCapacity(1024)
-        var buffer = [pid_t](repeating: 0, count: 4096)
+        let estimated = max(0, Int(proc_listallpids(nil, 0)))
+        var buffer = [pid_t](repeating: 0, count: max(1024, estimated + 128))
         let count = proc_listallpids(&buffer, Int32(buffer.count * MemoryLayout<pid_t>.stride))
         guard count > 0 else { return totals }
+        totals.reserveCapacity(Int(count))
 
         for pid in buffer.prefix(Int(count)) where pid > 0 {
             var info = proc_taskinfo()

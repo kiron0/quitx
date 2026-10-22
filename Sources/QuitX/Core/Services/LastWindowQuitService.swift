@@ -2,6 +2,7 @@ import AppKit
 import ApplicationServices
 import Combine
 import Foundation
+import os
 
 enum LastWindowQuitPolicy {
     static func isEligible(
@@ -78,20 +79,56 @@ enum LastWindowQuitWindowCounter {
         return ids
     }
 
+    private static let visibleSnapshotMaxAge: TimeInterval = 0.5
+    private static let visibleSnapshot = OSAllocatedUnfairLock<(ids: [pid_t: Set<CGWindowID>], at: TimeInterval)?>(
+        initialState: nil
+    )
+
     static func visibleWindowIDs() -> [pid_t: Set<CGWindowID>]? {
         guard let list = CGWindowListCopyWindowInfo(
             [.optionOnScreenOnly, .excludeDesktopElements],
             kCGNullWindowID
         ) as? [[String: Any]] else { return nil }
-        return windowIDs(from: list)
+        let ids = windowIDs(from: list)
+        let now = ProcessInfo.processInfo.systemUptime
+        visibleSnapshot.withLock { $0 = (ids, now) }
+        return ids
+    }
+
+    private static func recentVisibleWindowIDs() -> [pid_t: Set<CGWindowID>]? {
+        let now = ProcessInfo.processInfo.systemUptime
+        if let cached = visibleSnapshot.withLock({ state -> [pid_t: Set<CGWindowID>]? in
+            guard let state, now - state.at <= visibleSnapshotMaxAge else { return nil }
+            return state.ids
+        }) {
+            return cached
+        }
+        return visibleWindowIDs()
+    }
+
+    private static let axMessagingTimeout: Float = 0.5
+
+    private static func axApplication(for pid: pid_t) -> AXUIElement {
+        let application = AXUIElementCreateApplication(pid)
+        AXUIElementSetMessagingTimeout(application, axMessagingTimeout)
+        return application
+    }
+
+    private static func axWindows(for pid: pid_t) -> [AXUIElement]? {
+        let application = axApplication(for: pid)
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(application, kAXWindowsAttribute as CFString, &value) == .success,
+              let windows = value as? [AXUIElement] else { return nil }
+        return windows
     }
 
     static func hasMinimizedWindow(for pid: pid_t) -> Bool {
         guard AXIsProcessTrusted() else { return false }
-        let application = AXUIElementCreateApplication(pid)
-        var value: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(application, kAXWindowsAttribute as CFString, &value) == .success,
-              let windows = value as? [AXUIElement] else { return false }
+        guard let windows = axWindows(for: pid) else { return false }
+        return containsMinimizedWindow(windows)
+    }
+
+    private static func containsMinimizedWindow(_ windows: [AXUIElement]) -> Bool {
         for window in windows {
             var minVal: CFTypeRef?
             if AXUIElementCopyAttributeValue(window, kAXMinimizedAttribute as CFString, &minVal) == .success,
@@ -118,8 +155,23 @@ enum LastWindowQuitWindowCounter {
         return nil
     }
 
+    private static let webRuntimeCache = OSAllocatedUnfairLock(initialState: [String: Bool]())
+
     static func isWebRuntimeApp(bundleURL: URL?) -> Bool {
         guard let bundleURL else { return false }
+        let cacheKey = bundleURL.standardizedFileURL.path
+        if let cached = webRuntimeCache.withLock({ $0[cacheKey] }) {
+            return cached
+        }
+        let result = detectWebRuntime(bundleURL: bundleURL)
+        webRuntimeCache.withLock { cache in
+            if cache.count >= 256 { cache.removeAll() }
+            cache[cacheKey] = result
+        }
+        return result
+    }
+
+    private static func detectWebRuntime(bundleURL: URL) -> Bool {
         let checkURLs = [bundleURL, enclosingAppURL(for: bundleURL)].compactMap { $0 }
         let runtimeFrameworks = [
             "Contents/Frameworks/Electron Framework.framework",
@@ -137,32 +189,25 @@ enum LastWindowQuitWindowCounter {
 
     static func accessibilityWindowCount(for pid: pid_t) -> Int? {
         guard AXIsProcessTrusted() else { return nil }
-        let application = AXUIElementCreateApplication(pid)
-        var value: CFTypeRef?
-        let result = AXUIElementCopyAttributeValue(
-            application,
-            kAXWindowsAttribute as CFString,
-            &value
-        )
-        guard result == .success, let windows = value as? [AXUIElement] else { return nil }
-        return windows.count
+        return axWindows(for: pid)?.count
     }
 
     static func windowCount(for pid: pid_t, visible: [pid_t: Set<CGWindowID>]? = nil) -> Int? {
         guard AXIsProcessTrusted() else { return nil }
 
-        let axCount = accessibilityWindowCount(for: pid)
+        let windows = axWindows(for: pid)
+        let axCount = windows?.count
         if let axCount, axCount == 0 {
             return 0
         }
 
-        let visibleMap = visible ?? visibleWindowIDs() ?? [:]
+        let visibleMap = visible ?? recentVisibleWindowIDs() ?? [:]
         let visibleCount = visibleMap[pid]?.count ?? 0
         if visibleCount > 0 {
             return visibleCount
         }
 
-        if hasMinimizedWindow(for: pid) {
+        if let windows, containsMinimizedWindow(windows) {
             return max(1, axCount ?? 1)
         }
 
@@ -354,18 +399,18 @@ final class LastWindowQuitService: ObservableObject {
             guard tracked[pid] == nil, !pendingQuits.contains(pid) else { continue }
             let windowIDs = visible[pid] ?? []
             guard !windowIDs.isEmpty else { continue }
-            guard let count = windowCount(pid), count > 0 else { continue }
 
             let name = Self.resolvedName(for: app)
             guard !name.isEmpty else { continue }
             guard LastWindowQuitPolicy.isEligible(
                 bundleId: app.bundleIdentifier,
                 name: name,
-                isRegular: true,
+                isRegular: app.activationPolicy == .regular,
                 bundleURL: app.bundleURL,
                 executableURL: app.executableURL,
                 config: config
             ) else { continue }
+            guard let count = windowCount(pid), count > 0 else { continue }
 
             tracked[pid] = TrackedApp(
                 pid: pid,
@@ -423,7 +468,7 @@ final class LastWindowQuitService: ObservableObject {
         guard LastWindowQuitPolicy.isEligible(
             bundleId: entry.bundleId,
             name: entry.name,
-            isRegular: true,
+            isRegular: running.activationPolicy == .regular,
             bundleURL: running.bundleURL,
             executableURL: running.executableURL,
             config: ConfigStore.shared.config

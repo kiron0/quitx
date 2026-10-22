@@ -67,20 +67,21 @@ final class QuitTimerService {
         }
     }
 
-    private func ensureTimer() {
-        let hasTimers = !ConfigStore.shared.config.quitTimers.isEmpty
-        if hasTimers, timer == nil {
-            let newTimer = Timer(timeInterval: 60, repeats: true) { [weak self] _ in
-                Task { @MainActor in
-                    await self?.fireDueTimers()
-                }
+    private func ensureTimer(retryAfter: TimeInterval? = nil) {
+        timer?.invalidate()
+        timer = nil
+        let timers = ConfigStore.shared.config.quitTimers
+        guard let earliest = timers.values.min() else { return }
+        let untilDue = earliest - Date().timeIntervalSince1970
+        let delay = max(1, retryAfter ?? untilDue)
+        let newTimer = Timer(timeInterval: delay, repeats: false) { [weak self] _ in
+            Task { @MainActor in
+                await self?.fireDueTimers()
             }
-            RunLoop.main.add(newTimer, forMode: .common)
-            timer = newTimer
-        } else if !hasTimers {
-            timer?.invalidate()
-            timer = nil
         }
+        newTimer.tolerance = min(5, delay * 0.05)
+        RunLoop.main.add(newTimer, forMode: .common)
+        timer = newTimer
     }
 
     private func fireDueTimers() async {
@@ -92,6 +93,10 @@ final class QuitTimerService {
         }
 
         let vm = AppListViewModel.shared
+        guard !vm.hasPendingOperations else {
+            ensureTimer(retryAfter: 5)
+            return
+        }
         await vm.refresh()
         let targets = vm.apps.filter { app in
             let key = PerAppQuitRule.ruleKey(bundleId: app.bundleId, name: app.name)

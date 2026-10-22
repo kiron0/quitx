@@ -144,14 +144,17 @@ final class AutoQuitService {
 
     private func checkInactiveApps() async {
         let config = ConfigStore.shared.config
+        let globalTimeout = config.quitInactiveAfterMinutes
+        guard globalTimeout > 0 || !config.perAppQuitRules.isEmpty else {
+            lastActiveTimestamps = lastActiveTimestamps.filter { QuitService.processIsRunning($0.key) }
+            quittingPids = quittingPids.filter(QuitService.processIsRunning)
+            return
+        }
 
         let running = runningApplicationsWithResolvedPids()
         let runningPids = Set(running.map { $0.1 })
         lastActiveTimestamps = lastActiveTimestamps.filter { runningPids.contains($0.key) }
         quittingPids = quittingPids.intersection(runningPids)
-
-        let globalTimeout = config.quitInactiveAfterMinutes
-        guard globalTimeout > 0 || !config.perAppQuitRules.isEmpty else { return }
         let saverActive = BatterySaver.isSaverActive(config: config)
 
         let now = Date()
