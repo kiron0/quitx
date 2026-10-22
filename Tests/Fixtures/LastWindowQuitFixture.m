@@ -116,6 +116,14 @@ static void WriteFixtureState(NSString *state) {
             return NSTerminateCancel;
         }
     }
+    static int quitRequests = 0;
+    quitRequests += 1;
+    const char *background = getenv("QUITX_FIXTURE_BACKGROUND_ON_FIRST_QUIT");
+    if (background != NULL && strcmp(background, "1") == 0 && quitRequests == 1) {
+        [self.window orderOut:nil];
+        WriteFixtureState(@"background");
+        return NSTerminateCancel;
+    }
     const char *refuse = getenv("QUITX_FIXTURE_REFUSE_QUIT");
     if (refuse != NULL && strcmp(refuse, "1") == 0) {
         return NSTerminateCancel;

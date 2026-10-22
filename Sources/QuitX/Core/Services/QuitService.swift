@@ -60,7 +60,6 @@ final class QuitService {
 
         var helperPids: Set<pid_t> = []
         if let bundleId = app.bundleId, let rootURL {
-            let prefix = bundleId + "."
             let workspaceApps = NSWorkspace.shared.runningApplications
             let siblingInstances = Set(workspaceApps.compactMap { running -> pid_t? in
                 guard !running.isTerminated,
@@ -74,8 +73,6 @@ final class QuitService {
             })
             for running in workspaceApps {
                 guard !running.isTerminated else { continue }
-                guard let bid = running.bundleIdentifier else { continue }
-                guard bid == bundleId || bid.hasPrefix(prefix) else { continue }
                 guard let path = running.executableURL?.path ?? running.bundleURL?.path,
                       Self.isExecutablePath(path, insideContentsOf: rootURL) else { continue }
                 let pid = running.processIdentifier
@@ -174,13 +171,21 @@ final class QuitService {
         let pollNs: UInt64 = 100_000_000
         let gracefulAttempts = force ? 20 : 50
 
-        for _ in 0..<gracefulAttempts {
+        for attempt in 0..<gracefulAttempts {
             if Task.isCancelled {
                 return QuitResult(app: app, success: false, forced: false, error: "Cancelled")
             }
             let appsDone = pendingApps.allSatisfy { !targetIsRunning($0.pid, isHelper: $0.isHelper) }
             let pidsDone = pendingRawPids.allSatisfy { !targetIsRunning($0.pid, isHelper: $0.isHelper) }
             if appsDone && pidsDone { break }
+            if !force, Self.backgroundRetryAttempts.contains(attempt) {
+                let visible = LastWindowQuitWindowCounter.visibleWindowIDs() ?? [:]
+                for pid in knownPids where targetIsRunning(pid, isHelper: false) && (visible[pid] ?? []).isEmpty {
+                    guard let running = NSRunningApplication(processIdentifier: pid),
+                          Self.matches(running: running, app: app) else { continue }
+                    _ = running.terminate()
+                }
+            }
             try? await Task.sleep(nanoseconds: pollNs)
         }
 
@@ -261,6 +266,8 @@ final class QuitService {
             error: firstError
         )
     }
+
+    static let backgroundRetryAttempts: Set<Int> = [15, 30]
 
     static func helperBelongsToTarget(
         pid: pid_t,

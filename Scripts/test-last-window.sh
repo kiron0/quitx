@@ -15,6 +15,10 @@ trap cleanup EXIT
 
 cd "$ROOT_DIR"
 
+if pgrep -xq QuitX; then
+    echo "⚠️  QuitX is running. Its Quit When Last Window Closes can quit the test fixtures and make these tests flaky. Quit QuitX first for reliable results."
+fi
+
 echo "▶ Building last-window fixture..."
 xcrun clang \
     -fobjc-arc \

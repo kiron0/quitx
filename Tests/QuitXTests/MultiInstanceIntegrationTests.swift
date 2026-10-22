@@ -22,6 +22,7 @@ extension GUIIntegrationTests {
             refuseQuit: Bool = false,
             spawnBackend: Bool = false,
             accessoryOnClose: Bool = false,
+            backgroundOnFirstQuit: Bool = false,
             stateFile: URL? = nil
         ) async throws -> pid_t {
             let config = NSWorkspace.OpenConfiguration()
@@ -34,6 +35,7 @@ extension GUIIntegrationTests {
             if refuseQuit { environment["QUITX_FIXTURE_REFUSE_QUIT"] = "1" }
             if spawnBackend { environment["QUITX_FIXTURE_SPAWN_BACKEND"] = "1" }
             if accessoryOnClose { environment["QUITX_FIXTURE_ACCESSORY_ON_CLOSE"] = "1" }
+            if backgroundOnFirstQuit { environment["QUITX_FIXTURE_BACKGROUND_ON_FIRST_QUIT"] = "1" }
             if let stateFile { environment["QUITX_FIXTURE_STATE_FILE"] = stateFile.path }
             config.environment = environment
             let running = try await NSWorkspace.shared.openApplication(at: app, configuration: config)
@@ -242,6 +244,38 @@ extension GUIIntegrationTests {
                 !QuitService.processIsRunning(pid) && !QuitService.processIsRunning(backend)
             }
             #expect(allGone, "windowless app quits completely, backend included")
+        }
+
+        @Test("App that stays in the background on the first quit is quit by one action")
+        func backgroundOnFirstQuitNeedsOneAction() async throws {
+            let appURL = URL(fileURLWithPath: try #require(instanceFixtureApp))
+            let root = FileManager.default.temporaryDirectory.appendingPathComponent("quitx-bg-\(UUID().uuidString)")
+            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+            let state = root.appendingPathComponent("state")
+            let pid = try await launchInstance(
+                app: appURL,
+                dataDir: root.appendingPathComponent("G").path,
+                backgroundOnFirstQuit: true,
+                stateFile: state
+            )
+            defer {
+                kill([pid])
+                try? FileManager.default.removeItem(at: root)
+            }
+
+            var row: AppInfo?
+            let listed = await waitUntil(timeout: 8) {
+                row = await fixtureRows().first { $0.pids.contains(pid) }
+                return row != nil && !(LastWindowQuitWindowCounter.visibleWindowIDs()?[pid] ?? []).isEmpty
+            }
+            #expect(listed)
+            guard listed, let row else { return }
+
+            let results = await QuitService.shared.quit(apps: [row], force: false)
+            #expect((try? String(contentsOf: state, encoding: .utf8)) == "background" || !QuitService.processIsRunning(pid))
+            #expect(results.first?.success == true)
+            #expect(results.first?.forced == false)
+            #expect(!QuitService.processIsRunning(pid))
         }
 
         @Test("Single instance quit takes its backend child processes with it")
