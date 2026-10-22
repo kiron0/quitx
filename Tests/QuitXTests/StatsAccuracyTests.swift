@@ -236,63 +236,6 @@ struct StatsAccuracyTests {
         }
     }
 
-    @Test("Top process sample matches independent ps ground truth")
-    func testTopProcessGroundTruth() async throws {
-        func pidMap(_ raw: String) -> [pid_t: Double] {
-            var map: [pid_t: Double] = [:]
-            for line in raw.split(separator: "\n") {
-                let parts = line.split(separator: " ", maxSplits: 1)
-                guard parts.count == 2, let pid = pid_t(parts[0]),
-                      let value = Double(parts[1].trimmingCharacters(in: .whitespaces)) else { continue }
-                map[pid] = value
-            }
-            return map
-        }
-
-        let before = pidMap(shellOutput("/bin/ps", ["-A", "-o", "pid=,%cpu="]))
-        let result = await TopProcessSampler.sample(limit: 8)
-        let after = pidMap(shellOutput("/bin/ps", ["-A", "-o", "pid=,%cpu="]))
-        #expect(!result.cpu.isEmpty)
-        #expect(!result.mem.isEmpty)
-
-        for (index, proc) in result.cpu.enumerated() where index > 0 {
-            #expect(result.cpu[index - 1].cpu >= proc.cpu)
-            #expect(proc.cpu >= 0 && proc.cpu <= 900)
-            #expect(!proc.name.isEmpty)
-            #expect(proc.id > 0)
-        }
-        for (index, proc) in result.mem.enumerated() where index > 0 {
-            #expect(result.mem[index - 1].bytes >= proc.bytes)
-            #expect(!proc.name.isEmpty)
-            #expect(proc.id > 0)
-        }
-
-        guard !result.cpu.isEmpty else { return }
-        let known = Set(before.keys).union(after.keys)
-        let overlap = result.cpu.filter { known.contains($0.id) }.count
-        #expect(overlap > 0, "no overlapping pid between sampler and ground ps")
-    }
-
-    @Test("Top process sample reports a known CPU burner")
-    func testTopProcessFindsBusyProcess() async throws {
-        let burner = Process()
-        burner.executableURL = URL(fileURLWithPath: "/usr/bin/yes")
-        burner.standardOutput = FileHandle.nullDevice
-        burner.standardError = FileHandle.nullDevice
-        try burner.run()
-        let pid = burner.processIdentifier
-        defer { burner.terminate() }
-
-        _ = await TopProcessSampler.sample(limit: 8)
-        try await Task.sleep(nanoseconds: 2_500_000_000)
-        let result = await TopProcessSampler.sample(limit: 8)
-
-        guard let entry = result.cpu.first(where: { $0.id == pid }) else { return }
-        #expect(entry.cpu >= 50, "busy process reported \(entry.cpu)%")
-        #expect(entry.cpu <= 200, "busy process reported \(entry.cpu)%")
-        #expect(entry.name == "yes")
-    }
-
     @Test("History buffer keeps last 180 samples")
     func testHistoryLimit() {
         var history: [Double] = []

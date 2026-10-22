@@ -380,7 +380,30 @@ final class StatusItemController: NSObject {
         statusItem.button
     }
 
-    func updateMenuBarStats(powerSources: [[String: Any]]? = nil) {
+    struct MenuBarSample: Sendable {
+        let cpu: Double
+        let memoryUsed: UInt64
+        let battery: BatteryMenuBarSnapshot?
+        let gpu: GpuUsageService.Snapshot?
+        let onBattery: Bool
+    }
+
+    nonisolated static func sampleMenuBar(config cfg: QuitXConfig) -> MenuBarSample {
+        let needsPower = cfg.batterySaverEnabled || cfg.batteryMenuBarEnabled
+        let powerSources = needsPower ? BatterySaver.currentDescriptions() : nil
+        return MenuBarSample(
+            cpu: SystemUsage.cpuPercent(consumer: "menuBar"),
+            memoryUsed: SystemUsage.memoryUsedBytes(),
+            battery: cfg.batteryMenuBarEnabled
+                ? BatteryDetailSampler.menuBarSnapshot(descriptions: powerSources)
+                : nil,
+            gpu: cfg.menuBarShowGpu ? GpuUsageService.snapshot() : nil,
+            onBattery: cfg.batterySaverEnabled
+                && BatterySaver.isOnBattery(descriptions: powerSources ?? [])
+        )
+    }
+
+    func updateMenuBarStats(sample providedSample: MenuBarSample? = nil) {
         let cfg = ConfigStore.shared.config
         guard cfg.menuBarStatsEnabled else {
             removeStatsItem()
@@ -399,12 +422,11 @@ final class StatusItemController: NSObject {
             button.imagePosition = .imageLeading
         }
 
-        let cpu = SystemUsage.cpuPercent(consumer: "menuBar")
-        let memoryUsed = SystemUsage.memoryUsedBytes()
-        let battery = cfg.batteryMenuBarEnabled
-            ? BatteryDetailSampler.menuBarSnapshot(descriptions: powerSources)
-            : nil
-        let gpu = cfg.menuBarShowGpu ? GpuUsageService.snapshot() : nil
+        let sample = providedSample ?? Self.sampleMenuBar(config: cfg)
+        let cpu = sample.cpu
+        let memoryUsed = sample.memoryUsed
+        let battery = cfg.batteryMenuBarEnabled ? sample.battery : nil
+        let gpu = cfg.menuBarShowGpu ? sample.gpu : nil
 
         let cpuText = cfg.menuBarShowCpu ? BatterySaver.percentText(cpu) : "off"
         let memText = cfg.menuBarShowMemory ? BatterySaver.compactMemoryText(bytes: memoryUsed, unit: cfg.menuBarMemoryUnit) : "off"
@@ -591,13 +613,12 @@ final class StatusItemController: NSObject {
                     interval = 5_000_000_000
                     continue
                 }
-                let powerSources = (cfg.batterySaverEnabled || cfg.batteryMenuBarEnabled)
-                    ? BatterySaver.currentDescriptions()
-                    : nil
-                let onBattery = cfg.batterySaverEnabled
-                    && BatterySaver.isOnBattery(descriptions: powerSources ?? [])
-                interval = onBattery ? 5_000_000_000 : 1_000_000_000
-                self.updateMenuBarStats(powerSources: powerSources)
+                let sample = await Task.detached(priority: .utility) {
+                    StatusItemController.sampleMenuBar(config: cfg)
+                }.value
+                guard !Task.isCancelled else { break }
+                interval = sample.onBattery ? 5_000_000_000 : 1_000_000_000
+                self.updateMenuBarStats(sample: sample)
             }
         }
     }
