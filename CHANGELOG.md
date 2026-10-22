@@ -7,12 +7,15 @@ All notable changes to QuitX macOS App will be documented in this file.
 ### Added
 
 - Multi-instance application management: `AppInstanceService` detects and groups multiple running instances of the same app (`open -n`). Popover displays instance badges, collapsible instance rows with individual PID and memory stats, and individual or batch termination controls.
-- Multi-instance integration tests: added test suite (`AppInstanceTests`, `MultiInstanceIntegrationTests`, `RobustnessTests`) verifying detection, isolated quit, and helper process teardown across multiple app instances.
+- Multi-instance restart: `RestartService` captures per-instance launch arguments (e.g. `--user-data-dir`) and relaunches each instance with its original arguments when restarting a multi-instance app.
+- GUI integration test suite: grouped real WindowServer fixture tests and multi-instance lifecycle tests under a serialized `GUIIntegrationTests` suite (`LastWindowQuitIntegrationTests`, `MultiInstanceIntegrationTests`, `AppInstanceTests`, `RobustnessTests`).
 - Space change detection: registered `NSWorkspace.activeSpaceDidChangeNotification` in `LastWindowQuitService` to track window state across Spaces and prevent false quits during Space switching.
 - Quit when the last window closes: added an opt-in Automation setting ("Quit app when its last window closes") that force-quits regular apps after their last window closes via the red close button (x) or ⌘W, so they do not keep running in the background. Minimized windows, hidden apps, and windows on other Spaces are preserved. Excludes Finder, background daemons, music apps, and user exclusions.
 
 ### Changed
 
+- Helper process management: `QuitService` discovers nested helper processes via `AppListService.runningProcessPaths()` and `ProcessTree.isDescendant`; graceful quits wait for main processes to exit before cleaning up helpers, while force quits terminate all targets concurrently.
+- App-group window tracking: `LastWindowQuitService` tracks apps by bundle path groups (`appKey(for:)`) instead of single PIDs, aggregating window counts across all member processes so multi-process apps (Electron, Telegram, Discord, Docker) only quit once all windows across all helpers close.
 - Performance & battery efficiency: offloaded menu bar stats sampling to background tasks to keep the main runloop responsive, and dynamically throttled `CpuUsageSampler` to 10-second idle intervals when stats popovers are closed.
 - Last-window quit optimization: cached WindowServer visible window queries (`OSAllocatedUnfairLock`, 0.5s max age) and web runtime detection paths (Electron, Chromium, Slack, Discord, Telegram, Docker), eliminating duplicate window list scans.
 - Quit timer precision: replaced fixed 60-second polling timer with dynamic one-shot timer targeting the earliest due deadline, eliminating execution delay drift.
