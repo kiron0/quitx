@@ -70,15 +70,20 @@ final class AppUpdateWindowController: NSObject, NSWindowDelegate {
     func close() {
         window?.close()
         window = nil
-        UpdateDownloadService.shared.cancelDownload()
+        cancelActiveDownloadIfNeeded()
         UpdateChecker.shared.resetState()
         WindowActivationCoordinator.update()
     }
 
     func windowWillClose(_ notification: Notification) {
         window = nil
-        UpdateDownloadService.shared.cancelDownload()
+        cancelActiveDownloadIfNeeded()
         UpdateChecker.shared.resetState()
         WindowActivationCoordinator.update()
+    }
+
+    private func cancelActiveDownloadIfNeeded() {
+        if case .ready = UpdateDownloadService.shared.state { return }
+        UpdateDownloadService.shared.cancelDownload()
     }
 }

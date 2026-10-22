@@ -2,6 +2,28 @@
 
 All notable changes to QuitX macOS App will be documented in this file.
 
+## 1.1.6
+
+### Added
+
+- Quit when the last window closes: added an opt-in Automation setting ("Quit app when its last window closes") that force-quits regular apps after their last window closes via the red close button (x) or ⌘W, so they do not keep running in the background. Minimized windows, hidden apps, and windows on other Spaces are preserved. Excludes Finder, background daemons, music apps, and user exclusions.
+
+### Fixed
+
+- Quit when the last window closes: force-quits instead of sending a graceful request that background apps could ignore, and no longer treats minimized windows, hidden apps, or windows on another Space as closed.
+- Settings reset now asks for confirmation before restoring preferences, shortcuts, and launch-at-login defaults.
+- Reopening Settings, Welcome, Help, Exclude, or Update windows from the Dock restores a minimized window instead of leaving it hidden.
+- Help: Finder & Trash opens the Advanced tab, shortcut copy says "Quit all apps", menu-bar stats help includes GPU, and "Report an Issue" opens the GitHub issue tracker.
+- Stats detail panel: closing clears pending toast state.
+- Settings: permission-free quit-on-last-window detection no longer declares Accessibility usage.
+- Config: debounced saves can no longer overwrite a reset or a newer immediate save, and the memory-pressure threshold shown in Settings now matches the enforced value.
+- Updates: "Later" keeps the verified staged update, and failed installs no longer leak staged files.
+
+### Changed
+
+- Settings tab views now live in purpose-named files with shared controls separated, replacing clone-style type names.
+- Removed unused duplicate and legacy PNG resources from the app bundle.
+
 ## 1.1.5
 
 ### Added

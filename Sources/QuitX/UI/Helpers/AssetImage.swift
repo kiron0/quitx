@@ -70,6 +70,7 @@ struct QuitXAppIconView: View {
                     .frame(width: size, height: size)
             }
         }
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
     }
 }
 

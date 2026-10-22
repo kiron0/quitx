@@ -97,6 +97,9 @@ final class StatsDetailModel: ObservableObject {
         batteryTask?.cancel()
         batteryTask = nil
         isBatteryLoading = false
+        toastTask?.cancel()
+        toastTask = nil
+        showToast = false
     }
 
     private func tick() {

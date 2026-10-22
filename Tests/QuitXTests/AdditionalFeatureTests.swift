@@ -43,7 +43,6 @@ struct SingleInstanceVersionTests {
         #expect(VersionComparator.compare("1.0.0", "1.0.0") == 0)
     }
 }
-
 @Suite("AutoQuit and Timing Tests")
 struct AutoQuitAndTimingTests {
     @Test("Auto-quit disabled when minutes is 0")
@@ -52,82 +51,82 @@ struct AutoQuitAndTimingTests {
         #expect(minutes == 0)
     }
 
-    @Test("GeneralTabState minutes conversion for 1 hour")
+    @Test("AutomationTabState minutes conversion for 1 hour")
     @MainActor
-    func testGeneralTabState1Hour() {
-        let state = GeneralTabState()
+    func testAutomationTabState1Hour() {
+        let state = AutomationTabState()
         state.autoQuitValue = 1
         state.autoQuitUnit = "hours"
         #expect(state.calculateMinutes() == 60)
     }
 
-    @Test("GeneralTabState minutes conversion for 2 hours")
+    @Test("AutomationTabState minutes conversion for 2 hours")
     @MainActor
-    func testGeneralTabState2Hours() {
-        let state = GeneralTabState()
+    func testAutomationTabState2Hours() {
+        let state = AutomationTabState()
         state.autoQuitValue = 2
         state.autoQuitUnit = "hours"
         #expect(state.calculateMinutes() == 120)
     }
 
-    @Test("GeneralTabState minutes conversion for 1 day")
+    @Test("AutomationTabState minutes conversion for 1 day")
     @MainActor
-    func testGeneralTabState1Day() {
-        let state = GeneralTabState()
+    func testAutomationTabState1Day() {
+        let state = AutomationTabState()
         state.autoQuitValue = 1
         state.autoQuitUnit = "days"
         #expect(state.calculateMinutes() == 1440)
     }
 
-    @Test("GeneralTabState minutes conversion for 30 minutes")
+    @Test("AutomationTabState minutes conversion for 30 minutes")
     @MainActor
-    func testGeneralTabStateMinutes() {
-        let state = GeneralTabState()
+    func testAutomationTabStateMinutes() {
+        let state = AutomationTabState()
         state.autoQuitValue = 30
         state.autoQuitUnit = "minutes"
         #expect(state.calculateMinutes() == 30)
     }
 
-    @Test("GeneralTabState sync from 60 minutes")
+    @Test("AutomationTabState sync from 60 minutes")
     @MainActor
-    func testGeneralTabStateSync60Min() {
-        let state = GeneralTabState()
+    func testAutomationTabStateSync60Min() {
+        let state = AutomationTabState()
         state.syncFromMinutes(60)
         #expect(state.autoQuitValue == 1)
         #expect(state.autoQuitUnit == "hours")
     }
 
-    @Test("GeneralTabState sync from 120 minutes")
+    @Test("AutomationTabState sync from 120 minutes")
     @MainActor
-    func testGeneralTabStateSync120Min() {
-        let state = GeneralTabState()
+    func testAutomationTabStateSync120Min() {
+        let state = AutomationTabState()
         state.syncFromMinutes(120)
         #expect(state.autoQuitValue == 2)
         #expect(state.autoQuitUnit == "hours")
     }
 
-    @Test("GeneralTabState sync from 1440 minutes")
+    @Test("AutomationTabState sync from 1440 minutes")
     @MainActor
-    func testGeneralTabStateSync1440Min() {
-        let state = GeneralTabState()
+    func testAutomationTabStateSync1440Min() {
+        let state = AutomationTabState()
         state.syncFromMinutes(1440)
         #expect(state.autoQuitValue == 1)
         #expect(state.autoQuitUnit == "days")
     }
 
-    @Test("GeneralTabState sync from 45 minutes")
+    @Test("AutomationTabState sync from 45 minutes")
     @MainActor
-    func testGeneralTabStateSync45Min() {
-        let state = GeneralTabState()
+    func testAutomationTabStateSync45Min() {
+        let state = AutomationTabState()
         state.syncFromMinutes(45)
         #expect(state.autoQuitValue == 45)
         #expect(state.autoQuitUnit == "minutes")
     }
 
-    @Test("GeneralTabState sync from 0 minutes defaults to 1 hour")
+    @Test("AutomationTabState sync from 0 minutes defaults to 1 hour")
     @MainActor
-    func testGeneralTabStateSync0Min() {
-        let state = GeneralTabState()
+    func testAutomationTabStateSync0Min() {
+        let state = AutomationTabState()
         state.syncFromMinutes(0)
         #expect(state.autoQuitValue == 1)
     }
@@ -213,7 +212,7 @@ struct SettingsTabTests {
         } else {
             #expect(SettingsTab.general.contentHeight == 296)
         }
-        #expect(SettingsTab.automation.contentHeight == 356)
+        #expect(SettingsTab.automation.contentHeight == 386)
         #expect(SettingsTab.advanced.contentHeight == 266)
         #expect(SettingsTab.exclude.contentHeight == 306)
         #expect(SettingsTab.shortcuts.contentHeight == 221)

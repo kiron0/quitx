@@ -55,7 +55,7 @@ enum SettingsTab: String, CaseIterable {
         case .general:
             if #available(macOS 26.0, *) { return 326 }
             return 296
-        case .automation: return 356
+        case .automation: return 386
         case .advanced:  return 266
         case .exclude:   return 306
         case .shortcuts: return 221
@@ -263,21 +263,21 @@ struct SettingsContainerView: View {
         ZStack(alignment: .top) {
             switch tabModel.activeTab {
             case .general:
-                GeneralTabCloneView()
+                GeneralTabView()
                     .environmentObject(configStore)
             case .automation:
-                AutomationTabCloneView()
+                AutomationTabView()
                     .environmentObject(configStore)
             case .advanced:
-                AdvancedTabCloneView()
+                AdvancedTabView()
                     .environmentObject(configStore)
             case .exclude:
                 ExcludeTabView()
                     .environmentObject(configStore)
             case .shortcuts:
-                ShortcutsTabCloneView()
+                ShortcutsTabView()
             case .about:
-                AboutTabCloneView()
+                AboutTabView()
             }
         }
         .frame(width: 480, height: tabModel.activeTab.contentHeight, alignment: .top)
@@ -305,15 +305,5 @@ struct SettingsContainerView: View {
             HelpPopoverState.closeAll()
             NotificationCenter.default.post(name: QuitXConstants.Notifications.dismissSettingsTooltips, object: nil)
         }
-    }
-}
-
-struct SettingsView: View {
-    @EnvironmentObject private var configStore: ConfigStore
-    @StateObject private var tabModel = SettingsTabViewModel()
-
-    var body: some View {
-        SettingsContainerView(tabModel: tabModel)
-            .environmentObject(configStore)
     }
 }

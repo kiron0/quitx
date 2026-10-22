@@ -43,6 +43,7 @@ final class ConfigStore: ObservableObject {
 
     private func normalizeThresholds() {
         let systemMaxMB = max(128, Int(ProcessInfo.processInfo.physicalMemory / 1_048_576))
+        let memoryFloorMB = max(128, Int((Double(systemMaxMB) * 0.25).rounded()))
         var mutated = false
         if config.hogCpuThreshold < 80 {
             config.hogCpuThreshold = 80
@@ -52,8 +53,8 @@ final class ConfigStore: ObservableObject {
             config.hogCpuThreshold = 100
             mutated = true
         }
-        if config.memoryPressureThresholdMB < 128 {
-            config.memoryPressureThresholdMB = 128
+        if config.memoryPressureThresholdMB < memoryFloorMB {
+            config.memoryPressureThresholdMB = memoryFloorMB
             mutated = true
         }
         if config.memoryPressureThresholdMB > systemMaxMB {
@@ -73,8 +74,12 @@ final class ConfigStore: ObservableObject {
 
     private var saveWorkItem: DispatchWorkItem?
     private var refreshWorkItem: DispatchWorkItem?
+    private var saveGeneration = 0
+    private var refreshGeneration = 0
 
     func flush() {
+        saveGeneration += 1
+        refreshGeneration += 1
         saveWorkItem?.cancel()
         saveWorkItem = nil
         refreshWorkItem?.cancel()
@@ -85,6 +90,8 @@ final class ConfigStore: ObservableObject {
     }
 
     func save(refreshAppList: Bool = false, immediate: Bool = false) {
+        saveGeneration += 1
+        let generation = saveGeneration
         saveWorkItem?.cancel()
         let configToSave = self.config
         let writeBlock = {
@@ -95,15 +102,20 @@ final class ConfigStore: ObservableObject {
         if immediate {
             writeBlock()
         } else {
-            let item = DispatchWorkItem(block: writeBlock)
+            let item = DispatchWorkItem { [weak self] in
+                guard let self, generation == self.saveGeneration else { return }
+                writeBlock()
+            }
             saveWorkItem = item
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15, execute: item)
         }
 
         guard refreshAppList else { return }
+        refreshGeneration += 1
+        let refreshToken = refreshGeneration
         refreshWorkItem?.cancel()
         let item = DispatchWorkItem { [weak self] in
-            guard self != nil else { return }
+            guard let self, refreshToken == self.refreshGeneration else { return }
             Task { @MainActor in
                 await AppListViewModel.shared.refresh()
                 StatusItemController.shared?.updatePopoverSize()

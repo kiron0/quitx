@@ -47,6 +47,9 @@ enum WindowAnimator {
         window.displayIfNeeded()
 
         NSApp.activate(ignoringOtherApps: true)
+        if window.isMiniaturized {
+            window.deminiaturize(nil)
+        }
         window.makeKeyAndOrderFront(nil)
 
         let animTarget: NSView?
@@ -98,6 +101,9 @@ enum WindowAnimator {
     static func activateExisting(_ window: NSWindow) {
         guard !isRunningTests else { return }
         NSApp.activate(ignoringOtherApps: true)
+        if window.isMiniaturized {
+            window.deminiaturize(nil)
+        }
         window.makeKeyAndOrderFront(nil)
 
         guard let view = window.contentView?.superview ?? window.contentView else { return }

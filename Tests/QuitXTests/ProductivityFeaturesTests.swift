@@ -1,4 +1,5 @@
 import Testing
+import CoreGraphics
 import Foundation
 import IOKit.ps
 @testable import QuitX
@@ -523,6 +524,7 @@ struct ProductivityFeaturesTests {
         cfg.perAppQuitRules = ["com.example.app": 120]
         cfg.quitOnSleep = true
         cfg.quitOnScreenLock = true
+        cfg.quitWhenLastWindowClosed = true
         cfg.sleepLockStartMinutes = 1320
         cfg.sleepLockEndMinutes = 420
         cfg.sleepLockUse24Hour = false
@@ -561,6 +563,7 @@ struct ProductivityFeaturesTests {
         #expect(decoded.perAppQuitRules == cfg.perAppQuitRules)
         #expect(decoded.quitOnSleep == cfg.quitOnSleep)
         #expect(decoded.quitOnScreenLock == cfg.quitOnScreenLock)
+        #expect(decoded.quitWhenLastWindowClosed == cfg.quitWhenLastWindowClosed)
         #expect(decoded.sleepLockStartMinutes == cfg.sleepLockStartMinutes)
         #expect(decoded.sleepLockEndMinutes == cfg.sleepLockEndMinutes)
         #expect(decoded.sleepLockUse24Hour == cfg.sleepLockUse24Hour)
@@ -700,5 +703,137 @@ struct ProductivityFeaturesTests {
             endMinutes: 300,
             calendar: cal
         ))
+    }
+}
+
+@Suite("Last Window Quit Tests")
+struct LastWindowQuitTests {
+
+    private func eligible(
+        bundleId: String? = "com.tinyspeck.slackmacgap",
+        name: String = "Slack",
+        isRegular: Bool = true,
+        config: QuitXConfig = .default
+    ) -> Bool {
+        LastWindowQuitPolicy.isEligible(
+            bundleId: bundleId,
+            name: name,
+            isRegular: isRegular,
+            bundleURL: URL(fileURLWithPath: "/Applications/Slack.app"),
+            executableURL: URL(fileURLWithPath: "/Applications/Slack.app/Contents/MacOS/Slack"),
+            config: config
+        )
+    }
+
+    @Test("Regular app is eligible by default while background apps are not")
+    func testDefaultEligibility() {
+        #expect(eligible())
+        #expect(!eligible(isRegular: false))
+    }
+
+    @Test("Finder, Trash, QuitX, and protected system apps are never eligible")
+    func testProtectedApps() {
+        #expect(!eligible(bundleId: "com.apple.finder", name: "Finder"))
+        #expect(!eligible(bundleId: "com.apple.trash", name: "Trash"))
+        #expect(!eligible(bundleId: "io.coreify.quitx", name: "QuitX"))
+        #expect(!eligible(bundleId: "com.apple.dock", name: "Dock"))
+        #expect(!eligible(bundleId: nil, name: "Finder"))
+    }
+
+    @Test("Exclusions, music protection, and Never rules block eligibility")
+    func testUserRules() {
+        var config = QuitXConfig.default
+        config.exclude = ["com.example.excluded", "Excluded"]
+        #expect(!eligible(bundleId: "com.example.excluded", config: config))
+        #expect(!eligible(bundleId: nil, name: "Excluded", config: config))
+        #expect(eligible(bundleId: nil, name: "Other", config: config))
+
+        config.exclude = []
+        config.neverQuitMusic = true
+        config.musicApps = ["Spotify"]
+        #expect(!eligible(bundleId: "com.spotify.client", name: "Spotify", config: config))
+        #expect(eligible(bundleId: "com.tinyspeck.slackmacgap", name: "Slack", config: config))
+
+        config.neverQuitMusic = false
+        config.perAppQuitRules = ["com.tinyspeck.slackmacgap": PerAppQuitRule.neverMinutes]
+        #expect(!eligible(bundleId: "com.tinyspeck.slackmacgap", name: "Slack", config: config))
+
+        config.perAppQuitRules = ["com.tinyspeck.slackmacgap": 30]
+        #expect(eligible(bundleId: "com.tinyspeck.slackmacgap", name: "Slack", config: config))
+    }
+
+    @Test("Last window quit config defaults off and round trips")
+    func testConfigDefaultAndRoundTrip() throws {
+        #expect(!QuitXConfig.default.quitWhenLastWindowClosed)
+
+        let legacy = try JSONDecoder().decode(QuitXConfig.self, from: Data("{}".utf8))
+        #expect(!legacy.quitWhenLastWindowClosed)
+
+        var cfg = QuitXConfig.default
+        cfg.quitWhenLastWindowClosed = true
+        let decoded = try JSONDecoder().decode(QuitXConfig.self, from: try JSONEncoder().encode(cfg))
+        #expect(decoded.quitWhenLastWindowClosed)
+    }
+
+    private func window(
+        pid: Int,
+        number: Int = 1,
+        layer: Int = 0,
+        alpha: Double = 1.0,
+        width: Double = 800,
+        height: Double = 600
+    ) -> [String: Any] {
+        [
+            kCGWindowOwnerPID as String: NSNumber(value: pid),
+            kCGWindowNumber as String: NSNumber(value: number),
+            kCGWindowLayer as String: NSNumber(value: layer),
+            kCGWindowAlpha as String: NSNumber(value: alpha),
+            kCGWindowBounds as String: [
+                "X": NSNumber(value: 0),
+                "Y": NSNumber(value: 0),
+                "Width": NSNumber(value: width),
+                "Height": NSNumber(value: height)
+            ]
+        ]
+    }
+
+    @Test("Window IDs keep only real application windows")
+    func testWindowIDFilters() {
+        let ids = LastWindowQuitWindowCounter.windowIDs(from: [
+            window(pid: 101, number: 1),
+            window(pid: 101, number: 2, layer: 25),
+            window(pid: 101, number: 3, alpha: 0),
+            window(pid: 101, number: 4, width: 0, height: 0),
+            window(pid: 202, number: 5),
+            window(pid: 202, number: 6, layer: 2147483628),
+            window(pid: 0, number: 7)
+        ])
+
+        #expect(ids[101] == [1])
+        #expect(ids[202] == [5])
+        #expect(ids.count == 2)
+    }
+
+    @Test("Windows without an identifier are ignored")
+    func testWindowIDMissingNumber() {
+        let ids = LastWindowQuitWindowCounter.windowIDs(from: [
+            [kCGWindowOwnerPID as String: NSNumber(value: 303)]
+        ])
+        #expect(ids[303] == nil)
+    }
+
+    @Test("Minimized or off-Space windows are not treated as closed")
+    func testMinimizedWindowIsPreserved() {
+        let tracked: Set<CGWindowID> = [10, 11]
+        let merged = LastWindowQuitWindowState.mergedTrackedIDs(
+            current: tracked,
+            visible: [12],
+            all: [12, 13]
+        )
+        #expect(merged == [10, 11, 12, 13])
+        #expect(!LastWindowQuitWindowState.isClosed(tracked: tracked, visible: [], all: [10]))
+        #expect(!LastWindowQuitWindowState.isClosed(tracked: tracked, visible: [12], all: [12]))
+        #expect(LastWindowQuitWindowState.isClosed(tracked: tracked, visible: [], all: [12]))
+        #expect(LastWindowQuitWindowState.isClosed(tracked: tracked, visible: [], all: []))
     }
 }

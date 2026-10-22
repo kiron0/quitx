@@ -4,7 +4,7 @@ import SwiftUI
 enum QuitXHelpCategory: String, CaseIterable, Identifiable, Sendable {
     case essentials = "Essentials"
     case automation = "Automation"
-    case preferences = "Preferences"
+    case preferences = "Settings"
     case support = "Support"
 
     var id: String { rawValue }
@@ -115,7 +115,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "Relaunch recent apps",
-                    body: "Click the gear menu in the bottom-right corner and hover over Reopen to view recently quit apps (up to 5). Click any app to launch it immediately."
+                    body: "Click the gear menu in the bottom-right corner and hover over Reopen Recently Quit to view recently quit apps (up to 5). Click any app to launch it immediately."
                 ),
                 QuitXHelpSection(
                     title: "Automatic history",
@@ -123,7 +123,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Clear history",
-                    body: "Choose Clear Recent Apps at the bottom of the Reopen menu whenever you want to wipe the recent history."
+                    body: "Choose Clear List at the bottom of the Reopen Recently Quit menu whenever you want to wipe the recent history."
                 )
             ]
         ),
@@ -199,6 +199,10 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 QuitXHelpSection(
                     title: "Sleep quit schedule",
                     body: "Settings > Automation offers unattended quitting: automatically and gracefully terminate safe apps when your Mac sleeps. Configure your custom active hours with start and end time pickers (default 12 AM to 6 AM), and toggle between 12-hour AM/PM and 24-hour display formats. Outside the range, sleep leaves apps running."
+                ),
+                QuitXHelpSection(
+                    title: "Quit when the last window closes",
+                    body: "Enable Quit app when its last window closes in Settings > Automation and QuitX force-quits regular apps after their last window closes via the red close button (x) or ⌘W. Minimized windows, hidden apps, and windows on other Spaces do not count as closed. Finder, background daemons, music apps, and excluded apps remain protected. Quit apps appear in Recently Quit."
                 )
             ]
         ),
@@ -207,15 +211,15 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             category: .automation,
             title: "Menu Bar Stats and Battery",
             symbol: "battery.100.bolt",
-            summary: "Monitor live system CPU load in the menu bar and conserve battery power.",
+            summary: "Monitor live CPU, memory, GPU, and battery data in the menu bar and detail panel.",
             sections: [
                 QuitXHelpSection(
-                    title: "Menu bar CPU & memory readout",
-                    body: "Enable Show CPU & memory in menu bar in Settings > General. Optionally enable Show battery in menu bar for charge percentage and power state. Configure Style format with Icon (SF Symbols) or Text (CPU / MEM prefixes), and Memory format with Gigabytes (GB) or Percentage (%). The readout updates every second, or every 5 seconds under battery saver."
+                    title: "Menu bar stats readout",
+                    body: "Enable Show stats in menu bar in Settings > General, then choose CPU, Memory, GPU, and Battery independently. Configure Style format with Icon (SF Symbols) or Text (CPU / MEM / GPU prefixes), and Memory format with Gigabytes (GB) or Percentage (%). The readout updates every second, or every 5 seconds under battery saver."
                 ),
                 QuitXHelpSection(
                     title: "Stats detail panel",
-                    body: "Click the menu bar stats item to open a liquid glass detail panel showing live CPU, memory, and battery data. Battery details include power source, charge time, power draw, voltage, temperature, capacity, and cycle count when macOS reports them. Click the stats item again, click anywhere outside, or press Esc to dismiss it."
+                    body: "Click a menu bar stat to open its detail panel. CPU and memory show live breakdowns and top processes, GPU shows utilization and memory, and battery shows power source, charge time, power draw, voltage, temperature, capacity, and cycle count when macOS reports them. Click the stats item again, click anywhere outside, or press Esc to dismiss it."
                 ),
                 QuitXHelpSection(
                     title: "Battery saver mode",
@@ -278,7 +282,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             category: .preferences,
             title: "Keyboard Shortcuts",
             symbol: "command",
-            summary: "Configure global shortcuts for opening QuitX and quitting selected apps.",
+            summary: "Configure global shortcuts for opening QuitX, quitting all apps, and force quitting all apps.",
             sections: [
                 QuitXHelpSection(
                     title: "Available global shortcuts",
@@ -303,7 +307,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "General & Advanced tabs",
-                    body: "Settings > General controls startup, sounds, menu bar CPU/memory display, macOS 26 Liquid Glass vs Classic appearance theme, sort order, and defaults. Settings > Automation manages sleep scheduling, battery saver, health rescue thresholds, and Auto Quit. Settings > Advanced manages background apps, music protection, default selection, tips, confirmations, and Finder/Trash."
+                    body: "Settings > General controls startup, sounds, menu bar stats for CPU, memory, GPU, and battery, macOS 26 Liquid Glass vs Classic appearance theme, sort order, and defaults. Settings > Automation manages sleep scheduling, quit-on-last-window-close, battery saver, health rescue thresholds, and Auto Quit. Settings > Advanced manages background apps, music protection, default selection, tips, confirmations, and Finder/Trash."
                 ),
                 QuitXHelpSection(
                     title: "Exclude & Shortcuts tabs",
@@ -700,7 +704,7 @@ struct HelpView: View {
 
             case "finder-trash":
                 Button("Finder & Trash Settings") {
-                    SettingsWindowController.shared.show(tab: .general)
+                    SettingsWindowController.shared.show(tab: .advanced)
                 }
 
             case "shortcuts":
@@ -750,8 +754,7 @@ struct HelpView: View {
             }
 
             Button("Report an Issue") {
-                guard let url = QuitXConstants.contactURL() else { return }
-                NSWorkspace.shared.open(url)
+                NSWorkspace.shared.open(QuitXConstants.issuesURL)
             }
         }
         .controlSize(.small)

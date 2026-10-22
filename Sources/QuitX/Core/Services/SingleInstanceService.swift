@@ -2,10 +2,6 @@ import AppKit
 import Foundation
 import Darwin
 
-enum QuitXIdentity {
-    static let supportedBundleIdentifiers: Set<String> = QuitXConstants.supportedBundleIdentifiers
-}
-
 @MainActor
 final class SingleInstanceService {
     static let shared = SingleInstanceService()

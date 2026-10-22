@@ -4,7 +4,6 @@ import AppKit
 enum QuitXTheme {
     static let accent = Color(red: 254/255, green: 188/255, blue: 51/255)
     static let accentNSColor = NSColor(srgbRed: 254/255, green: 188/255, blue: 51/255, alpha: 1.0)
-    static let windowBackgroundColor = Color(NSColor.windowBackgroundColor)
     static let windowBackgroundNSColor = NSColor.windowBackgroundColor
     static let cardBackground = Color.primary.opacity(0.035)
     static let cardBackgroundNSColor: NSColor = {
@@ -18,7 +17,6 @@ enum QuitXTheme {
             return baseColor.blended(withFraction: 0.035, of: tintColor) ?? baseColor
         }
     }()
-    static let toolbarBackground = cardBackground
     static let toolbarBackgroundNSColor = cardBackgroundNSColor
 
     static var popoverBackground: some View {

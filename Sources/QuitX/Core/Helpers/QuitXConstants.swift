@@ -48,6 +48,7 @@ enum QuitXConstants {
     }
 
     static let supportEmail = "hello@kiron.dev"
+    static let issuesURL = URL(string: "https://github.com/kiron0/quitx/issues/new")!
     static let updateWorkerURL = URL(string: "https://quitx-update-gatekeeper.kiron.workers.dev/latest")!
 
     static let compiledEdPublicKey = "P+yk4qnUZ4Ms/f99XVKbc+vZG8pmeUOma5xWg4jw2GY="

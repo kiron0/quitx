@@ -5,7 +5,7 @@ private final class AboutTabState: ObservableObject {
     @Published var isContactHovered = false
 }
 
-struct AboutTabCloneView: View {
+struct AboutTabView: View {
     @ObservedObject private var updateChecker = UpdateChecker.shared
     @StateObject private var state = AboutTabState()
 

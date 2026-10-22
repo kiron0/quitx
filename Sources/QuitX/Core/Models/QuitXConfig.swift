@@ -20,6 +20,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
     var perAppQuitRules: [String: Int] = [:]
     var quitOnSleep: Bool = false
     var quitOnScreenLock: Bool = false
+    var quitWhenLastWindowClosed: Bool = false
     var sleepLockStartMinutes: Int = 0
     var sleepLockEndMinutes: Int = 360
     var sleepLockUse24Hour: Bool = true
@@ -43,6 +44,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         case defaultSelectAll, neverQuitMusic, musicApps, autoUpdate, confirmQuitAll, confirmIndividualAction, playSounds
         case quitInactiveAfterMinutes, disableQuitTips, sortBy, perAppQuitRules
         case quitOnSleep, quitOnScreenLock, showMenuBarStats, menuBarShowCpu, menuBarShowMemory, menuBarShowGpu, batteryMenuBarEnabled, menuBarStatStyle, menuBarMemoryUnit
+        case quitWhenLastWindowClosed
         case sleepLockStartMinutes, sleepLockEndMinutes, sleepLockUse24Hour
         case hogAlertEnabled, hogCpuThreshold
         case memoryPressureQuitEnabled, memoryPressureThresholdMB, batterySaverEnabled
@@ -69,6 +71,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         perAppQuitRules: [String: Int] = [:],
         quitOnSleep: Bool = false,
         quitOnScreenLock: Bool = false,
+        quitWhenLastWindowClosed: Bool = false,
         sleepLockStartMinutes: Int = 0,
         sleepLockEndMinutes: Int = 360,
         sleepLockUse24Hour: Bool = true,
@@ -106,6 +109,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         self.perAppQuitRules = perAppQuitRules
         self.quitOnSleep = quitOnSleep
         self.quitOnScreenLock = quitOnScreenLock
+        self.quitWhenLastWindowClosed = quitWhenLastWindowClosed
         self.sleepLockStartMinutes = min(1439, max(0, sleepLockStartMinutes))
         self.sleepLockEndMinutes = min(1439, max(0, sleepLockEndMinutes))
         self.sleepLockUse24Hour = sleepLockUse24Hour
@@ -147,6 +151,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         perAppQuitRules = Self.decIntMap(container, .perAppQuitRules, defaults.perAppQuitRules)
         quitOnSleep = Self.dec(container, .quitOnSleep, defaults.quitOnSleep)
         quitOnScreenLock = Self.dec(container, .quitOnScreenLock, defaults.quitOnScreenLock)
+        quitWhenLastWindowClosed = Self.dec(container, .quitWhenLastWindowClosed, defaults.quitWhenLastWindowClosed)
         sleepLockStartMinutes = min(1439, max(0, Self.dec(container, .sleepLockStartMinutes, defaults.sleepLockStartMinutes)))
         sleepLockEndMinutes = min(1439, max(0, Self.dec(container, .sleepLockEndMinutes, defaults.sleepLockEndMinutes)))
         sleepLockUse24Hour = Self.dec(container, .sleepLockUse24Hour, defaults.sleepLockUse24Hour)

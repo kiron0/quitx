@@ -165,6 +165,7 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         let stagedAppURL = stagingDir.appendingPathComponent("QuitX.app")
 
         var isMounted = false
+        var didSucceed = false
         defer {
             if isMounted {
                 let detachProcess = Process()
@@ -172,6 +173,9 @@ final class UpdateDownloadService: NSObject, ObservableObject {
                 detachProcess.arguments = ["detach", mountPoint.path, "-force", "-quiet"]
                 try? detachProcess.run()
                 detachProcess.waitUntilExit()
+            }
+            if !didSucceed {
+                try? FileManager.default.removeItem(at: stagingDir)
             }
             try? FileManager.default.removeItem(at: mountPoint)
             try? FileManager.default.removeItem(at: dmgURL.deletingLastPathComponent())
@@ -232,10 +236,10 @@ final class UpdateDownloadService: NSObject, ObservableObject {
 
         guard let executableURL = bundle.executableURL,
               FileManager.default.isExecutableFile(atPath: executableURL.path) else {
-            try? FileManager.default.removeItem(at: stagingDir)
             throw UpdateError.invalidBundle
         }
 
+        didSucceed = true
         return stagedAppURL
     }
 
@@ -435,9 +439,6 @@ final class UpdateDownloadService: NSObject, ObservableObject {
     }
 
     func installAndRelaunch(stagedURL: URL) {
-
-        stagedDirURL = nil
-
         let destURL = Self.resolveDestinationAppURL()
         let parentDir = destURL.deletingLastPathComponent()
 
@@ -446,6 +447,8 @@ final class UpdateDownloadService: NSObject, ObservableObject {
             state = .failed(message: error.localizedDescription)
             return
         }
+
+        stagedDirURL = nil
 
         let scriptURL = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("quitx_relaunch_\(UUID().uuidString).sh")

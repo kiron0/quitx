@@ -69,7 +69,7 @@ final class ShortcutsViewState: ObservableObject {
     }
 }
 
-struct ShortcutsTabCloneView: View {
+struct ShortcutsTabView: View {
     @ObservedObject private var sm = ShortcutManager.shared
     @StateObject private var viewState = ShortcutsViewState()
 
@@ -84,7 +84,7 @@ struct ShortcutsTabCloneView: View {
                 )
                 shortcutRow(
                     id: "quit",
-                    title: "Quit selected apps",
+                    title: "Quit all apps",
                     isEnabled: $sm.quitAllEnabled,
                     keys: $sm.quitAllKeys
                 )

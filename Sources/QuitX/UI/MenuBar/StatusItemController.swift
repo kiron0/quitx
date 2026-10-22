@@ -51,6 +51,7 @@ final class StatusItemController: NSObject {
         liveMonitoringTask?.cancel()
         backgroundRefreshTask?.cancel()
         menuStatsTask?.cancel()
+        NSStatusBar.system.removeStatusItem(statusItem)
         if let statsStatusItem { NSStatusBar.system.removeStatusItem(statsStatusItem) }
         let center = NSWorkspace.shared.notificationCenter
         workspaceObservers.forEach { center.removeObserver($0) }
@@ -85,33 +86,23 @@ final class StatusItemController: NSObject {
         }
         let targetSize = NSSize(width: 18, height: 18)
         let icon = NSImage(size: targetSize)
-        let iconNames = ["status-icon", "menubar"]
-        var loaded = false
+        let path1x = Bundle.main.path(forResource: "status-icon", ofType: "png") ?? "Support/Icons/status-icon.png"
+        let path2x = Bundle.main.path(forResource: "status-icon@2x", ofType: "png") ?? "Support/Icons/status-icon@2x.png"
 
-        for name in iconNames {
-            let path1x = Bundle.main.path(forResource: name, ofType: "png") ?? "Support/Icons/\(name).png"
-            let path2x = Bundle.main.path(forResource: "\(name)@2x", ofType: "png") ?? "Support/Icons/\(name)@2x.png"
-
-            var reps: [NSImageRep] = []
-            if FileManager.default.fileExists(atPath: path1x),
-               let rep1 = NSImageRep(contentsOfFile: path1x) {
-                rep1.size = targetSize
-                reps.append(rep1)
-            }
-            if FileManager.default.fileExists(atPath: path2x),
-               let rep2 = NSImageRep(contentsOfFile: path2x) {
-                rep2.size = targetSize
-                reps.append(rep2)
-            }
-
-            if !reps.isEmpty {
-                reps.forEach { icon.addRepresentation($0) }
-                loaded = true
-                break
-            }
+        var reps: [NSImageRep] = []
+        if FileManager.default.fileExists(atPath: path1x),
+           let rep1 = NSImageRep(contentsOfFile: path1x) {
+            rep1.size = targetSize
+            reps.append(rep1)
+        }
+        if FileManager.default.fileExists(atPath: path2x),
+           let rep2 = NSImageRep(contentsOfFile: path2x) {
+            rep2.size = targetSize
+            reps.append(rep2)
         }
 
-        if loaded {
+        if !reps.isEmpty {
+            reps.forEach { icon.addRepresentation($0) }
             icon.isTemplate = true
             cachedMenuBarIcon = icon
             return icon
@@ -539,7 +530,7 @@ final class StatusItemController: NSObject {
     @objc private func handleStatsItemClick(_ sender: Any?) {
         guard let button = statsStatusItem?.button, let buttonWindow = button.window else { return }
         if isRightClick {
-            showContextMenu()
+            showContextMenu(anchor: button)
             return
         }
 
@@ -616,7 +607,7 @@ final class StatusItemController: NSObject {
         liveMonitoringTask = nil
     }
 
-    private func showContextMenu() {
+    private func showContextMenu(anchor: NSStatusBarButton? = nil) {
         closePopover()
         StatsDetailController.shared.close()
         let menu = NSMenu()
@@ -668,7 +659,7 @@ final class StatusItemController: NSObject {
             systemSymbolName: "power"
         ))
 
-        if let button = statusItem.button {
+        if let button = anchor ?? statusItem.button {
             menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.height), in: button)
         }
     }
