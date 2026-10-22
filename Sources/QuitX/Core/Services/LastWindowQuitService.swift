@@ -3,7 +3,6 @@ import ApplicationServices
 import Combine
 import Foundation
 
-/// Eligibility for the "quit when the last window closes" automation.
 enum LastWindowQuitPolicy {
     static func isEligible(
         bundleId: String?,
@@ -51,7 +50,6 @@ enum LastWindowQuitPolicy {
     }
 }
 
-/// Advances the closed-window confirmation state.
 enum LastWindowQuitWindowState {
     static func nextEmptySamples(windowCount: Int?, previous: Int) -> Int {
         guard let windowCount else { return 0 }
@@ -59,7 +57,6 @@ enum LastWindowQuitWindowState {
     }
 }
 
-/// Reads app-owned window identifiers from window-server metadata.
 enum LastWindowQuitWindowCounter {
     static func windowIDs(from windowInfo: [[String: Any]]) -> [pid_t: Set<CGWindowID>] {
         var ids: [pid_t: Set<CGWindowID>] = [:]
@@ -103,11 +100,6 @@ enum LastWindowQuitWindowCounter {
     }
 }
 
-/// Force-quits a regular app once its last window closes.
-///
-/// Accessibility exposes open windows even when minimized, hidden, or off-Space.
-/// Closed AppKit windows disappear from that list even when WindowServer retains
-/// their backing record.
 @MainActor
 final class LastWindowQuitService: ObservableObject {
     static let shared = LastWindowQuitService()
