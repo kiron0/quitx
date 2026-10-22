@@ -106,11 +106,33 @@ enum LastWindowQuitWindowCounter {
         return false
     }
 
-    static func isElectronApp(bundleURL: URL?) -> Bool {
+    static func enclosingAppURL(for url: URL?) -> URL? {
+        guard let url = url?.standardizedFileURL else { return nil }
+        var current = url.deletingLastPathComponent()
+        while current.path != "/" && current.pathComponents.count > 1 {
+            if current.pathExtension == "app" {
+                return current.standardizedFileURL
+            }
+            current = current.deletingLastPathComponent()
+        }
+        return nil
+    }
+
+    static func isWebRuntimeApp(bundleURL: URL?) -> Bool {
         guard let bundleURL else { return false }
-        let electronFramework = bundleURL
-            .appendingPathComponent("Contents/Frameworks/Electron Framework.framework")
-        return FileManager.default.fileExists(atPath: electronFramework.path)
+        let checkURLs = [bundleURL, enclosingAppURL(for: bundleURL)].compactMap { $0 }
+        let runtimeFrameworks = [
+            "Contents/Frameworks/Electron Framework.framework",
+            "Contents/Frameworks/Chromium Embedded Framework.framework"
+        ]
+        for url in checkURLs {
+            for framework in runtimeFrameworks {
+                if FileManager.default.fileExists(atPath: url.appendingPathComponent(framework).path) {
+                    return true
+                }
+            }
+        }
+        return false
     }
 
     static func accessibilityWindowCount(for pid: pid_t) -> Int? {
@@ -145,11 +167,7 @@ enum LastWindowQuitWindowCounter {
         }
 
         if let running = NSRunningApplication(processIdentifier: pid), running.isHidden {
-            let isElectron = isElectronApp(bundleURL: running.bundleURL)
-            let lowerBid = running.bundleIdentifier?.lowercased() ?? ""
-            let lowerName = (running.localizedName ?? "").lowercased()
-            let knownHidingApp = lowerBid.contains("discord") || lowerBid.contains("slack") || lowerBid.contains("spotify") || lowerName.contains("discord") || lowerName.contains("slack")
-            if !isElectron && !knownHidingApp {
+            if !isWebRuntimeApp(bundleURL: running.bundleURL) {
                 return max(1, axCount ?? 1)
             }
         }
@@ -333,7 +351,6 @@ final class LastWindowQuitService: ObservableObject {
             guard restrictedPID == nil || pid == restrictedPID else { continue }
             livePids.insert(pid)
 
-            guard app.activationPolicy == .regular else { continue }
             guard tracked[pid] == nil, !pendingQuits.contains(pid) else { continue }
             let windowIDs = visible[pid] ?? []
             guard !windowIDs.isEmpty else { continue }
@@ -406,7 +423,7 @@ final class LastWindowQuitService: ObservableObject {
         guard LastWindowQuitPolicy.isEligible(
             bundleId: entry.bundleId,
             name: entry.name,
-            isRegular: running.activationPolicy == .regular,
+            isRegular: true,
             bundleURL: running.bundleURL,
             executableURL: running.executableURL,
             config: ConfigStore.shared.config
@@ -415,11 +432,14 @@ final class LastWindowQuitService: ObservableObject {
             return
         }
 
-        let app = AppInfo(name: entry.name, bundleId: entry.bundleId, pid: pid)
+        let isOptionPressed = NSEvent.modifierFlags.contains(.option)
+        let forceConfig = ConfigStore.shared.config.force == .force
+        let force = isOptionPressed ? !forceConfig : forceConfig
+        let targets = Self.resolvedQuitTargets(for: running)
         Task { @MainActor [weak self] in
-            let results = await QuitService.shared.quit(apps: [app], force: false)
-            if self?.recordsRecentlyQuit == true, results.first?.success == true {
-                RecentlyQuitService.shared.record(app: app)
+            let results = await QuitService.shared.quit(apps: targets, force: force)
+            if self?.recordsRecentlyQuit == true, let primary = targets.first, results.first?.success == true {
+                RecentlyQuitService.shared.record(app: primary)
             }
             self?.pendingQuits.remove(pid)
         }
@@ -427,6 +447,49 @@ final class LastWindowQuitService: ObservableObject {
 
     private func stillWindowless(entry: TrackedApp) -> Bool {
         windowCount(entry.pid) == 0
+    }
+
+    static func rootRunningApplication(for app: NSRunningApplication) -> NSRunningApplication {
+        guard let enclosingURL = LastWindowQuitWindowCounter.enclosingAppURL(for: app.bundleURL) else { return app }
+        if let parent = NSWorkspace.shared.runningApplications.first(where: {
+            $0.bundleURL?.standardizedFileURL == enclosingURL
+        }) {
+            return parent
+        }
+        return app
+    }
+
+    static func resolvedQuitTargets(for app: NSRunningApplication) -> [AppInfo] {
+        var targets: [AppInfo] = []
+        var seenPids = Set<pid_t>()
+
+        let rootApp = rootRunningApplication(for: app)
+        let rootURL = (rootApp.bundleURL ?? app.bundleURL)?.standardizedFileURL
+
+        func addTarget(_ running: NSRunningApplication) {
+            let pid = running.processIdentifier
+            guard pid > 0, seenPids.insert(pid).inserted else { return }
+            let name = resolvedName(for: running)
+            targets.append(AppInfo(name: name, bundleId: running.bundleIdentifier, pid: pid))
+        }
+
+        addTarget(app)
+
+        if rootApp.processIdentifier != app.processIdentifier {
+            addTarget(rootApp)
+        }
+
+        if let rootURL {
+            for running in NSWorkspace.shared.runningApplications {
+                guard !running.isTerminated else { continue }
+                if let url = running.bundleURL?.standardizedFileURL,
+                   url == rootURL || url.path.hasPrefix(rootURL.path + "/") {
+                    addTarget(running)
+                }
+            }
+        }
+
+        return targets
     }
 
     private static func resolvedName(for app: NSRunningApplication) -> String {
