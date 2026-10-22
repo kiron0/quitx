@@ -2,6 +2,17 @@
 
 All notable changes to QuitX macOS App will be documented in this file.
 
+## 1.1.7
+
+### Added
+
+- Multi-space window close observer: added `AXWindowCloseObserver` in `LastWindowQuitService` using native `AXObserver` notifications (`kAXWindowCreatedNotification` and `kAXUIElementDestroyedNotification`) to differentiate between user-initiated window closes and multi-Space/full-screen transitions.
+- All-spaces window counter: added cached `allSpacesWindowCount` querying WindowServer `[.optionAll, .excludeDesktopElements]` across all virtual desktops.
+
+### Fixed
+
+- Multi-space false quits: switching Spaces or moving an app to full-screen mode no longer triggers premature last-window termination when windows remain open on other Spaces.
+
 ## 1.1.6
 
 ### Added

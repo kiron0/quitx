@@ -10,23 +10,23 @@
 	<string>io.coreify.quitx</string>
 	<key>CFBundleName</key>
 	<string>QuitX</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.1.6</string>
+	<string>1.1.7</string>
 	<key>CFBundleVersion</key>
-	<string>17</string>
+	<string>18</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>14.0</string>
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSAccentColorName</key>
 	<string>AccentColor</string>
-	<key>NSAppleEventsUsageDescription</key>
-	<string>QuitX uses Apple Events to quit applications.</string>
 	<key>NSAccessibilityUsageDescription</key>
 	<string>QuitX uses Accessibility to detect when an application's last window closes.</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>QuitX uses Apple Events to quit applications.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
 </dict>
 </plist>
