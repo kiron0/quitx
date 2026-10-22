@@ -72,12 +72,14 @@ struct RobustnessTests {
         }
     }
 
-    @Test("Hundreds of identical instances still get unique display names")
-    func manyInstancesUnique() {
-        let apps = (1...300).map { AppInfo(name: "Code", bundleId: "com.microsoft.VSCode", pid: pid_t($0)) }
-        let labeled = AppInstanceLabel.assign(apps) { $0 % 2 == 0 ? "Same" : nil }
-        #expect(Set(labeled.map(\.displayName)).count == apps.count)
-        #expect(Set(labeled.map(\.id)).count == apps.count)
+    @Test("Hundreds of instances merge into one row with every PID")
+    func manyInstancesMerge() {
+        let apps = (1...300).map { AppInfo(name: "Code", bundleId: "com.microsoft.VSCode", pid: pid_t($0), memoryBytes: .max / 2) }
+        let merged = AppInstanceGrouping.merge(apps)
+        #expect(merged.count == 1)
+        #expect(merged.first?.pids.count == 300)
+        let labels = AppInstanceLabel.uniqueLabels(pids: apps.compactMap(\.pid)) { $0 % 2 == 0 ? "Same" : nil }
+        #expect(Set(labels.values).count == 300)
     }
 
     @Test("Version comparison is antisymmetric and tolerates garbage")
@@ -124,21 +126,6 @@ struct RobustnessTests {
         #expect(PerAppQuitRule.ruleKey(bundleId: "", name: " Safari ") == "safari")
         #expect(PerAppQuitRule.storedMinutes(bundleId: "   ", name: "Safari", rules: ["safari": 15]) == 15)
         #expect(PerAppQuitRule.timeoutMinutes(bundleId: nil, name: "", rules: [:], globalMinutes: 7) == 7)
-    }
-
-    @Test("Quit In timer keys isolate instances and keep legacy plain keys")
-    func timerKeys() {
-        let work = AppInfo(name: "Chrome", bundleId: "com.google.Chrome", pid: 1, instanceLabel: "Work")
-        let home = AppInfo(name: "Chrome", bundleId: "com.google.Chrome", pid: 2, instanceLabel: "Home")
-        let single = AppInfo(name: "Notes", bundleId: "com.apple.Notes", pid: 3)
-        let workKey = QuitTimerDue.timerKey(bundleId: work.bundleId, name: work.name, instanceLabel: work.instanceLabel)
-        #expect(workKey == "com.google.chrome#work")
-        #expect(QuitTimerDue.isDue(app: work, dueKeys: [workKey]))
-        #expect(!QuitTimerDue.isDue(app: home, dueKeys: [workKey]))
-        #expect(QuitTimerDue.isDue(app: home, dueKeys: ["com.google.chrome"]))
-        #expect(QuitTimerDue.isDue(app: single, dueKeys: ["com.apple.notes"]))
-        #expect(!QuitTimerDue.isDue(app: single, dueKeys: ["com.apple.notes#x"]))
-        #expect(QuitTimerDue.timerKey(bundleId: nil, name: "Tool", instanceLabel: "") == "tool")
     }
 
     @Test("Timer delay targets the earliest deadline within safe bounds")
@@ -208,7 +195,7 @@ struct RobustnessTests {
 
     @Test("Live stats drop dead PIDs and never invent rows")
     func liveStatsDeadPids() async {
-        let dead = AppInfo(name: "Ghost", bundleId: "x.ghost", pid: 999_999, instanceLabel: "Work")
+        let dead = AppInfo(name: "Ghost", bundleId: "x.ghost", pid: 999_999)
         let alive = AppInfo(name: "Self", bundleId: "x.self", pid: ProcessInfo.processInfo.processIdentifier)
         let trash = AppInfo(name: "Trash", bundleId: QuitXConstants.SystemBundleIds.trash, pid: nil, pids: [])
         let updated = await AppListService.shared.fetchLiveStats(currentApps: [dead, alive, trash], config: .default)

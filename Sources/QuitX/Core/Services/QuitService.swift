@@ -88,6 +88,12 @@ final class QuitService {
                 ) else { continue }
                 helperPids.insert(pid)
             }
+            for (pid, path) in AppListService.runningProcessPaths() where pid > 0 {
+                guard !knownPids.contains(pid), !helperPids.contains(pid), !siblingInstances.contains(pid) else { continue }
+                guard Self.isExecutablePath(path, insideContentsOf: rootURL) else { continue }
+                guard ProcessTree.isDescendant(pid, ofAny: knownPids) else { continue }
+                helperPids.insert(pid)
+            }
         }
 
         guard !knownPids.isEmpty || !helperPids.isEmpty else {
@@ -161,7 +167,9 @@ final class QuitService {
         }
 
         for pid in knownPids { terminatePid(pid, isHelper: false) }
-        for pid in helperPids { terminatePid(pid, isHelper: true) }
+        if force {
+            for pid in helperPids { terminatePid(pid, isHelper: true) }
+        }
 
         let pollNs: UInt64 = 100_000_000
         let gracefulAttempts = force ? 20 : 50
@@ -188,6 +196,16 @@ final class QuitService {
             for entry in pendingRawPids where targetIsRunning(entry.pid, isHelper: entry.isHelper) && !entry.isHelper {
                 allSucceeded = false
                 firstError = firstError ?? "Process did not quit gracefully"
+            }
+            if allSucceeded {
+                let remaining = helperPids.filter { targetIsRunning($0, isHelper: true) }
+                for pid in remaining { terminatePid(pid, isHelper: true) }
+                if !remaining.isEmpty {
+                    for _ in 0..<20 where !Task.isCancelled {
+                        if remaining.allSatisfy({ !targetIsRunning($0, isHelper: true) }) { break }
+                        try? await Task.sleep(nanoseconds: pollNs)
+                    }
+                }
             }
             return QuitResult(
                 app: app,

@@ -138,33 +138,63 @@ enum AppInstanceLabel {
         return nil
     }
 
-    static func groupKey(_ app: AppInfo) -> String {
-        (app.bundleId ?? app.name).lowercased()
+    static func uniqueLabels(pids: [pid_t], label: (pid_t) -> String?) -> [pid_t: String] {
+        var raw: [pid_t: String] = [:]
+        for pid in pids {
+            if let value = label(pid) { raw[pid] = value }
+        }
+        var counts: [String: Int] = [:]
+        for value in raw.values { counts[value.lowercased(), default: 0] += 1 }
+        var result: [pid_t: String] = [:]
+        for pid in pids {
+            if let base = raw[pid] {
+                result[pid] = counts[base.lowercased()] == 1 ? base : "\(base) · PID \(pid)"
+            } else {
+                result[pid] = "PID \(pid)"
+            }
+        }
+        return result
+    }
+}
+
+enum AppInstanceGrouping {
+    static func key(_ app: AppInfo) -> String? {
+        guard !app.isBackground, app.pid != nil,
+              let bundleId = app.bundleId?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
+              !bundleId.isEmpty else { return nil }
+        return bundleId
     }
 
-    static func assign(_ apps: [AppInfo], label: (pid_t) -> String?) -> [AppInfo] {
-        var groups: [String: [Int]] = [:]
-        for (index, app) in apps.enumerated() where !app.isBackground && app.pid != nil {
-            groups[groupKey(app), default: []].append(index)
+    static func merge(_ apps: [AppInfo]) -> [AppInfo] {
+        var groups: [String: [AppInfo]] = [:]
+        for app in apps {
+            guard let key = key(app) else { continue }
+            groups[key, default: []].append(app)
         }
-        var result = apps
-        for indices in groups.values where indices.count > 1 {
-            var labels: [Int: String] = [:]
-            for index in indices {
-                if let pid = apps[index].pid, let value = label(pid) { labels[index] = value }
+        var emitted = Set<String>()
+        var result: [AppInfo] = []
+        result.reserveCapacity(apps.count)
+        for app in apps {
+            guard let key = key(app) else {
+                result.append(app)
+                continue
             }
-            var counts: [String: Int] = [:]
-            for value in labels.values { counts[value.lowercased(), default: 0] += 1 }
-            for index in indices {
-                guard let pid = apps[index].pid else { continue }
-                let finalLabel: String
-                if let base = labels[index] {
-                    finalLabel = counts[base.lowercased()] == 1 ? base : "\(base) · PID \(pid)"
-                } else {
-                    finalLabel = "PID \(pid)"
-                }
-                result[index] = apps[index].settingInstanceLabel(finalLabel)
-            }
+            guard emitted.insert(key).inserted, let members = groups[key], let first = members.first else { continue }
+            var seen = Set<pid_t>()
+            let pids = members.flatMap(\.pids).filter { seen.insert($0).inserted }
+            result.append(AppInfo(
+                id: "app:\(key)",
+                name: first.name,
+                bundleId: first.bundleId,
+                pid: first.pid,
+                pids: pids,
+                isBackground: false,
+                windowCount: members.reduce(0) { $0 + $1.windowCount },
+                memoryBytes: members.reduce(0) { $0 &+ $1.memoryBytes },
+                cpuUsage: members.reduce(0) { $0 + $1.cpuUsage },
+                isUnresponsive: members.contains(where: \.isUnresponsive),
+                isCpuHog: members.contains(where: \.isCpuHog)
+            ))
         }
         return result
     }

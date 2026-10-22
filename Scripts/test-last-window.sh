@@ -27,6 +27,7 @@ echo "▶ Wrapping fixture as an app bundle for multi-instance tests..."
 FIXTURE_APP="$TEST_TEMP_DIR/QuitXInstanceFixture.app"
 mkdir -p "$FIXTURE_APP/Contents/MacOS"
 cp "$FIXTURE_PATH" "$FIXTURE_APP/Contents/MacOS/QuitXInstanceFixture"
+printf '#include <unistd.h>\nint main(void) { for (;;) pause(); }\n' | xcrun clang -x c - -o "$FIXTURE_APP/Contents/MacOS/QuitXFixtureBackend"
 cat > "$FIXTURE_APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -50,6 +51,7 @@ set -o pipefail
 swift test \
     --build-system native \
     --filter "LastWindowQuitIntegrationTests|MultiInstanceIntegrationTests" \
+    --no-parallel \
     -Xswiftc -F \
     -Xswiftc /Library/Developer/CommandLineTools/Library/Developer/Frameworks \
     2>&1 | LC_ALL=C sed -E '/warning:.*build-system native.*deprecated/d'

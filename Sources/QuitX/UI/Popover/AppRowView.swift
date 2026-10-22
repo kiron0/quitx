@@ -36,23 +36,7 @@ struct AppRowView: View {
                 .foregroundStyle(Color.primary)
                 .lineLimit(1)
                 .truncationMode(.tail)
-                .layoutPriority(1)
-                .help(app.displayName)
-
-            if let instanceLabel = app.instanceLabel {
-                Text(instanceLabel)
-                    .font(.system(size: 10.5, weight: .medium))
-                    .foregroundStyle(Color.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 1)
-                    .background(
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(Color.primary.opacity(0.08))
-                    )
-                    .help(app.displayName)
-            }
+                .help(app.name)
 
             Spacer(minLength: 4)
 
@@ -99,8 +83,8 @@ struct AppRowView: View {
             }
             .buttonStyle(.plain)
             .disabled(isPending)
-            .help(isPending ? "Operation in progress" : (isForced ? "Force quit \(app.displayName)" : "Quit \(app.displayName)"))
-            .accessibilityLabel(isPending ? "Operation in progress" : (isForced ? "Force quit \(app.displayName)" : "Quit \(app.displayName)"))
+            .help(isPending ? "Operation in progress" : (isForced ? "Force quit \(app.name)" : "Quit \(app.name)"))
+            .accessibilityLabel(isPending ? "Operation in progress" : (isForced ? "Force quit \(app.name)" : "Quit \(app.name)"))
             .onHover { h in state.isQuitHovered = h }
         }
         .padding(.horizontal, 8)
@@ -188,7 +172,7 @@ struct AppRowView: View {
         if !app.isBackground {
             menu.addItem(buildAutoQuitItem())
             menu.addItem(buildQuitTimerItem())
-            if let pid = app.pid, let windowsItem = buildWindowsItem(pid: pid) {
+            if let windowsItem = buildWindowsItem() {
                 menu.addItem(windowsItem)
             }
         }
@@ -254,10 +238,14 @@ struct AppRowView: View {
         return item
     }
 
-    private func buildWindowsItem(pid: pid_t) -> NSMenuItem? {
+    private func buildWindowsItem() -> NSMenuItem? {
         let trusted = AppWindowControl.isTrusted
-        let windows = trusted ? AppWindowControl.windows(pid: pid) : []
-        guard Self.showsWindowsMenu(trusted: trusted, axWindowCount: windows.count, visibleWindowCount: app.windowCount) else {
+        let pids = app.pids.isEmpty ? (app.pid.map { [$0] } ?? []) : app.pids
+        let windowsByPid: [(pid: pid_t, windows: [AppWindowControl.Window])] = trusted
+            ? pids.map { (pid: $0, windows: AppWindowControl.windows(pid: $0)) }.filter { !$0.windows.isEmpty }
+            : []
+        let total = windowsByPid.reduce(0) { $0 + $1.windows.count }
+        guard Self.showsWindowsMenu(trusted: trusted, axWindowCount: total, visibleWindowCount: app.windowCount) else {
             return nil
         }
 
@@ -282,41 +270,62 @@ struct AppRowView: View {
             return item
         }
 
-        let profileNames = ChromiumProfiles.profileNames(pid: pid)
-        if let groups = WindowGrouping.groups(titles: windows.map(\.title), profileNames: profileNames) {
-            for group in groups {
-                let members = group.indices.compactMap { windows.indices.contains($0) ? windows[$0] : nil }
-                guard !members.isEmpty else { continue }
-                let groupItem = MenuHelper.makeSubmenuItem(
-                    title: "\(group.name) (\(members.count))",
-                    systemSymbolName: group.name == WindowGrouping.otherGroupName ? "macwindow" : "person.crop.circle"
+        if windowsByPid.count > 1 {
+            let labels = AppInstanceLabel.uniqueLabels(pids: windowsByPid.map(\.pid)) {
+                AppListService.instanceLabel(for: $0)
+            }
+            for entry in windowsByPid {
+                let instanceItem = MenuHelper.makeSubmenuItem(
+                    title: "\(labels[entry.pid] ?? "PID \(entry.pid)") (\(entry.windows.count))",
+                    systemSymbolName: "square.on.square"
                 )
-                let groupMenu = groupItem.submenu ?? NSMenu()
-                groupMenu.addItem(closeWindowsItem(members, label: group.name))
-                groupMenu.addItem(.separator())
-                for window in members {
-                    groupMenu.addItem(windowItem(window, pid: pid, profile: group.name))
-                }
-                groupItem.submenu = groupMenu
-                submenu.addItem(groupItem)
+                let instanceMenu = instanceItem.submenu ?? NSMenu()
+                addWindows(entry.windows, pid: entry.pid, to: instanceMenu)
+                instanceItem.submenu = instanceMenu
+                submenu.addItem(instanceItem)
             }
-        } else {
-            for window in windows {
-                submenu.addItem(windowItem(window, pid: pid, profile: nil))
-            }
-            submenu.addItem(.separator())
-            submenu.addItem(closeWindowsItem(windows, label: nil))
+        } else if let entry = windowsByPid.first {
+            addWindows(entry.windows, pid: entry.pid, to: submenu)
         }
         return item
+    }
+
+    private func addWindows(_ windows: [AppWindowControl.Window], pid: pid_t, to menu: NSMenu) {
+        let profileNames = ChromiumProfiles.profileNames(pid: pid)
+        guard let groups = WindowGrouping.groups(titles: windows.map(\.title), profileNames: profileNames) else {
+            for window in windows {
+                menu.addItem(windowItem(window, pid: pid, profile: nil))
+            }
+            return
+        }
+        for group in groups {
+            let members = group.indices.compactMap { windows.indices.contains($0) ? windows[$0] : nil }
+            guard !members.isEmpty else { continue }
+            let isOther = group.name == WindowGrouping.otherGroupName
+            let groupItem = MenuHelper.makeSubmenuItem(
+                title: "\(group.name) (\(members.count))",
+                systemSymbolName: isOther ? "macwindow" : "person.crop.circle"
+            )
+            let groupMenu = groupItem.submenu ?? NSMenu()
+            if !isOther {
+                groupMenu.addItem(closeWindowsItem(members, label: group.name))
+                groupMenu.addItem(.separator())
+            }
+            for window in members {
+                groupMenu.addItem(windowItem(window, pid: pid, profile: group.name))
+            }
+            groupItem.submenu = groupMenu
+            menu.addItem(groupItem)
+        }
     }
 
     static func showsWindowsMenu(trusted: Bool, axWindowCount: Int, visibleWindowCount: Int) -> Bool {
         trusted ? axWindowCount > 1 : visibleWindowCount > 1
     }
 
-    private func closeWindowsItem(_ windows: [AppWindowControl.Window], label: String?) -> NSMenuItem {
+    private func closeWindowsItem(_ windows: [AppWindowControl.Window], label: String) -> NSMenuItem {
         let noun = windows.count == 1 ? "Window" : "Windows"
-        let title = label.map { "Close \($0) \(noun) (\(windows.count))" } ?? "Close All \(noun) (\(windows.count))"
+        let title = "Close \(label) \(noun) (\(windows.count))"
         return MenuHelper.makeItem(
             title: title,
             systemSymbolName: "xmark.rectangle",
@@ -363,7 +372,7 @@ struct AppRowView: View {
     private func buildQuitTimerItem() -> NSMenuItem {
         let item = MenuHelper.makeSubmenuItem(title: "Quit In", systemSymbolName: "alarm")
         let submenu = item.submenu ?? NSMenu()
-        let key = QuitTimerDue.timerKey(bundleId: app.bundleId, name: app.name, instanceLabel: app.instanceLabel)
+        let key = PerAppQuitRule.ruleKey(bundleId: app.bundleId, name: app.name)
         if let remaining = QuitTimerService.shared.remainingMinutes(identifier: key) {
             submenu.addItem(MenuHelper.makeItem(
                 title: "Cancel Timer (\(remaining) min left)",

@@ -1,5 +1,8 @@
 #import <AppKit/AppKit.h>
 #import <signal.h>
+#import <spawn.h>
+
+extern char **environ;
 
 @interface LastWindowQuitFixtureDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate>
 @property(nonatomic, strong) NSWindow *window;
@@ -19,6 +22,8 @@ static void WriteFixtureState(NSString *state) {
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
     (void)notification;
     [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+    [[NSProcessInfo processInfo] disableAutomaticTermination:@"QuitX fixture"];
+    [[NSProcessInfo processInfo] disableSuddenTermination];
 
     NSRect frame = NSMakeRect(200, 200, 480, 280);
     self.window = [[NSWindow alloc]
@@ -36,6 +41,14 @@ static void WriteFixtureState(NSString *state) {
     [self.window makeKeyAndOrderFront:nil];
     [NSApp activateIgnoringOtherApps:YES];
     WriteFixtureState(@"open");
+
+    const char *spawnBackend = getenv("QUITX_FIXTURE_SPAWN_BACKEND");
+    NSString *backend = [[NSBundle mainBundle] pathForAuxiliaryExecutable:@"QuitXFixtureBackend"];
+    if (spawnBackend != NULL && strcmp(spawnBackend, "1") == 0 && backend != nil) {
+        pid_t child = 0;
+        char *argv[] = { (char *)backend.fileSystemRepresentation, NULL };
+        posix_spawn(&child, backend.fileSystemRepresentation, NULL, NULL, argv, environ);
+    }
 
     signal(SIGUSR1, SIG_IGN);
     self.closeSource = dispatch_source_create(
@@ -82,6 +95,10 @@ static void WriteFixtureState(NSString *state) {
 - (void)windowWillClose:(NSNotification *)notification {
     (void)notification;
     WriteFixtureState(@"closed");
+    const char *accessory = getenv("QUITX_FIXTURE_ACCESSORY_ON_CLOSE");
+    if (accessory != NULL && strcmp(accessory, "1") == 0) {
+        [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
+    }
 }
 
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender {
@@ -91,6 +108,14 @@ static void WriteFixtureState(NSString *state) {
 
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender {
     (void)sender;
+    const char *allowed = getenv("QUITX_FIXTURE_QUIT_SENDER");
+    if (allowed != NULL) {
+        NSAppleEventDescriptor *event = [[NSAppleEventManager sharedAppleEventManager] currentAppleEvent];
+        pid_t senderPid = (pid_t)[[event attributeDescriptorForKeyword:keySenderPIDAttr] int32Value];
+        if (event != nil && senderPid != 0 && senderPid != (pid_t)atoi(allowed)) {
+            return NSTerminateCancel;
+        }
+    }
     const char *refuse = getenv("QUITX_FIXTURE_REFUSE_QUIT");
     if (refuse != NULL && strcmp(refuse, "1") == 0) {
         return NSTerminateCancel;

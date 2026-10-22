@@ -102,7 +102,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Multiple instances and profiles",
-                    body: "When an app runs more than once (for example Chrome started with a separate data folder, or Firefox with -P), each instance gets its own row with a label taken from its profile or data folder. Quit, restart, and Quit In act on that instance only. Profiles that share one process, such as normal Chrome profiles, cannot be quit on their own: use Windows in the row menu to close one profile's windows, or show and close single windows. Windows needs Accessibility access, granted in Automation settings."
+                    body: "An app that runs more than once (for example Chrome with a separate data folder) shows as one row. Quit, restart, and Quit In act on every instance; restart brings each instance back with its own profile. To close only part of an app, open Windows in the row menu, shown when the app has more than one window: close single windows, or close one Chrome profile's windows. With Quit When Last Window Closes on, the app quits only when none of its instances has a window left. It then quits completely, every instance and the background processes it started, exactly like Quit in the list. Windows needs Accessibility access, granted in Automation settings."
                 ),
                 QuitXHelpSection(
                     title: "Background apps",

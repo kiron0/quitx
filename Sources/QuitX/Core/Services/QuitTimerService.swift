@@ -13,18 +13,6 @@ enum QuitTimerDue {
         return min(3600, max(1, retryAfter ?? untilDue))
     }
 
-    static func timerKey(bundleId: String?, name: String, instanceLabel: String?) -> String {
-        let base = PerAppQuitRule.ruleKey(bundleId: bundleId, name: name)
-        guard let instanceLabel, !instanceLabel.isEmpty else { return base }
-        return base + "#" + instanceLabel.lowercased()
-    }
-
-    static func isDue(app: AppInfo, dueKeys: Set<String>) -> Bool {
-        if dueKeys.contains(PerAppQuitRule.ruleKey(bundleId: app.bundleId, name: app.name)) { return true }
-        guard app.instanceLabel != nil else { return false }
-        return dueKeys.contains(timerKey(bundleId: app.bundleId, name: app.name, instanceLabel: app.instanceLabel))
-    }
-
     static func pruneExpired(timers: [String: Double], now: Date) -> [String: Double] {
         let epoch = now.timeIntervalSince1970
         return timers.filter { $0.value > epoch }
@@ -118,7 +106,7 @@ final class QuitTimerService {
         }
         await vm.refresh()
         let dueSet = Set(due)
-        let targets = vm.apps.filter { QuitTimerDue.isDue(app: $0, dueKeys: dueSet) }
+        let targets = vm.apps.filter { dueSet.contains(PerAppQuitRule.ruleKey(bundleId: $0.bundleId, name: $0.name)) }
 
         var remaining = ConfigStore.shared.config.quitTimers
         for key in due { remaining.removeValue(forKey: key) }

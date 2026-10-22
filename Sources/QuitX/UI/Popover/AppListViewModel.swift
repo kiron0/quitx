@@ -239,7 +239,7 @@ final class AppListViewModel: ObservableObject {
         if !showBackgroundApps || hasQuery {
             list = apps.filter { app in
                 if !showBackgroundApps && app.isBackground { return false }
-                if hasQuery && !app.displayName.lowercased().contains(normalizedQuery) { return false }
+                if hasQuery && !app.name.lowercased().contains(normalizedQuery) { return false }
                 return true
             }
         } else {
@@ -450,10 +450,10 @@ final class AppListViewModel: ObservableObject {
         lastQuitCount = succeeded ? 1 : 0
         await refresh(force: true)
         if succeeded {
-            triggerToast(message: "\(app.displayName) quit", isError: false)
+            triggerToast(message: "\(app.name) quit", isError: false)
         } else if !force {
             triggerToast(
-                message: "\(app.displayName) is still open",
+                message: "\(app.name) is still open",
                 isError: true,
                 actionTitle: "Force Quit",
                 action: { [weak self] in
@@ -461,7 +461,7 @@ final class AppListViewModel: ObservableObject {
                 }
             )
         } else {
-            triggerToast(message: "Couldn’t quit \(app.displayName)", isError: true)
+            triggerToast(message: "Couldn’t quit \(app.name)", isError: true)
         }
     }
 
@@ -566,7 +566,7 @@ final class AppListViewModel: ObservableObject {
         let succeeded = await RestartService.shared.restart(app: app)
         await refresh(force: true)
         if !succeeded {
-            triggerToast(message: "Couldn’t restart \(app.displayName). Try force quit.", isError: true)
+            triggerToast(message: "Couldn’t restart \(app.name). Try force quit.", isError: true)
         }
     }
 

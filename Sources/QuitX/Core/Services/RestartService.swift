@@ -9,40 +9,48 @@ final class RestartService {
         Array(arguments.dropFirst()).filter { !$0.hasPrefix("-psn_") }
     }
 
+    static func relaunchPlan(pids: [pid_t], arguments: (pid_t) -> [String]?) -> [[String]?] {
+        guard pids.count > 1 else { return [nil] }
+        return pids.map { pid in arguments(pid).map(relaunchArguments(from:)) }
+    }
+
     func restart(app: AppInfo, force: Bool = false) async -> Bool {
         let candidateUrl = app.pid.flatMap { NSRunningApplication(processIdentifier: $0)?.bundleURL }
             ?? (app.bundleId.flatMap { NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) })
         guard let url = candidateUrl else { return false }
 
-        let relaunchArguments: [String]? = app.instanceLabel == nil
-            ? nil
-            : app.pid.flatMap { ProcessArguments.read(pid: $0) }.map(Self.relaunchArguments(from:))
+        let instancePids = app.pids.isEmpty ? (app.pid.map { [$0] } ?? []) : app.pids
+        let launches = Self.relaunchPlan(
+            pids: instancePids,
+            arguments: { ProcessArguments.read(pid: $0) }
+        )
 
         let results = await QuitService.shared.quit(apps: [app], force: force)
         guard results.first?.success == true else { return false }
 
-        if let pid = app.pid, QuitService.processIsRunning(pid) {
+        let livePids = instancePids.filter(QuitService.processIsRunning)
+        if !livePids.isEmpty {
             let deadline = Date().addingTimeInterval(2.0)
-            while QuitService.processIsRunning(pid), Date() < deadline, !Task.isCancelled {
+            while livePids.contains(where: QuitService.processIsRunning), Date() < deadline, !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 50_000_000)
             }
-            guard !QuitService.processIsRunning(pid) else { return false }
+            guard !livePids.contains(where: QuitService.processIsRunning) else { return false }
         } else {
             try? await Task.sleep(nanoseconds: 200_000_000)
         }
 
-        let config = NSWorkspace.OpenConfiguration()
-        config.activates = true
-        if let relaunchArguments {
-            config.arguments = relaunchArguments
-            config.createsNewApplicationInstance = true
+        var launchedAny = false
+        for (index, arguments) in launches.enumerated() {
+            let config = NSWorkspace.OpenConfiguration()
+            config.activates = index == 0
+            if let arguments {
+                config.arguments = arguments
+            }
+            config.createsNewApplicationInstance = index > 0
+            if (try? await NSWorkspace.shared.openApplication(at: url, configuration: config)) != nil {
+                launchedAny = true
+            }
         }
-
-        do {
-            try await NSWorkspace.shared.openApplication(at: url, configuration: config)
-            return true
-        } catch {
-            return false
-        }
+        return launchedAny
     }
 }

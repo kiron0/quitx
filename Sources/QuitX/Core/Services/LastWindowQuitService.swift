@@ -244,14 +244,18 @@ final class LastWindowQuitService: ObservableObject {
     }
 
     private struct TrackedApp {
-        let pid: pid_t
+        let key: String
         let bundleId: String?
         let name: String
+        let bundleURL: URL?
+        let executableURL: URL?
+        var owners: Set<pid_t>
         var emptySamples: Int
     }
 
-    private var tracked: [pid_t: TrackedApp] = [:]
-    private var pendingQuits: Set<pid_t> = []
+    private var tracked: [String: TrackedApp] = [:]
+    private var pendingQuits: Set<String> = []
+    private(set) var quitRequests: [[pid_t]] = []
     private var configSubscription: AnyCancellable?
     private var spaceObserver: NSObjectProtocol?
     private var pollTask: Task<Void, Never>?
@@ -312,12 +316,12 @@ final class LastWindowQuitService: ObservableObject {
     }
 
     func isTracking(_ pid: pid_t) -> Bool {
-        tracked[pid] != nil
+        tracked.values.contains { $0.owners.contains(pid) }
     }
 
     private func handleSpaceChange() {
-        for pid in tracked.keys {
-            tracked[pid]?.emptySamples = 0
+        for key in tracked.keys {
+            tracked[key]?.emptySamples = 0
         }
     }
 
@@ -385,156 +389,166 @@ final class LastWindowQuitService: ObservableObject {
             return
         }
         let config = ConfigStore.shared.config
-        let ownPid = ProcessInfo.processInfo.processIdentifier
-
         guard let visible = LastWindowQuitWindowCounter.visibleWindowIDs() else { return }
 
-        var livePids: Set<pid_t> = []
-        for app in NSWorkspace.shared.runningApplications {
-            let pid = app.processIdentifier
-            guard pid > 0, pid != ownPid, !app.isTerminated else { continue }
-            guard restrictedPID == nil || pid == restrictedPID else { continue }
-            livePids.insert(pid)
+        let groups = currentGroups()
 
-            guard tracked[pid] == nil, !pendingQuits.contains(pid) else { continue }
-            let windowIDs = visible[pid] ?? []
-            guard !windowIDs.isEmpty else { continue }
+        for key in Array(tracked.keys) where groups[key] == nil {
+            tracked.removeValue(forKey: key)
+        }
 
-            let name = Self.resolvedName(for: app)
+        for (key, members) in groups {
+            let withWindows = Set(members.filter { !(visible[$0.processIdentifier] ?? []).isEmpty }.map(\.processIdentifier))
+            let regular = Set(members.filter { $0.activationPolicy == .regular }.map(\.processIdentifier))
+            let live = Set(members.map(\.processIdentifier))
+
+            if var entry = tracked[key] {
+                entry.owners = entry.owners.union(withWindows).union(regular).intersection(live)
+                tracked[key] = entry
+                continue
+            }
+            guard !pendingQuits.contains(key), !withWindows.isEmpty else { continue }
+            let identity = Self.identityApplication(key: key, members: members)
+            let name = Self.resolvedName(for: identity)
             guard !name.isEmpty else { continue }
             guard LastWindowQuitPolicy.isEligible(
-                bundleId: app.bundleIdentifier,
+                bundleId: identity.bundleIdentifier,
                 name: name,
-                isRegular: app.activationPolicy == .regular,
-                bundleURL: app.bundleURL,
-                executableURL: app.executableURL,
+                isRegular: !regular.isEmpty,
+                bundleURL: identity.bundleURL,
+                executableURL: identity.executableURL,
                 config: config
             ) else { continue }
-            guard let count = windowCount(pid), count > 0 else { continue }
+            let owners = withWindows.union(regular)
+            guard let total = totalWindows(owners), total > 0 else { continue }
 
-            tracked[pid] = TrackedApp(
-                pid: pid,
-                bundleId: app.bundleIdentifier,
+            tracked[key] = TrackedApp(
+                key: key,
+                bundleId: identity.bundleIdentifier,
                 name: name,
+                bundleURL: identity.bundleURL,
+                executableURL: identity.executableURL,
+                owners: owners,
                 emptySamples: 0
             )
         }
 
-        for pid in Array(tracked.keys) where !livePids.contains(pid) {
-            tracked.removeValue(forKey: pid)
-        }
-
-        for pid in Array(tracked.keys) {
-            guard var entry = tracked[pid] else { continue }
+        for key in Array(tracked.keys) {
+            guard var entry = tracked[key] else { continue }
             entry.emptySamples = LastWindowQuitWindowState.nextEmptySamples(
-                windowCount: windowCount(pid),
+                windowCount: totalWindows(entry.owners),
                 previous: entry.emptySamples
             )
-            tracked[pid] = entry
+            tracked[key] = entry
             guard entry.emptySamples >= requiredEmptySamples else { continue }
 
-            tracked.removeValue(forKey: pid)
-            guard pendingQuits.insert(pid).inserted else { continue }
+            tracked.removeValue(forKey: key)
+            guard pendingQuits.insert(key).inserted else { continue }
             performQuit(entry: entry)
         }
     }
 
-    private func performQuit(entry: TrackedApp) {
-        let pid = entry.pid
-        guard QuitService.processIsRunning(pid) else {
-            pendingQuits.remove(pid)
-            return
+    private func currentGroups() -> [String: [NSRunningApplication]] {
+        let ownPid = ProcessInfo.processInfo.processIdentifier
+        var groups: [String: [NSRunningApplication]] = [:]
+        for app in NSWorkspace.shared.runningApplications {
+            let pid = app.processIdentifier
+            guard pid > 0, pid != ownPid, !app.isTerminated else { continue }
+            groups[Self.appKey(for: app), default: []].append(app)
         }
-        guard stillWindowless(entry: entry) else {
-            pendingQuits.remove(pid)
-            return
+        if let restrictedPID {
+            groups = groups.filter { $0.value.contains { $0.processIdentifier == restrictedPID } }
         }
-        guard let running = NSRunningApplication(processIdentifier: pid), !running.isTerminated else {
-            pendingQuits.remove(pid)
-            return
-        }
+        return groups
+    }
 
-        let runningName = Self.resolvedName(for: running)
+    private func totalWindows(_ owners: Set<pid_t>) -> Int? {
+        var total = 0
+        for pid in owners where QuitService.processIsRunning(pid) {
+            guard let count = windowCount(pid) else { return nil }
+            total += count
+        }
+        return total
+    }
+
+    private func performQuit(entry: TrackedApp) {
+        let key = entry.key
+        let members = currentGroups()[key] ?? []
+        guard !members.isEmpty else {
+            pendingQuits.remove(key)
+            return
+        }
+        let owners = entry.owners.union(members.filter { $0.activationPolicy == .regular }.map(\.processIdentifier))
+        guard totalWindows(owners) == 0 else {
+            pendingQuits.remove(key)
+            return
+        }
+        let identity = Self.identityApplication(key: key, members: members)
         guard QuitService.identityMatches(
             expectedBundleId: entry.bundleId,
             expectedName: entry.name,
-            runningBundleId: running.bundleIdentifier,
-            runningName: runningName
-        ) else {
-            pendingQuits.remove(pid)
-            return
-        }
-
-        guard LastWindowQuitPolicy.isEligible(
+            runningBundleId: identity.bundleIdentifier,
+            runningName: Self.resolvedName(for: identity)
+        ), LastWindowQuitPolicy.isEligible(
             bundleId: entry.bundleId,
             name: entry.name,
-            isRegular: running.activationPolicy == .regular,
-            bundleURL: running.bundleURL,
-            executableURL: running.executableURL,
+            isRegular: true,
+            bundleURL: entry.bundleURL,
+            executableURL: entry.executableURL,
             config: ConfigStore.shared.config
         ) else {
-            pendingQuits.remove(pid)
+            pendingQuits.remove(key)
             return
         }
 
         let isOptionPressed = NSEvent.modifierFlags.contains(.option)
         let forceConfig = ConfigStore.shared.config.force == .force
         let force = isOptionPressed ? !forceConfig : forceConfig
-        let targets = Self.resolvedQuitTargets(for: running)
+        let targets = Self.quitTargets(identity: identity, members: members)
+        quitRequests.append(targets.compactMap(\.pid))
         Task { @MainActor [weak self] in
             let results = await QuitService.shared.quit(apps: targets, force: force)
             if self?.recordsRecentlyQuit == true, let primary = targets.first, results.first?.success == true {
                 RecentlyQuitService.shared.record(app: primary)
             }
-            self?.pendingQuits.remove(pid)
+            self?.pendingQuits.remove(key)
         }
     }
 
-    private func stillWindowless(entry: TrackedApp) -> Bool {
-        windowCount(entry.pid) == 0
+    static func appKey(for app: NSRunningApplication) -> String {
+        let root = rootRunningApplication(for: app)
+        if let url = (root.bundleURL ?? app.bundleURL)?.standardizedFileURL {
+            return url.path
+        }
+        return "pid:\(app.processIdentifier)"
+    }
+
+    private static func identityApplication(key: String, members: [NSRunningApplication]) -> NSRunningApplication {
+        members.first { $0.bundleURL?.standardizedFileURL.path == key && $0.activationPolicy == .regular }
+            ?? members.first { $0.bundleURL?.standardizedFileURL.path == key }
+            ?? members.first { $0.activationPolicy == .regular }
+            ?? members[0]
+    }
+
+    static func quitTargets(identity: NSRunningApplication, members: [NSRunningApplication]) -> [AppInfo] {
+        var seen = Set<pid_t>()
+        let ordered = [identity] + members.filter { $0.processIdentifier != identity.processIdentifier }
+        return ordered.compactMap { running -> AppInfo? in
+            let pid = running.processIdentifier
+            guard pid > 0, seen.insert(pid).inserted else { return nil }
+            return AppInfo(name: resolvedName(for: running), bundleId: running.bundleIdentifier, pid: pid)
+        }
     }
 
     static func rootRunningApplication(for app: NSRunningApplication) -> NSRunningApplication {
         guard let enclosingURL = LastWindowQuitWindowCounter.enclosingAppURL(for: app.bundleURL) else { return app }
-        if let parent = NSWorkspace.shared.runningApplications.first(where: {
-            $0.bundleURL?.standardizedFileURL == enclosingURL
-        }) {
-            return parent
+        let parents = NSWorkspace.shared.runningApplications.filter {
+            !$0.isTerminated && $0.bundleURL?.standardizedFileURL == enclosingURL
         }
-        return app
-    }
-
-    static func resolvedQuitTargets(for app: NSRunningApplication) -> [AppInfo] {
-        var targets: [AppInfo] = []
-        var seenPids = Set<pid_t>()
-
-        let rootApp = rootRunningApplication(for: app)
-        let rootURL = (rootApp.bundleURL ?? app.bundleURL)?.standardizedFileURL
-
-        func addTarget(_ running: NSRunningApplication) {
-            let pid = running.processIdentifier
-            guard pid > 0, seenPids.insert(pid).inserted else { return }
-            let name = resolvedName(for: running)
-            targets.append(AppInfo(name: name, bundleId: running.bundleIdentifier, pid: pid))
+        let ancestor = parents.first {
+            ProcessTree.isDescendant(app.processIdentifier, ofAny: [$0.processIdentifier])
         }
-
-        addTarget(app)
-
-        if rootApp.processIdentifier != app.processIdentifier {
-            addTarget(rootApp)
-        }
-
-        if let rootURL {
-            for running in NSWorkspace.shared.runningApplications {
-                guard !running.isTerminated else { continue }
-                if let url = running.bundleURL?.standardizedFileURL,
-                   url == rootURL || url.path.hasPrefix(rootURL.path + "/") {
-                    addTarget(running)
-                }
-            }
-        }
-
-        return targets
+        return ancestor ?? parents.first ?? app
     }
 
     private static func resolvedName(for app: NSRunningApplication) -> String {

@@ -102,43 +102,60 @@ struct AppInstanceTests {
         #expect(fallback == "Profile 1")
     }
 
-    @Test("Only apps running more than once get labels; collisions fall back to PID")
-    func assignLabels() {
+    @Test("Instances of one bundle merge into one row; others stay apart")
+    func mergeInstances() {
         let apps = [
-            AppInfo(name: "Chrome", bundleId: "com.google.Chrome", pid: 10),
-            AppInfo(name: "Chrome", bundleId: "com.google.chrome", pid: 11),
-            AppInfo(name: "Chrome", bundleId: "com.google.Chrome", pid: 12),
+            AppInfo(name: "Chrome", bundleId: "com.google.Chrome", pid: 10, windowCount: 2, memoryBytes: 100, cpuUsage: 1),
             AppInfo(name: "Notes", bundleId: "com.apple.Notes", pid: 20),
+            AppInfo(name: "Chrome", bundleId: "com.google.chrome", pid: 11, windowCount: 3, memoryBytes: 50, cpuUsage: 2, isUnresponsive: true),
             AppInfo(name: "Helper", bundleId: "com.google.Chrome", pid: 30, isBackground: true),
             AppInfo(name: "Tool", pid: 40),
-            AppInfo(name: "Tool", pid: 41)
+            AppInfo(name: "Tool", pid: 41),
+            AppInfo(name: "Trash", bundleId: "trash", pid: nil, pids: [])
         ]
-        let labels: [pid_t: String] = [10: "Work", 11: "Work", 40: "A"]
-        let result = AppInstanceLabel.assign(apps) { labels[$0] }
-        #expect(result[0].instanceLabel == "Work · PID 10")
-        #expect(result[1].instanceLabel == "Work · PID 11")
-        #expect(result[2].instanceLabel == "PID 12")
-        #expect(result[3].instanceLabel == nil)
-        #expect(result[4].instanceLabel == nil)
-        #expect(result[5].instanceLabel == "A")
-        #expect(result[6].instanceLabel == "PID 41")
-        #expect(result.map(\.id) == apps.map(\.id))
-        #expect(result.map(\.name) == apps.map(\.name))
-        let unique = Set(result.prefix(3).map(\.displayName))
-        #expect(unique.count == 3)
+        let merged = AppInstanceGrouping.merge(apps)
+        #expect(merged.map(\.name) == ["Chrome", "Notes", "Helper", "Tool", "Tool", "Trash"])
+        let chrome = merged[0]
+        #expect(chrome.id == "app:com.google.chrome")
+        #expect(chrome.pids == [10, 11])
+        #expect(chrome.pid == 10)
+        #expect(chrome.windowCount == 5)
+        #expect(chrome.memoryBytes == 150)
+        #expect(chrome.cpuUsage == 3)
+        #expect(chrome.isUnresponsive)
+        #expect(merged[1].id == "app:com.apple.notes")
+        #expect(merged[2].isBackground)
+        #expect(Set(merged.map(\.id)).count == merged.count)
     }
 
-    @Test("Display name, copies and live stats keep the instance label")
-    func labelSurvivesCopies() async {
+    @Test("Merged row ID stays stable when instances come and go")
+    func mergedIdStable() {
+        let one = AppInstanceGrouping.merge([AppInfo(name: "Code", bundleId: "com.microsoft.VSCode", pid: 5)])
+        let two = AppInstanceGrouping.merge([
+            AppInfo(name: "Code", bundleId: "com.microsoft.VSCode", pid: 5),
+            AppInfo(name: "Code", bundleId: "com.microsoft.VSCode", pid: 6)
+        ])
+        #expect(one.first?.id == two.first?.id)
+        #expect(AppInstanceGrouping.merge([]).isEmpty)
+    }
+
+    @Test("Instance labels are unique and fall back to PID")
+    func uniqueInstanceLabels() {
+        let labels = AppInstanceLabel.uniqueLabels(pids: [10, 11, 12, 13]) { pid in
+            [10: "Work", 11: "Work", 13: "Home"][pid]
+        }
+        #expect(labels == [10: "Work · PID 10", 11: "Work · PID 11", 12: "PID 12", 13: "Home"])
+        #expect(AppInstanceLabel.uniqueLabels(pids: []) { _ in "x" }.isEmpty)
+    }
+
+    @Test("Live stats keep every instance PID of a merged row")
+    func liveStatsKeepMergedPids() async {
         let pid = ProcessInfo.processInfo.processIdentifier
-        let app = AppInfo(name: "Chrome", bundleId: "com.google.Chrome", pid: pid, instanceLabel: "Work")
-        #expect(app.displayName == "Chrome — Work")
-        #expect(AppInfo(name: "Chrome").displayName == "Chrome")
-        #expect(AppInfo(name: "Chrome", instanceLabel: "").displayName == "Chrome")
-        #expect(app.settingUnresponsive(true).instanceLabel == "Work")
-        #expect(app.settingInstanceLabel(nil).instanceLabel == nil)
-        let updated = await AppListService.shared.fetchLiveStats(currentApps: [app], config: .default)
-        #expect(updated.first?.instanceLabel == "Work")
+        let parent = getppid()
+        let row = AppInfo(id: "app:x", name: "X", bundleId: "x", pid: pid, pids: [pid, parent, 999_999])
+        let updated = await AppListService.shared.fetchLiveStats(currentApps: [row], config: .default)
+        #expect(updated.first?.pids == [pid, parent])
+        #expect(updated.first?.id == "app:x")
     }
 
     private func makeUserDataDir(_ json: String) throws -> URL {
@@ -254,17 +271,14 @@ struct AppInstanceTests {
         #expect(RestartService.relaunchArguments(from: []) == [])
     }
 
-    @Test("Search matches the instance label")
-    func searchMatchesLabel() {
-        let vm = AppListViewModel()
-        vm.apps = [
-            AppInfo(name: "Chrome", bundleId: "com.google.Chrome", pid: 1, instanceLabel: "Work"),
-            AppInfo(name: "Chrome", bundleId: "com.google.Chrome", pid: 2, instanceLabel: "Personal")
-        ]
-        vm.searchQuery = "work"
-        #expect(vm.filteredApps.map(\.pid) == [1])
-        vm.searchQuery = "chrome"
-        #expect(vm.filteredApps.count == 2)
+    @Test("Restart relaunches each instance with its own arguments")
+    func relaunchPlan() {
+        #expect(RestartService.relaunchPlan(pids: [1]) { _ in ["x"] } == [nil])
+        #expect(RestartService.relaunchPlan(pids: []) { _ in ["x"] } == [nil])
+        let plan = RestartService.relaunchPlan(pids: [1, 2]) { pid in
+            pid == 1 ? ["/x/App", "--user-data-dir=/a", "-psn_0_1"] : nil
+        }
+        #expect(plan == [["--user-data-dir=/a"], nil])
     }
 
     @Test("Windows menu appears only for more than one window")

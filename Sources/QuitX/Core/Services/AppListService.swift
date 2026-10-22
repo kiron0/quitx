@@ -149,7 +149,7 @@ final class AppListService {
             ))
         }
 
-        results = AppInstanceLabel.assign(results, label: instanceLabel(for:))
+        results = AppInstanceGrouping.merge(results)
 
         if config.includeBackground && config.groupBackground {
             var groupedResults: [AppInfo] = []
@@ -233,8 +233,7 @@ final class AppListService {
                     memoryBytes: totalMem,
                     cpuUsage: totalCpu,
                     isUnresponsive: false,
-                    isCpuHog: !Set(livePids).isDisjoint(with: hogPids),
-                    instanceLabel: app.instanceLabel
+                    isCpuHog: !Set(livePids).isDisjoint(with: hogPids)
                 )
             }
             return Self.sortApps(updated, sortBy: config.sortBy)
