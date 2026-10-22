@@ -22,6 +22,10 @@ struct QuitXApp: App {
                     HelpWindowController.shared.show()
                 }
                 .keyboardShortcut("?", modifiers: .command)
+
+                Button("What's New") {
+                    ChangelogWindowController.shared.show()
+                }
             }
         }
     }

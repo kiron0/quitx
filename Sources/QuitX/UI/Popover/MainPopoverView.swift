@@ -404,6 +404,16 @@ struct MainPopoverView: View {
         ))
 
         menu.addItem(MenuHelper.makeItem(
+            title: "What's New",
+            keyEquivalent: "n",
+            systemSymbolName: "sparkles",
+            action: {
+                StatusItemController.shared?.closePopover()
+                ChangelogWindowController.shared.show()
+            }
+        ))
+
+        menu.addItem(MenuHelper.makeItem(
             title: "Check for Updates",
             keyEquivalent: "u",
             systemSymbolName: "arrow.triangle.2.circlepath",

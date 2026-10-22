@@ -86,7 +86,7 @@ struct GeneralTabView: View {
                 .disabled(!configStore.config.showMenuBarStats)
                 .opacity(configStore.config.showMenuBarStats ? 1.0 : 0.42)
             } help: {
-                HelpPopoverButton(text: "Pick which stats stay visible. Master switch turns all on or off.")
+                HelpPopoverButton(text: "Assemble your menu bar dream team! Toggle CPU, memory, GPU, or battery independently. The master switch commands them all. 🕹️📊")
             }
 
             row(label: "") {

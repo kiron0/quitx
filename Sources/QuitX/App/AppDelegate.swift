@@ -66,6 +66,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         UpdateChecker.shared.startAutomaticChecks()
         _ = ShortcutManager.shared
         WelcomeWindowController.shared.showIfFirstLaunch()
+        ChangelogWindowController.shared.showIfUpdated()
     }
 
     private var distributedNotificationObservers: [NSObjectProtocol] = []
@@ -94,5 +95,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func showPreferencesWindow(_ sender: Any?) {
         SettingsWindowController.shared.show()
+    }
+
+    @objc func showChangelogWindow(_ sender: Any?) {
+        ChangelogWindowController.shared.show()
     }
 }

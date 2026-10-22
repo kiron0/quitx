@@ -653,6 +653,14 @@ final class StatusItemController: NSObject {
         ))
 
         menu.addItem(MenuHelper.makeItem(
+            title: "What's New",
+            action: #selector(openChangelog),
+            target: self,
+            keyEquivalent: "n",
+            systemSymbolName: "sparkles"
+        ))
+
+        menu.addItem(MenuHelper.makeItem(
             title: "Check for Updates",
             action: #selector(checkForUpdates),
             target: self,
@@ -701,6 +709,10 @@ final class StatusItemController: NSObject {
 
     @objc private func openHelp() {
         HelpWindowController.shared.show()
+    }
+
+    @objc private func openChangelog() {
+        ChangelogWindowController.shared.show()
     }
 
     @objc private func quitApp() {
@@ -752,6 +764,10 @@ final class StatusItemController: NSObject {
                     } else if chars == "?" || (chars == "/" && event.modifierFlags.contains(.shift)) {
                         self.closePopover()
                         HelpWindowController.shared.show()
+                        return nil
+                    } else if chars == "n" {
+                        self.closePopover()
+                        ChangelogWindowController.shared.show()
                         return nil
                     } else if chars == "i" {
                         self.closePopover()

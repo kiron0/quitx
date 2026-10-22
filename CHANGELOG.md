@@ -6,12 +6,23 @@ All notable changes to QuitX macOS App will be documented in this file.
 
 ### Added
 
+- Version changelog window: added `ChangelogWindowController`, `ChangelogView`, and `ChangelogData` presenting a What's New window with a version history sidebar, real-time search, quick review summaries, and categorized markdown release notes. Automatically displays upon first launch after an update and remains manually accessible from About, Settings, and Menu Bar.
 - Multi-space window close observer: added `AXWindowCloseObserver` in `LastWindowQuitService` using native `AXObserver` notifications (`kAXWindowCreatedNotification` and `kAXUIElementDestroyedNotification`) to differentiate between user-initiated window closes and multi-Space/full-screen transitions.
 - All-spaces window counter: added cached `allSpacesWindowCount` querying WindowServer `[.optionAll, .excludeDesktopElements]` across all virtual desktops.
+- Settings stats tooltip: added playful dream team description and emoji to the menu bar stats configuration popover.
+
+### Changed
+
+- Menu bar item label: shortened "What's New in QuitX..." to "What's New" across application menus and status items.
+- In-app changelog architecture: separated developer git release notes from in-app human-language Swift definitions in `ChangelogData.swift`.
 
 ### Fixed
 
 - Multi-space false quits: switching Spaces or moving an app to full-screen mode no longer triggers premature last-window termination when windows remain open on other Spaces.
+- Update launch presentation: What's New displays once upon restarting into a new version and remains dismissed on subsequent launches until the next release.
+- What's New on upgrade from 1.1.6 or earlier: builds without a recorded last-seen version now show the window once instead of silently skipping it; downgrades never show it.
+- Release note rendering: items render as inline Markdown via `AttributedString` instead of `LocalizedStringKey`, avoiding localization lookups on note text.
+- Activation policy updates no longer crash when `NSApp` is unavailable and skip redundant policy changes.
 
 ## 1.1.6
 
