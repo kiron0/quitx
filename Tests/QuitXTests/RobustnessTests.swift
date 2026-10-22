@@ -53,20 +53,10 @@ struct RobustnessTests {
         }
     }
 
-    @Test("Window grouping and titles survive unicode, separators and huge lists")
-    func windowGroupingFuzz() {
-        let names = ["Work", "Work - Team", "😀 Personal", "Ünïcödé", "a"]
-        var titles: [String] = []
-        for index in 0..<500 {
-            let name = names[index % names.count]
-            titles.append(index % 7 == 0 ? "Untitled" : "Page \(index) - \(name)")
-        }
-        let groups = WindowGrouping.groups(titles: titles, profileNames: names) ?? []
-        let covered = groups.flatMap(\.indices).sorted()
-        #expect(covered == Array(0..<titles.count))
-        #expect(Set(covered).count == covered.count)
-        for title in titles + ["", " ", "\u{200B}", String(repeating: "é", count: 500)] {
-            let shown = WindowGrouping.displayTitle(title, profile: "Work", maxLength: 40)
+    @Test("Window titles survive unicode and extreme lengths")
+    func windowTitleFuzz() {
+        for title in ["", " ", "\u{200B}", "😀 Personal", String(repeating: "é", count: 500), "a - b - c"] {
+            let shown = WindowGrouping.displayTitle(title, maxLength: 40)
             #expect(!shown.isEmpty)
             #expect(shown.count <= 40)
         }

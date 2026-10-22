@@ -294,11 +294,7 @@ final class AppListService {
         if let cached = instanceLabelCache.withLockUnchecked({ $0[pid] }), cached.start == start {
             return cached.label
         }
-        let label = ProcessArguments.read(pid: pid).flatMap { arguments in
-            AppInstanceLabel.label(arguments: arguments) { userDataDir, profileDirectory in
-                ChromiumProfiles.resolveLabel(userDataDir: userDataDir, profileDirectory: profileDirectory)
-            }
-        }
+        let label = ProcessArguments.read(pid: pid).flatMap { AppInstanceLabel.label(arguments: $0) }
         instanceLabelCache.withLockUnchecked { cache in
             if cache.count >= 256 { cache.removeAll() }
             cache[pid] = (start, label)

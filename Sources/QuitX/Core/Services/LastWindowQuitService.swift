@@ -323,22 +323,6 @@ final class LastWindowQuitService: ObservableObject {
 
     @Published private(set) var accessibilityTrusted: Bool
 
-    nonisolated static var isAccessibilityTrusted: Bool {
-        AXIsProcessTrusted()
-    }
-
-    nonisolated static func requestAccessibilityPermission() {
-        let promptKey = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
-        _ = AXIsProcessTrustedWithOptions([promptKey: true] as CFDictionary)
-    }
-
-    nonisolated static func openAccessibilitySettings() {
-        guard let url = URL(
-            string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
-        ) else { return }
-        NSWorkspace.shared.open(url)
-    }
-
     private struct TrackedApp {
         let key: String
         let bundleId: String?
@@ -359,8 +343,9 @@ final class LastWindowQuitService: ObservableObject {
     private let restrictedPID: pid_t?
     private let recordsRecentlyQuit: Bool
     private let requiresAccessibilityTrust: Bool
-    private let accessibilityTrust: () -> Bool
+    private let accessibilityTrust: @MainActor () -> Bool
     private let windowCount: (pid_t) -> Int?
+    private var permissionSubscription: AnyCancellable?
     private let allSpacesWindowCount: (pid_t) -> Int?
     private var closeObservers: [pid_t: AXWindowCloseObserver] = [:]
 
@@ -371,7 +356,7 @@ final class LastWindowQuitService: ObservableObject {
         restrictedToPID: pid_t? = nil,
         recordsRecentlyQuit: Bool = true,
         requiresAccessibilityTrust: Bool = true,
-        accessibilityTrust: @escaping () -> Bool = { LastWindowQuitService.isAccessibilityTrusted },
+        accessibilityTrust: @escaping @MainActor () -> Bool = { AccessibilityPermission.shared.refresh() },
         windowCount: @escaping (pid_t) -> Int? = { pid in LastWindowQuitWindowCounter.windowCount(for: pid) },
         allSpacesWindowCount: @escaping (pid_t) -> Int? = { pid in LastWindowQuitWindowCounter.allSpacesWindowCount(for: pid) }
     ) {
@@ -385,6 +370,14 @@ final class LastWindowQuitService: ObservableObject {
     }
 
     func start() {
+        if requiresAccessibilityTrust, permissionSubscription == nil {
+            permissionSubscription = AccessibilityPermission.shared.$isTrusted
+                .removeDuplicates()
+                .dropFirst()
+                .sink { [weak self] _ in
+                    Task { @MainActor [weak self] in self?.syncTrackingState() }
+                }
+        }
         guard configSubscription == nil else { return }
         configSubscription = ConfigStore.shared.$config
             .receive(on: RunLoop.main)
@@ -406,6 +399,7 @@ final class LastWindowQuitService: ObservableObject {
     }
 
     func stop() {
+        permissionSubscription = nil
         configSubscription = nil
         if let spaceObserver {
             NSWorkspace.shared.notificationCenter.removeObserver(spaceObserver)
@@ -428,27 +422,19 @@ final class LastWindowQuitService: ObservableObject {
     }
 
     func refreshAccessibilityTrust() {
-        let trusted = !requiresAccessibilityTrust || accessibilityTrust()
-        if accessibilityTrusted != trusted {
-            accessibilityTrusted = trusted
-        }
-        if !trusted, ConfigStore.shared.config.quitWhenLastWindowClosed {
-            ConfigStore.shared.config.quitWhenLastWindowClosed = false
-            ConfigStore.shared.save()
-        }
         syncTrackingState()
     }
 
-    private func syncTrackingState() {
+    private func updateTrust() -> Bool {
         let trusted = !requiresAccessibilityTrust || accessibilityTrust()
         if accessibilityTrusted != trusted {
             accessibilityTrusted = trusted
         }
+        return trusted
+    }
 
-        if !trusted, ConfigStore.shared.config.quitWhenLastWindowClosed {
-            ConfigStore.shared.config.quitWhenLastWindowClosed = false
-            ConfigStore.shared.save()
-        }
+    private func syncTrackingState() {
+        let trusted = updateTrust()
 
         if ConfigStore.shared.config.quitWhenLastWindowClosed, trusted {
             startPolling()
@@ -536,13 +522,8 @@ final class LastWindowQuitService: ObservableObject {
 
     private func poll() {
         guard ConfigStore.shared.config.quitWhenLastWindowClosed else { return }
-        let trusted = !requiresAccessibilityTrust || accessibilityTrust()
-        if accessibilityTrusted != trusted {
-            accessibilityTrusted = trusted
-        }
-        guard trusted else {
-            ConfigStore.shared.config.quitWhenLastWindowClosed = false
-            ConfigStore.shared.save()
+        guard updateTrust() else {
+            syncTrackingState()
             return
         }
         let config = ConfigStore.shared.config

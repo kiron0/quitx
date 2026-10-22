@@ -41,6 +41,13 @@ else
         --requirements '=designated => identifier "io.coreify.quitx" and info[CFBundleIdentifier] = "io.coreify.quitx"' \
         "$APP_DIR"
 fi
+REQUIREMENT=$(codesign --display --requirements - "$APP_DIR" 2>&1 || true)
+if ! grep -q 'designated => .*identifier "io.coreify.quitx"' <<<"$REQUIREMENT" || grep -q 'cdhash' <<<"$REQUIREMENT"; then
+    echo "❌ Unstable designated requirement. macOS privacy grants would reset on every update:" >&2
+    echo "$REQUIREMENT" >&2
+    exit 1
+fi
+codesign --verify --strict --deep "$APP_DIR"
 echo "✅ $APP_NAME.app ready: $APP_DIR"
 
 if [[ "${1:-}" == "--run" ]]; then

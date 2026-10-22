@@ -2,6 +2,13 @@ import Foundation
 
 extension ChangelogProvider {
     static let appReleases: [ReleaseChangelog] = [
+        ReleaseChangelog("1.1.8", "Accessibility permission persistence & data access fixes", [
+            ("Fixes", [
+                "**Accessibility Survives Updates**: QuitX keeps its Accessibility permission across updates. If macOS dropped it after updating from an older version, Settings ▸ Automation offers a one-click Repair.",
+                "**No More Data Access Warnings**: QuitX no longer looks inside other apps' private data or your personal folders while detecting browser profiles."
+            ])
+        ]),
+
         ReleaseChangelog("1.1.7", "What's New window & multi-space window improvements", [
             ("New Features", [
                 "**What's New Window**: A dedicated version history window to explore highlights, improvements, and fixes whenever QuitX updates. Open it anytime from About, Settings, or the menu bar.",

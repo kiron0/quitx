@@ -64,19 +64,6 @@ struct AppInstanceTests {
         #expect(ProcessTree.startTime(of: -1) == nil)
     }
 
-    @Test("Open file listing includes a file this process holds open")
-    func openFilesIncludesHeldFile() throws {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("quitx-openfile-\(UUID().uuidString)")
-        try Data("x".utf8).write(to: url)
-        defer { try? FileManager.default.removeItem(at: url) }
-        let handle = try FileHandle(forReadingFrom: url)
-        defer { try? handle.close() }
-        let paths = OpenFiles.paths(pid: ProcessInfo.processInfo.processIdentifier)
-        let target = url.resolvingSymlinksInPath().path
-        #expect(paths.contains { URL(fileURLWithPath: $0).resolvingSymlinksInPath().path == target })
-        #expect(OpenFiles.paths(pid: -1).isEmpty)
-    }
-
     @Test("Instance labels come from Chromium, Firefox and generic profile flags")
     func instanceLabels() {
         #expect(AppInstanceLabel.label(arguments: ["Chrome", "--profile-directory=Profile 2"]) == "Profile 2")
@@ -158,98 +145,16 @@ struct AppInstanceTests {
         #expect(updated.first?.id == "app:x")
     }
 
-    private func makeUserDataDir(_ json: String) throws -> URL {
-        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("quitx-chromium-\(UUID().uuidString)")
-        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        try Data(json.utf8).write(to: dir.appendingPathComponent("Local State"))
-        return dir
-    }
-
-    @Test("Local State parsing reads profile names and tolerates junk")
-    func parsesLocalState() {
-        let json = #"{"profile":{"info_cache":{"Profile 1":{"name":"Work"},"Default":{"name":"Personal"},"Profile 2":{"name":"  "},"Bad":3}}}"#
-        let profiles = ChromiumProfiles.parseLocalState(Data(json.utf8))
-        #expect(profiles.map(\.directory) == ["Default", "Profile 1", "Profile 2"])
-        #expect(profiles.map(\.name) == ["Personal", "Work", "Profile 2"])
-        #expect(ChromiumProfiles.parseLocalState(Data("not json".utf8)).isEmpty)
-        #expect(ChromiumProfiles.parseLocalState(Data("[]".utf8)).isEmpty)
-        #expect(ChromiumProfiles.parseLocalState(Data(#"{"profile":{}}"#.utf8)).isEmpty)
-    }
-
-    @Test("Profiles reload when Local State changes and resolve labels")
-    func profilesFromDisk() throws {
-        let dir = try makeUserDataDir(#"{"profile":{"info_cache":{"Default":{"name":"Solo"}}}}"#)
-        defer { try? FileManager.default.removeItem(at: dir) }
-        #expect(ChromiumProfiles.profiles(userDataDir: dir).map(\.name) == ["Solo"])
-        #expect(ChromiumProfiles.resolveLabel(userDataDir: dir.path, profileDirectory: nil) == "Solo")
-        #expect(ChromiumProfiles.resolveLabel(userDataDir: dir.path, profileDirectory: "Missing") == nil)
-        #expect(ChromiumProfiles.resolveLabel(userDataDir: nil, profileDirectory: "Default") == nil)
-
-        let localState = dir.appendingPathComponent("Local State")
-        try Data(#"{"profile":{"info_cache":{"Default":{"name":"A"},"Profile 1":{"name":"B"}}}}"#.utf8).write(to: localState)
-        try FileManager.default.setAttributes([.modificationDate: Date().addingTimeInterval(5)], ofItemAtPath: localState.path)
-        #expect(ChromiumProfiles.profiles(userDataDir: dir).map(\.name) == ["A", "B"])
-        #expect(ChromiumProfiles.resolveLabel(userDataDir: dir.path, profileDirectory: "Profile 1") == "B")
-        #expect(ChromiumProfiles.resolveLabel(userDataDir: dir.path, profileDirectory: nil) == nil)
-        #expect(ChromiumProfiles.profiles(userDataDir: dir.appendingPathComponent("nope")).isEmpty)
-    }
-
-    @Test("User data directory is found from an open file in a profile folder")
-    func userDataDirFromOpenFile() throws {
-        let dir = try makeUserDataDir(#"{"profile":{"info_cache":{}}}"#)
-        defer { try? FileManager.default.removeItem(at: dir) }
-        let profileDir = dir.appendingPathComponent("Default", isDirectory: true)
-        try FileManager.default.createDirectory(at: profileDir, withIntermediateDirectories: true)
-        let history = profileDir.appendingPathComponent("History")
-        try Data("db".utf8).write(to: history)
-        let handle = try FileHandle(forReadingFrom: history)
-        defer { try? handle.close() }
-
-        let explicit = ChromiumProfiles.userDataDirectory(pid: -42, arguments: ["x", "--user-data-dir=\(dir.path)"])
-        #expect(explicit?.resolvingSymlinksInPath().path == dir.resolvingSymlinksInPath().path)
-
-        let pid = ProcessInfo.processInfo.processIdentifier
-        let found = ChromiumProfiles.userDataDirectory(pid: pid, arguments: ["x"])
-        #expect(found?.resolvingSymlinksInPath().path == dir.resolvingSymlinksInPath().path)
-    }
-
-    @Test("Windows group by trailing profile name, longest name first")
-    func groupsWindows() {
-        let titles = [
-            "Inbox - Gmail - Work",
-            "Docs - Work Team",
-            "News - Personal",
-            "Settings",
-            "Work"
-        ]
-        let groups = WindowGrouping.groups(titles: titles, profileNames: ["Work", "Personal", "Work Team", "Work"])
-        #expect(groups == [
-            .init(name: "Work", indices: [0, 4]),
-            .init(name: "Work Team", indices: [1]),
-            .init(name: "Personal", indices: [2]),
-            .init(name: WindowGrouping.otherGroupName, indices: [3])
-        ])
-    }
-
-    @Test("No grouping with one profile or when no title carries a profile")
-    func noGrouping() {
-        #expect(WindowGrouping.groups(titles: ["A - Solo"], profileNames: ["Solo"]) == nil)
-        #expect(WindowGrouping.groups(titles: ["A", "B"], profileNames: ["X", "Y"]) == nil)
-        #expect(WindowGrouping.groups(titles: [], profileNames: ["X", "Y"]) == nil)
-        #expect(WindowGrouping.groups(titles: ["A - X"], profileNames: ["", "X"]) == nil)
-        #expect(WindowGrouping.groups(titles: ["A – X", "B — Y"], profileNames: ["X", "Y"])?.count == 2)
-    }
-
-    @Test("Window titles drop the profile suffix and are truncated")
+    @Test("Window titles are trimmed and truncated")
     func displayTitles() {
-        #expect(WindowGrouping.displayTitle("Inbox - Work", profile: "Work") == "Inbox")
-        #expect(WindowGrouping.displayTitle("Inbox - Work", profile: nil) == "Inbox - Work")
-        #expect(WindowGrouping.displayTitle("   ", profile: nil) == "Untitled Window")
-        #expect(WindowGrouping.displayTitle(" - Work", profile: "Work") == "Untitled Window")
+        #expect(WindowGrouping.displayTitle("Inbox - Work") == "Inbox - Work")
+        #expect(WindowGrouping.displayTitle("   ") == "Untitled Window")
+        #expect(WindowGrouping.displayTitle("  Doc  ") == "Doc")
         let long = String(repeating: "a", count: 200)
-        let shown = WindowGrouping.displayTitle(long, profile: nil, maxLength: 20)
+        let shown = WindowGrouping.displayTitle(long, maxLength: 20)
         #expect(shown.count == 20)
         #expect(shown.hasSuffix("…"))
+        #expect(WindowGrouping.displayTitle("abc", maxLength: 1).count <= 2)
     }
 
     @Test("Helpers of a sibling instance are never quit with this instance")

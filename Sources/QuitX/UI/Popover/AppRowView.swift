@@ -290,57 +290,18 @@ struct AppRowView: View {
         return item
     }
 
-    private func addWindows(_ windows: [AppWindowControl.Window], pid: pid_t, to menu: NSMenu) {
-        let profileNames = ChromiumProfiles.profileNames(pid: pid)
-        guard let groups = WindowGrouping.groups(titles: windows.map(\.title), profileNames: profileNames) else {
-            for window in windows {
-                menu.addItem(windowItem(window, pid: pid, profile: nil))
-            }
-            return
-        }
-        for group in groups {
-            let members = group.indices.compactMap { windows.indices.contains($0) ? windows[$0] : nil }
-            guard !members.isEmpty else { continue }
-            let isOther = group.name == WindowGrouping.otherGroupName
-            let groupItem = MenuHelper.makeSubmenuItem(
-                title: "\(group.name) (\(members.count))",
-                systemSymbolName: isOther ? "macwindow" : "person.crop.circle"
-            )
-            let groupMenu = groupItem.submenu ?? NSMenu()
-            if !isOther {
-                groupMenu.addItem(closeWindowsItem(members, label: group.name))
-                groupMenu.addItem(.separator())
-            }
-            for window in members {
-                groupMenu.addItem(windowItem(window, pid: pid, profile: group.name))
-            }
-            groupItem.submenu = groupMenu
-            menu.addItem(groupItem)
-        }
-    }
-
     static func showsWindowsMenu(trusted: Bool, axWindowCount: Int, visibleWindowCount: Int) -> Bool {
         trusted ? axWindowCount > 1 : visibleWindowCount > 1
     }
 
-    private func closeWindowsItem(_ windows: [AppWindowControl.Window], label: String) -> NSMenuItem {
-        let noun = windows.count == 1 ? "Window" : "Windows"
-        let title = "Close \(label) \(noun) (\(windows.count))"
-        return MenuHelper.makeItem(
-            title: title,
-            systemSymbolName: "xmark.rectangle",
-            action: {
-                AppWindowControl.close(windows)
-                Task { @MainActor in
-                    try? await Task.sleep(nanoseconds: 400_000_000)
-                    await AppListViewModel.shared.refresh(force: true)
-                }
-            }
-        )
+    private func addWindows(_ windows: [AppWindowControl.Window], pid: pid_t, to menu: NSMenu) {
+        for window in windows {
+            menu.addItem(windowItem(window, pid: pid))
+        }
     }
 
-    private func windowItem(_ window: AppWindowControl.Window, pid: pid_t, profile: String?) -> NSMenuItem {
-        let title = WindowGrouping.displayTitle(window.title, profile: profile)
+    private func windowItem(_ window: AppWindowControl.Window, pid: pid_t) -> NSMenuItem {
+        let title = WindowGrouping.displayTitle(window.title)
         let item = MenuHelper.makeSubmenuItem(
             title: window.isMinimized ? "\(title) (Minimized)" : title,
             systemSymbolName: "macwindow"

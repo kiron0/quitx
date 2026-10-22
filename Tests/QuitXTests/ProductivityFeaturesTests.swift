@@ -830,7 +830,7 @@ struct LastWindowQuitTests {
         #expect(LastWindowQuitWindowState.nextEmptySamples(windowCount: 0, previous: 1) == 2)
     }
 
-    @Test("Missing Accessibility permission disables the option without prompting")
+    @Test("Missing Accessibility permission pauses the option without prompting or losing it")
     @MainActor
     func testMissingAccessibilityDisablesOption() {
         let originalConfig = ConfigStore.shared.config
@@ -847,6 +847,64 @@ struct LastWindowQuitTests {
         service.refreshAccessibilityTrust()
 
         #expect(!service.accessibilityTrusted)
-        #expect(!ConfigStore.shared.config.quitWhenLastWindowClosed)
+        #expect(ConfigStore.shared.config.quitWhenLastWindowClosed)
+        #expect(!service.isTracking(ProcessInfo.processInfo.processIdentifier))
     }
+
+    @Test("Lost Accessibility after an update offers repair; a first-time user is not nagged")
+    @MainActor
+    func testAccessibilityRepairDetection() {
+        #expect(AccessibilityPermission.permissionWasLost(trustedVersion: "1.1.6", currentVersion: "1.1.7"))
+        #expect(!AccessibilityPermission.permissionWasLost(trustedVersion: "1.1.7", currentVersion: "1.1.7"))
+        #expect(!AccessibilityPermission.permissionWasLost(trustedVersion: nil, currentVersion: "1.1.7"))
+        #expect(!AccessibilityPermission.permissionWasLost(trustedVersion: "", currentVersion: "1.1.7"))
+
+        let suite = "test_ax_trust_\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suite) else { return }
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        var trusted = true
+        let permission = AccessibilityPermission(trustCheck: { trusted }, defaults: defaults, currentVersion: "2.0.0")
+        #expect(permission.refresh())
+        #expect(defaults.string(forKey: QuitXConstants.UserDefaultsKeys.accessibilityTrustedVersion) == "2.0.0")
+        #expect(!permission.needsRepair)
+
+        trusted = false
+        #expect(!permission.refresh())
+        #expect(!permission.isTrusted)
+        #expect(!permission.needsRepair, "same version: plain grant flow, no repair")
+
+        let upgraded = AccessibilityPermission(trustCheck: { false }, defaults: defaults, currentVersion: "2.1.0")
+        #expect(upgraded.needsRepair)
+
+        let freshSuite = suite + ".fresh"
+        if let freshDefaults = UserDefaults(suiteName: freshSuite) {
+            defer { freshDefaults.removePersistentDomain(forName: freshSuite) }
+            let fresh = AccessibilityPermission(trustCheck: { false }, defaults: freshDefaults, currentVersion: "2.1.0")
+            #expect(!fresh.needsRepair, "never granted: normal Allow flow, not Repair")
+        }
+    }
+
+    @Test("Accessibility changes are picked up from the system notification")
+    @MainActor
+    func testAccessibilityObservation() async {
+        var trusted = false
+        let permission = AccessibilityPermission(trustCheck: { trusted }, defaults: UserDefaults(suiteName: "test_ax_obs_\(UUID().uuidString)") ?? .standard, currentVersion: "2.0.0")
+        permission.startObserving()
+        defer { permission.stopObserving() }
+        #expect(!permission.isTrusted)
+        trusted = true
+        DistributedNotificationCenter.default().post(name: AccessibilityPermission.systemChangeNotification, object: nil)
+        var observed = false
+        for _ in 0..<30 {
+            try? await Task.sleep(for: .milliseconds(100))
+            if permission.isTrusted { observed = true; break }
+        }
+        if !observed {
+            permission.scheduleRechecks()
+            try? await Task.sleep(for: .milliseconds(400))
+        }
+        #expect(permission.isTrusted)
+    }
+
 }

@@ -2,6 +2,14 @@
 
 All notable changes to QuitX macOS App will be documented in this file.
 
+## 1.1.8
+
+### Fixed
+
+- Accessibility after updates: releases up to 1.1.5 were signed with a CDHash-based designated requirement, so macOS dropped the Accessibility grant on every update. Builds now fail if the designated requirement is not identifier-based, losing trust only pauses Quit When Last Window Closes instead of switching it off, and Automation settings offer Repair Accessibility (resets the stale entry with `tccutil` and asks again) when access was lost after an update.
+- Permission management: new `AccessibilityPermission` service is the single owner of Accessibility state. It never prompts on its own, reacts to the system `com.apple.accessibility.api` change notification with short re-checks, records the version that last held the grant, and drives Allow, Repair (`tccutil reset`) and Open Settings.
+- "Data Access Blocked" notifications: QuitX no longer reads any other app's files. Chromium profile discovery (open-file scanning and `Local State` parsing) is removed; instance labels come from launch arguments only and the Windows menu lists windows directly.
+
 ## 1.1.7
 
 ### Added

@@ -25,6 +25,7 @@ enum QuitXConstants {
         static let recentlyQuit = "QuitXRecentlyQuit"
         static let firstLaunchSeen = "quitx_first_launch_seen_v1"
         static let lastSeenVersion = "quitx_last_seen_version"
+        static let accessibilityTrustedVersion = "quitx_accessibility_trusted_version"
         static let lastAutomaticUpdateCheck = "quitx_last_automatic_update_check"
         static let lastAutomaticUpdateCheckFailed = "quitx_last_automatic_update_check_failed"
         static let launchAtLogin = "quitx_launch_at_login"

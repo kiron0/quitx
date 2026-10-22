@@ -69,32 +69,6 @@ enum ProcessTree {
     }
 }
 
-enum OpenFiles {
-    static func paths(pid: pid_t, limit: Int = 1024) -> [String] {
-        guard pid > 0 else { return [] }
-        let bufferSize = proc_pidinfo(pid, PROC_PIDLISTFDS, 0, nil, 0)
-        guard bufferSize > 0 else { return [] }
-        let stride = MemoryLayout<proc_fdinfo>.stride
-        let capacity = Int(bufferSize) / stride + 16
-        var fds = [proc_fdinfo](repeating: proc_fdinfo(), count: capacity)
-        let bytes = proc_pidinfo(pid, PROC_PIDLISTFDS, 0, &fds, Int32(capacity * stride))
-        guard bytes > 0 else { return [] }
-        let count = min(Int(bytes) / stride, capacity)
-        var paths: [String] = []
-        for fd in fds.prefix(count) where fd.proc_fdtype == UInt32(PROX_FDTYPE_VNODE) {
-            var info = vnode_fdinfowithpath()
-            let size = Int32(MemoryLayout<vnode_fdinfowithpath>.size)
-            guard proc_pidfdinfo(pid, fd.proc_fd, PROC_PIDFDVNODEPATHINFO, &info, size) == size else { continue }
-            let path = withUnsafeBytes(of: &info.pvip.vip_path) { raw in
-                String(decoding: raw.prefix(while: { $0 != 0 }), as: UTF8.self)
-            }
-            if !path.isEmpty { paths.append(path) }
-            if paths.count >= limit { break }
-        }
-        return paths
-    }
-}
-
 enum AppInstanceLabel {
     static func flagValue(_ arguments: [String], names: [String]) -> String? {
         for (index, argument) in arguments.enumerated() {
@@ -200,151 +174,11 @@ enum AppInstanceGrouping {
     }
 }
 
-enum ChromiumProfiles {
-    struct Profile: Equatable, Sendable {
-        let directory: String
-        let name: String
-    }
-
-    static func parseLocalState(_ data: Data) -> [Profile] {
-        guard let root = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
-              let profile = root["profile"] as? [String: Any],
-              let cache = profile["info_cache"] as? [String: Any] else { return [] }
-        return cache.compactMap { directory, value -> Profile? in
-            guard let entry = value as? [String: Any] else { return nil }
-            let name = (entry["name"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            return Profile(directory: directory, name: name.isEmpty ? directory : name)
-        }
-        .sorted { $0.directory.localizedStandardCompare($1.directory) == .orderedAscending }
-    }
-
-    private struct CacheEntry {
-        let modified: Date
-        let profiles: [Profile]
-    }
-
-    private static let profileCache = OSAllocatedUnfairLock(uncheckedState: [String: CacheEntry]())
-    private static let directoryCache = OSAllocatedUnfairLock(uncheckedState: [pid_t: (start: UInt64, dir: URL?)]())
-
-    static func profiles(userDataDir: URL) -> [Profile] {
-        let localState = userDataDir.appendingPathComponent("Local State")
-        guard let attributes = try? FileManager.default.attributesOfItem(atPath: localState.path),
-              let modified = attributes[.modificationDate] as? Date else { return [] }
-        let key = localState.standardizedFileURL.path
-        if let cached = profileCache.withLockUnchecked({ $0[key] }), cached.modified == modified {
-            return cached.profiles
-        }
-        guard let data = try? Data(contentsOf: localState), data.count < 32 * 1024 * 1024 else { return [] }
-        let parsed = parseLocalState(data)
-        profileCache.withLockUnchecked { cache in
-            if cache.count >= 32 { cache.removeAll() }
-            cache[key] = CacheEntry(modified: modified, profiles: parsed)
-        }
-        return parsed
-    }
-
-    static func userDataDirectory(pid: pid_t, arguments: [String]?) -> URL? {
-        let start = ProcessTree.startTime(of: pid) ?? 0
-        if let cached = directoryCache.withLockUnchecked({ $0[pid] }), cached.start == start {
-            return cached.dir
-        }
-        let resolved = resolveUserDataDirectory(pid: pid, arguments: arguments)
-        directoryCache.withLockUnchecked { cache in
-            if cache.count >= 64 { cache.removeAll() }
-            cache[pid] = (start, resolved)
-        }
-        return resolved
-    }
-
-    private static func resolveUserDataDirectory(pid: pid_t, arguments: [String]?) -> URL? {
-        if let arguments,
-           let value = AppInstanceLabel.flagValue(Array(arguments.dropFirst()), names: ["--user-data-dir"]) {
-            let url = URL(fileURLWithPath: (value as NSString).expandingTildeInPath).standardizedFileURL
-            return hasLocalState(url) ? url : nil
-        }
-        var checked = Set<String>()
-        for path in OpenFiles.paths(pid: pid) {
-            var directory = URL(fileURLWithPath: path).deletingLastPathComponent()
-            for _ in 0..<4 {
-                let key = directory.path
-                if key == "/" || key.isEmpty { break }
-                if checked.insert(key).inserted, hasLocalState(directory) { return directory }
-                directory = directory.deletingLastPathComponent()
-            }
-        }
-        return nil
-    }
-
-    private static func hasLocalState(_ directory: URL) -> Bool {
-        FileManager.default.fileExists(atPath: directory.appendingPathComponent("Local State").path)
-    }
-
-    static func profileNames(pid: pid_t) -> [String] {
-        let arguments = ProcessArguments.read(pid: pid)
-        guard let directory = userDataDirectory(pid: pid, arguments: arguments) else { return [] }
-        return profiles(userDataDir: directory).map(\.name)
-    }
-
-    static func resolveLabel(userDataDir: String?, profileDirectory: String?) -> String? {
-        guard let userDataDir else { return nil }
-        let url = URL(fileURLWithPath: (userDataDir as NSString).expandingTildeInPath).standardizedFileURL
-        let known = profiles(userDataDir: url)
-        if let profileDirectory {
-            return known.first(where: { $0.directory == profileDirectory })?.name
-        }
-        return known.count == 1 ? known[0].name : nil
-    }
-}
-
 enum WindowGrouping {
-    struct Group: Equatable {
-        let name: String
-        let indices: [Int]
-    }
-
-    static let otherGroupName = "Other Windows"
-    private static let separators = [" - ", " – ", " — "]
-
-    static func profileName(forTitle title: String, profileNames: [String]) -> String? {
-        for name in profileNames.sorted(by: { $0.count > $1.count }) where !name.isEmpty {
-            if title == name { return name }
-            for separator in separators where title.hasSuffix(separator + name) { return name }
-        }
-        return nil
-    }
-
-    static func groups(titles: [String], profileNames: [String]) -> [Group]? {
-        var seen = Set<String>()
-        let names = profileNames.filter { !$0.isEmpty && seen.insert($0).inserted }
-        guard names.count >= 2 else { return nil }
-        var members: [String: [Int]] = [:]
-        var order: [String] = []
-        var other: [Int] = []
-        for (index, title) in titles.enumerated() {
-            if let name = profileName(forTitle: title, profileNames: names) {
-                if members[name] == nil { order.append(name) }
-                members[name, default: []].append(index)
-            } else {
-                other.append(index)
-            }
-        }
-        guard !members.isEmpty else { return nil }
-        var result = order.map { Group(name: $0, indices: members[$0] ?? []) }
-        if !other.isEmpty { result.append(Group(name: otherGroupName, indices: other)) }
-        return result
-    }
-
-    static func displayTitle(_ title: String, profile: String?, maxLength: Int = 60) -> String {
-        var text = title
-        if let profile, profile != otherGroupName {
-            for separator in separators where text.hasSuffix(separator + profile) {
-                text = String(text.dropLast(separator.count + profile.count))
-                break
-            }
-        }
-        text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    static func displayTitle(_ title: String, maxLength: Int = 60) -> String {
+        var text = title.trimmingCharacters(in: .whitespacesAndNewlines)
         if text.isEmpty { text = "Untitled Window" }
-        if text.count > maxLength { text = String(text.prefix(maxLength - 1)) + "…" }
+        if text.count > maxLength { text = String(text.prefix(max(1, maxLength - 1))) + "…" }
         return text
     }
 }
