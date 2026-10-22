@@ -1,4 +1,5 @@
 import AppKit
+import ApplicationServices
 import Combine
 import Foundation
 
@@ -50,22 +51,11 @@ enum LastWindowQuitPolicy {
     }
 }
 
-/// Decides whether a previously windowed app has actually closed its windows.
+/// Advances the closed-window confirmation state.
 enum LastWindowQuitWindowState {
-    static func mergedTrackedIDs(
-        current: Set<CGWindowID> = [],
-        visible: Set<CGWindowID>,
-        all: Set<CGWindowID>
-    ) -> Set<CGWindowID> {
-        current.union(visible).union(all)
-    }
-
-    static func isClosed(
-        tracked: Set<CGWindowID>,
-        visible: Set<CGWindowID>,
-        all: Set<CGWindowID>
-    ) -> Bool {
-        visible.isEmpty && tracked.isDisjoint(with: all)
+    static func nextEmptySamples(windowCount: Int?, previous: Int) -> Int {
+        guard let windowCount else { return 0 }
+        return windowCount == 0 ? previous + 1 : 0
     }
 }
 
@@ -78,7 +68,6 @@ enum LastWindowQuitWindowCounter {
             let pid = pid_t(ownerNumber.int32Value)
             guard pid > 0 else { continue }
             guard let number = window[kCGWindowNumber as String] as? NSNumber else { continue }
-
             if let layer = window[kCGWindowLayer as String] as? NSNumber, layer.intValue != 0 { continue }
             if let alpha = window[kCGWindowAlpha as String] as? NSNumber, alpha.doubleValue <= 0 { continue }
 
@@ -100,29 +89,51 @@ enum LastWindowQuitWindowCounter {
         return windowIDs(from: list)
     }
 
-    static func allWindowIDs() -> [pid_t: Set<CGWindowID>]? {
-        guard let list = CGWindowListCopyWindowInfo(
-            [.optionAll, .excludeDesktopElements],
-            kCGNullWindowID
-        ) as? [[String: Any]] else { return nil }
-        return windowIDs(from: list)
+    static func accessibilityWindowCount(for pid: pid_t) -> Int? {
+        guard AXIsProcessTrusted() else { return nil }
+        let application = AXUIElementCreateApplication(pid)
+        var value: CFTypeRef?
+        let result = AXUIElementCopyAttributeValue(
+            application,
+            kAXWindowsAttribute as CFString,
+            &value
+        )
+        guard result == .success, let windows = value as? [AXUIElement] else { return nil }
+        return windows.count
     }
 }
 
 /// Force-quits a regular app once its last window closes.
 ///
-/// Closing the red close button or the last window with ⌘W destroys the window,
-/// so its window ID disappears from the window server. Minimized windows, hidden
-/// apps, and windows on another Space keep their window ID and are preserved.
+/// Accessibility exposes open windows even when minimized, hidden, or off-Space.
+/// Closed AppKit windows disappear from that list even when WindowServer retains
+/// their backing record.
 @MainActor
 final class LastWindowQuitService: ObservableObject {
     static let shared = LastWindowQuitService()
+
+    @Published private(set) var accessibilityTrusted: Bool
+
+    nonisolated static var isAccessibilityTrusted: Bool {
+        AXIsProcessTrusted()
+    }
+
+    nonisolated static func requestAccessibilityPermission() {
+        let promptKey = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
+        _ = AXIsProcessTrustedWithOptions([promptKey: true] as CFDictionary)
+    }
+
+    nonisolated static func openAccessibilitySettings() {
+        guard let url = URL(
+            string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+        ) else { return }
+        NSWorkspace.shared.open(url)
+    }
 
     private struct TrackedApp {
         let pid: pid_t
         let bundleId: String?
         let name: String
-        var windowIDs: Set<CGWindowID>
         var emptySamples: Int
     }
 
@@ -130,11 +141,29 @@ final class LastWindowQuitService: ObservableObject {
     private var pendingQuits: Set<pid_t> = []
     private var configSubscription: AnyCancellable?
     private var pollTask: Task<Void, Never>?
+    private let restrictedPID: pid_t?
+    private let recordsRecentlyQuit: Bool
+    private let requiresAccessibilityTrust: Bool
+    private let accessibilityTrust: () -> Bool
+    private let windowCount: (pid_t) -> Int?
 
     private let pollInterval: Duration = .seconds(1)
     private let requiredEmptySamples = 2
 
-    private init() {}
+    init(
+        restrictedToPID: pid_t? = nil,
+        recordsRecentlyQuit: Bool = true,
+        requiresAccessibilityTrust: Bool = true,
+        accessibilityTrust: @escaping () -> Bool = { LastWindowQuitService.isAccessibilityTrusted },
+        windowCount: @escaping (pid_t) -> Int? = LastWindowQuitWindowCounter.accessibilityWindowCount
+    ) {
+        self.restrictedPID = restrictedToPID
+        self.recordsRecentlyQuit = recordsRecentlyQuit
+        self.requiresAccessibilityTrust = requiresAccessibilityTrust
+        self.accessibilityTrust = accessibilityTrust
+        self.windowCount = windowCount
+        self.accessibilityTrusted = !requiresAccessibilityTrust || accessibilityTrust()
+    }
 
     func start() {
         guard configSubscription == nil else { return }
@@ -153,8 +182,29 @@ final class LastWindowQuitService: ObservableObject {
         pendingQuits.removeAll()
     }
 
+    func isTracking(_ pid: pid_t) -> Bool {
+        tracked[pid] != nil
+    }
+
+    func refreshAccessibilityTrust() {
+        let trusted = !requiresAccessibilityTrust || accessibilityTrust()
+        if accessibilityTrusted != trusted {
+            accessibilityTrusted = trusted
+        }
+        if !trusted, ConfigStore.shared.config.quitWhenLastWindowClosed {
+            ConfigStore.shared.config.quitWhenLastWindowClosed = false
+            ConfigStore.shared.save()
+        }
+        syncTrackingState()
+    }
+
     private func syncTrackingState() {
-        if ConfigStore.shared.config.quitWhenLastWindowClosed {
+        let trusted = !requiresAccessibilityTrust || accessibilityTrust()
+        if accessibilityTrusted != trusted {
+            accessibilityTrusted = trusted
+        }
+
+        if ConfigStore.shared.config.quitWhenLastWindowClosed, trusted {
             startPolling()
         } else {
             stopPolling()
@@ -185,22 +235,32 @@ final class LastWindowQuitService: ObservableObject {
 
     private func poll() {
         guard ConfigStore.shared.config.quitWhenLastWindowClosed else { return }
+        let trusted = !requiresAccessibilityTrust || accessibilityTrust()
+        if accessibilityTrusted != trusted {
+            accessibilityTrusted = trusted
+        }
+        guard trusted else {
+            ConfigStore.shared.config.quitWhenLastWindowClosed = false
+            ConfigStore.shared.save()
+            return
+        }
         let config = ConfigStore.shared.config
         let ownPid = ProcessInfo.processInfo.processIdentifier
 
-        guard let visible = LastWindowQuitWindowCounter.visibleWindowIDs(),
-              let allWindows = LastWindowQuitWindowCounter.allWindowIDs() else { return }
+        guard let visible = LastWindowQuitWindowCounter.visibleWindowIDs() else { return }
 
         var livePids: Set<pid_t> = []
         for app in NSWorkspace.shared.runningApplications {
             let pid = app.processIdentifier
             guard pid > 0, pid != ownPid, !app.isTerminated else { continue }
+            guard restrictedPID == nil || pid == restrictedPID else { continue }
             livePids.insert(pid)
 
             guard app.activationPolicy == .regular else { continue }
             guard tracked[pid] == nil, !pendingQuits.contains(pid) else { continue }
             let windowIDs = visible[pid] ?? []
             guard !windowIDs.isEmpty else { continue }
+            guard let count = windowCount(pid), count > 0 else { continue }
 
             let name = Self.resolvedName(for: app)
             guard !name.isEmpty else { continue }
@@ -217,10 +277,6 @@ final class LastWindowQuitService: ObservableObject {
                 pid: pid,
                 bundleId: app.bundleIdentifier,
                 name: name,
-                windowIDs: LastWindowQuitWindowState.mergedTrackedIDs(
-                    visible: windowIDs,
-                    all: allWindows[pid] ?? []
-                ),
                 emptySamples: 0
             )
         }
@@ -231,31 +287,10 @@ final class LastWindowQuitService: ObservableObject {
 
         for pid in Array(tracked.keys) {
             guard var entry = tracked[pid] else { continue }
-            let visibleIDs = visible[pid] ?? []
-
-            if !visibleIDs.isEmpty {
-                entry.windowIDs = LastWindowQuitWindowState.mergedTrackedIDs(
-                    current: entry.windowIDs,
-                    visible: visibleIDs,
-                    all: allWindows[pid] ?? []
-                )
-                entry.emptySamples = 0
-                tracked[pid] = entry
-                continue
-            }
-
-            let isClosed = LastWindowQuitWindowState.isClosed(
-                tracked: entry.windowIDs,
-                visible: visibleIDs,
-                all: allWindows[pid] ?? []
+            entry.emptySamples = LastWindowQuitWindowState.nextEmptySamples(
+                windowCount: windowCount(pid),
+                previous: entry.emptySamples
             )
-            if !isClosed {
-                entry.emptySamples = 0
-                tracked[pid] = entry
-                continue
-            }
-
-            entry.emptySamples += 1
             tracked[pid] = entry
             guard entry.emptySamples >= requiredEmptySamples else { continue }
 
@@ -306,7 +341,7 @@ final class LastWindowQuitService: ObservableObject {
         let app = AppInfo(name: entry.name, bundleId: entry.bundleId, pid: pid)
         Task { @MainActor [weak self] in
             let results = await QuitService.shared.quit(apps: [app], force: true)
-            if results.first?.success == true {
+            if self?.recordsRecentlyQuit == true, results.first?.success == true {
                 RecentlyQuitService.shared.record(app: app)
             }
             self?.pendingQuits.remove(pid)
@@ -314,13 +349,7 @@ final class LastWindowQuitService: ObservableObject {
     }
 
     private func stillWindowless(entry: TrackedApp) -> Bool {
-        guard let visible = LastWindowQuitWindowCounter.visibleWindowIDs(),
-              let allWindows = LastWindowQuitWindowCounter.allWindowIDs() else { return false }
-        return LastWindowQuitWindowState.isClosed(
-            tracked: entry.windowIDs,
-            visible: visible[entry.pid] ?? [],
-            all: allWindows[entry.pid] ?? []
-        )
+        windowCount(entry.pid) == 0
     }
 
     private static func resolvedName(for app: NSRunningApplication) -> String {

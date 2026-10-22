@@ -202,7 +202,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Quit when the last window closes",
-                    body: "Enable Quit app when its last window closes in Settings > Automation and QuitX force-quits regular apps after their last window closes via the red close button (x) or ⌘W. Minimized windows, hidden apps, and windows on other Spaces do not count as closed. Finder, background daemons, music apps, and excluded apps remain protected. Quit apps appear in Recently Quit."
+                    body: "In Settings > Automation, grant Accessibility, then enable Quit app when its last window closes. QuitX never asks at launch. Once allowed, it directly force-quits regular apps after their last window closes via the red close button (x) or ⌘W. Minimized windows, hidden apps, and windows on other Spaces do not count as closed. Remove Access disables the option and opens macOS Accessibility settings for native permission removal. Finder, background daemons, music apps, and excluded apps remain protected. Quit apps appear in Recently Quit."
                 )
             ]
         ),

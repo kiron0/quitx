@@ -27,7 +27,20 @@ cp "$ROOT_DIR"/Support/Sounds/*.aiff "$RESOURCES_DIR"/ 2>/dev/null || true
 cp "$ROOT_DIR/Support/Assets.car" "$RESOURCES_DIR"/ 2>/dev/null || true
 /usr/libexec/PlistBuddy -c "Set :CFBundleIconFile AppIcon" "$CONTENTS/Info.plist" 2>/dev/null || true
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$CONTENTS/Info.plist" 2>/dev/null || true
-codesign --force --deep --sign - "$APP_DIR"
+
+# A stable designated requirement lets macOS recognize local ad-hoc rebuilds as
+# updates of the same app, so privacy grants do not bind to a changing CDHash.
+# Release builds should set QUITX_CODESIGN_IDENTITY to a Developer ID identity.
+if [[ -n "${QUITX_CODESIGN_IDENTITY:-}" ]]; then
+    codesign --force --deep --sign "$QUITX_CODESIGN_IDENTITY" "$APP_DIR"
+else
+    codesign \
+        --force \
+        --deep \
+        --sign - \
+        --requirements '=designated => identifier "io.coreify.quitx" and info[CFBundleIdentifier] = "io.coreify.quitx"' \
+        "$APP_DIR"
+fi
 echo "✅ $APP_NAME.app ready: $APP_DIR"
 
 if [[ "${1:-}" == "--run" ]]; then

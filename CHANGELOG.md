@@ -10,12 +10,16 @@ All notable changes to QuitX macOS App will be documented in this file.
 
 ### Fixed
 
-- Quit when the last window closes: force-quits instead of sending a graceful request that background apps could ignore, and no longer treats minimized windows, hidden apps, or windows on another Space as closed.
+- Quit when the last window closes: force-quits instead of sending a graceful request that background apps could ignore. It now detects AppKit-retained closed windows while preserving minimized, hidden, and off-Space windows.
 - Settings reset now asks for confirmation before restoring preferences, shortcuts, and launch-at-login defaults.
 - Reopening Settings, Welcome, Help, Exclude, or Update windows from the Dock restores a minimized window instead of leaving it hidden.
 - Help: Finder & Trash opens the Advanced tab, shortcut copy says "Quit all apps", menu-bar stats help includes GPU, and "Report an Issue" opens the GitHub issue tracker.
 - Stats detail panel: closing clears pending toast state.
-- Settings: permission-free quit-on-last-window detection no longer declares Accessibility usage.
+- Settings: quit-on-last-window requests Accessibility only from Automation settings, never during app launch. Granted access shows a checkmark; Remove Access disables the option and opens the native revocation pane.
+- Settings: Accessibility status now refreshes live while Automation settings remain open. The last-window toggle stays clickable and opens the grant flow when access is missing.
+- Build: local app bundles now use a stable designated requirement instead of a changing CDHash identity, preserving macOS privacy grants across rebuilds.
+- Automation: last-window close directly force-quits eligible apps. Minimized, hidden, and off-Space windows remain open and never trigger a quit.
+- Testing: added a real WindowServer integration test that opens a fixture window, performs its close-button action, and verifies automatic force termination.
 - Config: debounced saves can no longer overwrite a reset or a newer immediate save, and the memory-pressure threshold shown in Settings now matches the enforced value.
 - Updates: "Later" keeps the verified staged update, and failed installs no longer leak staged files.
 

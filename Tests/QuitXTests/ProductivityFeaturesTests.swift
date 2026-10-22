@@ -822,18 +822,31 @@ struct LastWindowQuitTests {
         #expect(ids[303] == nil)
     }
 
-    @Test("Minimized or off-Space windows are not treated as closed")
-    func testMinimizedWindowIsPreserved() {
-        let tracked: Set<CGWindowID> = [10, 11]
-        let merged = LastWindowQuitWindowState.mergedTrackedIDs(
-            current: tracked,
-            visible: [12],
-            all: [12, 13]
+    @Test("Window-count confirmation is fail-safe and needs consecutive empty samples")
+    func testWindowCountConfirmation() {
+        #expect(LastWindowQuitWindowState.nextEmptySamples(windowCount: 2, previous: 1) == 0)
+        #expect(LastWindowQuitWindowState.nextEmptySamples(windowCount: nil, previous: 1) == 0)
+        #expect(LastWindowQuitWindowState.nextEmptySamples(windowCount: 0, previous: 0) == 1)
+        #expect(LastWindowQuitWindowState.nextEmptySamples(windowCount: 0, previous: 1) == 2)
+    }
+
+    @Test("Missing Accessibility permission disables the option without prompting")
+    @MainActor
+    func testMissingAccessibilityDisablesOption() {
+        let originalConfig = ConfigStore.shared.config
+        defer { ConfigStore.shared.config = originalConfig }
+
+        var config = originalConfig
+        config.quitWhenLastWindowClosed = true
+        ConfigStore.shared.config = config
+
+        let service = LastWindowQuitService(
+            recordsRecentlyQuit: false,
+            accessibilityTrust: { false }
         )
-        #expect(merged == [10, 11, 12, 13])
-        #expect(!LastWindowQuitWindowState.isClosed(tracked: tracked, visible: [], all: [10]))
-        #expect(!LastWindowQuitWindowState.isClosed(tracked: tracked, visible: [12], all: [12]))
-        #expect(LastWindowQuitWindowState.isClosed(tracked: tracked, visible: [], all: [12]))
-        #expect(LastWindowQuitWindowState.isClosed(tracked: tracked, visible: [], all: []))
+        service.refreshAccessibilityTrust()
+
+        #expect(!service.accessibilityTrusted)
+        #expect(!ConfigStore.shared.config.quitWhenLastWindowClosed)
     }
 }

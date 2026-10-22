@@ -22,6 +22,8 @@
 	<string>AccentColor</string>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>QuitX uses Apple Events to quit applications.</string>
+	<key>NSAccessibilityUsageDescription</key>
+	<string>QuitX uses Accessibility to detect when an application's last window closes.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>CFBundlePackageType</key>

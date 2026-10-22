@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import Foundation
 
@@ -35,6 +36,7 @@ final class AutomationTabState: ObservableObject {
 struct AutomationTabView: View {
     @EnvironmentObject private var configStore: ConfigStore
     @StateObject private var state = AutomationTabState()
+    @ObservedObject private var lastWindowQuitService = LastWindowQuitService.shared
 
     private var systemMaxGB: Int {
         max(1, Int(ProcessInfo.processInfo.physicalMemory / 1_073_741_824))
@@ -147,10 +149,43 @@ struct AutomationTabView: View {
             row(label: "Windows:") {
                 toggle("Quit app when its last window closes", isOn: Binding(
                     get: { configStore.config.quitWhenLastWindowClosed },
-                    set: { configStore.config.quitWhenLastWindowClosed = $0; configStore.save() }
+                    set: { enabled in
+                        lastWindowQuitService.refreshAccessibilityTrust()
+                        if enabled && !lastWindowQuitService.accessibilityTrusted {
+                            LastWindowQuitService.requestAccessibilityPermission()
+                            LastWindowQuitService.openAccessibilitySettings()
+                            return
+                        }
+                        configStore.config.quitWhenLastWindowClosed = enabled
+                        configStore.save()
+                    }
                 ))
             } help: {
-                HelpPopoverButton(text: "Window shut, app out! Force-quits an app after its last window closes via the red close button (x) or ⌘W. Minimized windows, hidden apps, and windows on other Spaces keep the app running. 🪟🔴")
+                HelpPopoverButton(text: "Grant Accessibility below, then enable this option. QuitX directly force-quits an app after its last window closes via the red close button (x) or ⌘W. Minimized, hidden, and off-Space windows never trigger it. 🪟🔴")
+            }
+
+            row(label: "") {
+                if lastWindowQuitService.accessibilityTrusted {
+                    HStack(spacing: 10) {
+                        Label("Accessibility allowed", systemImage: "checkmark.circle.fill")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.secondary)
+
+                        Button("Remove Access…") {
+                            configStore.config.quitWhenLastWindowClosed = false
+                            configStore.save()
+                            LastWindowQuitService.openAccessibilitySettings()
+                        }
+                        .font(.system(size: 11.5))
+                        .help("Disables this automation and opens macOS Accessibility settings. Turn off QuitX there to remove the system permission.")
+                    }
+                } else {
+                    Button("Allow Accessibility…") {
+                        LastWindowQuitService.requestAccessibilityPermission()
+                        LastWindowQuitService.openAccessibilitySettings()
+                    }
+                    .font(.system(size: 11.5))
+                }
             }
 
             row(label: "Health:") {
@@ -263,6 +298,20 @@ struct AutomationTabView: View {
         .background(QuitXTheme.paneBackground)
         .onAppear {
             state.syncFromMinutes(configStore.config.quitInactiveAfterMinutes)
+            lastWindowQuitService.refreshAccessibilityTrust()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            lastWindowQuitService.refreshAccessibilityTrust()
+        }
+        .task {
+            while !Task.isCancelled {
+                lastWindowQuitService.refreshAccessibilityTrust()
+                do {
+                    try await Task.sleep(for: .milliseconds(500))
+                } catch {
+                    return
+                }
+            }
         }
         .onChange(of: state.autoQuitValue) {
             if configStore.config.quitInactiveAfterMinutes > 0 {
@@ -377,4 +426,3 @@ struct AutomationTabView: View {
         }
     }
 }
-
