@@ -93,8 +93,8 @@ struct MainPopoverView: View {
                 switch action {
                 case .quit(let app, let force):
                     QuitConfirmationOverlay(
-                        title: force ? "Force Quit \(app.name)?" : "Quit \(app.name)?",
-                        subtitle: "This will close \(app.name).",
+                        title: force ? "Force Quit \(app.displayName)?" : "Quit \(app.displayName)?",
+                        subtitle: "This will close \(app.displayName).",
                         confirmTitle: force ? "Force Quit" : "Quit",
                         systemImage: force ? "bolt.trianglebadge.exclamationmark.fill" : "questionmark.circle.fill",
                         isForced: force,
@@ -110,8 +110,8 @@ struct MainPopoverView: View {
                     .transition(.opacity.combined(with: .scale(scale: 0.95)))
                 case .restart(let app):
                     QuitConfirmationOverlay(
-                        title: "Restart \(app.name)?",
-                        subtitle: "This will close and reopen \(app.name).",
+                        title: "Restart \(app.displayName)?",
+                        subtitle: "This will close and reopen \(app.displayName).",
                         confirmTitle: "Restart",
                         systemImage: "arrow.clockwise.circle.fill",
                         isForced: false,

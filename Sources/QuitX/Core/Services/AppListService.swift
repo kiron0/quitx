@@ -149,6 +149,8 @@ final class AppListService {
             ))
         }
 
+        results = AppInstanceLabel.assign(results, label: instanceLabel(for:))
+
         if config.includeBackground && config.groupBackground {
             var groupedResults: [AppInfo] = []
             var bgGroups: [String: (app: AppInfo, cleanName: String, pids: [pid_t], mem: UInt64, cpu: Double, windows: Int)] = [:]
@@ -231,7 +233,8 @@ final class AppListService {
                     memoryBytes: totalMem,
                     cpuUsage: totalCpu,
                     isUnresponsive: false,
-                    isCpuHog: !Set(livePids).isDisjoint(with: hogPids)
+                    isCpuHog: !Set(livePids).isDisjoint(with: hogPids),
+                    instanceLabel: app.instanceLabel
                 )
             }
             return Self.sortApps(updated, sortBy: config.sortBy)
@@ -281,6 +284,27 @@ final class AppListService {
     static func fetchCpuUsages() -> [pid_t: Double] {
         CpuUsageSampler.start()
         return CpuUsageSampler.usages()
+    }
+
+    private static let instanceLabelCache = OSAllocatedUnfairLock(
+        uncheckedState: [pid_t: (start: UInt64, label: String?)]()
+    )
+
+    static func instanceLabel(for pid: pid_t) -> String? {
+        let start = ProcessTree.startTime(of: pid) ?? 0
+        if let cached = instanceLabelCache.withLockUnchecked({ $0[pid] }), cached.start == start {
+            return cached.label
+        }
+        let label = ProcessArguments.read(pid: pid).flatMap { arguments in
+            AppInstanceLabel.label(arguments: arguments) { userDataDir, profileDirectory in
+                ChromiumProfiles.resolveLabel(userDataDir: userDataDir, profileDirectory: profileDirectory)
+            }
+        }
+        instanceLabelCache.withLockUnchecked { cache in
+            if cache.count >= 256 { cache.removeAll() }
+            cache[pid] = (start, label)
+        }
+        return label
     }
 
     private static let memoryCache = OSAllocatedUnfairLock(initialState: [pid_t: (bytes: UInt64, timestamp: Date)]())

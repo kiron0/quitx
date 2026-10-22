@@ -89,6 +89,15 @@ static void WriteFixtureState(NSString *state) {
     return NO;
 }
 
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender {
+    (void)sender;
+    const char *refuse = getenv("QUITX_FIXTURE_REFUSE_QUIT");
+    if (refuse != NULL && strcmp(refuse, "1") == 0) {
+        return NSTerminateCancel;
+    }
+    return NSTerminateNow;
+}
+
 @end
 
 int main(void) {

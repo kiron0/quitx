@@ -101,6 +101,10 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                     body: "Choose Quit In from the row menu to schedule graceful termination after 15, 30, or 60 minutes. Timers persist across app restarts and can be cancelled anytime from the same menu."
                 ),
                 QuitXHelpSection(
+                    title: "Multiple instances and profiles",
+                    body: "When an app runs more than once (for example Chrome started with a separate data folder, or Firefox with -P), each instance gets its own row with a label taken from its profile or data folder. Quit, restart, and Quit In act on that instance only. Profiles that share one process, such as normal Chrome profiles, cannot be quit on their own: use Windows in the row menu to close one profile's windows, or show and close single windows. Windows needs Accessibility access, granted in Automation settings."
+                ),
+                QuitXHelpSection(
                     title: "Background apps",
                     body: "Show background apps temporarily from the popover gear menu or persistently from Settings > Advanced. Group Background Instances combines related helper processes into one line."
                 )

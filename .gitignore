@@ -87,3 +87,4 @@ DerivedData/
 *.swo
 *.idea/
 node_modules/
+.qa/

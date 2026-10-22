@@ -7,6 +7,24 @@ enum QuitTimerDue {
         return timers.filter { $0.value <= epoch }.map(\.key).sorted()
     }
 
+    static func nextDelay(timers: [String: Double], now: Date, retryAfter: TimeInterval? = nil) -> TimeInterval? {
+        guard let earliest = timers.values.filter(\.isFinite).min() else { return nil }
+        let untilDue = earliest - now.timeIntervalSince1970
+        return min(3600, max(1, retryAfter ?? untilDue))
+    }
+
+    static func timerKey(bundleId: String?, name: String, instanceLabel: String?) -> String {
+        let base = PerAppQuitRule.ruleKey(bundleId: bundleId, name: name)
+        guard let instanceLabel, !instanceLabel.isEmpty else { return base }
+        return base + "#" + instanceLabel.lowercased()
+    }
+
+    static func isDue(app: AppInfo, dueKeys: Set<String>) -> Bool {
+        if dueKeys.contains(PerAppQuitRule.ruleKey(bundleId: app.bundleId, name: app.name)) { return true }
+        guard app.instanceLabel != nil else { return false }
+        return dueKeys.contains(timerKey(bundleId: app.bundleId, name: app.name, instanceLabel: app.instanceLabel))
+    }
+
     static func pruneExpired(timers: [String: Double], now: Date) -> [String: Double] {
         let epoch = now.timeIntervalSince1970
         return timers.filter { $0.value > epoch }
@@ -70,10 +88,11 @@ final class QuitTimerService {
     private func ensureTimer(retryAfter: TimeInterval? = nil) {
         timer?.invalidate()
         timer = nil
-        let timers = ConfigStore.shared.config.quitTimers
-        guard let earliest = timers.values.min() else { return }
-        let untilDue = earliest - Date().timeIntervalSince1970
-        let delay = max(1, retryAfter ?? untilDue)
+        guard let delay = QuitTimerDue.nextDelay(
+            timers: ConfigStore.shared.config.quitTimers,
+            now: Date(),
+            retryAfter: retryAfter
+        ) else { return }
         let newTimer = Timer(timeInterval: delay, repeats: false) { [weak self] _ in
             Task { @MainActor in
                 await self?.fireDueTimers()
@@ -98,10 +117,8 @@ final class QuitTimerService {
             return
         }
         await vm.refresh()
-        let targets = vm.apps.filter { app in
-            let key = PerAppQuitRule.ruleKey(bundleId: app.bundleId, name: app.name)
-            return due.contains(key)
-        }
+        let dueSet = Set(due)
+        let targets = vm.apps.filter { QuitTimerDue.isDue(app: $0, dueKeys: dueSet) }
 
         var remaining = ConfigStore.shared.config.quitTimers
         for key in due { remaining.removeValue(forKey: key) }

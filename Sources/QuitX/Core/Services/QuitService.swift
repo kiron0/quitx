@@ -61,7 +61,18 @@ final class QuitService {
         var helperPids: Set<pid_t> = []
         if let bundleId = app.bundleId, let rootURL {
             let prefix = bundleId + "."
-            for running in NSWorkspace.shared.runningApplications {
+            let workspaceApps = NSWorkspace.shared.runningApplications
+            let siblingInstances = Set(workspaceApps.compactMap { running -> pid_t? in
+                guard !running.isTerminated,
+                      running.bundleIdentifier == bundleId,
+                      running.activationPolicy == .regular,
+                      !knownPids.contains(running.processIdentifier),
+                      Self.processIsRunning(running.processIdentifier),
+                      let url = running.bundleURL?.standardizedFileURL,
+                      url == rootURL else { return nil }
+                return running.processIdentifier
+            })
+            for running in workspaceApps {
                 guard !running.isTerminated else { continue }
                 guard let bid = running.bundleIdentifier else { continue }
                 guard bid == bundleId || bid.hasPrefix(prefix) else { continue }
@@ -70,6 +81,11 @@ final class QuitService {
                 let pid = running.processIdentifier
                 guard Self.processIsRunning(pid) else { continue }
                 guard !knownPids.contains(pid) else { continue }
+                guard Self.helperBelongsToTarget(
+                    pid: pid,
+                    targetPids: knownPids,
+                    siblingInstancePids: siblingInstances
+                ) else { continue }
                 helperPids.insert(pid)
             }
         }
@@ -226,6 +242,17 @@ final class QuitService {
             forced: force,
             error: firstError
         )
+    }
+
+    static func helperBelongsToTarget(
+        pid: pid_t,
+        targetPids: Set<pid_t>,
+        siblingInstancePids: Set<pid_t>,
+        isDescendant: (pid_t, Set<pid_t>) -> Bool = { ProcessTree.isDescendant($0, ofAny: $1) }
+    ) -> Bool {
+        guard !siblingInstancePids.contains(pid) else { return false }
+        guard !siblingInstancePids.isEmpty else { return true }
+        return isDescendant(pid, targetPids)
     }
 
     private static func rootBundleURL(for app: AppInfo) -> URL? {

@@ -36,7 +36,23 @@ struct AppRowView: View {
                 .foregroundStyle(Color.primary)
                 .lineLimit(1)
                 .truncationMode(.tail)
-                .help(app.name)
+                .layoutPriority(1)
+                .help(app.displayName)
+
+            if let instanceLabel = app.instanceLabel {
+                Text(instanceLabel)
+                    .font(.system(size: 10.5, weight: .medium))
+                    .foregroundStyle(Color.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 1)
+                    .background(
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(Color.primary.opacity(0.08))
+                    )
+                    .help(app.displayName)
+            }
 
             Spacer(minLength: 4)
 
@@ -83,8 +99,8 @@ struct AppRowView: View {
             }
             .buttonStyle(.plain)
             .disabled(isPending)
-            .help(isPending ? "Operation in progress" : (isForced ? "Force quit \(app.name)" : "Quit \(app.name)"))
-            .accessibilityLabel(isPending ? "Operation in progress" : (isForced ? "Force quit \(app.name)" : "Quit \(app.name)"))
+            .help(isPending ? "Operation in progress" : (isForced ? "Force quit \(app.displayName)" : "Quit \(app.displayName)"))
+            .accessibilityLabel(isPending ? "Operation in progress" : (isForced ? "Force quit \(app.displayName)" : "Quit \(app.displayName)"))
             .onHover { h in state.isQuitHovered = h }
         }
         .padding(.horizontal, 8)
@@ -172,6 +188,9 @@ struct AppRowView: View {
         if !app.isBackground {
             menu.addItem(buildAutoQuitItem())
             menu.addItem(buildQuitTimerItem())
+            if let pid = app.pid, let windowsItem = buildWindowsItem(pid: pid) {
+                menu.addItem(windowsItem)
+            }
         }
 
         menu.addItem(MenuHelper.makeItem(
@@ -235,10 +254,116 @@ struct AppRowView: View {
         return item
     }
 
+    private func buildWindowsItem(pid: pid_t) -> NSMenuItem? {
+        let trusted = AppWindowControl.isTrusted
+        let windows = trusted ? AppWindowControl.windows(pid: pid) : []
+        guard Self.showsWindowsMenu(trusted: trusted, axWindowCount: windows.count, visibleWindowCount: app.windowCount) else {
+            return nil
+        }
+
+        let item = MenuHelper.makeSubmenuItem(title: "Windows", systemSymbolName: "macwindow.on.rectangle")
+        let submenu = item.submenu ?? NSMenu()
+        defer { item.submenu = submenu }
+
+        guard trusted else {
+            submenu.addItem(MenuHelper.makeItem(
+                title: "Needs Accessibility Access",
+                isEnabled: false,
+                action: {}
+            ))
+            submenu.addItem(MenuHelper.makeItem(
+                title: "Open Automation Settings…",
+                systemSymbolName: "gearshape",
+                action: {
+                    StatusItemController.shared?.closePopover()
+                    SettingsWindowController.shared.show(tab: .automation)
+                }
+            ))
+            return item
+        }
+
+        let profileNames = ChromiumProfiles.profileNames(pid: pid)
+        if let groups = WindowGrouping.groups(titles: windows.map(\.title), profileNames: profileNames) {
+            for group in groups {
+                let members = group.indices.compactMap { windows.indices.contains($0) ? windows[$0] : nil }
+                guard !members.isEmpty else { continue }
+                let groupItem = MenuHelper.makeSubmenuItem(
+                    title: "\(group.name) (\(members.count))",
+                    systemSymbolName: group.name == WindowGrouping.otherGroupName ? "macwindow" : "person.crop.circle"
+                )
+                let groupMenu = groupItem.submenu ?? NSMenu()
+                groupMenu.addItem(closeWindowsItem(members, label: group.name))
+                groupMenu.addItem(.separator())
+                for window in members {
+                    groupMenu.addItem(windowItem(window, pid: pid, profile: group.name))
+                }
+                groupItem.submenu = groupMenu
+                submenu.addItem(groupItem)
+            }
+        } else {
+            for window in windows {
+                submenu.addItem(windowItem(window, pid: pid, profile: nil))
+            }
+            submenu.addItem(.separator())
+            submenu.addItem(closeWindowsItem(windows, label: nil))
+        }
+        return item
+    }
+
+    static func showsWindowsMenu(trusted: Bool, axWindowCount: Int, visibleWindowCount: Int) -> Bool {
+        trusted ? axWindowCount > 1 : visibleWindowCount > 1
+    }
+
+    private func closeWindowsItem(_ windows: [AppWindowControl.Window], label: String?) -> NSMenuItem {
+        let noun = windows.count == 1 ? "Window" : "Windows"
+        let title = label.map { "Close \($0) \(noun) (\(windows.count))" } ?? "Close All \(noun) (\(windows.count))"
+        return MenuHelper.makeItem(
+            title: title,
+            systemSymbolName: "xmark.rectangle",
+            action: {
+                AppWindowControl.close(windows)
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 400_000_000)
+                    await AppListViewModel.shared.refresh(force: true)
+                }
+            }
+        )
+    }
+
+    private func windowItem(_ window: AppWindowControl.Window, pid: pid_t, profile: String?) -> NSMenuItem {
+        let title = WindowGrouping.displayTitle(window.title, profile: profile)
+        let item = MenuHelper.makeSubmenuItem(
+            title: window.isMinimized ? "\(title) (Minimized)" : title,
+            systemSymbolName: "macwindow"
+        )
+        let windowMenu = item.submenu ?? NSMenu()
+        windowMenu.addItem(MenuHelper.makeItem(
+            title: "Show",
+            systemSymbolName: "eye",
+            action: {
+                StatusItemController.shared?.closePopover()
+                AppWindowControl.show(window, pid: pid)
+            }
+        ))
+        windowMenu.addItem(MenuHelper.makeItem(
+            title: "Close",
+            systemSymbolName: "xmark",
+            action: {
+                AppWindowControl.close([window])
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 400_000_000)
+                    await AppListViewModel.shared.refresh(force: true)
+                }
+            }
+        ))
+        item.submenu = windowMenu
+        return item
+    }
+
     private func buildQuitTimerItem() -> NSMenuItem {
         let item = MenuHelper.makeSubmenuItem(title: "Quit In", systemSymbolName: "alarm")
         let submenu = item.submenu ?? NSMenu()
-        let key = PerAppQuitRule.ruleKey(bundleId: app.bundleId, name: app.name)
+        let key = QuitTimerDue.timerKey(bundleId: app.bundleId, name: app.name, instanceLabel: app.instanceLabel)
         if let remaining = QuitTimerService.shared.remainingMinutes(identifier: key) {
             submenu.addItem(MenuHelper.makeItem(
                 title: "Cancel Timer (\(remaining) min left)",

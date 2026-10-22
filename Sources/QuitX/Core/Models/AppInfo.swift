@@ -12,6 +12,12 @@ struct AppInfo: Identifiable, Hashable, Sendable {
     let cpuUsage: Double
     let isUnresponsive: Bool
     let isCpuHog: Bool
+    let instanceLabel: String?
+
+    var displayName: String {
+        guard let instanceLabel, !instanceLabel.isEmpty else { return name }
+        return "\(name) — \(instanceLabel)"
+    }
 
     var isWindowless: Bool { windowCount == 0 && !isBackground }
 
@@ -34,7 +40,8 @@ struct AppInfo: Identifiable, Hashable, Sendable {
         memoryBytes: UInt64 = 0,
         cpuUsage: Double = 0.0,
         isUnresponsive: Bool = false,
-        isCpuHog: Bool = false
+        isCpuHog: Bool = false,
+        instanceLabel: String? = nil
     ) {
         let resolvedPids = pids.isEmpty ? (pid.map { [$0] } ?? []) : pids
         if let id {
@@ -58,6 +65,7 @@ struct AppInfo: Identifiable, Hashable, Sendable {
         self.cpuUsage = cpuUsage
         self.isUnresponsive = isUnresponsive
         self.isCpuHog = isCpuHog
+        self.instanceLabel = instanceLabel
     }
 
     func settingUnresponsive(_ value: Bool) -> AppInfo {
@@ -72,7 +80,25 @@ struct AppInfo: Identifiable, Hashable, Sendable {
             memoryBytes: memoryBytes,
             cpuUsage: cpuUsage,
             isUnresponsive: value,
-            isCpuHog: isCpuHog
+            isCpuHog: isCpuHog,
+            instanceLabel: instanceLabel
+        )
+    }
+
+    func settingInstanceLabel(_ value: String?) -> AppInfo {
+        AppInfo(
+            id: id,
+            name: name,
+            bundleId: bundleId,
+            pid: pid,
+            pids: pids,
+            isBackground: isBackground,
+            windowCount: windowCount,
+            memoryBytes: memoryBytes,
+            cpuUsage: cpuUsage,
+            isUnresponsive: isUnresponsive,
+            isCpuHog: isCpuHog,
+            instanceLabel: value
         )
     }
 }
