@@ -244,10 +244,11 @@
     .mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 16px; }
     @media (max-width: 960px) { .fgrid, .mini { grid-template-columns: 1fr; } }
     @media (prefers-reduced-motion: reduce) { .fcard .media img { transition: none; } }
-    .ipaths { display: grid; grid-template-columns: 1.15fr .85fr; gap: 16px; }
+    .ipaths { display: grid; grid-template-columns: 1fr; gap: 16px; }
     .ipath { padding: 30px; }
     .ipath .tag { display: inline-block; margin-bottom: 14px; padding: 5px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600; color: var(--gold); background: rgba(254,188,51,.1); box-shadow: inset 0 0 0 1px rgba(254,188,51,.22); }
     .ipath p.muted { margin-top: 8px; font-size: 15.5px; }
+    .ipath .note { margin-top: 14px; font-size: 14px; color: var(--faint); }
     .ipath .note a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
     .ipath .media.small { margin-top: 18px; border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 1px var(--line); }
     .isteps { list-style: none; margin: 40px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
