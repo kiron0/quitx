@@ -375,7 +375,7 @@
           </article>
           <article class="fcard reveal">
             <div class="media"><img src="assets/shots/sounds.jpg" alt="QuitX General settings with Play cool sounds turned on" width="2100" height="1444" loading="lazy"></div>
-            <div class="fbody"><span class="num">10</span><h3>Sounds on quit</h3><p>A short arcade laser plays every time an app goes. Switch it off any time in Settings.</p><button class="btn btn-ghost btn-sm play" type="button" id="playSound"><svg class="i" aria-hidden="true"><use href="#i-sound"/></svg><span>Play the sound</span></button><audio id="quitSound" src="assets/quit.m4a" preload="none"></audio></div>
+            <div class="fbody"><span class="num">10</span><h3>Sounds on quit</h3><p>A short arcade laser plays every time an app goes. Switch it off any time in Settings.</p><button class="btn btn-ghost btn-sm play" type="button" id="playSound"><svg class="i" aria-hidden="true"><use href="#i-sound"/></svg><span>Play the sound</span></button><audio id="quitSound" preload="auto"><source src="assets/quit.wav" type="audio/wav"><source src="assets/quit.m4a" type="audio/mp4"></audio></div>
           </article>
         </div>
 
@@ -558,7 +558,25 @@
 
       const snd = document.getElementById('quitSound');
       const sbtn = document.getElementById('playSound');
-      if (snd && sbtn) sbtn.addEventListener('click', () => { snd.currentTime = 0; snd.play().catch(() => {}); });
+      if (snd && sbtn) {
+        const sspan = sbtn.querySelector('span');
+        sbtn.addEventListener('click', () => {
+          try {
+            snd.currentTime = 0;
+          } catch (_) {}
+          const p = snd.play();
+          if (sspan) {
+            sspan.textContent = 'Playing...';
+            setTimeout(() => { sspan.textContent = 'Play the sound'; }, 600);
+          }
+          if (p !== undefined) {
+            p.catch(() => {
+              const fb = new Audio('assets/quit.wav');
+              fb.play().catch(() => {});
+            });
+          }
+        });
+      }
 
       document.querySelectorAll('[data-copy]').forEach(btn => {
         btn.addEventListener('click', async () => {
