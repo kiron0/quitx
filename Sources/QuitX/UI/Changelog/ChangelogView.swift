@@ -98,7 +98,7 @@ struct ChangelogView: View {
     }
 
     private var compactView: some View {
-        let release = selectedRelease ?? state.releases.first
+        let release = state.releases.first ?? selectedRelease
         return VStack(spacing: 0) {
             if let release {
                 compactHero(for: release)
@@ -573,6 +573,7 @@ struct ChangelogView: View {
         HStack(spacing: 8) {
             Button {
                 withAnimation(.easeInOut(duration: 0.22)) {
+                    state.selection = state.releases.first?.version
                     state.isExpanded = false
                 }
                 onToggleExpand?(false)
