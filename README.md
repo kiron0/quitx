@@ -75,21 +75,23 @@
 
 ## Install
 
-### Terminal
+QuitX isn't notarized by Apple (that needs a paid developer account), so macOS asks you to confirm it once. Full walkthrough with screenshots: [quitx.kiron.dev/#install](https://quitx.kiron.dev/#install).
+
+**Terminal** (no prompt): checks the SHA-256 checksum and code signature, installs in `/Applications`, opens QuitX. Don't use `sudo`. [Read the script](site/install).
 
 ```bash
 curl -fsSL https://quitx.kiron.dev/install | bash
 ```
 
-The script downloads the latest release from GitHub, checks its SHA-256 checksum, bundle and code signature, installs QuitX in `/Applications` and opens it. Don't run it with `sudo`; it asks for a password only if `/Applications` needs one. Read it first at [quitx.kiron.dev/install](https://quitx.kiron.dev/install) or in [`site/install`](site/install).
+**Download**
 
-### Manual
+1. Get the `.dmg` from [Releases](https://github.com/kiron0/quitx/releases/latest) and drag **QuitX** into Applications.
+2. Open QuitX. At **“QuitX” Not Opened**, click **Done**.
+3. **System Settings › Privacy & Security** › **Open Anyway**, then **Open Anyway** again and your password. On macOS 14, Control-click QuitX › **Open** instead.
 
-1. Download the latest `.dmg` from [Releases](https://github.com/kiron0/quitx/releases/latest).
-2. Drag **QuitX** into `/Applications`.
-3. Launch from Applications or Spotlight. It lives in your menu bar.
+<p align="center"><img src="Support/Screenshots/install.jpg" width="100%" alt="Install steps: drag to Applications, click Done, Open Anyway in Privacy & Security, confirm" /></p>
 
-QuitX updates itself from GitHub Releases. Turn automatic checks and background downloads on or off in Settings → General.
+QuitX then updates itself from GitHub Releases (Settings › General).
 
 ## License
 

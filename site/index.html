@@ -244,6 +244,27 @@
     .mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 16px; }
     @media (max-width: 960px) { .fgrid, .mini { grid-template-columns: 1fr; } }
     @media (prefers-reduced-motion: reduce) { .fcard .media img { transition: none; } }
+    .ipaths { display: grid; grid-template-columns: 1.15fr .85fr; gap: 16px; }
+    .ipath { padding: 30px; }
+    .ipath .tag { display: inline-block; margin-bottom: 14px; padding: 5px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600; color: var(--gold); background: rgba(254,188,51,.1); box-shadow: inset 0 0 0 1px rgba(254,188,51,.22); }
+    .ipath p.muted { margin-top: 8px; font-size: 15.5px; }
+    .ipath .note a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+    .ipath .media.small { margin-top: 18px; border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 1px var(--line); }
+    .isteps { list-style: none; margin: 40px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .istep { border-radius: var(--radius); overflow: hidden; background: linear-gradient(180deg, var(--surface-2), var(--surface)); box-shadow: inset 0 0 0 1px var(--line); }
+    .istep:last-child { grid-column: span 2; display: grid; grid-template-columns: 1.2fr 1fr; align-items: center; }
+    .istep .media { aspect-ratio: 16 / 10; overflow: hidden; border-bottom: 1px solid var(--line); background: #120F0C; }
+    .istep:last-child .media { border-bottom: 0; border-right: 1px solid var(--line); }
+    .istep .media img { width: 100%; height: 100%; object-fit: cover; }
+    .ibody { padding: 22px 26px 26px; }
+    .ibody p { margin-top: 8px; color: var(--muted); font-size: 15.5px; }
+    .ibody b { color: var(--ink); font-weight: 600; }
+    .ibody code { font: 500 13.5px var(--mono); color: var(--ink); }
+    .inotes { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+    .inotes .tile { padding: 26px; }
+    .inotes p { margin-top: 8px; font-size: 15.5px; }
+    .inotes b { color: var(--ink); font-weight: 600; }
+    @media (max-width: 960px) { .ipaths, .isteps, .inotes { grid-template-columns: 1fr; } .istep:last-child { grid-column: auto; display: block; } .istep:last-child .media { border-right: 0; border-bottom: 1px solid var(--line); } }
   </style>
 </head>
 <body>
@@ -435,22 +456,53 @@
         <div class="head reveal">
           <span class="eyebrow">Install</span>
           <h2>Up and running in a minute.</h2>
+          <p>QuitX is free and open source, so it isn't notarized by Apple (that needs a paid developer account). macOS asks you to confirm it once, the first time you open it. Here's exactly what you'll see.</p>
         </div>
-        <div class="install">
-          <div class="tile reveal">
+
+        <div class="ipaths">
+          <div class="tile ipath reveal">
+            <span class="tag">Fastest · no prompts</span>
+            <h3>Install from Terminal</h3>
+            <p class="muted">Downloads the latest release from GitHub, checks its SHA-256 checksum and code signature, installs QuitX in Applications and opens it. Never run it with sudo.</p>
+            <div class="code"><code id="cmd">curl -fsSL https://quitx.kiron.dev/install | bash</code><button class="btn btn-ghost btn-sm copybtn" type="button" data-copy="cmd"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
+            <p class="note">Want to read it first? <a href="install">View the script</a>.</p>
+            <div class="media small"><img src="assets/install/terminal.jpg" alt="Terminal output of the QuitX installer finishing successfully" width="2400" height="1500" loading="lazy"></div>
+          </div>
+          <div class="tile ipath reveal">
+            <span class="tag">Classic</span>
             <h3>Download the app</h3>
-            <ol>
-              <li>Download the latest <a class="dl" href="https://github.com/kiron0/quitx/releases/latest">QuitX disk image</a>.</li>
-              <li>Open it and drag QuitX into Applications.</li>
-              <li>Launch QuitX. It lives in your menu bar.</li>
-            </ol>
+            <p class="muted">Get the disk image and follow the five steps below. You only do the Privacy &amp; Security part once; updates install without it.</p>
+            <a class="btn btn-gold dl" href="https://github.com/kiron0/quitx/releases/latest" style="margin-top:18px"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Download for Mac <small class="ver"></small></a>
             <p class="note">Requires macOS 14 Sonoma or later.</p>
           </div>
-          <div class="tile reveal">
-            <h3>Or use Terminal</h3>
-            <div class="code"><code id="cmd">curl -fsSL https://quitx.kiron.dev/install | bash</code><button class="btn btn-ghost btn-sm copybtn" type="button" data-copy="cmd"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
-            <p class="note">Downloads the latest release from GitHub, checks its SHA-256 checksum and code signature, installs QuitX in Applications and opens it. Never run it with sudo. Want to read it first? <a href="install" style="color:var(--ink);text-decoration:underline;text-underline-offset:3px">View the script</a>.</p>
-          </div>
+        </div>
+
+        <ol class="isteps">
+            <li class="istep reveal">
+              <div class="media"><img src="assets/install/dmg.jpg" alt="The QuitX disk image window with QuitX being dragged into Applications" width="2400" height="1500" loading="lazy"></div>
+              <div class="ibody"><span class="num">STEP 1</span><h3>Drag QuitX into Applications</h3><p>Open the downloaded <code>QuitX-vX.Y.Z.dmg</code> and drag the QuitX icon onto the Applications folder.</p></div>
+            </li>
+            <li class="istep reveal">
+              <div class="media"><img src="assets/install/blocked.jpg" alt="The “QuitX” Not Opened alert with the Done button highlighted" width="2400" height="1500" loading="lazy"></div>
+              <div class="ibody"><span class="num">STEP 2</span><h3>Open QuitX, then click Done</h3><p>macOS says <b>“QuitX” Not Opened</b> because Apple hasn't checked it. Click <b>Done</b>. Don't choose Move to Trash.</p></div>
+            </li>
+            <li class="istep reveal">
+              <div class="media"><img src="assets/install/settings.jpg" alt="System Settings, Privacy & Security, with the Open Anyway button highlighted" width="2400" height="1500" loading="lazy"></div>
+              <div class="ibody"><span class="num">STEP 3</span><h3>Allow it in Privacy &amp; Security</h3><p>Open <b>System Settings › Privacy &amp; Security</b> and scroll to <b>Security</b>. Next to “QuitX” was blocked to protect your Mac, click <b>Open Anyway</b>. The button shows for about an hour after step 2.</p></div>
+            </li>
+            <li class="istep reveal">
+              <div class="media"><img src="assets/install/confirm.jpg" alt="The Open “QuitX”? dialog with Open Anyway highlighted" width="2400" height="1500" loading="lazy"></div>
+              <div class="ibody"><span class="num">STEP 4</span><h3>Confirm with Open Anyway</h3><p>Click <b>Open Anyway</b> once more and enter your password or use Touch ID. macOS remembers your choice, so QuitX opens normally from now on.</p></div>
+            </li>
+            <li class="istep reveal">
+              <div class="media"><img src="assets/install/ready.jpg" alt="The QuitX menu open in the menu bar" width="2400" height="1500" loading="lazy"></div>
+              <div class="ibody"><span class="num">STEP 5</span><h3>Find it in your menu bar</h3><p>QuitX lives next to the clock. Click it to see every running app. Grant Accessibility later only if you want the window features.</p></div>
+            </li>
+        </ol>
+
+        <div class="inotes">
+          <div class="tile reveal"><h3>On macOS 14 Sonoma</h3><p class="muted">You can skip step 3: Control-click QuitX in Applications, choose <b>Open</b>, then click <b>Open</b> in the dialog.</p></div>
+          <div class="tile reveal"><h3>Why the warning?</h3><p class="muted">Notarization is Apple's malware scan for apps from paid developer accounts. QuitX skips it, but its source is public and every install or update is checked against GitHub's SHA-256 checksum and the app's code signature.</p></div>
         </div>
       </div>
     </section>
@@ -462,6 +514,7 @@
           <h2>Good questions.</h2>
         </div>
         <div class="faq reveal">
+          <details><summary>Why does macOS say it can’t verify QuitX?<svg class="i" aria-hidden="true"><use href="#i-plus"/></svg></summary><p>QuitX isn't notarized by Apple, because that needs a paid developer account. macOS asks you to confirm it once. Follow the <a href="#install" style="color:var(--ink);text-decoration:underline">install steps</a>, or install from Terminal, which skips the prompt.</p></details>
           <details><summary>Will I lose unsaved work?<svg class="i" aria-hidden="true"><use href="#i-plus"/></svg></summary><p>No. A normal quit asks each app to quit the same way the Dock does, so apps can still prompt you to save. QuitX only force quits when you choose it, for example by holding Option.</p></details>
           <details><summary>Which macOS versions are supported?<svg class="i" aria-hidden="true"><use href="#i-plus"/></svg></summary><p>macOS 14 Sonoma and later. On macOS 26 you can switch between the classic look and Liquid Glass.</p></details>
           <details><summary>How do updates work?<svg class="i" aria-hidden="true"><use href="#i-plus"/></svg></summary><p>QuitX checks GitHub Releases a few times a day when automatic checks are on. You'll see a red dot on the menu bar icon and an update item in the menu. The download is verified before QuitX restarts into the new version.</p></details>
