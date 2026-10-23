@@ -531,15 +531,21 @@ struct ChangelogView: View {
 
     private func sectionCard(_ section: ChangelogSection) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(section.title)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Color.primary)
+            HStack(spacing: 6) {
+                Image(systemName: sectionSymbol(for: section.title))
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .foregroundStyle(QuitXTheme.accent)
+
+                Text(section.title)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.primary)
+            }
 
             VStack(alignment: .leading, spacing: 7) {
                 ForEach(section.items, id: \.self) { item in
                     HStack(alignment: .firstTextBaseline, spacing: 7) {
                         Text("•")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.system(size: 12.5, weight: .bold))
                             .foregroundStyle(QuitXTheme.accent.opacity(0.85))
 
                         Text(Self.renderedItem(item))
@@ -551,14 +557,15 @@ struct ChangelogView: View {
                     }
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(14)
-            .background(QuitXTheme.cardBackground, in: RoundedRectangle(cornerRadius: 8))
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color.primary.opacity(0.09), lineWidth: 0.5)
-            )
+            .padding(.leading, 4)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(QuitXTheme.cardBackground, in: RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.primary.opacity(0.09), lineWidth: 0.5)
+        )
     }
 
     @ViewBuilder
