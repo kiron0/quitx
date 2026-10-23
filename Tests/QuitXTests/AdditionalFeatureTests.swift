@@ -212,7 +212,8 @@ struct SettingsTabTests {
         } else {
             #expect(SettingsTab.general.contentHeight == 356)
         }
-        #expect(SettingsTab.automation.contentHeight == 416)
+        let expectedAutomationHeight: CGFloat = HardwareCapabilities.hasBattery ? 416 : 386
+        #expect(SettingsTab.automation.contentHeight == expectedAutomationHeight)
         #expect(SettingsTab.advanced.contentHeight == 266)
         #expect(SettingsTab.exclude.contentHeight == 306)
         #expect(SettingsTab.shortcuts.contentHeight == 221)
