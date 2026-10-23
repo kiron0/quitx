@@ -40,13 +40,13 @@
     }
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; overflow-x: clip; }
-    body { margin: 0; background: var(--bg); color: var(--ink); font: 400 17px/1.6 var(--body); -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01", "ss03"; overflow-x: hidden; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 400 17px/1.6 var(--body); -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01", "ss03"; overflow-x: hidden; overflow-wrap: break-word; }
     a { color: inherit; text-decoration: none; }
     img, video { display: block; max-width: 100%; height: auto; }
     :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 6px; }
     .wrap { width: min(1180px, 100% - 40px); margin: 0 auto; }
     h1, h2, h3 { margin: 0; letter-spacing: -.028em; text-wrap: balance; font-weight: 700; }
-    h2 { font-size: clamp(32px, 4.4vw, 52px); line-height: 1.04; }
+    h2 { font-size: clamp(26px, 4.2vw, 48px); line-height: 1.14; letter-spacing: -.025em; }
     h3 { font-size: 19px; letter-spacing: -.012em; line-height: 1.3; }
     p { margin: 0; }
     .muted { color: var(--muted); }
@@ -77,12 +77,12 @@
     .hero { position: relative; padding: 152px 0 40px; text-align: center; overflow: hidden; }
     .hero::before { content: ""; position: absolute; left: 50%; top: -220px; width: 1200px; height: 760px; transform: translateX(-50%); pointer-events: none;
       background: radial-gradient(50% 50% at 50% 50%, rgba(254, 188, 51, .22), rgba(254, 188, 51, 0) 70%); }
-    .badge { position: relative; display: inline-flex; align-items: center; gap: 10px; padding: 7px 14px 7px 8px; border-radius: 999px; background: rgba(255, 244, 228, .05); box-shadow: inset 0 0 0 1px var(--line-strong); font-size: 14px; color: var(--muted); transition: background .15s; }
+    .badge { position: relative; display: inline-flex; align-items: center; gap: 10px; padding: 7px 14px 7px 8px; border-radius: 999px; background: rgba(255, 244, 228, .05); box-shadow: inset 0 0 0 1px var(--line-strong); font-size: 14px; color: var(--muted); transition: background .15s; max-width: 100%; line-height: 1.35; }
     .badge:hover { background: rgba(255, 244, 228, .09); }
     .badge b { white-space: nowrap; padding: 4px 9px; border-radius: 999px; background: rgba(254, 188, 51, .14); color: var(--gold); font-size: 12.5px; font-weight: 600; }
-    .hero h1 { position: relative; margin: 26px auto 22px; max-width: 13ch; font-size: clamp(46px, 7.6vw, 92px); line-height: .98; letter-spacing: -.045em; font-weight: 750; }
+    .hero h1 { position: relative; margin: 26px auto 22px; max-width: 14ch; font-size: clamp(36px, 6.8vw, 84px); line-height: 1.05; letter-spacing: -.038em; font-weight: 750; }
     .hero h1 span { background: linear-gradient(180deg, #FFD271, #F2A51A); -webkit-background-clip: text; background-clip: text; color: transparent; }
-    .hero .lede { position: relative; max-width: 36em; margin: 0 auto; font-size: clamp(17px, 1.6vw, 20px); color: var(--muted); }
+    .hero .lede { position: relative; max-width: 36em; margin: 0 auto; font-size: clamp(16px, 1.6vw, 19.5px); line-height: 1.55; color: var(--muted); }
     .cta { position: relative; display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 34px; }
     .meta { position: relative; margin-top: 18px; font-size: 14px; color: var(--faint); display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: center; }
     .meta span { display: inline-flex; align-items: center; gap: 6px; }
@@ -100,8 +100,9 @@
 
     section { padding: 120px 0; }
     .head { max-width: 680px; margin-bottom: 52px; }
-    .head p { margin-top: 18px; font-size: 18px; color: var(--muted); }
+    .head p { margin-top: 18px; font-size: clamp(16px, 1.7vw, 18px); line-height: 1.55; color: var(--muted); }
     .head .eyebrow { display: block; margin-bottom: 16px; }
+    .split-lead { font-size: clamp(16px, 1.7vw, 18px); line-height: 1.55; }
     .center { text-align: center; margin-left: auto; margin-right: auto; }
 
     .bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; }
@@ -182,15 +183,48 @@
       .tile.half, .tile.third { grid-column: span 6; }
       .split, .install, .trust { grid-template-columns: 1fr; }
       .split { gap: 40px; }
-      section { padding: 88px 0; }
+      section { padding: 80px 0; }
     }
     @media (max-width: 560px) {
-      .hero { padding-top: 120px; }
+      .wrap { width: min(1180px, 100% - 32px); }
+      body { font-size: 15.5px; line-height: 1.55; }
+      .hero { padding-top: 104px; }
+      .hero h1 { margin: 20px auto 16px; font-size: clamp(30px, 8.5vw, 42px); line-height: 1.08; letter-spacing: -.03em; max-width: 100%; }
+      .hero .lede { font-size: 15.5px; line-height: 1.5; }
+      .badge { font-size: 12px; padding: 5px 11px 5px 6px; gap: 7px; }
+      .badge b { font-size: 11px; padding: 3px 7px; }
+      .meta { font-size: 12.5px; gap: 6px 12px; margin-top: 14px; }
       .nav .right .btn-ghost { display: none; }
-      .cta .btn { width: 100%; }
+      .cta .btn { width: 100%; font-size: 15px; }
       .frame { border-radius: 14px; }
-      .tile .copy, .tile.third, .trust .tile, .install .tile { padding-left: 22px; padding-right: 22px; }
+      .head { margin-bottom: 36px; }
+      .head p { margin-top: 12px; font-size: 15px; }
+      .tile.big .copy { padding: 24px 18px 8px; }
+      .tile.big h3 { font-size: 22px; line-height: 1.25; }
+      .tile.big p { font-size: 15px; }
+      .tile .copy, .tile.third, .trust .tile, .install .tile { padding: 20px 18px; }
+      .fbody { padding: 18px; }
+      .fbody h3 { font-size: 17.5px; line-height: 1.3; }
+      .fbody p { font-size: 14.5px; line-height: 1.5; }
+      .steps { margin-top: 24px; gap: 16px; }
+      .steps li { grid-template-columns: 34px 1fr; gap: 12px; }
+      .steps li::before { width: 34px; height: 34px; font-size: 13.5px; border-radius: 10px; }
+      .steps strong { font-size: 15px; }
+      .steps span { font-size: 14px; line-height: 1.5; }
+      .code { padding: 6px 6px 6px 12px; }
+      .code code { font-size: 12px; }
+      .faq summary { font-size: 16px; padding: 16px 0; line-height: 1.35; }
+      .faq details p { font-size: 14.5px; line-height: 1.55; padding: 0 0 16px; }
+      .final { padding: 72px 0 80px; }
+      .final h2 { font-size: clamp(26px, 6.5vw, 36px); line-height: 1.15; }
+      .final p { font-size: 15.5px; }
+      footer { padding: 26px 0 34px; font-size: 13px; }
       footer nav { margin-left: 0; }
+    }
+    @media (max-width: 380px) {
+      .badge { flex-direction: column; align-items: flex-start; border-radius: 12px; padding: 8px 10px; }
+      .hero h1 { font-size: 27px; }
+      .code code { font-size: 11px; }
     }
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
@@ -370,7 +404,7 @@
         <div class="reveal">
           <span class="eyebrow">In-app updates</span>
           <h2 style="margin-top:16px">Updates itself, straight from GitHub.</h2>
-          <p class="muted" style="margin-top:18px;font-size:18px">No update server and no keys to trust. QuitX reads this project's GitHub Releases and checks every download before it installs.</p>
+          <p class="muted split-lead" style="margin-top:18px">No update server and no keys to trust. QuitX reads this project's GitHub Releases and checks every download before it installs.</p>
           <ol class="steps">
             <li><div><strong>A red dot appears</strong><span>When a new version ships, the menu bar icon gets a dot and the menu offers the update.</span></div></li>
             <li><div><strong>Downloaded and verified</strong><span>The checksum, bundle, version and code signature all have to match.</span></div></li>
