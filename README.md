@@ -91,15 +91,6 @@ The script downloads the latest release from GitHub, checks its SHA-256 checksum
 
 QuitX updates itself from GitHub Releases. Turn automatic checks and background downloads on or off in Settings → General.
 
----
-
-## Docs
-
-- [How QuitX works](docs/HOW-IT-WORKS.md)
-- [Signing releases](docs/SIGNING.md)
-- Website source: [`site/`](site), deployed by [`pages.yml`](.github/workflows/pages.yml)
-- Screenshots and demo video: [`video/`](video) (`node video/render-shots.mjs`, `node video/render.mjs`)
-
 ## License
 
 MIT © [Toufiq Hasan Kiron](https://github.com/kiron0)
