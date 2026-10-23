@@ -19,6 +19,22 @@ json_value() {
     /usr/bin/plutil -extract "$2" raw -o - "$1" 2>/dev/null || true
 }
 
+version_is_lower() {
+    [ "$1" != "$2" ] && [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | head -n1)" = "$1" ]
+}
+
+mount_dir=""
+work=""
+
+cleanup() {
+    if [ -n "${mount_dir:-}" ] && [ -d "${mount_dir:-}" ]; then
+        hdiutil detach "$mount_dir" -quiet -force >/dev/null 2>&1 || true
+    fi
+    if [ -n "${work:-}" ] && [ -d "${work:-}" ]; then
+        rm -rf "$work"
+    fi
+}
+
 main() {
     [ "$(uname -s)" = "Darwin" ] || fail "QuitX runs on macOS only."
     [ "${EUID:-$(id -u)}" -ne 0 ] || fail "Don't run this installer with sudo or as root. It asks for a password only if it needs one."
@@ -32,14 +48,7 @@ main() {
         command -v "$tool" >/dev/null 2>&1 || fail "Missing required tool: $tool"
     done
 
-    local work mount_dir=""
     work="$(mktemp -d -t quitx-install)"
-    cleanup() {
-        if [ -n "$mount_dir" ] && [ -d "$mount_dir" ]; then
-            hdiutil detach "$mount_dir" -quiet -force >/dev/null 2>&1 || true
-        fi
-        rm -rf "$work"
-    }
     trap cleanup EXIT INT TERM
 
     step "Finding the latest QuitX release"
@@ -72,6 +81,24 @@ main() {
     esac
     info "QuitX $version"
 
+    local target_dir="/Applications"
+    local target="$target_dir/QuitX.app"
+
+    if [ -d "$target" ]; then
+        local installed_version
+        installed_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$target/Contents/Info.plist" 2>/dev/null || true)"
+        if [ -n "$installed_version" ]; then
+            if [ "$installed_version" = "$version" ]; then
+                printf '\n%sQuitX %s is already installed and up to date.%s\n' "$GREEN" "$installed_version" "$RESET"
+                exit 0
+            elif ! version_is_lower "$installed_version" "$version"; then
+                printf '\n%sQuitX %s is already installed (newer than release %s).%s\n' "$GREEN" "$installed_version" "$version" "$RESET"
+                exit 0
+            fi
+            info "Updating installed QuitX ($installed_version -> $version)"
+        fi
+    fi
+
     step "Downloading"
     curl -fL --proto '=https' --tlsv1.2 --retry 3 --progress-bar -o "$work/QuitX.dmg" "$asset_url" \
         || fail "Download failed."
@@ -103,8 +130,6 @@ main() {
     codesign --verify --deep --strict "$app" >/dev/null 2>&1 || fail "QuitX's code signature isn't valid."
     info "Code signature valid, version $app_version"
 
-    local target_dir="/Applications"
-    local target="$target_dir/QuitX.app"
     local sudo_cmd=""
     if [ ! -w "$target_dir" ] || { [ -e "$target" ] && [ ! -w "$target" ]; }; then
         printf '    %sInstalling in %s needs your administrator password.%s\n' "$DIM" "$target_dir" "$RESET"

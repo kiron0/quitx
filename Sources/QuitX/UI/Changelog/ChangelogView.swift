@@ -77,6 +77,7 @@ struct ChangelogView: View {
                 compactView
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
             if LiquidGlass.enabled {
                 LiquidGlassFill(shape: Rectangle())
@@ -124,7 +125,8 @@ struct ChangelogView: View {
                 .padding(.horizontal, 22)
                 .padding(.bottom, 20)
         }
-        .frame(width: 400, height: 490)
+        .frame(width: 400)
+        .frame(maxHeight: .infinity)
     }
 
     private func compactHero(for release: ReleaseChangelog) -> some View {
@@ -132,7 +134,7 @@ struct ChangelogView: View {
             QuitXAppIconView(size: 58, cornerRadius: 13)
 
             VStack(spacing: 3) {
-                Text("What's New in QuitX")
+                Text("What's New in \(QuitXConstants.appName)")
                     .font(.system(size: 19, weight: .bold))
                     .foregroundStyle(Color.primary)
 
@@ -252,9 +254,7 @@ struct ChangelogView: View {
                 Spacer()
 
                 Button("GitHub Releases") {
-                    if let url = URL(string: "https://github.com/kiron0/quitx/releases") {
-                        NSWorkspace.shared.open(url)
-                    }
+                    NSWorkspace.shared.open(QuitXConstants.releasesURL)
                 }
                 .buttonStyle(.plain)
                 .font(.system(size: 11.5))
@@ -269,7 +269,8 @@ struct ChangelogView: View {
 
             detail
         }
-        .frame(width: 740, height: 520)
+        .frame(minWidth: 740, maxWidth: .infinity)
+        .frame(maxHeight: .infinity)
     }
 
     private var sidebar: some View {
@@ -585,9 +586,7 @@ struct ChangelogView: View {
             Spacer()
 
             Button("All Releases") {
-                if let url = URL(string: "https://github.com/kiron0/quitx/releases") {
-                    NSWorkspace.shared.open(url)
-                }
+                NSWorkspace.shared.open(QuitXConstants.releasesURL)
             }
 
             Button("Report an Issue") {

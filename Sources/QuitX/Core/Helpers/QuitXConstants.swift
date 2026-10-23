@@ -50,9 +50,12 @@ enum QuitXConstants {
     }
 
     static let supportEmail = "hello@kiron.dev"
-    static let issuesURL = URL(string: "https://github.com/kiron0/quitx/issues/new")!
     static let githubRepository = "kiron0/quitx"
-    static let releasesPageURL = URL(string: "https://github.com/kiron0/quitx/releases/latest")!
+    static let websiteURL = URL(string: "https://quitx.kiron.dev")!
+    static let repositoryURL = URL(string: "https://github.com/\(githubRepository)")!
+    static let issuesURL = URL(string: "https://github.com/\(githubRepository)/issues/new")!
+    static let releasesURL = URL(string: "https://github.com/\(githubRepository)/releases")!
+    static let releasesPageURL = URL(string: "https://github.com/\(githubRepository)/releases/latest")!
 
     static var currentYear: Int {
         Calendar.current.component(.year, from: Date())

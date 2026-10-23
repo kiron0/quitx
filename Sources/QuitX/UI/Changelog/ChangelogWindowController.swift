@@ -88,7 +88,6 @@ final class ChangelogWindowController: NSObject, NSWindowDelegate {
         window.titlebarAppearsTransparent = true
         window.titlebarSeparatorStyle = .none
         window.titleVisibility = .hidden
-        window.setContentSize(initialSize)
         window.minSize = initialSize
         window.maxSize = initialSize
         window.collectionBehavior = [.fullScreenNone]
@@ -110,11 +109,12 @@ final class ChangelogWindowController: NSObject, NSWindowDelegate {
 
         let targetFrame: NSRect
         if let screen = WindowPositioner.targetScreen {
-            targetFrame = WindowPositioner.topBiasedFrame(for: window.frame.size, on: screen)
+            targetFrame = WindowPositioner.topBiasedFrame(for: initialSize, on: screen)
         } else {
             window.center()
-            targetFrame = window.frame
+            targetFrame = NSRect(origin: window.frame.origin, size: initialSize)
         }
+        window.setFrame(targetFrame, display: false)
 
         WindowAnimator.present(window, targetFrame: targetFrame)
     }
