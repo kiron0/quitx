@@ -55,8 +55,8 @@
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 
-    .nav { position: sticky; top: 0; z-index: 50; backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); background: rgba(14, 12, 10, .72); border-bottom: 1px solid transparent; transition: border-color .2s; }
-    .nav.scrolled { border-bottom-color: var(--line); }
+    .nav { position: absolute; top: 0; left: 0; right: 0; width: 100%; z-index: 50; background: transparent; }
+    section[id], main[id] { scroll-margin-top: 24px; }
     .nav .wrap { display: flex; align-items: center; gap: 28px; height: 64px; }
     .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; letter-spacing: -.02em; }
     .brand img { width: 30px; height: 30px; }
@@ -74,7 +74,7 @@
     .btn-sm { min-height: 36px; padding: 0 14px; font-size: 14px; border-radius: 10px; }
     .btn small { font: 500 12.5px/1 var(--mono); opacity: .7; }
 
-    .hero { position: relative; padding: 88px 0 40px; text-align: center; overflow: hidden; }
+    .hero { position: relative; padding: 152px 0 40px; text-align: center; overflow: hidden; }
     .hero::before { content: ""; position: absolute; left: 50%; top: -220px; width: 1200px; height: 760px; transform: translateX(-50%); pointer-events: none;
       background: radial-gradient(50% 50% at 50% 50%, rgba(254, 188, 51, .22), rgba(254, 188, 51, 0) 70%); }
     .badge { position: relative; display: inline-flex; align-items: center; gap: 10px; padding: 7px 14px 7px 8px; border-radius: 999px; background: rgba(255, 244, 228, .05); box-shadow: inset 0 0 0 1px var(--line-strong); font-size: 14px; color: var(--muted); transition: background .15s; }
@@ -185,7 +185,7 @@
       section { padding: 88px 0; }
     }
     @media (max-width: 560px) {
-      .hero { padding-top: 56px; }
+      .hero { padding-top: 120px; }
       .nav .right .btn-ghost { display: none; }
       .cta .btn { width: 100%; }
       .frame { border-radius: 14px; }
@@ -463,13 +463,22 @@
 
   <script>
     (() => {
-      const nav = document.getElementById('nav');
-      const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 8);
-      addEventListener('scroll', onScroll, { passive: true });
-      onScroll();
       document.getElementById('year').textContent = new Date().getFullYear();
 
       const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', e => {
+          const targetId = anchor.getAttribute('href');
+          if (!targetId || targetId === '#') return;
+          const target = document.querySelector(targetId);
+          if (!target) return;
+          e.preventDefault();
+          target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
+          if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+        });
+      });
       const els = document.querySelectorAll('.reveal');
       if (reduce || !('IntersectionObserver' in window)) {
         els.forEach(el => el.classList.add('in'));
