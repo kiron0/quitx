@@ -94,7 +94,6 @@ node_modules/
 
 ## Local tooling and notes (keep out of GitHub)
 .qa/
-Scripts/qa-bridge.sh
 .claude/
 .agents/
 .cursor/

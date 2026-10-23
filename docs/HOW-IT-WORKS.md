@@ -29,14 +29,14 @@ QuitX is a menu bar app that quits, force quits and manages running macOS apps. 
 
 ## Uninstalling apps
 
-The ••• menu offers **Uninstall…** only for apps with a real `.app` bundle that isn't Apple's (`com.apple.*`), isn't under `/System`, `/Library/Apple` or `/usr`, isn't a helper inside another app, isn't a translocated copy and isn't QuitX. `AppUninstaller` then lists:
+The ••• menu offers **Uninstall** for one app, and **Uninstall Apps…** in the popover's gear menu and the menu bar icon's right-click menu opens a list of installed apps to uninstall several at once. Both are offered only for apps with a real `.app` bundle that isn't Apple's (`com.apple.*`), isn't under `/System`, `/Library/Apple` or `/usr`, isn't a helper inside another app, isn't a translocated copy and isn't QuitX. `AppUninstaller` then lists:
 
 - the app bundle and any other copies macOS knows for the same bundle identifier (copies on other volumes or in the Trash are skipped);
 - entries directly inside `~/Library` folders (Application Support, Application Scripts, Containers, Group Containers, Caches, HTTPStorages, WebKit, Cookies, Preferences, Preferences/ByHost, Saved Application State, Logs, Logs/DiagnosticReports, LaunchAgents), the matching `/Library` folders (Application Support, Caches, Preferences, Logs, LaunchAgents, LaunchDaemons, PrivilegedHelperTools) and the temporary folders.
 
 An entry matches when its name is the bundle identifier or starts with it followed by a dot. In Application Support, Caches and Logs, a folder named exactly like the app or its executable also matches, if the name has at least 4 characters and isn't a generic word. Documents, Desktop and the home folder are never searched. Sizes are allocated sizes on disk.
 
-Remove quits the app normally and waits up to 8 seconds. It never force quits; if the app is still open, nothing is removed. Selected items move to the Trash. Items QuitX can't move, such as files installed by an installer package, are moved after an administrator prompt. macOS may ask you to allow QuitX under **Privacy & Security › App Management** before it can remove an app bundle.
+Every removal asks for confirmation first. Removing the selection force quits each app (every instance, plus processes whose executable is inside its bundle) without saving, because a running app would rewrite its files. If an app can't be force quit, its files are left alone. Hovering an item shows **Show in Finder** and **Remove** for that item alone; removing a single file doesn't quit the app, removing the app bundle does. Selected items move to the Trash, and removed apps are taken out of the Dock (`persistent-apps` and `recent-apps` in `com.apple.dock`, then the Dock restarts). Items QuitX can't move, such as files installed by an installer package, are moved after an administrator prompt. macOS may ask you to allow QuitX under **Privacy & Security › App Management** before it can remove an app bundle.
 
 ## Hardware-aware settings
 

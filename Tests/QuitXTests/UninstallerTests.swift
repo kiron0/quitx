@@ -120,6 +120,63 @@ struct UninstallerTests {
     }
 }
 
+@Suite("Uninstaller grouping and Dock")
+struct UninstallerGroupingTests {
+    private func item(_ path: String, _ category: LeftoverCategory, _ target: String) -> LeftoverItem {
+        LeftoverItem(url: URL(fileURLWithPath: path), category: category, bytes: 10, fileCount: 1, targetID: target)
+    }
+
+    private func target(_ name: String, _ bid: String) -> UninstallTarget {
+        UninstallTarget(name: name, bundleIdentifier: bid, bundleURL: URL(fileURLWithPath: "/Applications/\(name).app"), executableName: name)
+    }
+
+    @Test("One app groups by category, several apps group by app")
+    func grouping() {
+        let one = target("One", "com.example.One")
+        let two = target("Two", "com.example.two")
+        let items = [
+            item("/Applications/One.app", .application, one.id),
+            item("/Users/me/Library/Caches/com.example.One", .caches, one.id),
+            item("/Users/me/Library/Preferences/com.example.One.plist", .preferences, one.id),
+            item("/Applications/Two.app", .application, two.id),
+        ]
+        let single = LeftoverGroup.grouped(items.filter { $0.targetID == one.id }, targets: [one])
+        #expect(single.map(\.title) == ["Application", "Caches", "Preferences"])
+        let multi = LeftoverGroup.grouped(items, targets: [one, two])
+        #expect(multi.map(\.title) == ["One", "Two"])
+        #expect(multi[0].items.count == 3)
+        #expect(multi[0].bytes == 30)
+        #expect(one.id == "com.example.one")
+    }
+
+    @Test("Only processes inside the app bundle count as the app's")
+    func insideBundle() {
+        let bundles = [URL(fileURLWithPath: "/Applications/Cool App.app")]
+        #expect(AppUninstaller.isInside("/Applications/Cool App.app/Contents/MacOS/Cool App", bundles: bundles))
+        #expect(AppUninstaller.isInside("/Applications/Cool App.app/Contents/Library/LoginItems/Helper.app/Contents/MacOS/Helper", bundles: bundles))
+        #expect(!AppUninstaller.isInside("/Applications/Cool App Pro.app/Contents/MacOS/Cool App Pro", bundles: bundles))
+        #expect(!AppUninstaller.isInside("/usr/bin/cool", bundles: bundles))
+        #expect(!AppUninstaller.isInside(nil, bundles: bundles))
+    }
+
+    @Test("Dock tiles are removed by bundle id or path, others kept")
+    func dockTiles() {
+        let tiles: [[String: Any]] = [
+            ["tile-data": ["bundle-identifier": "com.example.CoolApp", "file-data": ["_CFURLString": "file:///Applications/Cool%20App.app/", "_CFURLStringType": 15]]],
+            ["tile-data": ["file-data": ["_CFURLString": "file:///Users/me/Applications/Cool%20App.app/", "_CFURLStringType": 15]]],
+            ["tile-data": ["bundle-identifier": "com.apple.Safari", "file-data": ["_CFURLString": "file:///Applications/Safari.app/", "_CFURLStringType": 15]]],
+            ["tile-type": "spacer-tile"],
+        ]
+        let app = DockCleaner.App(bundleIdentifier: "com.example.coolapp", bundlePaths: ["/Users/me/Applications/Cool App.app"])
+        let kept = DockCleaner.removing([app], from: tiles)
+        #expect(kept?.count == 2)
+        #expect(((kept?[0]["tile-data"] as? [String: Any])?["bundle-identifier"] as? String) == "com.apple.Safari")
+        let other = DockCleaner.App(bundleIdentifier: "com.example.none", bundlePaths: ["/Applications/None.app"])
+        #expect(DockCleaner.removing([other], from: tiles) == nil)
+        #expect(DockCleaner.normalizedPath("file:///Applications/Cool%20App.app/") == "/Applications/Cool App.app")
+    }
+}
+
 @Suite("Hardware capabilities")
 struct HardwareCapabilitiesTests {
     @Test("Battery detection reads the internal battery type")

@@ -3,6 +3,11 @@ import SwiftUI
 
 @MainActor
 final class UninstallViewModel: ObservableObject {
+    enum Screen: Equatable {
+        case picker
+        case review
+    }
+
     enum Phase: Equatable {
         case scanning
         case ready
@@ -10,31 +15,185 @@ final class UninstallViewModel: ObservableObject {
         case finished(trashed: Int, failed: [AppUninstaller.RemovalFailure])
     }
 
-    let target: UninstallTarget
-    let icon: NSImage
-
-    @Published private(set) var items: [LeftoverItem] = []
-    @Published var selected: Set<String> = []
-    @Published var collapsed: Set<LeftoverCategory> = []
-    @Published private(set) var phase: Phase = .scanning
-    @Published var errorMessage: String?
-    @Published private(set) var isAppRunning = false
-
-    init(target: UninstallTarget) {
-        self.target = target
-        self.icon = AppIconCache.icon(for: target.bundleIdentifier, url: target.bundleURL)
-            ?? NSWorkspace.shared.icon(forFile: target.bundleURL.path)
+    enum Confirmation: Equatable {
+        case removeSelected
+        case removeItem(LeftoverItem)
     }
 
-    var groups: [LeftoverGroup] {
-        var result: [LeftoverGroup] = []
-        for category in LeftoverCategory.allCases {
-            let members = items.filter { $0.category == category }
-            if !members.isEmpty {
-                result.append(LeftoverGroup(category: category, items: members))
+    struct PickerApp: Identifiable, Hashable {
+        let target: UninstallTarget
+        let isBackground: Bool
+
+        var id: String { target.id }
+    }
+
+    @Published private(set) var screen: Screen = .picker
+    @Published private(set) var cameFromPicker = false
+
+    @Published private(set) var pickerApps: [PickerApp] = []
+    @Published private(set) var isLoadingApps = false
+    @Published var pickerSelection: Set<String> = []
+    @Published var searchText = ""
+    @Published private(set) var bundleSizes: [String: Int64] = [:]
+    @Published private(set) var runningIDs: Set<String> = []
+
+    @Published private(set) var targets: [UninstallTarget] = []
+    @Published private(set) var items: [LeftoverItem] = []
+    @Published var selected: Set<String> = []
+    @Published var collapsed: Set<String> = []
+    @Published private(set) var phase: Phase = .ready
+    @Published var confirmation: Confirmation?
+    @Published var errorMessage: String?
+
+    private var icons: [String: NSImage] = [:]
+    private var loadTask: Task<Void, Never>?
+    private var sizeTask: Task<Void, Never>?
+    private var scanTask: Task<Void, Never>?
+
+    func cancelWork() {
+        loadTask?.cancel()
+        sizeTask?.cancel()
+        scanTask?.cancel()
+    }
+
+    func icon(for target: UninstallTarget) -> NSImage {
+        if let cached = icons[target.id] { return cached }
+        let image = AppIconCache.icon(for: target.bundleIdentifier, url: target.bundleURL)
+            ?? NSWorkspace.shared.icon(forFile: target.bundleURL.path)
+        icons[target.id] = image
+        return image
+    }
+
+    var filteredPickerApps: [PickerApp] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return pickerApps }
+        return pickerApps.filter {
+            $0.target.name.localizedCaseInsensitiveContains(query)
+                || $0.target.bundleIdentifier.localizedCaseInsensitiveContains(query)
+        }
+    }
+
+    var pickerSelectedApps: [PickerApp] {
+        pickerApps.filter { pickerSelection.contains($0.id) }
+    }
+
+    var pickerSelectedBytes: Int64 {
+        pickerSelectedApps.reduce(0) { $0 + (bundleSizes[$1.id] ?? 0) }
+    }
+
+    func showPicker() {
+        guard phase != .removing else { return }
+        scanTask?.cancel()
+        confirmation = nil
+        errorMessage = nil
+        screen = .picker
+        if pickerApps.isEmpty { loadApps(forceRefresh: false) }
+    }
+
+    func loadApps(forceRefresh: Bool) {
+        loadTask?.cancel()
+        isLoadingApps = true
+        let running = InstalledApplicationScanner.runningApplicationInfos()
+        loadTask = Task { [weak self] in
+            let installed = await Task.detached(priority: .userInitiated) {
+                InstalledApplicationScanner.scan(forceRefresh: forceRefresh, runningApplications: running)
+            }.value
+            guard let self, !Task.isCancelled else { return }
+            let apps = installed.compactMap { app -> PickerApp? in
+                guard let target = AppUninstaller.target(name: app.name, bundleIdentifier: app.bundleIdentifier, bundleURL: app.url) else { return nil }
+                return PickerApp(target: target, isBackground: app.isBackground)
+            }
+            self.pickerApps = apps
+            self.pickerSelection.formIntersection(Set(apps.map(\.id)))
+            self.isLoadingApps = false
+            self.refreshRunningState()
+            self.measureBundles(apps.map(\.target))
+        }
+    }
+
+    private func measureBundles(_ targets: [UninstallTarget]) {
+        sizeTask?.cancel()
+        let pending = targets.filter { bundleSizes[$0.id] == nil }
+        guard !pending.isEmpty else { return }
+        sizeTask = Task { [weak self] in
+            for target in pending {
+                if Task.isCancelled { return }
+                let bytes = await Task.detached(priority: .utility) {
+                    AppUninstaller.measure(target.bundleURL).bytes
+                }.value
+                guard let self, !Task.isCancelled else { return }
+                self.bundleSizes[target.id] = bytes
             }
         }
-        return result
+    }
+
+    func togglePicker(_ app: PickerApp) {
+        if pickerSelection.contains(app.id) {
+            pickerSelection.remove(app.id)
+        } else {
+            pickerSelection.insert(app.id)
+        }
+    }
+
+    func selectAllPicker() { pickerSelection.formUnion(filteredPickerApps.map(\.id)) }
+    func deselectAllPicker() { pickerSelection.subtract(filteredPickerApps.map(\.id)) }
+
+    func reviewPickerSelection() {
+        let chosen = pickerSelectedApps.map(\.target)
+        guard !chosen.isEmpty else { return }
+        startReview(chosen, fromPicker: true)
+    }
+
+    func startReview(_ newTargets: [UninstallTarget], fromPicker: Bool) {
+        guard phase != .removing else { return }
+        scanTask?.cancel()
+        targets = newTargets
+        cameFromPicker = fromPicker
+        items = []
+        selected = []
+        collapsed = []
+        confirmation = nil
+        errorMessage = nil
+        screen = .review
+        phase = .scanning
+        refreshRunningState()
+        scanTask = Task { [weak self] in
+            let found = await AppUninstaller.scan(targets: newTargets)
+            guard let self, !Task.isCancelled else { return }
+            self.items = found
+            self.selected = Set(found.map(\.id))
+            self.phase = .ready
+        }
+    }
+
+    func bundles(for target: UninstallTarget) -> [URL] {
+        var urls = [target.bundleURL]
+        for item in items where item.targetID == target.id && item.category == .application && !urls.contains(item.url) {
+            urls.append(item.url)
+        }
+        return urls
+    }
+
+    func refreshRunningState() {
+        if screen == .review {
+            runningIDs = Set(targets.filter { AppUninstaller.isRunning($0, bundles: bundles(for: $0)) }.map(\.id))
+        } else {
+            let running = Set(NSWorkspace.shared.runningApplications.compactMap { $0.isTerminated ? nil : $0.bundleIdentifier?.lowercased() })
+            runningIDs = Set(pickerApps.map(\.id).filter { running.contains($0) })
+        }
+    }
+
+    var runningTargets: [UninstallTarget] { targets.filter { runningIDs.contains($0.id) } }
+
+    var groups: [LeftoverGroup] { LeftoverGroup.grouped(items, targets: targets) }
+
+    var title: String {
+        switch screen {
+        case .picker:
+            return "Uninstall Apps"
+        case .review:
+            return targets.count == 1 ? "Uninstall \(targets[0].name)" : "Uninstall \(targets.count) Apps"
+        }
     }
 
     var totalBytes: Int64 { items.reduce(0) { $0 + $1.bytes } }
@@ -43,29 +202,14 @@ final class UninstallViewModel: ObservableObject {
     var selectedBytes: Int64 { selectedItems.reduce(0) { $0 + $1.bytes } }
     var selectedFiles: Int { selectedItems.reduce(0) { $0 + $1.fileCount } }
 
-    func scan() async {
-        phase = .scanning
-        errorMessage = nil
-        refreshRunningState()
-        let found = await AppUninstaller.scan(target: target)
-        items = found
-        selected = Set(found.map(\.id))
-        phase = .ready
+    func groupState(_ group: LeftoverGroup) -> (all: Bool, some: Bool) {
+        let count = group.items.filter { selected.contains($0.id) }.count
+        return (count == group.items.count && count > 0, count > 0 && count < group.items.count)
     }
 
-    func refreshRunningState() {
-        isAppRunning = !AppUninstaller.runningInstances(bundleIdentifier: target.bundleIdentifier).isEmpty
-    }
-
-    func groupState(_ category: LeftoverCategory) -> (all: Bool, some: Bool) {
-        let ids = items.filter { $0.category == category }.map(\.id)
-        let count = ids.filter { selected.contains($0) }.count
-        return (count == ids.count && count > 0, count > 0 && count < ids.count)
-    }
-
-    func toggleGroup(_ category: LeftoverCategory) {
-        let ids = items.filter { $0.category == category }.map(\.id)
-        if groupState(category).all {
+    func toggleGroup(_ group: LeftoverGroup) {
+        let ids = group.items.map(\.id)
+        if groupState(group).all {
             selected.subtract(ids)
         } else {
             selected.formUnion(ids)
@@ -80,32 +224,135 @@ final class UninstallViewModel: ObservableObject {
         }
     }
 
-    func toggleCollapsed(_ category: LeftoverCategory) {
-        if collapsed.contains(category) {
-            collapsed.remove(category)
+    func toggleCollapsed(_ group: LeftoverGroup) {
+        if collapsed.contains(group.id) {
+            collapsed.remove(group.id)
         } else {
-            collapsed.insert(category)
+            collapsed.insert(group.id)
         }
     }
 
     func selectAll() { selected = Set(items.map(\.id)) }
     func deselectAll() { selected.removeAll() }
 
-    func remove() async {
+    func target(for item: LeftoverItem) -> UninstallTarget? {
+        targets.first { $0.id == item.targetID }
+    }
+
+    func requestRemoveSelected() {
+        guard phase == .ready, !selected.isEmpty else { return }
+        refreshRunningState()
+        confirmation = .removeSelected
+    }
+
+    func requestRemove(_ item: LeftoverItem) {
+        guard phase == .ready else { return }
+        refreshRunningState()
+        confirmation = .removeItem(item)
+    }
+
+    func confirm() {
+        guard let pending = confirmation else { return }
+        confirmation = nil
+        switch pending {
+        case .removeSelected:
+            Task { await removeSelected() }
+        case let .removeItem(item):
+            Task { await remove(item) }
+        }
+    }
+
+    var confirmationTitle: String {
+        switch confirmation {
+        case .removeSelected:
+            return targets.count > 1 ? "Uninstall \(targets.count) Apps?" : "Remove \(Self.formatFiles(selectedFiles).capitalized)?"
+        case let .removeItem(item):
+            return "Remove \u{201C}\(item.name)\u{201D}?"
+        case nil:
+            return ""
+        }
+    }
+
+    var confirmationSubtitle: String {
+        switch confirmation {
+        case .removeSelected:
+            let size = "\(Self.formatFiles(selectedFiles)) (\(Self.formatBytes(selectedBytes))) move to the Trash."
+            let running = runningTargets.filter { target in selectedItems.contains { $0.targetID == target.id } }
+            guard !running.isEmpty else { return size }
+            let names = running.count == 1 ? running[0].name : "\(running.count) running apps"
+            return "\(names) will be force quit without saving. \(size)"
+        case let .removeItem(item):
+            if item.category == .application, let target = target(for: item), runningIDs.contains(target.id) {
+                return "\(target.name) will be force quit without saving, then moved to the Trash."
+            }
+            return "It moves to the Trash (\(Self.formatBytes(item.bytes)))."
+        case nil:
+            return ""
+        }
+    }
+
+    private func removeSelected() async {
         let chosen = selectedItems
         guard !chosen.isEmpty, phase == .ready else { return }
         errorMessage = nil
         phase = .removing
-        let quit = await AppUninstaller.quitRunningInstances(bundleIdentifier: target.bundleIdentifier)
-        guard quit else {
-            refreshRunningState()
-            errorMessage = "\(target.name) didn't quit. Save your work, quit it, then try again."
-            phase = .ready
-            return
+        let outcome = await performRemoval(chosen, forceQuitAll: true)
+        phase = .finished(trashed: outcome.trashed.count, failed: outcome.failed)
+        refreshAfterRemoval()
+    }
+
+    private func remove(_ item: LeftoverItem) async {
+        guard phase == .ready else { return }
+        errorMessage = nil
+        phase = .removing
+        let outcome = await performRemoval([item], forceQuitAll: false)
+        let trashedPaths = Set(outcome.trashed.map(\.path))
+        items.removeAll { trashedPaths.contains($0.url.path) }
+        selected = selected.filter { id in items.contains { $0.id == id } }
+        if let failure = outcome.failed.first {
+            errorMessage = "Couldn't remove \(failure.url.lastPathComponent): \(failure.message)"
         }
-        let result = await AppUninstaller.moveToTrash(chosen.map(\.url))
-        phase = .finished(trashed: result.trashed.count, failed: result.failed)
-        await AppListViewModel.shared.refresh(force: true)
+        phase = .ready
+        refreshRunningState()
+        if item.category == .application { refreshAfterRemoval() }
+    }
+
+    private func performRemoval(_ chosen: [LeftoverItem], forceQuitAll: Bool) async -> AppUninstaller.RemovalResult {
+        var outcome = AppUninstaller.RemovalResult()
+        var dockApps: [DockCleaner.App] = []
+        for target in targets {
+            let owned = chosen.filter { $0.targetID == target.id }
+            guard !owned.isEmpty else { continue }
+            let needsQuit = forceQuitAll || owned.contains { $0.category == .application }
+            if needsQuit {
+                let quit = await AppUninstaller.forceQuit(target, bundles: bundles(for: target))
+                guard quit else {
+                    outcome.failed.append(contentsOf: owned.map {
+                        AppUninstaller.RemovalFailure(url: $0.url, message: "\(target.name) couldn't be force quit")
+                    })
+                    continue
+                }
+            }
+            let result = await AppUninstaller.moveToTrash(owned.map(\.url))
+            outcome.trashed.append(contentsOf: result.trashed)
+            outcome.failed.append(contentsOf: result.failed)
+            let removedBundles = result.trashed.filter { $0.pathExtension.lowercased() == "app" }.map(\.path)
+            if !removedBundles.isEmpty {
+                dockApps.append(DockCleaner.App(bundleIdentifier: target.bundleIdentifier, bundlePaths: removedBundles))
+            }
+        }
+        if !dockApps.isEmpty {
+            let apps = dockApps
+            _ = await Task.detached(priority: .userInitiated) { DockCleaner.remove(apps) }.value
+        }
+        return outcome
+    }
+
+    private func refreshAfterRemoval() {
+        let removed = Set(targets.map(\.id))
+        pickerSelection.subtract(removed)
+        loadApps(forceRefresh: true)
+        Task { await AppListViewModel.shared.refresh(force: true) }
     }
 
     static func formatBytes(_ bytes: Int64) -> String {

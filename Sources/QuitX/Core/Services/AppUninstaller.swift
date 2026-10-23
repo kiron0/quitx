@@ -1,4 +1,5 @@
 import AppKit
+import Darwin
 import Foundation
 
 enum LeftoverCategory: String, CaseIterable, Sendable {
@@ -61,24 +62,53 @@ struct LeftoverItem: Identifiable, Hashable, Sendable {
     let bytes: Int64
     let fileCount: Int
     var isDirectory: Bool = false
+    var targetID: String = ""
 
     var id: String { url.path }
     var name: String { url.lastPathComponent }
 }
 
 struct LeftoverGroup: Identifiable {
-    let category: LeftoverCategory
+    enum Kind {
+        case category(LeftoverCategory)
+        case app(UninstallTarget)
+    }
+
+    let id: String
+    let kind: Kind
     let items: [LeftoverItem]
 
-    var id: LeftoverCategory { category }
     var bytes: Int64 { items.reduce(0) { $0 + $1.bytes } }
+    var files: Int { items.reduce(0) { $0 + $1.fileCount } }
+
+    var title: String {
+        switch kind {
+        case let .category(category): return category.title
+        case let .app(target): return target.name
+        }
+    }
+
+    static func grouped(_ items: [LeftoverItem], targets: [UninstallTarget]) -> [LeftoverGroup] {
+        if targets.count > 1 {
+            return targets.compactMap { target -> LeftoverGroup? in
+                let members = items.filter { $0.targetID == target.id }
+                return members.isEmpty ? nil : LeftoverGroup(id: "app." + target.id, kind: .app(target), items: members)
+            }
+        }
+        return LeftoverCategory.allCases.compactMap { category -> LeftoverGroup? in
+            let members = items.filter { $0.category == category }
+            return members.isEmpty ? nil : LeftoverGroup(id: "category." + category.rawValue, kind: .category(category), items: members)
+        }
+    }
 }
 
-struct UninstallTarget: Sendable, Equatable {
+struct UninstallTarget: Sendable, Hashable, Identifiable {
     let name: String
     let bundleIdentifier: String
     let bundleURL: URL
     let executableName: String?
+
+    var id: String { bundleIdentifier.lowercased() }
 }
 
 struct LeftoverSearchRoot: Sendable, Equatable {
@@ -140,8 +170,13 @@ enum AppUninstaller {
     @MainActor
     static func target(name: String, pid: pid_t?, bundleIdentifier: String?) -> UninstallTarget? {
         guard let bundleIdentifier,
-              let url = resolvedBundleURL(pid: pid, bundleIdentifier: bundleIdentifier),
-              canUninstall(bundleIdentifier: bundleIdentifier, bundleURL: url) else { return nil }
+              let url = resolvedBundleURL(pid: pid, bundleIdentifier: bundleIdentifier) else { return nil }
+        return target(name: name, bundleIdentifier: bundleIdentifier, bundleURL: url)
+    }
+
+    static func target(name: String, bundleIdentifier: String, bundleURL: URL) -> UninstallTarget? {
+        let url = bundleURL.standardizedFileURL
+        guard canUninstall(bundleIdentifier: bundleIdentifier, bundleURL: url) else { return nil }
         let executable = Bundle(url: url)?.object(forInfoDictionaryKey: "CFBundleExecutable") as? String
         return UninstallTarget(name: name, bundleIdentifier: bundleIdentifier, bundleURL: url, executableName: executable)
     }
@@ -262,9 +297,22 @@ enum AppUninstaller {
                 let (url, category) = entry
                 let measured = measure(url)
                 let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
-                return LeftoverItem(url: url, category: category, bytes: measured.bytes, fileCount: measured.files, isDirectory: isDirectory)
+                return LeftoverItem(url: url, category: category, bytes: measured.bytes, fileCount: measured.files, isDirectory: isDirectory, targetID: target.id)
             }
         }.value
+    }
+
+    static func scan(targets: [UninstallTarget]) async -> [LeftoverItem] {
+        var collected: [LeftoverItem] = []
+        var seen = Set<String>()
+        for target in targets {
+            if Task.isCancelled { break }
+            for item in await scan(target: target) where !seen.contains(item.id) {
+                seen.insert(item.id)
+                collected.append(item)
+            }
+        }
+        return collected
     }
 
     static func measure(_ url: URL) -> (bytes: Int64, files: Int) {
@@ -282,6 +330,7 @@ enum AppUninstaller {
         var bytes: Int64 = 0
         var files = 0
         for case let child as URL in enumerator {
+            if Task.isCancelled { break }
             let values = try? child.resourceValues(forKeys: keys)
             if values?.isRegularFile == true || values?.isSymbolicLink == true {
                 bytes += size(values)
@@ -301,22 +350,50 @@ enum AppUninstaller {
         var failed: [RemovalFailure] = []
     }
 
-    static func runningInstances(bundleIdentifier: String) -> [NSRunningApplication] {
-        NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier)
-            .filter { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier }
+    static func isInside(_ path: String?, bundles: [URL]) -> Bool {
+        guard let path, !path.isEmpty else { return false }
+        return bundles.contains { QuitService.isExecutablePath(path, insideContentsOf: $0) }
     }
 
     @MainActor
-    static func quitRunningInstances(bundleIdentifier: String, timeout: TimeInterval = 8) async -> Bool {
-        let running = runningInstances(bundleIdentifier: bundleIdentifier)
-        guard !running.isEmpty else { return true }
-        running.forEach { $0.terminate() }
+    static func runningApplications(for target: UninstallTarget, bundles: [URL]) -> [NSRunningApplication] {
+        let own = ProcessInfo.processInfo.processIdentifier
+        return NSWorkspace.shared.runningApplications.filter { app in
+            guard !app.isTerminated, app.processIdentifier > 0, app.processIdentifier != own else { return false }
+            if app.bundleIdentifier?.lowercased() == target.id { return true }
+            return isInside(app.executableURL?.path, bundles: bundles)
+        }
+    }
+
+    @MainActor
+    static func isRunning(_ target: UninstallTarget, bundles: [URL]) -> Bool {
+        !runningApplications(for: target, bundles: bundles).isEmpty
+    }
+
+    static func executablePath(pid: pid_t) -> String? {
+        var buffer = [CChar](repeating: 0, count: 4096)
+        let length = proc_pidpath(pid, &buffer, 4096)
+        guard length > 0 else { return nil }
+        return String(cString: buffer)
+    }
+
+    @MainActor
+    static func forceQuit(_ target: UninstallTarget, bundles: [URL], timeout: TimeInterval = 5) async -> Bool {
+        let own = ProcessInfo.processInfo.processIdentifier
+        for app in runningApplications(for: target, bundles: bundles) {
+            app.forceTerminate()
+        }
+        let processPaths = await Task.detached(priority: .userInitiated) { AppListService.runningProcessPaths() }.value
+        for (pid, path) in processPaths where pid > 0 && pid != own && isInside(path, bundles: bundles) {
+            guard QuitService.processIsRunning(pid), isInside(executablePath(pid: pid), bundles: bundles) else { continue }
+            _ = Darwin.kill(pid, SIGKILL)
+        }
         let deadline = Date().addingTimeInterval(timeout)
         while Date() < deadline {
-            if runningInstances(bundleIdentifier: bundleIdentifier).allSatisfy(\.isTerminated) { return true }
-            try? await Task.sleep(nanoseconds: 200_000_000)
+            if !isRunning(target, bundles: bundles) { return true }
+            try? await Task.sleep(nanoseconds: 150_000_000)
         }
-        return runningInstances(bundleIdentifier: bundleIdentifier).isEmpty
+        return !isRunning(target, bundles: bundles)
     }
 
     static func moveToTrash(_ urls: [URL]) async -> RemovalResult {

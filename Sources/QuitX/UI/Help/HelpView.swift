@@ -94,7 +94,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Uninstall apps",
-                    body: "Choose Uninstall in an app row's menu to open the uninstaller. It finds the app and the files it left in your Library: application support, caches, preferences, containers, saved state, logs, and launch items. Everything starts selected; uncheck anything you want to keep, then click Remove. QuitX quits the app normally first and moves the files to the Trash, so you can put them back until you empty it. Apple apps, parts of macOS, helpers inside other apps, and QuitX itself can't be uninstalled. Your Documents and Desktop are never touched."
+                    body: "Choose Uninstall in an app row's menu to open the uninstaller, or Uninstall Apps in the gear menu to pick several installed apps at once. It finds each app and the files it left in your Library: application support, caches, preferences, containers, saved state, logs, and launch items. Everything starts selected; uncheck anything you want to keep, then click Remove and confirm. Hover a file to show it in Finder or remove only that file. QuitX force quits the app first, so save your work, then moves the files to the Trash and takes the app out of the Dock. You can put files back until you empty the Trash. Apple apps, parts of macOS, helpers inside other apps, and QuitX itself can't be uninstalled. Your Documents and Desktop are never touched."
                 ),
                 QuitXHelpSection(
                     title: "Quit Other Apps",

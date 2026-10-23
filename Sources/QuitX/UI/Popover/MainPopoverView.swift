@@ -379,6 +379,14 @@ struct MainPopoverView: View {
             menu.addItem(reopenItem)
         }
 
+        menu.addItem(MenuHelper.makeItem(
+            title: "Uninstall Apps…",
+            systemSymbolName: "trash",
+            action: {
+                UninstallWindowController.shared.showPicker()
+            }
+        ))
+
         menu.addItem(.separator())
 
         let updateState = UpdateDownloadService.shared.state

@@ -717,6 +717,15 @@ final class StatusItemController: NSObject {
         }
 
         menu.addItem(MenuHelper.makeItem(
+            title: "Uninstall Apps…",
+            action: #selector(openUninstaller),
+            target: self,
+            systemSymbolName: "trash"
+        ))
+
+        menu.addItem(.separator())
+
+        menu.addItem(MenuHelper.makeItem(
             title: "Settings",
             action: #selector(openSettings),
             target: self,
@@ -773,6 +782,10 @@ final class StatusItemController: NSObject {
         if let button = anchor ?? statusItem.button {
             menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.height), in: button)
         }
+    }
+
+    @objc private func openUninstaller() {
+        UninstallWindowController.shared.showPicker()
     }
 
     @objc private func openSettings() {

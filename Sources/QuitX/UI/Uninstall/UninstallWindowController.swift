@@ -5,7 +5,7 @@ import SwiftUI
 final class UninstallWindowController: NSObject, NSWindowDelegate {
     static let shared = UninstallWindowController()
 
-    static let defaultSize = NSSize(width: 600, height: 580)
+    static let defaultSize = NSSize(width: 620, height: 600)
 
     private var window: NSWindow?
     private var model: UninstallViewModel?
@@ -25,24 +25,38 @@ final class UninstallWindowController: NSObject, NSWindowDelegate {
     }
 
     func show(target: UninstallTarget) {
-        StatusItemController.shared?.closePopover()
+        let model = prepare()
+        if model.phase != .removing, !(model.screen == .review && model.targets == [target]) {
+            model.startReview([target], fromPicker: false)
+        }
+        present()
+    }
 
-        if let window, let model, model.target == target {
+    func showPicker() {
+        let model = prepare()
+        if model.phase != .removing, model.screen != .picker || model.pickerApps.isEmpty {
+            model.showPicker()
+        }
+        present()
+    }
+
+    private func prepare() -> UninstallViewModel {
+        StatusItemController.shared?.closePopover()
+        if let model { return model }
+        let model = UninstallViewModel()
+        self.model = model
+        return model
+    }
+
+    private func present() {
+        guard let model else { return }
+        if let window {
             if !Self.isRunningTests { WindowAnimator.activateExisting(window) }
             return
         }
 
-        let model = UninstallViewModel(target: target)
-        self.model = model
         let rootView = UninstallView(model: model, onDismiss: { [weak self] in self?.close() })
         let hosting = NSHostingController(rootView: rootView)
-
-        if let window {
-            window.contentViewController = hosting
-            if !Self.isRunningTests { WindowAnimator.activateExisting(window) }
-            return
-        }
-
         let window = NSWindow(contentViewController: hosting)
         window.title = ""
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
@@ -76,7 +90,13 @@ final class UninstallWindowController: NSObject, NSWindowDelegate {
     }
 
     func close() {
+        guard model?.phase != .removing else { return }
         window?.close()
+        teardown()
+    }
+
+    private func teardown() {
+        model?.cancelWork()
         window = nil
         model = nil
         WindowActivationCoordinator.update()
@@ -87,8 +107,6 @@ final class UninstallWindowController: NSObject, NSWindowDelegate {
     }
 
     func windowWillClose(_ notification: Notification) {
-        window = nil
-        model = nil
-        WindowActivationCoordinator.update()
+        teardown()
     }
 }
