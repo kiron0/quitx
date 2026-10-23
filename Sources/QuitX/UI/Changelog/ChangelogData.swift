@@ -5,14 +5,17 @@ extension ChangelogProvider {
         ReleaseChangelog("1.2.0", "App uninstaller & hardware-aware settings", [
             ("New Features", [
                 "**Uninstall Apps**: Choose Uninstall in an app's ••• menu. QuitX finds the app and its leftover support files, caches, preferences, containers, saved state, logs, and launch items, with sizes. Everything starts selected; confirm and they go to the Trash.",
-                "**Uninstall Several at Once**: Uninstall Apps… in the menu lists your installed apps. Pick as many as you like and review all their files together.",
+                "**Uninstall Several at Once**: Uninstall Apps in the menu lists your installed apps. Pick as many as you like and review all their files together.",
                 "**Clean Exit**: The app is force quit before removal. Hover any file to show it in Finder or remove just that one.",
                 "**Safe by Design**: Apple apps, parts of macOS, helpers inside other apps, and QuitX itself can't be uninstalled, and your Documents and Desktop are never searched."
             ]),
             ("Improvements", [
-                "**Settings Match Your Mac**: Battery stats and Save power on battery only appear on Macs with a battery, and the GPU stat only when macOS reports GPU usage. A Mac mini no longer shows options it can't use."
+                "**Uninstaller Visuals**: Radar pulse scan animation with live item counter; leftover rows display file paths.",
+                "**Settings Match Your Mac**: Battery stats and Save power on battery only appear on Macs with a battery, and the GPU stat only when macOS reports GPU usage. A Mac mini no longer shows options it can't use.",
+                "**Login Item Approval**: Settings ▸ General shows an inline Allow button if macOS requires permission for Open at login."
             ]),
             ("Fixes", [
+                "**Battery Stats Panel Stability**: The battery stats panel no longer resizes while loading, reserving full layout height with placeholder rows and an animated icon.",
                 "**Empty Menu Bar Stats**: A battery-only stats setting carried over to a Mac without a battery no longer leaves an empty menu bar item."
             ])
         ]),

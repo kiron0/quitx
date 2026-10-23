@@ -7,13 +7,15 @@ All notable changes to QuitX macOS App will be documented in this file.
 ### Added
 
 - App uninstaller: **Uninstall** in the app row's ••• menu opens a window (`UninstallWindowController`, `UninstallView`) that scans for the app bundle and its leftovers with `AppUninstaller`. Results are grouped (Application, Application Support, Caches, Preferences, Containers, Saved State, Logs, Launch Items, Other Files) with sizes and file counts, every item preselected, Select All / Deselect All, and a **Remove N files (size)** button in the QuitX button style.
-- Bulk uninstall: **Uninstall Apps…** in the popover gear menu and the menu bar icon's right-click menu lists installed apps (search, sizes, Running and Menu Bar tags, multi-select). **Review N Apps** scans them together, grouped by app, with one **Uninstall N Apps** button.
+- Bulk uninstall: **Uninstall Apps** in the popover gear menu and the menu bar icon's right-click menu lists installed apps (search, sizes, Running and Menu Bar tags, multi-select). **Review N Apps** scans them together, grouped by app, with one **Uninstall N Apps** button.
+- Uninstaller scan animation & details: pulsating radar wave and glowing orb animation during scan; leftover rows display full file paths.
 - Hovering a leftover shows **Show in Finder** and **Remove** buttons for that item alone.
 - Every removal asks first with the QuitX confirmation card.
 - `Scripts/qa-bridge.sh` is tracked again and gains `check [filter]` (build, then test).
 - Leftovers are matched by bundle identifier in `~/Library` (Application Support, Application Scripts, Containers, Group Containers, Caches, HTTPStorages, WebKit, Cookies, Preferences, ByHost, Saved Application State, Logs, DiagnosticReports, LaunchAgents), `/Library` (Application Support, Caches, Preferences, Logs, LaunchAgents, LaunchDaemons, PrivilegedHelperTools) and temporary folders. Folder-name matching is limited to Application Support, Caches and Logs, and skips names shorter than 4 characters or generic ones. Documents, Desktop and the home folder are never searched.
 - Removal force quits the app on purpose (every instance, and processes whose executable is inside its bundle) and waits up to 5 seconds; if it can't, that app's files are left alone. Then items move to the Trash. Items the user can't move are retried with an administrator prompt. Apple apps, `/System` apps, helpers inside other bundles, translocated copies and QuitX itself are not eligible.
 - `HardwareCapabilities` detects an internal battery (IOKit power sources) and GPU statistics.
+- Settings ▸ General: inline **Allow in Login Items** button appears when macOS requires approval for Open QuitX at login.
 
 ### Changed
 
