@@ -2,6 +2,24 @@
 
 All notable changes to QuitX macOS App will be documented in this file.
 
+## 1.1.9
+
+### Added
+
+- In-app updates come straight from GitHub Releases: `UpdateChecker` reads `GET /repos/kiron0/quitx/releases/latest` with an `ETag` cache (304 responses are free of the rate limit), ignores drafts and pre-releases, and picks the `QuitX-vX.dmg` asset. Checks run 20 s after launch, every 6 hours and on wake.
+- An available update shows a red dot on the menu bar icon and an **Update to vX…** / **Restart to Update to vX** item at the top of the status menu and the popover menu, plus one notification per version.
+- Settings ▸ General: **Check for updates automatically** (existing `autoUpdate`) and **Download and prepare updates automatically** (`autoInstallUpdates`, default off).
+- Repository `docs/` (`HOW-IT-WORKS.md`, `SIGNING.md`), `site/` landing page deployed by `.github/workflows/pages.yml`, and `video/` (time-driven `demo.html` rendered to `site/assets/demo.mp4` by `render.mjs`).
+- Terminal installer: `curl -fsSL https://quitx.kiron.dev/install | bash` (`site/install`) downloads the latest release from GitHub, verifies the SHA-256 digest, bundle identifier, version and code signature, swaps the app into `/Applications` with rollback, and opens it. The website moves to quitx.kiron.dev (`site/CNAME`).
+- Website, README screenshots and demo video cover every feature: quit, confirm, force quit, background apps, exclusions, menu bar stats, CPU and memory warnings, quit on sleep, Classic and Liquid Glass, sounds, last-window quit and updates. Screenshots render from `video/shots.html` with `node video/render-shots.mjs`; the video renders from `video/demo.html` with its sound design from `video/sfx.py`.
+- Optional stable self-signed release certificate (`Scripts/create-signing-cert.sh`, `MACOS_SIGNING_*` secrets) with a signature check step in the release workflow.
+
+### Changed
+
+- Removed the Cloudflare Worker, the pinned Ed25519 public key and `Scripts/generate-update-key.sh`. Updates are verified with the GitHub asset SHA-256 digest, bundle identifier, exact version, strict nested code signature, and the running app's designated requirement when it is not ad-hoc signed.
+- The installer helper installs to `/Applications` when QuitX runs from a disk image or translocated folder, asks for an administrator password only when the app folder isn't writable, and reopens the old copy if the swap fails.
+- `updates.json` is now optional and only published (when `UPDATE_ED25519_PRIVATE_KEY` is set) so QuitX 1.1.8 and earlier can still update through the old Worker.
+
 ## 1.1.8
 
 ### Fixed

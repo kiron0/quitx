@@ -381,6 +381,28 @@ struct MainPopoverView: View {
 
         menu.addItem(.separator())
 
+        let updateState = UpdateDownloadService.shared.state
+        if let updateTitle = StatusItemController.updateMenuTitle(
+            availableVersion: UpdateChecker.shared.availableUpdate?.version,
+            state: updateState
+        ) {
+            let isReady: Bool
+            if case .ready = updateState { isReady = true } else { isReady = false }
+            menu.addItem(MenuHelper.makeItem(
+                title: updateTitle,
+                customImage: StatusItemController.redDot,
+                action: {
+                    StatusItemController.shared?.closePopover()
+                    if isReady {
+                        UpdateChecker.shared.restartToUpdate()
+                    } else {
+                        UpdateChecker.shared.presentAvailableUpdate()
+                    }
+                }
+            ))
+            menu.addItem(.separator())
+        }
+
         menu.addItem(MenuHelper.makeItem(
             title: "Settings",
             keyEquivalent: ",",

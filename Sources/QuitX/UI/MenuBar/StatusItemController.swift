@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SwiftUI
 
 @MainActor
@@ -30,6 +31,7 @@ final class StatusItemController: NSObject {
     private var lastThrottled = false
     private var menuStatsTask: Task<Void, Never>?
     private var resignKeyObserver: NSObjectProtocol?
+    private var updateObservers: Set<AnyCancellable> = []
 
     var isShown: Bool {
         window?.isVisible ?? false
@@ -44,6 +46,68 @@ final class StatusItemController: NSObject {
         configureWindow()
         startEventMonitor()
         startWorkspaceObservers()
+        observeUpdates()
+    }
+
+    private func observeUpdates() {
+        UpdateChecker.shared.$availableUpdate
+            .map { $0 != nil }
+            .combineLatest(UpdateDownloadService.shared.$state.map { state -> Bool in
+                if case .ready = state { return true }
+                return false
+            })
+            .map { $0 || $1 }
+            .removeDuplicates()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] show in
+                self?.updateBadge(show: show)
+            }
+            .store(in: &updateObservers)
+    }
+
+    private func updateBadge(show: Bool) {
+        guard let button = statusItem.button else { return }
+        button.wantsLayer = true
+        let name = "quitxUpdateDot"
+        let existing = button.layer?.sublayers?.first { $0.name == name }
+        guard show else {
+            existing?.removeFromSuperlayer()
+            button.setAccessibilityLabel(QuitXConstants.appName)
+            button.toolTip = QuitXConstants.appName
+            return
+        }
+        let dot = existing ?? CALayer()
+        dot.name = name
+        dot.backgroundColor = NSColor.systemRed.cgColor
+        dot.borderColor = NSColor.windowBackgroundColor.cgColor
+        dot.borderWidth = 1
+        let size: CGFloat = 7
+        dot.frame = CGRect(x: button.bounds.maxX - size - 2, y: button.bounds.maxY - size - 3, width: size, height: size)
+        dot.cornerRadius = size / 2
+        if existing == nil { button.layer?.addSublayer(dot) }
+        button.setAccessibilityLabel("\(QuitXConstants.appName), update available")
+        button.toolTip = "\(QuitXConstants.appName) — update available"
+    }
+
+    static func updateMenuTitle(availableVersion: String?, state: UpdateState) -> String? {
+        switch state {
+        case .ready(_, let version):
+            return "Restart to Update to v\(version)"
+        case .downloading, .extracting:
+            return availableVersion.map { "Downloading v\($0)…" }
+        default:
+            return availableVersion.map { "Update to v\($0)…" }
+        }
+    }
+
+    static var redDot: NSImage {
+        let image = NSImage(size: NSSize(width: 10, height: 10), flipped: false) { rect in
+            NSColor.systemRed.setFill()
+            NSBezierPath(ovalIn: rect.insetBy(dx: 1, dy: 1)).fill()
+            return true
+        }
+        image.isTemplate = false
+        return image
     }
 
     deinit {
@@ -634,6 +698,24 @@ final class StatusItemController: NSObject {
         let menu = NSMenu()
         menu.autoenablesItems = false
 
+        let updateState = UpdateDownloadService.shared.state
+        if let title = Self.updateMenuTitle(
+            availableVersion: UpdateChecker.shared.availableUpdate?.version,
+            state: updateState
+        ) {
+            let isReady: Bool
+            if case .ready = updateState { isReady = true } else { isReady = false }
+            let updateItem = NSMenuItem(
+                title: title,
+                action: isReady ? #selector(restartToUpdate) : #selector(showAvailableUpdate),
+                keyEquivalent: ""
+            )
+            updateItem.target = self
+            updateItem.image = Self.redDot
+            menu.addItem(updateItem)
+            menu.addItem(.separator())
+        }
+
         menu.addItem(MenuHelper.makeItem(
             title: "Settings",
             action: #selector(openSettings),
@@ -699,6 +781,14 @@ final class StatusItemController: NSObject {
 
     @objc private func openAbout() {
         SettingsWindowController.shared.show(tab: .about)
+    }
+
+    @objc private func showAvailableUpdate() {
+        UpdateChecker.shared.presentAvailableUpdate()
+    }
+
+    @objc private func restartToUpdate() {
+        UpdateChecker.shared.restartToUpdate()
     }
 
     @objc private func checkForUpdates() {

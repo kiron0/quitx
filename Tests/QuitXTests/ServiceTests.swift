@@ -405,9 +405,21 @@ struct UpdateCheckerVersionTests {
         #expect(!checker.isVersion("99.99.99", greaterThan: "100.0.0"))
     }
 
-    @Test("Update worker URL is configured")
-    func testUpdateWorkerURL() {
-        #expect(QuitXConstants.updateWorkerURL.absoluteString.contains("quitx-update-gatekeeper"))
+    @Test("Updates use the GitHub repository directly")
+    func testUpdateRepository() {
+        #expect(QuitXConstants.githubRepository == "kiron0/quitx")
+        #expect(UpdateChecker.latestReleaseURL.host == "api.github.com")
+    }
+
+    @Test("Auto install defaults off and survives decoding")
+    func testAutoInstallUpdatesConfig() throws {
+        #expect(!QuitXConfig.default.autoInstallUpdates)
+        let legacy = try JSONDecoder().decode(QuitXConfig.self, from: Data("{\"autoUpdate\": true}".utf8))
+        #expect(!legacy.autoInstallUpdates)
+        var cfg = QuitXConfig.default
+        cfg.autoInstallUpdates = true
+        let decoded = try JSONDecoder().decode(QuitXConfig.self, from: JSONEncoder().encode(cfg))
+        #expect(decoded.autoInstallUpdates)
     }
 
     @Test("Current version is non-empty")

@@ -27,6 +27,38 @@ struct GeneralTabView: View {
                 HelpPopoverButton(text: "PEW PEW! A deeply satisfying arcade laser blast fires whenever you vaporize an app. 👾🔫")
             }
 
+            row(label: "Updates:") {
+                toggle("Check for updates automatically", isOn: Binding(
+                    get: { configStore.config.autoUpdate },
+                    set: {
+                        configStore.config.autoUpdate = $0
+                        configStore.save()
+                        if $0 {
+                            UpdateChecker.shared.startAutomaticChecks()
+                        }
+                    }
+                ))
+            } help: {
+                HelpPopoverButton(text: "QuitX asks GitHub for the latest release a few times a day. When a new version ships, it shows up at the top of the QuitX menu.")
+            }
+
+            row(label: "") {
+                toggle("Download and prepare updates automatically", isOn: Binding(
+                    get: { configStore.config.autoUpdate && configStore.config.autoInstallUpdates },
+                    set: {
+                        configStore.config.autoInstallUpdates = $0
+                        configStore.save()
+                        if $0 {
+                            UpdateChecker.shared.startAutomaticChecks()
+                        }
+                    }
+                ))
+                .disabled(!configStore.config.autoUpdate)
+                .opacity(configStore.config.autoUpdate ? 1 : 0.45)
+            } help: {
+                HelpPopoverButton(text: "New versions download and get verified in the background. Choose Restart to Update in the menu when it suits you.")
+            }
+
             row(label: "Menu Bar:") {
                 toggle("Show stats in menu bar", isOn: Binding(
                     get: { configStore.config.showMenuBarStats },

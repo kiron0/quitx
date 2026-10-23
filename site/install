@@ -1,0 +1,147 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+QUITX_REPO="${QUITX_REPO:-kiron0/quitx}"
+QUITX_BUNDLE_ID="io.coreify.quitx"
+QUITX_API="https://api.github.com/repos/${QUITX_REPO}/releases/latest"
+
+if [ -t 1 ]; then
+    BOLD=$'\033[1m'; DIM=$'\033[2m'; GOLD=$'\033[38;5;214m'; RED=$'\033[31m'; GREEN=$'\033[32m'; RESET=$'\033[0m'
+else
+    BOLD=""; DIM=""; GOLD=""; RED=""; GREEN=""; RESET=""
+fi
+
+step() { printf '%s==>%s %s%s%s\n' "$GOLD" "$RESET" "$BOLD" "$1" "$RESET"; }
+info() { printf '    %s%s%s\n' "$DIM" "$1" "$RESET"; }
+fail() { printf '%sError:%s %s\n' "$RED" "$RESET" "$1" >&2; exit 1; }
+
+json_value() {
+    /usr/bin/plutil -extract "$2" raw -o - "$1" 2>/dev/null || true
+}
+
+main() {
+    [ "$(uname -s)" = "Darwin" ] || fail "QuitX runs on macOS only."
+    [ "${EUID:-$(id -u)}" -ne 0 ] || fail "Don't run this installer with sudo or as root. It asks for a password only if it needs one."
+
+    local os_major
+    os_major="$(sw_vers -productVersion | cut -d. -f1)"
+    [ "$os_major" -ge 14 ] || fail "QuitX needs macOS 14 Sonoma or later. This Mac runs $(sw_vers -productVersion)."
+
+    local tool
+    for tool in curl shasum hdiutil ditto codesign plutil; do
+        command -v "$tool" >/dev/null 2>&1 || fail "Missing required tool: $tool"
+    done
+
+    local work mount_dir=""
+    work="$(mktemp -d -t quitx-install)"
+    cleanup() {
+        if [ -n "$mount_dir" ] && [ -d "$mount_dir" ]; then
+            hdiutil detach "$mount_dir" -quiet -force >/dev/null 2>&1 || true
+        fi
+        rm -rf "$work"
+    }
+    trap cleanup EXIT INT TERM
+
+    step "Finding the latest QuitX release"
+    curl -fsSL --proto '=https' --tlsv1.2 --retry 3 \
+        -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" \
+        -o "$work/release.json" "$QUITX_API" || fail "Couldn't reach GitHub. Check your connection and try again."
+
+    local tag version count i name url digest="" asset_url=""
+    tag="$(json_value "$work/release.json" tag_name)"
+    [ -n "$tag" ] || fail "GitHub didn't return a release."
+    version="${tag#v}"
+    count="$(/usr/bin/plutil -extract assets raw -o - "$work/release.json" 2>/dev/null || echo 0)"
+    i=0
+    while [ "$i" -lt "$count" ]; do
+        name="$(json_value "$work/release.json" "assets.$i.name")"
+        url="$(json_value "$work/release.json" "assets.$i.browser_download_url")"
+        case "$name" in
+            QuitX*.dmg)
+                asset_url="$url"
+                digest="$(json_value "$work/release.json" "assets.$i.digest")"
+                break
+                ;;
+        esac
+        i=$((i + 1))
+    done
+    [ -n "$asset_url" ] || fail "Release $tag has no QuitX disk image."
+    case "$asset_url" in
+        https://github.com/*|https://objects.githubusercontent.com/*) ;;
+        *) fail "Unexpected download location: $asset_url" ;;
+    esac
+    info "QuitX $version"
+
+    step "Downloading"
+    curl -fL --proto '=https' --tlsv1.2 --retry 3 --progress-bar -o "$work/QuitX.dmg" "$asset_url" \
+        || fail "Download failed."
+
+    step "Verifying checksum"
+    local expected actual
+    expected="$(printf '%s' "${digest#sha256:}" | tr '[:upper:]' '[:lower:]')"
+    actual="$(shasum -a 256 "$work/QuitX.dmg" | awk '{print $1}')"
+    if [ -n "$expected" ]; then
+        [ "$actual" = "$expected" ] || fail "Checksum mismatch. Expected $expected, got $actual."
+        info "SHA-256 matches GitHub ($actual)"
+    else
+        info "GitHub published no checksum for this release; continuing with the code signature check"
+    fi
+
+    step "Checking the app"
+    mount_dir="$work/mount"
+    mkdir -p "$mount_dir"
+    hdiutil attach "$work/QuitX.dmg" -nobrowse -readonly -noautoopen -mountpoint "$mount_dir" -quiet \
+        || fail "Couldn't open the disk image."
+    local app="$mount_dir/QuitX.app"
+    [ -d "$app" ] || fail "QuitX.app isn't in the disk image."
+
+    local bundle_id app_version
+    bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Contents/Info.plist" 2>/dev/null || true)"
+    app_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist" 2>/dev/null || true)"
+    [ "$bundle_id" = "$QUITX_BUNDLE_ID" ] || fail "Unexpected bundle identifier: ${bundle_id:-none}"
+    [ "$app_version" = "$version" ] || fail "The app inside reports version ${app_version:-none}, expected $version."
+    codesign --verify --deep --strict "$app" >/dev/null 2>&1 || fail "QuitX's code signature isn't valid."
+    info "Code signature valid, version $app_version"
+
+    local target_dir="/Applications"
+    local target="$target_dir/QuitX.app"
+    local sudo_cmd=""
+    if [ ! -w "$target_dir" ] || { [ -e "$target" ] && [ ! -w "$target" ]; }; then
+        printf '    %sInstalling in %s needs your administrator password.%s\n' "$DIM" "$target_dir" "$RESET"
+        sudo_cmd="sudo"
+    fi
+
+    if pgrep -x QuitX >/dev/null 2>&1; then
+        step "Quitting the running QuitX"
+        osascript -e "tell application id \"$QUITX_BUNDLE_ID\" to quit" >/dev/null 2>&1 || true
+        local n=0
+        while pgrep -x QuitX >/dev/null 2>&1 && [ "$n" -lt 50 ]; do sleep 0.2; n=$((n + 1)); done
+    fi
+
+    step "Installing in $target_dir"
+    local staged="$target_dir/.QuitX.new.$$"
+    $sudo_cmd rm -rf "$staged"
+    $sudo_cmd ditto "$app" "$staged" || fail "Couldn't copy QuitX into $target_dir."
+    if [ -e "$target" ]; then
+        $sudo_cmd rm -rf "$target.previous"
+        $sudo_cmd mv "$target" "$target.previous"
+    fi
+    if $sudo_cmd mv "$staged" "$target"; then
+        $sudo_cmd rm -rf "$target.previous"
+    else
+        $sudo_cmd rm -rf "$staged"
+        [ -e "$target.previous" ] && $sudo_cmd mv "$target.previous" "$target"
+        fail "Couldn't put QuitX in place. Your previous copy was restored."
+    fi
+    $sudo_cmd xattr -dr com.apple.quarantine "$target" 2>/dev/null || true
+
+    hdiutil detach "$mount_dir" -quiet >/dev/null 2>&1 || true
+    mount_dir=""
+
+    step "Opening QuitX"
+    open "$target"
+    printf '\n%sQuitX %s is installed.%s Look for its icon in the menu bar.\n' "$GREEN" "$version" "$RESET"
+    printf '%sIt updates itself from GitHub. Settings are in its menu.%s\n' "$DIM" "$RESET"
+}
+
+main "$@"

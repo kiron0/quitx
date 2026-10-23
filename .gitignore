@@ -88,3 +88,26 @@ DerivedData/
 *.idea/
 node_modules/
 .qa/
+
+## Signing
+*.p12
+
+## Local tooling and notes (keep out of GitHub)
+.qa/
+Scripts/qa-bridge.sh
+.claude/
+.agents/
+.cursor/
+design-system/
+*.log
+*.local.md
+TODO.md
+NOTES.md
+/plans/
+/docs/plans/
+/tmp/
+
+## Marketing renders
+video/stills/
+video/tmp/
+video/node_modules/

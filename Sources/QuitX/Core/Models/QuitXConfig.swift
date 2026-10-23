@@ -11,6 +11,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
     var neverQuitMusic: Bool
     var musicApps: [String]
     var autoUpdate: Bool
+    var autoInstallUpdates: Bool = false
     var confirmQuitAll: Bool = true
     var confirmIndividualAction: Bool = false
     var playSounds: Bool = true
@@ -41,7 +42,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case exclude, force, includeFinder, includeTrash, includeBackground, groupBackground
-        case defaultSelectAll, neverQuitMusic, musicApps, autoUpdate, confirmQuitAll, confirmIndividualAction, playSounds
+        case defaultSelectAll, neverQuitMusic, musicApps, autoUpdate, autoInstallUpdates, confirmQuitAll, confirmIndividualAction, playSounds
         case quitInactiveAfterMinutes, disableQuitTips, sortBy, perAppQuitRules
         case quitOnSleep, quitOnScreenLock, showMenuBarStats, menuBarShowCpu, menuBarShowMemory, menuBarShowGpu, batteryMenuBarEnabled, menuBarStatStyle, menuBarMemoryUnit
         case quitWhenLastWindowClosed
@@ -62,6 +63,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         neverQuitMusic: Bool,
         musicApps: [String],
         autoUpdate: Bool,
+        autoInstallUpdates: Bool = false,
         confirmQuitAll: Bool = true,
         confirmIndividualAction: Bool = false,
         playSounds: Bool = true,
@@ -100,6 +102,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         self.neverQuitMusic = neverQuitMusic
         self.musicApps = musicApps
         self.autoUpdate = autoUpdate
+        self.autoInstallUpdates = autoInstallUpdates
         self.confirmQuitAll = confirmQuitAll
         self.confirmIndividualAction = confirmIndividualAction
         self.playSounds = playSounds
@@ -142,6 +145,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         neverQuitMusic = Self.dec(container, .neverQuitMusic, defaults.neverQuitMusic)
         musicApps = Self.dec(container, .musicApps, defaults.musicApps)
         autoUpdate = Self.dec(container, .autoUpdate, defaults.autoUpdate)
+        autoInstallUpdates = Self.dec(container, .autoInstallUpdates, defaults.autoInstallUpdates)
         confirmQuitAll = Self.dec(container, .confirmQuitAll, defaults.confirmQuitAll)
         confirmIndividualAction = Self.dec(container, .confirmIndividualAction, defaults.confirmIndividualAction)
         playSounds = Self.dec(container, .playSounds, defaults.playSounds)

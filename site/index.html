@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>QuitX: quit apps from your Mac's menu bar</title>
+  <meta name="description" content="QuitX is a free, open-source menu bar app for macOS. Quit one, some or all running apps in a click, force quit on demand, and quit apps when their last window closes.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="QuitX: quit apps from your Mac's menu bar">
+  <meta property="og:description" content="Quit everything. Keep what matters. Free and open source for macOS 14 and later.">
+  <meta property="og:image" content="https://quitx.kiron.dev/assets/og.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta property="og:url" content="https://quitx.kiron.dev/">
+  <link rel="canonical" href="https://quitx.kiron.dev/">
+  <meta name="theme-color" content="#0E0C0A">
+  <meta name="color-scheme" content="dark">
+  <link rel="icon" href="assets/icon.png" type="image/png">
+  <link rel="apple-touch-icon" href="assets/icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&family=JetBrains+Mono:wght@500&display=swap">
+  <style>
+    :root {
+      --bg: #0E0C0A;
+      --bg-2: #141210;
+      --surface: #1A1714;
+      --surface-2: #211D19;
+      --line: rgba(255, 244, 228, .09);
+      --line-strong: rgba(255, 244, 228, .16);
+      --ink: #F6F1E9;
+      --muted: #B4AB9E;
+      --faint: #847B6F;
+      --gold: #FEBC33;
+      --gold-deep: #E89B00;
+      --on-gold: #1A1205;
+      --radius: 18px;
+      --body: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+      --ease: cubic-bezier(.2, .7, .2, 1);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; overflow-x: clip; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 400 17px/1.6 var(--body); -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01", "ss03"; overflow-x: hidden; }
+    a { color: inherit; text-decoration: none; }
+    img, video { display: block; max-width: 100%; height: auto; }
+    :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 6px; }
+    .wrap { width: min(1180px, 100% - 40px); margin: 0 auto; }
+    h1, h2, h3 { margin: 0; letter-spacing: -.028em; text-wrap: balance; font-weight: 700; }
+    h2 { font-size: clamp(32px, 4.4vw, 52px); line-height: 1.04; }
+    h3 { font-size: 19px; letter-spacing: -.012em; line-height: 1.3; }
+    p { margin: 0; }
+    .muted { color: var(--muted); }
+    .eyebrow { font: 600 13px/1 var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--gold); }
+    .gold { color: var(--gold); }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+    .nav { position: sticky; top: 0; z-index: 50; backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); background: rgba(14, 12, 10, .72); border-bottom: 1px solid transparent; transition: border-color .2s; }
+    .nav.scrolled { border-bottom-color: var(--line); }
+    .nav .wrap { display: flex; align-items: center; gap: 28px; height: 64px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; letter-spacing: -.02em; }
+    .brand img { width: 30px; height: 30px; }
+    .nav nav { display: flex; gap: 26px; font-size: 15px; color: var(--muted); }
+    .nav nav a { transition: color .15s; }
+    .nav nav a:hover { color: var(--ink); }
+    .nav .right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; padding: 0 20px; border-radius: 12px; font: 600 15.5px/1 var(--body); letter-spacing: -.005em; cursor: pointer; border: 0; transition: transform .15s var(--ease), background-color .15s, box-shadow .15s, filter .15s; white-space: nowrap; }
+    .btn:active { transform: translateY(1px) scale(.99); }
+    .btn-gold { background: linear-gradient(180deg, var(--gold), var(--gold-deep)); color: var(--on-gold); box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 8px 24px rgba(232, 155, 0, .22); }
+    .btn-gold:hover { filter: brightness(1.05); }
+    .btn-ghost { background: rgba(255, 244, 228, .06); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line-strong); }
+    .btn-ghost:hover { background: rgba(255, 244, 228, .1); }
+    .btn-sm { min-height: 36px; padding: 0 14px; font-size: 14px; border-radius: 10px; }
+    .btn small { font: 500 12.5px/1 var(--mono); opacity: .7; }
+
+    .hero { position: relative; padding: 88px 0 40px; text-align: center; overflow: hidden; }
+    .hero::before { content: ""; position: absolute; left: 50%; top: -220px; width: 1200px; height: 760px; transform: translateX(-50%); pointer-events: none;
+      background: radial-gradient(50% 50% at 50% 50%, rgba(254, 188, 51, .22), rgba(254, 188, 51, 0) 70%); }
+    .badge { position: relative; display: inline-flex; align-items: center; gap: 10px; padding: 7px 14px 7px 8px; border-radius: 999px; background: rgba(255, 244, 228, .05); box-shadow: inset 0 0 0 1px var(--line-strong); font-size: 14px; color: var(--muted); transition: background .15s; }
+    .badge:hover { background: rgba(255, 244, 228, .09); }
+    .badge b { white-space: nowrap; padding: 4px 9px; border-radius: 999px; background: rgba(254, 188, 51, .14); color: var(--gold); font-size: 12.5px; font-weight: 600; }
+    .hero h1 { position: relative; margin: 26px auto 22px; max-width: 13ch; font-size: clamp(46px, 7.6vw, 92px); line-height: .98; letter-spacing: -.045em; font-weight: 750; }
+    .hero h1 span { background: linear-gradient(180deg, #FFD271, #F2A51A); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .hero .lede { position: relative; max-width: 36em; margin: 0 auto; font-size: clamp(17px, 1.6vw, 20px); color: var(--muted); }
+    .cta { position: relative; display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 34px; }
+    .meta { position: relative; margin-top: 18px; font-size: 14px; color: var(--faint); display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: center; }
+    .meta span { display: inline-flex; align-items: center; gap: 6px; }
+    .meta svg.i { width: 15px; height: 15px; }
+
+    .stage { position: relative; margin: 64px auto 0; max-width: 1180px; }
+    .frame { position: relative; border-radius: 22px; overflow: hidden; background: #000; aspect-ratio: 16 / 10;
+      box-shadow: 0 0 0 1px var(--line-strong), 0 40px 120px rgba(0,0,0,.6), 0 0 160px rgba(254, 188, 51, .08); }
+    .frame video, .frame img { width: 100%; height: 100%; object-fit: cover; }
+    .controls { position: absolute; right: 16px; bottom: 16px; display: flex; gap: 8px; }
+    .ctrl { width: 44px; height: 44px; border-radius: 12px; border: 0; cursor: pointer; display: grid; place-items: center; color: #fff;
+      background: rgba(14, 12, 10, .62); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); transition: background .15s; }
+    .ctrl:hover { background: rgba(14, 12, 10, .82); }
+    .ctrl svg { width: 18px; height: 18px; }
+
+    section { padding: 120px 0; }
+    .head { max-width: 680px; margin-bottom: 52px; }
+    .head p { margin-top: 18px; font-size: 18px; color: var(--muted); }
+    .head .eyebrow { display: block; margin-bottom: 16px; }
+    .center { text-align: center; margin-left: auto; margin-right: auto; }
+
+    .bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; }
+    .tile { position: relative; overflow: hidden; border-radius: var(--radius); background: linear-gradient(180deg, var(--surface-2), var(--surface)); box-shadow: inset 0 0 0 1px var(--line); }
+    .tile .copy { padding: 28px 28px 0; }
+    .tile .copy p { margin-top: 10px; color: var(--muted); font-size: 15.5px; max-width: 34em; }
+    .tile.big { grid-column: span 6; display: grid; grid-template-columns: 1fr 1.35fr; align-items: center; }
+    .tile.big .copy { padding: 44px; }
+    .tile.big h3 { font-size: 30px; letter-spacing: -.025em; }
+    .tile.big p { font-size: 17px; }
+    .tile.half { grid-column: span 3; }
+    .tile.third { grid-column: span 2; padding: 26px; }
+    .tile .shot { margin-top: 24px; }
+    .tile .shot img { width: 100%; }
+    .tile.big .shot { margin: 0; height: 100%; }
+    .tile.big .shot { align-self: stretch; }
+    .tile.big .shot img { height: 100%; width: 100%; object-fit: cover; object-position: 50% 0; }
+    .tile.half .shot img { aspect-ratio: 4 / 3; object-fit: cover; object-position: 30% 0; }
+    .tile .ico { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; color: var(--gold); background: rgba(254, 188, 51, .1); box-shadow: inset 0 0 0 1px rgba(254, 188, 51, .2); margin-bottom: 18px; }
+    .tile.third p { margin-top: 8px; color: var(--muted); font-size: 15px; }
+    .points { list-style: none; padding: 0; margin: 22px 0 0; display: grid; gap: 10px; }
+    .points li { display: flex; gap: 10px; align-items: flex-start; color: var(--muted); font-size: 15.5px; }
+    .points svg.i { color: var(--gold); width: 18px; height: 18px; margin-top: 3px; }
+    kbd { font: 600 13px/1 var(--body); padding: 4px 7px; border-radius: 6px; background: rgba(255,255,255,.1); box-shadow: inset 0 -1px 0 rgba(0,0,0,.4), inset 0 0 0 1px rgba(255,255,255,.08); color: var(--ink); }
+
+    .band { background: var(--bg-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .split { display: grid; grid-template-columns: 1fr 1.15fr; gap: 64px; align-items: center; }
+    .steps { list-style: none; margin: 34px 0 0; padding: 0; counter-reset: s; display: grid; gap: 22px; }
+    .steps li { counter-increment: s; display: grid; grid-template-columns: 40px 1fr; gap: 16px; }
+    .steps li::before { content: counter(s); width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font: 600 15px/1 var(--mono); color: var(--gold); background: rgba(254, 188, 51, .1); box-shadow: inset 0 0 0 1px rgba(254, 188, 51, .22); }
+    .steps strong { display: block; font-size: 17px; font-weight: 600; margin-bottom: 2px; }
+    .steps span { color: var(--muted); font-size: 15.5px; }
+    .shotframe { border-radius: 18px; overflow: hidden; box-shadow: 0 0 0 1px var(--line-strong), 0 30px 80px rgba(0,0,0,.5); }
+
+    .trust { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .trust .tile { padding: 28px; }
+    .trust h3 { margin-top: 2px; }
+    .trust p { margin-top: 8px; color: var(--muted); font-size: 15.5px; }
+
+    .install { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .install .tile { padding: 30px; }
+    .install ol { margin: 16px 0 0; padding-left: 20px; color: var(--muted); display: grid; gap: 8px; }
+    .install ol a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 4px; }
+    .code { margin-top: 16px; display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 16px; border-radius: 12px; background: #0A0908; box-shadow: inset 0 0 0 1px var(--line); }
+    .code code { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; font: 500 14px/1.6 var(--mono); color: #EDE6DA; scrollbar-width: none; }
+    .code code::-webkit-scrollbar { display: none; }
+    .code .copybtn { min-height: 36px; }
+    .install .note { margin-top: 14px; font-size: 14px; color: var(--faint); }
+
+    .faq { max-width: 820px; margin: 0 auto; }
+    .faq details { border-bottom: 1px solid var(--line); }
+    .faq summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 22px 2px; font-size: 18px; font-weight: 600; letter-spacing: -.01em; min-height: 44px; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary svg { transition: transform .2s var(--ease); color: var(--muted); }
+    .faq details[open] summary svg { transform: rotate(45deg); }
+    .faq details p { padding: 0 2px 22px; color: var(--muted); max-width: 62ch; }
+
+    .final { position: relative; text-align: center; padding: 120px 0 130px; overflow: hidden; }
+    .final::before { content: ""; position: absolute; left: 50%; bottom: -320px; width: 1100px; height: 640px; transform: translateX(-50%); background: radial-gradient(50% 50% at 50% 50%, rgba(254, 188, 51, .2), transparent 70%); pointer-events: none; }
+    .final img { position: relative; width: 96px; height: 96px; margin: 0 auto 26px; filter: drop-shadow(0 18px 30px rgba(0,0,0,.5)); }
+    .final h2 { position: relative; }
+    .final p { position: relative; margin: 16px auto 0; color: var(--muted); font-size: 18px; max-width: 34em; }
+    .final .cta { margin-top: 30px; }
+
+    footer { border-top: 1px solid var(--line); padding: 34px 0 48px; color: var(--faint); font-size: 14px; }
+    footer .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 28px; }
+    footer nav { margin-left: auto; display: flex; flex-wrap: wrap; gap: 8px 22px; }
+    footer a:hover { color: var(--ink); }
+
+    .reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s var(--ease), transform .6s var(--ease); }
+    .reveal.in { opacity: 1; transform: none; }
+
+    @media (max-width: 960px) {
+      .nav nav { display: none; }
+      .tile.big { grid-template-columns: 1fr; }
+      .tile.big .copy { padding: 32px 28px 8px; }
+      .tile.big .shot img { height: auto; }
+      .tile.half, .tile.third { grid-column: span 6; }
+      .split, .install, .trust { grid-template-columns: 1fr; }
+      .split { gap: 40px; }
+      section { padding: 88px 0; }
+    }
+    @media (max-width: 560px) {
+      .hero { padding-top: 56px; }
+      .nav .right .btn-ghost { display: none; }
+      .cta .btn { width: 100%; }
+      .frame { border-radius: 14px; }
+      .tile .copy, .tile.third, .trust .tile, .install .tile { padding-left: 22px; padding-right: 22px; }
+      footer nav { margin-left: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .reveal { opacity: 1; transform: none; transition: none; }
+      .btn, .ctrl, .faq summary svg { transition: none; }
+    }
+    .tile.big { margin-bottom: 16px; }
+    .num { display: inline-block; font: 600 12.5px/1 var(--mono); color: var(--gold); letter-spacing: .04em; margin-bottom: 12px; }
+    .fgrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .fcard { border-radius: var(--radius); overflow: hidden; background: linear-gradient(180deg, var(--surface-2), var(--surface)); box-shadow: inset 0 0 0 1px var(--line); display: flex; flex-direction: column; }
+    .fcard .media { aspect-ratio: 16 / 11; overflow: hidden; background: #120F0C; border-bottom: 1px solid var(--line); }
+    .fcard .media img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 0; transition: transform .6s var(--ease); }
+    .fcard:hover .media img { transform: scale(1.02); }
+    .fbody { padding: 24px 26px 28px; }
+    .fbody p { margin-top: 8px; color: var(--muted); font-size: 15.5px; }
+    .fbody .play { margin-top: 16px; }
+    .mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 16px; }
+    @media (max-width: 960px) { .fgrid, .mini { grid-template-columns: 1fr; } }
+    @media (prefers-reduced-motion: reduce) { .fcard .media img { transition: none; } }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></symbol>
+      <symbol id="i-github" viewBox="0 0 24 24"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></symbol>
+      <symbol id="i-apple" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+      <symbol id="i-code" viewBox="0 0 24 24"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></symbol>
+      <symbol id="i-window" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><circle cx="6.5" cy="6.5" r=".6"/></symbol>
+      <symbol id="i-timer" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></symbol>
+      <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M12 14l4-4M3.3 19a10 10 0 1 1 17.4 0"/></symbol>
+      <symbol id="i-command" viewBox="0 0 24 24"><path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3"/></symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+      <symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M5.7 5.7l12.6 12.6"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="currentColor" stroke="none"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/><rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/></symbol>
+      <symbol id="i-muted" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4zM22 9l-6 6M16 9l6 6"/></symbol>
+      <symbol id="i-sound" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4zM15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></symbol>
+    </defs>
+  </svg>
+
+  <header class="nav" id="nav">
+    <div class="wrap">
+      <a class="brand" href="#top" aria-label="QuitX home"><img src="assets/icon.png" alt="" width="30" height="30">QuitX</a>
+      <nav aria-label="Primary">
+        <a href="#features">Features</a>
+        <a href="#updates">Updates</a>
+        <a href="#install">Install</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <div class="right">
+        <a class="btn btn-ghost btn-sm" href="https://github.com/kiron0/quitx"><svg class="i" aria-hidden="true"><use href="#i-github"/></svg>GitHub</a>
+        <a class="btn btn-gold btn-sm dl" href="https://github.com/kiron0/quitx/releases/latest">Download</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <div class="hero">
+      <div class="wrap">
+        <a class="badge" href="#updates"><b>New in 1.1.9</b>Updates now come straight from GitHub</a>
+        <h1>Quit everything. <span>Keep what matters.</span></h1>
+        <p class="lede">QuitX lives in your menu bar and lists every running app, grouped with its windows and helpers. Quit one, some, or all of them in a click. Apps still get to ask about unsaved work.</p>
+        <div class="cta">
+          <a class="btn btn-gold dl" href="https://github.com/kiron0/quitx/releases/latest"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Download for Mac <small class="ver"></small></a>
+          <a class="btn btn-ghost" href="https://github.com/kiron0/quitx"><svg class="i" aria-hidden="true"><use href="#i-github"/></svg>View source</a>
+        </div>
+        <div class="meta">
+          <span><svg class="i" aria-hidden="true"><use href="#i-apple"/></svg>macOS 14 or later</span>
+          <span><svg class="i" aria-hidden="true"><use href="#i-code"/></svg>Free and open source (MIT)</span>
+          <span><svg class="i" aria-hidden="true"><use href="#i-lock"/></svg>No account, no tracking</span>
+        </div>
+
+        <div class="stage">
+          <div class="frame">
+            <video id="demo" muted loop playsinline preload="metadata" poster="assets/demo-poster.jpg" aria-label="QuitX demo: quitting apps, confirmation, sounds, force quit, background apps, exclusions, menu bar stats, CPU warnings, quit on sleep, Classic and Liquid Glass, quitting on last window close, and in-app updates">
+              <source src="assets/demo.webm" type="video/webm">
+              <source src="assets/demo.mp4" type="video/mp4">
+            </video>
+            <div class="controls">
+              <button class="ctrl" id="playbtn" type="button" aria-label="Pause video"><svg class="i" aria-hidden="true"><use href="#i-pause"/></svg></button>
+              <button class="ctrl" id="soundbtn" type="button" aria-label="Turn sound on"><svg class="i" aria-hidden="true"><use href="#i-muted"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section id="features">
+      <div class="wrap">
+        <div class="head reveal">
+          <span class="eyebrow">Features</span>
+          <h2>Everything a quit button should have been.</h2>
+          <p>Built on public macOS APIs. It never reads other apps' files, and the only thing it asks the internet is whether a new QuitX release is out.</p>
+        </div>
+
+        <article class="tile big reveal">
+          <div class="copy">
+            <span class="num">01</span>
+            <h3>Quit one, some, or all</h3>
+            <p>Every running app gets one row with all of its windows and helpers. Check what should go, press Quit, done. Apps still get to ask about unsaved work.</p>
+            <ul class="points">
+              <li><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>Search, and sort by name, CPU or memory</li>
+              <li><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>Quit, restart, or quit every other app from a row's ••• menu</li>
+              <li><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>Apps that linger in the background are asked again, so one click is enough</li>
+            </ul>
+          </div>
+          <div class="shot"><img src="assets/shots/hero.jpg" alt="The QuitX menu listing running apps with a Quit All button" width="1340" height="922" loading="lazy"></div>
+        </article>
+
+        <div class="fgrid">
+          <article class="fcard reveal">
+            <div class="media"><img src="assets/shots/confirm.jpg" alt="QuitX asking Quit 14 Apps? with Cancel and Quit buttons" width="940" height="646" loading="lazy"></div>
+            <div class="fbody"><span class="num">02</span><h3>Confirm before quit</h3><p>A quick “Quit 14 Apps?” before Quit All, and optionally before single quits and restarts. Return confirms, Escape cancels.</p></div>
+          </article>
+          <article class="fcard reveal">
+            <div class="media"><img src="assets/shots/force.jpg" alt="The QuitX menu in force quit mode with Force Quit All" width="1214" height="836" loading="lazy"></div>
+            <div class="fbody"><span class="num">03</span><h3>Normal quit or force quit</h3><p>Normal quit lets apps save first. Hold <kbd>⌥</kbd> to force quit a frozen app, or make Force quit the default in Settings.</p></div>
+          </article>
+          <article class="fcard reveal">
+            <div class="media"><img src="assets/shots/background.jpg" alt="The QuitX menu showing background apps and the View Background Apps option" width="1828" height="1256" loading="lazy"></div>
+            <div class="fbody"><span class="num">04</span><h3>View background apps</h3><p>Show helpers and agents that never appear in the Dock, with identical instances grouped into one row. Toggle with <kbd>⌘B</kbd>.</p></div>
+          </article>
+          <article class="fcard reveal">
+            <div class="media"><img src="assets/shots/exclude.jpg" alt="A row menu in QuitX with Add to Exclude List selected" width="1058" height="728" loading="lazy"></div>
+            <div class="fbody"><span class="num">05</span><h3>Exclude apps</h3><p>Add an app from its ••• menu and it disappears from the list, safe from every manual and automatic quit. Music apps can be protected with one switch.</p></div>
+          </article>
+          <article class="fcard reveal">
+            <div class="media"><img src="assets/shots/stats.jpg" alt="CPU, memory, GPU and battery stats in the menu bar with QuitX settings" width="2168" height="1490" loading="lazy"></div>
+            <div class="fbody"><span class="num">06</span><h3>Menu bar stats</h3><p>Live CPU, memory, GPU and battery in the menu bar. Show any mix, as icons or text, and click a stat for a detailed view.</p></div>
+          </article>
+          <article class="fcard reveal">
+            <div class="media"><img src="assets/shots/health.jpg" alt="QuitX warning about high CPU usage and offering to quit three apps" width="1478" height="1016" loading="lazy"></div>
+            <div class="fbody"><span class="num">07</span><h3>CPU &amp; memory warnings</h3><p>When CPU or memory stays over your limit, QuitX notifies you and offers to quit inactive apps. Never the app you’re using, never without asking.</p></div>
+          </article>
+          <article class="fcard reveal">
+            <div class="media"><img src="assets/shots/sleep.jpg" alt="QuitX Automation settings with Quit apps when Mac sleeps turned on" width="1918" height="1318" loading="lazy"></div>
+            <div class="fbody"><span class="num">08</span><h3>Quit apps when your Mac sleeps</h3><p>Close everything when your Mac goes to sleep, only between the hours you pick. Wake up to a clean desktop.</p></div>
+          </article>
+          <article class="fcard reveal">
+            <div class="media"><img src="assets/shots/theme.jpg" alt="The QuitX menu in the Classic and Liquid Glass styles side by side" width="1608" height="1106" loading="lazy"></div>
+            <div class="fbody"><span class="num">09</span><h3>Classic or Liquid Glass</h3><p>Choose the solid classic look or translucent Liquid Glass on macOS 26. Every window and menu follows along.</p></div>
+          </article>
+          <article class="fcard reveal">
+            <div class="media"><img src="assets/shots/sounds.jpg" alt="QuitX General settings with Play cool sounds turned on" width="2100" height="1444" loading="lazy"></div>
+            <div class="fbody"><span class="num">10</span><h3>Sounds on quit</h3><p>A short arcade laser plays every time an app goes. Switch it off any time in Settings.</p><button class="btn btn-ghost btn-sm play" type="button" id="playSound"><svg class="i" aria-hidden="true"><use href="#i-sound"/></svg><span>Play the sound</span></button><audio id="quitSound" src="assets/quit.m4a" preload="none"></audio></div>
+          </article>
+        </div>
+
+        <div class="mini">
+          <article class="tile third reveal">
+            <div class="ico"><svg class="i" aria-hidden="true"><use href="#i-window"/></svg></div>
+            <h3>Last window closes, app quits</h3>
+            <p>Close an app's last window and it quits with all its helpers. Switching Spaces, full screen and minimize never count.</p>
+          </article>
+          <article class="tile third reveal">
+            <div class="ico"><svg class="i" aria-hidden="true"><use href="#i-timer"/></svg></div>
+            <h3>Auto quit and timers</h3>
+            <p>Quit apps you haven't touched in a while, set a timer on one app, and save power on battery.</p>
+          </article>
+          <article class="tile third reveal">
+            <div class="ico"><svg class="i" aria-hidden="true"><use href="#i-command"/></svg></div>
+            <h3>Global shortcuts</h3>
+            <p>Open the menu, Quit All or Force Quit All from anywhere with your own key combos.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="updates">
+      <div class="wrap split">
+        <div class="reveal">
+          <span class="eyebrow">In-app updates</span>
+          <h2 style="margin-top:16px">Updates itself, straight from GitHub.</h2>
+          <p class="muted" style="margin-top:18px;font-size:18px">No update server and no keys to trust. QuitX reads this project's GitHub Releases and checks every download before it installs.</p>
+          <ol class="steps">
+            <li><div><strong>A red dot appears</strong><span>When a new version ships, the menu bar icon gets a dot and the menu offers the update.</span></div></li>
+            <li><div><strong>Downloaded and verified</strong><span>The checksum, bundle, version and code signature all have to match.</span></div></li>
+            <li><div><strong>Restart to Update</strong><span>QuitX swaps itself in place and reopens. Your settings stay as they were.</span></div></li>
+          </ol>
+          <p style="margin-top:28px;font-size:14.5px;color:var(--faint)">Turn automatic checks and background downloads on or off in Settings → General.</p>
+        </div>
+        <div class="shotframe reveal"><img src="assets/shots/updates.jpg" alt="The QuitX menu showing Restart to Update next to the Update window" width="1680" height="1154" loading="lazy"></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <div class="head center reveal" style="text-align:center">
+          <span class="eyebrow">Privacy</span>
+          <h2>Your Mac, your business.</h2>
+        </div>
+        <div class="trust">
+          <div class="tile reveal"><div class="ico"><svg class="i" aria-hidden="true"><use href="#i-lock"/></svg></div><h3>No data leaves your Mac</h3><p>No analytics and no account. The only request QuitX makes is asking GitHub for the latest release.</p></div>
+          <div class="tile reveal"><div class="ico"><svg class="i" aria-hidden="true"><use href="#i-shield"/></svg></div><h3>Only the access it needs</h3><p>Accessibility is used only for window features like Quit When Last Window Closes. Everything else works without it.</p></div>
+          <div class="tile reveal"><div class="ico"><svg class="i" aria-hidden="true"><use href="#i-code"/></svg></div><h3>Read every line</h3><p>MIT licensed and built in the open. Issues and pull requests are welcome on GitHub.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="install">
+      <div class="wrap">
+        <div class="head reveal">
+          <span class="eyebrow">Install</span>
+          <h2>Up and running in a minute.</h2>
+        </div>
+        <div class="install">
+          <div class="tile reveal">
+            <h3>Download the app</h3>
+            <ol>
+              <li>Download the latest <a class="dl" href="https://github.com/kiron0/quitx/releases/latest">QuitX disk image</a>.</li>
+              <li>Open it and drag QuitX into Applications.</li>
+              <li>Launch QuitX. It lives in your menu bar.</li>
+            </ol>
+            <p class="note">Requires macOS 14 Sonoma or later.</p>
+          </div>
+          <div class="tile reveal">
+            <h3>Or use Terminal</h3>
+            <div class="code"><code id="cmd">curl -fsSL https://quitx.kiron.dev/install | bash</code><button class="btn btn-ghost btn-sm copybtn" type="button" data-copy="cmd"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
+            <p class="note">Downloads the latest release from GitHub, checks its SHA-256 checksum and code signature, installs QuitX in Applications and opens it. Never run it with sudo. Want to read it first? <a href="install" style="color:var(--ink);text-decoration:underline;text-underline-offset:3px">View the script</a>.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq">
+      <div class="wrap">
+        <div class="head center reveal" style="text-align:center">
+          <span class="eyebrow">FAQ</span>
+          <h2>Good questions.</h2>
+        </div>
+        <div class="faq reveal">
+          <details><summary>Will I lose unsaved work?<svg class="i" aria-hidden="true"><use href="#i-plus"/></svg></summary><p>No. A normal quit asks each app to quit the same way the Dock does, so apps can still prompt you to save. QuitX only force quits when you choose it, for example by holding Option.</p></details>
+          <details><summary>Which macOS versions are supported?<svg class="i" aria-hidden="true"><use href="#i-plus"/></svg></summary><p>macOS 14 Sonoma and later. On macOS 26 you can switch between the classic look and Liquid Glass.</p></details>
+          <details><summary>How do updates work?<svg class="i" aria-hidden="true"><use href="#i-plus"/></svg></summary><p>QuitX checks GitHub Releases a few times a day when automatic checks are on. You'll see a red dot on the menu bar icon and an update item in the menu. The download is verified before QuitX restarts into the new version.</p></details>
+          <details><summary>Why does it ask for Accessibility?<svg class="i" aria-hidden="true"><use href="#i-plus"/></svg></summary><p>Only window-based features need it, such as quitting an app when its last window closes and the per-app Windows menu. You can use the rest of QuitX without granting it.</p></details>
+          <details><summary>Is it really free?<svg class="i" aria-hidden="true"><use href="#i-plus"/></svg></summary><p>Yes. QuitX is MIT licensed. There's no paid tier and no account.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <div class="final">
+      <div class="wrap">
+        <img src="assets/icon.png" alt="" width="96" height="96" loading="lazy">
+        <h2>Give your Mac a fresh start.</h2>
+        <p>No restart required.</p>
+        <div class="cta">
+          <a class="btn btn-gold dl" href="https://github.com/kiron0/quitx/releases/latest"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Download for Mac <small class="ver"></small></a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span>© <span id="year">2026</span> Toufiq Hasan Kiron · MIT License</span>
+      <nav aria-label="Footer">
+        <a href="https://github.com/kiron0/quitx/releases">Releases</a>
+        <a href="https://github.com/kiron0/quitx/blob/main/CHANGELOG.md">Changelog</a>
+        <a href="https://github.com/kiron0/quitx/blob/main/docs/HOW-IT-WORKS.md">How it works</a>
+        <a href="https://github.com/kiron0/quitx/issues/new">Report an issue</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      const nav = document.getElementById('nav');
+      const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 8);
+      addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+      document.getElementById('year').textContent = new Date().getFullYear();
+
+      const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const els = document.querySelectorAll('.reveal');
+      if (reduce || !('IntersectionObserver' in window)) {
+        els.forEach(el => el.classList.add('in'));
+      } else {
+        const io = new IntersectionObserver(entries => {
+          entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+        }, { rootMargin: '0px 0px -8% 0px' });
+        els.forEach(el => io.observe(el));
+      }
+
+      const video = document.getElementById('demo');
+      const playBtn = document.getElementById('playbtn');
+      const soundBtn = document.getElementById('soundbtn');
+      const setPlayIcon = () => {
+        const playing = !video.paused;
+        playBtn.innerHTML = `<svg class="i" aria-hidden="true"><use href="#i-${playing ? 'pause' : 'play'}"/></svg>`;
+        playBtn.setAttribute('aria-label', playing ? 'Pause video' : 'Play video');
+      };
+      const setSoundIcon = () => {
+        soundBtn.innerHTML = `<svg class="i" aria-hidden="true"><use href="#i-${video.muted ? 'muted' : 'sound'}"/></svg>`;
+        soundBtn.setAttribute('aria-label', video.muted ? 'Turn sound on' : 'Turn sound off');
+      };
+      let userPaused = false;
+      playBtn.addEventListener('click', () => {
+        if (video.paused) { userPaused = false; video.play().catch(() => {}); } else { userPaused = true; video.pause(); }
+      });
+      soundBtn.addEventListener('click', () => {
+        video.muted = !video.muted;
+        if (!video.muted && video.paused) { userPaused = false; video.play().catch(() => {}); }
+        setSoundIcon();
+      });
+      video.addEventListener('play', setPlayIcon);
+      video.addEventListener('pause', setPlayIcon);
+      if (!reduce && 'IntersectionObserver' in window) {
+        new IntersectionObserver(([e]) => {
+          if (e.isIntersecting && !userPaused) video.play().catch(() => {});
+          else if (!e.isIntersecting) video.pause();
+        }, { threshold: .35 }).observe(video);
+      }
+      document.addEventListener('visibilitychange', () => { if (document.hidden) video.pause(); });
+      setPlayIcon();
+      setSoundIcon();
+
+      const snd = document.getElementById('quitSound');
+      const sbtn = document.getElementById('playSound');
+      if (snd && sbtn) sbtn.addEventListener('click', () => { snd.currentTime = 0; snd.play().catch(() => {}); });
+
+      document.querySelectorAll('[data-copy]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const text = document.getElementById(btn.dataset.copy).textContent.trim();
+          try { await navigator.clipboard.writeText(text); btn.querySelector('span').textContent = 'Copied'; }
+          catch { btn.querySelector('span').textContent = 'Select and copy'; }
+          setTimeout(() => { btn.querySelector('span').textContent = 'Copy'; }, 1800);
+        });
+      });
+
+      fetch('https://api.github.com/repos/kiron0/quitx/releases/latest', { headers: { Accept: 'application/vnd.github+json' } })
+        .then(r => r.ok ? r.json() : null)
+        .then(release => {
+          if (!release) return;
+          const dmg = (release.assets || []).find(a => /\.dmg$/i.test(a.name));
+          if (dmg && dmg.browser_download_url.startsWith('https://')) document.querySelectorAll('a.dl').forEach(a => { a.href = dmg.browser_download_url; });
+          if (release.tag_name) document.querySelectorAll('.ver').forEach(el => { el.textContent = release.tag_name; });
+        })
+        .catch(() => {});
+    })();
+  </script>
+</body>
+</html>

@@ -66,8 +66,49 @@ jobs:
       - name: Run Tests
         run: swift test || swift test --build-system native
 
+      - name: Import Signing Certificate
+        shell: bash
+        env:
+          CERT_P12: ${{ secrets.MACOS_SIGNING_CERT_P12 }}
+          CERT_PASSWORD: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
+          CERT_NAME: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CERT_P12}" ]; then
+            echo "No signing certificate configured; building with the stable ad-hoc requirement."
+            exit 0
+          fi
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          security create-keychain -p "" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "" "$KEYCHAIN"
+          echo "$CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$KEYCHAIN" -P "$CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" "$KEYCHAIN" >/dev/null
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          rm -f "$RUNNER_TEMP/cert.p12"
+          NAME="${CERT_NAME:-QuitX Code Signing}"
+          HASH="$(security find-identity -p codesigning "$KEYCHAIN" | awk -v n="\"$NAME\"" 'index($0, n) {print $2; exit}')"
+          if [ -z "$HASH" ]; then
+            security find-identity -p codesigning "$KEYCHAIN"
+            echo "::error::Signing identity \"$NAME\" was not found in the imported certificate."
+            exit 1
+          fi
+          echo "QUITX_CODESIGN_IDENTITY=$HASH" >> "$GITHUB_ENV"
+
       - name: Build and Bundle App
         run: ./Scripts/build.sh
+
+      - name: Check the Signature
+        shell: bash
+        run: |
+          codesign -dvv .build/QuitX.app 2>&1 | grep -E "^(Authority|Signature|TeamIdentifier|Identifier)" || true
+          codesign -dr - .build/QuitX.app 2>&1 | tail -1
+          codesign --verify --strict --deep .build/QuitX.app
+          if [ -n "${QUITX_CODESIGN_IDENTITY:-}" ] && codesign -dvv .build/QuitX.app 2>&1 | grep -q "Signature=adhoc"; then
+            echo "::error::A signing certificate is configured, but the app was signed ad hoc."
+            exit 1
+          fi
 
       - name: Create DMG Installer
         run: |
@@ -86,7 +127,7 @@ jobs:
           echo "Packaging QuitX-${TAG}.zip..."
           ditto -c -k --sequesterRsrc --keepParent .build/QuitX.app ".build/QuitX-${TAG}.zip"
 
-      - name: Sign Update Payload
+      - name: Legacy Update Metadata
         shell: bash
         env:
           UPDATE_ED25519_PRIVATE_KEY: ${{ secrets.UPDATE_ED25519_PRIVATE_KEY }}
@@ -94,8 +135,8 @@ jobs:
           TAG="${{ steps.meta.outputs.tag }}"
           VERSION="${{ steps.meta.outputs.version }}"
           if [ -z "$UPDATE_ED25519_PRIVATE_KEY" ]; then
-            echo "UPDATE_ED25519_PRIVATE_KEY secret is not set" >&2
-            exit 1
+            echo "::warning::UPDATE_ED25519_PRIVATE_KEY is not set, so no updates.json is published. QuitX 1.1.8 and earlier will not see this release in-app; they can still update from the website or Releases page."
+            exit 0
           fi
           ./Scripts/sign-update.sh ".build/QuitX-${TAG}.dmg" "$VERSION" .build/updates.json
 
@@ -127,6 +168,10 @@ jobs:
           1. Download \`QuitX-${{ steps.meta.outputs.tag }}.dmg\` (or \`.zip\`) from Assets below.
           2. Open the disk image and drag **QuitX** to your \`/Applications\` folder. The zip contains the same app if you prefer archives.
 
+          Or in Terminal: \`curl -fsSL https://quitx.kiron.dev/install | bash\`
+
+          Already using QuitX? It updates itself from this page: choose **Check for Updates** in the menu bar, or turn on automatic updates in Settings → General.
+
           **Full changelog:** https://github.com/${{ github.repository }}/commits/${{ steps.meta.outputs.tag }}
           EOF
 
@@ -141,6 +186,6 @@ jobs:
             .build/QuitX-*.dmg
             .build/QuitX-*.zip
             .build/updates.json
-          fail_on_unmatched_files: true
+          fail_on_unmatched_files: false
           draft: false
           prerelease: false

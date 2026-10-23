@@ -1,6 +1,5 @@
 import Testing
 import AppKit
-import CryptoKit
 import Foundation
 @testable import QuitX
 
@@ -8,31 +7,118 @@ import Foundation
 @MainActor
 struct AppUpdateTests {
 
-    @Test("Gatekeeper Release JSON Decoding")
-    func testGatekeeperReleaseDecoding() throws {
-        let json = """
-        {
-            "version": "1.0.4",
-            "releaseName": "v1.0.4",
-            "releaseNotes": "Fixes and improvements",
-            "publishedAt": "2026-10-03T17:37:26Z",
-            "downloadUrl": "https://updates.example.com/download/12345",
-            "sizeBytes": 4384565,
-            "fileName": "QuitX-v1.0.4.dmg",
-            "digest": "sha256:0e358a884c81bd1eb7f0ba654ea0193e4289e4253fa2e22918ad1b389b0f40ca",
-            "edSignature": "9jIudgPRP0VpRrpXscyEo7rEiJigKHIDNgzwuEh65yDSM/u0IUOgpeBi1sJ/ah399Purw26UGBk3A55E3Kn/BQ=="
+    private static let releaseJSON = """
+    {
+        "tag_name": "v9.9.9",
+        "name": "QuitX v9.9.9",
+        "body": "## Fixes\\n- Faster quits",
+        "html_url": "https://github.com/kiron0/quitx/releases/tag/v9.9.9",
+        "published_at": "2026-10-20T10:00:00Z",
+        "draft": false,
+        "prerelease": false,
+        "assets": [
+            {
+                "name": "updates.json",
+                "browser_download_url": "https://github.com/kiron0/quitx/releases/download/v9.9.9/updates.json",
+                "size": 512
+            },
+            {
+                "name": "QuitX-v9.9.9.zip",
+                "browser_download_url": "https://github.com/kiron0/quitx/releases/download/v9.9.9/QuitX-v9.9.9.zip",
+                "size": 4000000
+            },
+            {
+                "name": "QuitX-v9.9.9.dmg",
+                "browser_download_url": "https://github.com/kiron0/quitx/releases/download/v9.9.9/QuitX-v9.9.9.dmg",
+                "size": 4384565,
+                "digest": "sha256:0e358a884c81bd1eb7f0ba654ea0193e4289e4253fa2e22918ad1b389b0f40ca"
+            }
+        ]
+    }
+    """
+
+    @Test("GitHub release JSON decoding picks the DMG")
+    func testGitHubReleaseDecoding() throws {
+        let release = try GitHubRelease.decode(Data(Self.releaseJSON.utf8))
+
+        #expect(release.version == "9.9.9")
+        #expect(release.htmlUrl?.contains("/releases/tag/v9.9.9") == true)
+        let asset = try #require(release.installerAsset)
+        #expect(asset.name == "QuitX-v9.9.9.dmg")
+        #expect(asset.size == 4384565)
+        #expect(asset.digest?.hasPrefix("sha256:") == true)
+    }
+
+    @Test("Newer GitHub release becomes an available update")
+    func testEvaluateNewerRelease() throws {
+        let release = try GitHubRelease.decode(Data(Self.releaseJSON.utf8))
+        let update = try #require(try UpdateChecker.evaluate(release: release, currentVersion: "1.1.7").get())
+
+        #expect(update.version == "9.9.9")
+        #expect(update.downloadURL.lastPathComponent == "QuitX-v9.9.9.dmg")
+        #expect(update.digest?.contains("0e358a88") == true)
+        #expect(update.notes?.contains("Faster quits") == true)
+    }
+
+    @Test("Same, older, draft and prerelease releases are not offered")
+    func testEvaluateIgnoresNonUpdates() throws {
+        let release = try GitHubRelease.decode(Data(Self.releaseJSON.utf8))
+        #expect(try UpdateChecker.evaluate(release: release, currentVersion: "9.9.9").get() == nil)
+        #expect(try UpdateChecker.evaluate(release: release, currentVersion: "10.0.0").get() == nil)
+
+        let draft = Self.releaseJSON.replacingOccurrences(of: "\"draft\": false", with: "\"draft\": true")
+        #expect(try UpdateChecker.evaluate(release: GitHubRelease.decode(Data(draft.utf8)), currentVersion: "1.0.0").get() == nil)
+
+        let pre = Self.releaseJSON.replacingOccurrences(of: "\"prerelease\": false", with: "\"prerelease\": true")
+        #expect(try UpdateChecker.evaluate(release: GitHubRelease.decode(Data(pre.utf8)), currentVersion: "1.0.0").get() == nil)
+    }
+
+    @Test("Release without a DMG or with an insecure URL fails clearly")
+    func testEvaluateMissingInstaller() throws {
+        let noDmg = Self.releaseJSON.replacingOccurrences(of: "QuitX-v9.9.9.dmg", with: "QuitX-v9.9.9.pkg")
+        let release = try GitHubRelease.decode(Data(noDmg.utf8))
+        #expect(throws: UpdateCheckError.missingInstaller) {
+            try UpdateChecker.evaluate(release: release, currentVersion: "1.0.0").get()
         }
-        """
 
-        let data = try #require(json.data(using: .utf8))
-        let release = try JSONDecoder().decode(GatekeeperRelease.self, from: data)
+        let insecure = Self.releaseJSON.replacingOccurrences(
+            of: "https://github.com/kiron0/quitx/releases/download/v9.9.9/QuitX-v9.9.9.dmg",
+            with: "http://github.com/kiron0/quitx/releases/download/v9.9.9/QuitX-v9.9.9.dmg"
+        )
+        #expect(throws: UpdateCheckError.missingInstaller) {
+            try UpdateChecker.evaluate(release: GitHubRelease.decode(Data(insecure.utf8)), currentVersion: "1.0.0").get()
+        }
+    }
 
-        #expect(release.version == "1.0.4")
-        #expect(release.releaseName == "v1.0.4")
-        #expect(release.sizeBytes == 4384565)
-        #expect(release.downloadUrl.contains("/download/12345"))
-        #expect(release.digest?.contains("sha256") == true)
-        #expect(release.edSignature?.isEmpty == false)
+    @Test("Updates come straight from the GitHub Releases API")
+    func testLatestReleaseEndpoint() {
+        #expect(UpdateChecker.latestReleaseURL.absoluteString == "https://api.github.com/repos/kiron0/quitx/releases/latest")
+        #expect(QuitXConstants.releasesPageURL.host == "github.com")
+    }
+
+    @Test("Menu title follows update progress")
+    func testUpdateMenuTitle() {
+        #expect(StatusItemController.updateMenuTitle(availableVersion: nil, state: .idle) == nil)
+        #expect(StatusItemController.updateMenuTitle(availableVersion: "2.0.0", state: .idle) == "Update to v2.0.0…")
+        #expect(StatusItemController.updateMenuTitle(availableVersion: "2.0.0", state: .extracting) == "Downloading v2.0.0…")
+        #expect(
+            StatusItemController.updateMenuTitle(
+                availableVersion: nil,
+                state: .ready(stagedURL: URL(fileURLWithPath: "/tmp/QuitX.app"), version: "2.0.0")
+            ) == "Restart to Update to v2.0.0"
+        )
+    }
+
+    @Test("Update notifications fire once per version and kind")
+    func testUpdateNotifierDedup() throws {
+        let suite = "quitx-notifier-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        #expect(UpdateNotifier.shouldNotify(version: "2.0.0", kind: "available", defaults: defaults))
+        defaults.set("available:2.0.0", forKey: "quitx_update_notified_version")
+        #expect(!UpdateNotifier.shouldNotify(version: "2.0.0", kind: "available", defaults: defaults))
+        #expect(UpdateNotifier.shouldNotify(version: "2.0.0", kind: "ready", defaults: defaults))
+        #expect(UpdateNotifier.shouldNotify(version: "2.0.1", kind: "available", defaults: defaults))
     }
 
     @Test("Update download URLs require HTTPS and a host")
@@ -43,30 +129,15 @@ struct AppUpdateTests {
         #expect(UpdateChecker.secureDownloadURL(from: "not a URL") == nil)
     }
 
-    @Test("Automatic update checks run once per day")
+    @Test("Automatic update checks run every six hours")
     func testAutomaticUpdateCheckDelay() {
         let now = Date(timeIntervalSince1970: 2_000_000_000)
         let hour: TimeInterval = 60 * 60
 
         #expect(UpdateChecker.automaticCheckDelay(lastCheck: nil, now: now) == 0)
-        #expect(
-            UpdateChecker.automaticCheckDelay(
-                lastCheck: now.addingTimeInterval(-23 * hour),
-                now: now
-            ) == hour
-        )
-        #expect(
-            UpdateChecker.automaticCheckDelay(
-                lastCheck: now.addingTimeInterval(-24 * hour),
-                now: now
-            ) == 0
-        )
-        #expect(
-            UpdateChecker.automaticCheckDelay(
-                lastCheck: now.addingTimeInterval(hour),
-                now: now
-            ) == 0
-        )
+        #expect(UpdateChecker.automaticCheckDelay(lastCheck: now.addingTimeInterval(-5 * hour), now: now) == hour)
+        #expect(UpdateChecker.automaticCheckDelay(lastCheck: now.addingTimeInterval(-6 * hour), now: now) == 0)
+        #expect(UpdateChecker.automaticCheckDelay(lastCheck: now.addingTimeInterval(hour), now: now) == 0)
     }
 
     @Test("Relaunch Script Generation Syntax and Safety")
@@ -74,7 +145,7 @@ struct AppUpdateTests {
         let script = UpdateDownloadService.generateRelaunchScript()
 
         #expect(script.hasPrefix("#!/bin/bash"))
-        #expect(script.contains("set -euo pipefail"))
+        #expect(script.contains("set -uo pipefail"))
         #expect(script.contains("TARGET_PID=\"$1\""))
         #expect(script.contains("SRC_APP=\"$2\""))
         #expect(script.contains("DEST_APP=\"$3\""))
@@ -82,12 +153,52 @@ struct AppUpdateTests {
         #expect(script.contains("ditto \"$SRC_APP\" \"$NEW_APP\""))
         #expect(script.contains("mv \"$DEST_APP\" \"$OLD_APP\""))
         #expect(script.contains("mv \"$NEW_APP\" \"$DEST_APP\""))
+        #expect(script.contains("mv \"$OLD_APP\" \"$DEST_APP\""))
         #expect(script.contains("xattr -rd com.apple.quarantine \"$DEST_APP\""))
+        #expect(script.contains("/usr/bin/osascript -e \"$ADMIN_SCRIPT\""))
         #expect(script.contains("open \"$DEST_APP\""))
+        #expect(script.contains("open \"$CURRENT_APP\""))
         #expect(script.contains("rm -- \"$0\""))
         #expect(!script.contains("kill -9"))
         #expect(!script.contains("/tmp/staged"))
         #expect(!script.contains("/Applications/QuitX.app"))
+    }
+
+    @Test("Relaunch script swaps the app and restores on failure")
+    func testRelaunchScriptSwapRuns() throws {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("quitx-swap-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let staged = root.appendingPathComponent("staged/QuitX.app")
+        let dest = root.appendingPathComponent("Apps/QuitX.app")
+        try FileManager.default.createDirectory(at: staged, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: dest, withIntermediateDirectories: true)
+        try "new".write(to: staged.appendingPathComponent("marker"), atomically: true, encoding: .utf8)
+        try "old".write(to: dest.appendingPathComponent("marker"), atomically: true, encoding: .utf8)
+        let scriptURL = root.appendingPathComponent("relaunch.sh")
+        try UpdateDownloadService.generateRelaunchScript().write(to: scriptURL, atomically: true, encoding: .utf8)
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/bash")
+        process.arguments = [scriptURL.path, "--swap", staged.path, dest.path]
+        try process.run()
+        process.waitUntilExit()
+
+        #expect(process.terminationStatus == 0)
+        #expect(try String(contentsOf: dest.appendingPathComponent("marker"), encoding: .utf8) == "new")
+        let leftovers = try FileManager.default.contentsOfDirectory(atPath: dest.deletingLastPathComponent().path)
+        #expect(leftovers == ["QuitX.app"])
+    }
+
+    @Test("Admin install command quotes paths safely")
+    func testAdminAppleScriptQuoting() {
+        let script = UpdateDownloadService.adminAppleScript(
+            runningScriptAt: "/tmp/it's here.sh",
+            arguments: ["--swap", "/tmp/a \"b\"/QuitX.app", "/Applications/QuitX.app"]
+        )
+        #expect(script.hasPrefix("do shell script \""))
+        #expect(script.hasSuffix("with administrator privileges"))
+        #expect(script.contains("'/tmp/it'\\\\''s here.sh'"))
+        #expect(script.contains("\\\"b\\\""))
     }
 
     @Test("Byte Formatting and Speed Calculations")
@@ -156,7 +267,13 @@ struct AppUpdateTests {
     func testResolveDestinationAppURL() {
         let dest = UpdateDownloadService.resolveDestinationAppURL()
         #expect(dest.pathExtension == "app")
-        #expect(dest.lastPathComponent == "QuitX.app")
+
+        let installed = URL(fileURLWithPath: "/Users/someone/Applications/QuitX.app")
+        #expect(UpdateDownloadService.resolveDestinationAppURL(current: installed) == installed)
+
+        let translocated = URL(fileURLWithPath: "/private/var/folders/xy/AppTranslocation/ABC/d/QuitX.app")
+        #expect(UpdateDownloadService.resolveDestinationAppURL(current: translocated).lastPathComponent == "QuitX.app")
+        #expect(!UpdateDownloadService.resolveDestinationAppURL(current: translocated).path.contains("AppTranslocation"))
     }
 
     @Test("DMG Mount, Extraction and Bundle Validation Pipeline")
@@ -288,7 +405,7 @@ struct AppUpdateTests {
         )
 
         #expect(throws: UpdateError.invalidSignature) {
-            try UpdateDownloadService.validateSignature(of: tempDir, expectedTeamIdentifier: nil)
+            try UpdateDownloadService.validateSignature(of: tempDir, requirement: nil)
         }
     }
 
@@ -326,54 +443,6 @@ struct AppUpdateTests {
 
         #expect(throws: UpdateError.invalidSignature) {
             try UpdateDownloadService.validateUpdateBundle(at: appDir, expectedVersion: "9.9.9")
-        }
-    }
-
-    @Test("Ed25519 Publisher Signature Verification")
-    func testEdSignatureVerification() throws {
-        let privateKey = Curve25519.Signing.PrivateKey()
-        let publicKeyBase64 = privateKey.publicKey.rawRepresentation.base64EncodedString()
-
-        let fileURL = URL(fileURLWithPath: NSTemporaryDirectory())
-            .appendingPathComponent("quitx-ed25519-\(UUID().uuidString).dmg")
-        defer { try? FileManager.default.removeItem(at: fileURL) }
-
-        let payload = Data("quitx update payload".utf8)
-        try payload.write(to: fileURL)
-
-        let signature = try privateKey.signature(for: payload).base64EncodedString()
-        try UpdateDownloadService.verifyEdSignature(
-            of: fileURL,
-            signatureBase64: signature,
-            publicKeyBase64: publicKeyBase64
-        )
-
-        try Data("tampered payload".utf8).write(to: fileURL)
-        #expect(throws: UpdateError.invalidSignature) {
-            try UpdateDownloadService.verifyEdSignature(
-                of: fileURL,
-                signatureBase64: signature,
-                publicKeyBase64: publicKeyBase64
-            )
-        }
-
-        try payload.write(to: fileURL)
-        let otherKey = Curve25519.Signing.PrivateKey()
-        let otherSignature = try otherKey.signature(for: payload).base64EncodedString()
-        #expect(throws: UpdateError.invalidSignature) {
-            try UpdateDownloadService.verifyEdSignature(
-                of: fileURL,
-                signatureBase64: otherSignature,
-                publicKeyBase64: publicKeyBase64
-            )
-        }
-
-        #expect(throws: UpdateError.invalidSignature) {
-            try UpdateDownloadService.verifyEdSignature(
-                of: fileURL,
-                signatureBase64: "not-base64-signature",
-                publicKeyBase64: publicKeyBase64
-            )
         }
     }
 }

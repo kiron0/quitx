@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>QuitX demo</title>
+<link rel="stylesheet" href="kit.css">
+<style>
+  :root { --gold: #FEBC33; --gold-deep: #E89B00; --muted: rgba(245, 242, 236, .64); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 1440px; height: 900px; overflow: hidden; background: #0B0A09; }
+  body { font-family: "Inter", -apple-system, system-ui, sans-serif; color: #F5F2EC; -webkit-font-smoothing: antialiased; }
+  .abs { position: absolute; }
+  #stage { position: relative; width: 1440px; height: 900px; overflow: hidden; }
+  #cam { position: absolute; inset: 0; }
+  #wall { inset: -40px;
+    background:
+      radial-gradient(60% 75% at 82% 8%, rgba(254, 188, 51, .55), transparent 62%),
+      radial-gradient(55% 65% at 100% 100%, rgba(214, 92, 26, .55), transparent 60%),
+      radial-gradient(70% 80% at 0% 100%, rgba(70, 38, 14, .9), transparent 65%),
+      linear-gradient(160deg, #1A1511 0%, #120F0C 45%, #24160C 100%); }
+  #menubar { left: 0; right: 0; top: 0; height: 28px; z-index: 30; display: flex; align-items: center; gap: 20px; padding: 0 18px;
+    background: rgba(18, 14, 10, .38); backdrop-filter: blur(30px) saturate(1.4); font-size: 13px; font-weight: 500; color: rgba(255,255,255,.92); }
+  #menubar b { font-weight: 700; min-width: 64px; }
+  #menubar .right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+  #statsWrap { overflow: hidden; display: flex; justify-content: flex-end; }
+  #qx { position: relative; width: 28px; height: 22px; border-radius: 5px; display: grid; place-items: center; }
+  #qx img { width: 17px; height: 17px; filter: invert(1); }
+  #qxdot { position: absolute; right: 2px; top: 1px; width: 7px; height: 7px; border-radius: 50%; background: #FF453A; box-shadow: 0 0 0 1px rgba(20,14,10,.6); }
+  #qxring { position: absolute; right: -2px; top: -3px; width: 15px; height: 15px; border-radius: 50%; border: 2px solid #FF453A; }
+  .layer { position: absolute; left: 0; top: 0; }
+  #pop, #menu, #menu2, #rescue { z-index: 20; }
+  #note { z-index: 35; }
+  .doc { z-index: 10; width: 600px; height: 400px; }
+  .doc .bar { height: 52px; display: flex; align-items: center; gap: 8px; padding: 0 18px; background: #2A292B; border-bottom: 1px solid rgba(0,0,0,.5); }
+  .doc .bar i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+  .doc .bar span { margin-left: 18px; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.82); }
+  .doc .txt { padding: 30px 48px; font-size: 15px; line-height: 1.75; color: rgba(255,255,255,.8); }
+  .doc .txt h4 { margin: 0 0 10px; font-size: 21px; font-weight: 700; color: #fff; }
+  #upd { z-index: 26; width: 412px; padding: 0 22px 18px; background: #2A292C; }
+  #upd .head { height: 34px; display: flex; align-items: center; justify-content: center; position: relative; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.88); }
+  #upd .lights { position: absolute; left: -8px; }
+  #upd .top { display: flex; align-items: flex-start; gap: 16px; margin-top: 10px; }
+  #upd .icon { position: relative; flex: none; }
+  #upd .icon img { width: 64px; height: 64px; display: block; }
+  #updbadge { position: absolute; right: 3px; bottom: 3px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; box-shadow: 0 0 0 2px #2A292C; }
+  #upd h3 { margin: 2px 0 6px; font-size: 15px; font-weight: 700; }
+  #upd .t1 { font-size: 12.5px; color: rgba(255,255,255,.8); line-height: 1.45; min-height: 18px; }
+  #upd .t2 { font-size: 12px; color: rgba(255,255,255,.52); margin-top: 4px; display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; }
+  #upd .bar { margin-top: 10px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.12); overflow: hidden; }
+  #upd .bar b { display: block; height: 100%; width: 0; background: var(--gold); border-radius: 3px; }
+  #upd .btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+  #upd .btns span { height: 30px; padding: 0 15px; border-radius: 7px; display: inline-flex; align-items: center; font-size: 13px; font-weight: 500; background: rgba(255,255,255,.1); }
+  #upd .btns span.p { background: var(--gold); color: rgba(0,0,0,.88); font-weight: 600; }
+  #settingsWin { z-index: 15; }
+  #sleep { inset: 0; z-index: 45; background: #000; display: grid; place-items: center; }
+  #sleep .c { text-align: center; color: rgba(255,255,255,.88); }
+  #sleep svg { width: 54px; height: 54px; }
+  #sleep .clock { margin-top: 16px; font: 300 64px/1 "Inter Display", "Inter"; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  #sleep .sub { margin-top: 10px; font-size: 16px; color: rgba(255,255,255,.55); }
+  #themeTag { z-index: 40; display: flex; gap: 6px; padding: 5px; border-radius: 999px; background: rgba(0,0,0,.45); box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); backdrop-filter: blur(10px); }
+  #themeTag span { padding: 8px 16px; border-radius: 999px; font-size: 15px; font-weight: 600; color: rgba(255,255,255,.7); }
+  #themeTag span.on { background: var(--gold); color: rgba(0,0,0,.88); }
+  #caption { left: 96px; bottom: 84px; z-index: 40; max-width: 700px; }
+  #caption .k { display: inline-flex; align-items: center; gap: 8px; font: 600 12px/1 "Inter"; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); }
+  #caption .k i { font-style: normal; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; background: rgba(254,188,51,.14); font-size: 11px; letter-spacing: 0; }
+  #caption .h { margin-top: 12px; font-family: "Inter Display", "Inter"; font-size: 46px; font-weight: 700; letter-spacing: -.03em; line-height: 1.04; color: #fff; text-shadow: 0 2px 24px rgba(0,0,0,.35); }
+  #keycap { z-index: 40; left: 96px; top: 130px; display: flex; gap: 10px; align-items: center; }
+  #keycap kbd { min-width: 58px; height: 58px; padding: 0 16px; border-radius: 13px; display: grid; place-items: center;
+    background: linear-gradient(#3A383B, #2A292B); box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 3px 0 #151415, 0 8px 18px rgba(0,0,0,.35); font: 600 24px/1 "Inter"; color: #fff; }
+  #keycap span { font-size: 15px; font-weight: 600; color: rgba(255,255,255,.75); }
+  #cursor { width: 22px; height: 30px; z-index: 50; filter: drop-shadow(0 2px 3px rgba(0,0,0,.45)); transform-origin: 3px 2px; }
+  #ripple { z-index: 49; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%; border: 2px solid rgba(255,255,255,.75); }
+  .card { inset: 0; z-index: 60; display: grid; place-items: center; text-align: center; background: radial-gradient(60% 60% at 50% 40%, #2A1F12 0%, #0E0C0A 70%); }
+  .card .glow { position: absolute; left: 50%; top: 40%; width: 520px; height: 520px; margin: -260px 0 0 -260px; border-radius: 50%; background: radial-gradient(closest-side, rgba(254,188,51,.35), transparent 70%); }
+  .card img { width: 132px; height: 132px; position: relative; filter: drop-shadow(0 24px 40px rgba(0,0,0,.6)); }
+  .card h1 { position: relative; margin: 26px 0 10px; font-family: "Inter Display", "Inter"; font-size: 76px; letter-spacing: -.04em; font-weight: 700; color: #fff; }
+  .card p { position: relative; margin: 0; font-size: 22px; color: var(--muted); }
+  .card .pill { position: relative; display: inline-flex; margin-top: 30px; padding: 14px 24px; border-radius: 14px; background: linear-gradient(var(--gold), var(--gold-deep)); color: rgba(0,0,0,.88); font-weight: 700; font-size: 18px; }
+  .card .url { position: relative; margin-top: 16px; font: 500 16px/1 "JetBrains Mono", monospace; color: rgba(255,255,255,.55); }
+  #fade { inset: 0; z-index: 70; background: #000; pointer-events: none; }
+</style>
+</head>
+<body>
+<script src="kit.js"></script>
+<div id="stage">
+  <div id="cam">
+    <div id="wall" class="abs"></div>
+    <div id="doc1" class="abs qx-win doc" style="left:180px;top:190px"><div class="bar"><i style="background:#FF5F57" id="close1"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i><span>Launch notes.txt</span></div><div class="txt"><h4>Launch checklist</h4>Ship 1.1.9 with in-app updates from GitHub.<br>Record the demo video and refresh the site.<br>Tell everyone the red dot means good news.</div></div>
+    <div id="doc2" class="abs qx-win doc" style="left:300px;top:250px;width:520px;height:330px"><div class="bar"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i><span>Untitled</span></div><div class="txt"><h4>Ideas</h4>Quit everything at midnight.<br>Keep the music playing.</div></div>
+    <div id="menubar" class="abs">
+      <b id="front">Finder</b><span>File</span><span>Edit</span><span>View</span><span>Window</span><span>Help</span>
+      <div class="right">
+        <div id="statsWrap"><div id="stats"></div></div>
+        <div id="qx"><img src="../site/assets/status-icon.png" alt=""><span id="qxring"></span><span id="qxdot"></span></div>
+        <svg width="24" height="12" viewBox="0 0 22 12" id="sysbatt"><rect x="1" y="1.5" width="17" height="9" rx="2.6" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="1.1"/><rect x="2.8" y="3.3" width="11.4" height="5.4" rx="1.3" fill="#fff"/></svg>
+        <svg width="17" height="13" viewBox="0 0 18 14"><path d="M9 12.6l2.2-2.4a3.2 3.2 0 0 0-4.4 0zM4.6 8.1a6.2 6.2 0 0 1 8.8 0l1.4-1.5a8.3 8.3 0 0 0-11.6 0zM1.6 4.9a10.6 10.6 0 0 1 14.8 0L17.8 3.4A12.7 12.7 0 0 0 .2 3.4z" fill="#fff"/></svg>
+        <span id="clock">Fri Oct 23&nbsp;&nbsp;9:41 AM</span>
+      </div>
+    </div>
+    <div id="settingsWin" class="layer"></div>
+    <div id="pop" class="layer"></div>
+    <div id="menu" class="layer"></div>
+    <div id="menu2" class="layer"></div>
+    <div id="rescue" class="layer"></div>
+    <div id="upd" class="abs qx-win" style="left:514px;top:300px">
+      <div class="head"><span class="lights"><i style="background:#FF5F57"></i><i style="background:#58565A"></i><i style="background:#58565A"></i></span>Update</div>
+      <div class="top"><div class="icon"><img src="../site/assets/icon.png" alt=""><span id="updbadge"></span></div><div style="flex:1"><h3 id="updh"></h3><div class="t1" id="updt1"></div><div class="t2" id="updt2"></div><div class="bar" id="updbarwrap"><b id="updbar"></b></div></div></div>
+      <div class="btns"><span id="updb1">Later</span><span class="p" id="updb2"></span></div>
+    </div>
+  </div>
+  <div id="note" class="layer"></div>
+  <div id="sleep" class="abs"><div class="c"><svg viewBox="0 0 24 24" fill="none" stroke="#FEBC33" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><div class="clock" id="sleepclock">12:41 AM</div><div class="sub" id="sleepsub">Mac is asleep</div></div></div>
+  <div id="themeTag" class="abs"><span id="tagClassic">Classic</span><span id="tagGlass">Liquid Glass</span></div>
+  <div id="caption" class="abs"><div class="k" id="capk"></div><div class="h" id="caph"></div></div>
+  <div id="keycap" class="abs"><kbd>⌥</kbd><span>Option</span></div>
+  <div id="ripple" class="abs"></div>
+  <svg id="cursor" class="abs" viewBox="0 0 22 30"><path d="M2 2v22l6-6 4 9 4-2-4-8.5h8.5z" fill="#000" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/></svg>
+  <div id="title" class="abs card"><div class="glow" id="tglow"></div><div><img id="ticon" src="../site/assets/icon.png" alt=""><h1 id="tword">QuitX</h1><p id="ttag">A fresh start without a restart.</p></div></div>
+  <div id="end" class="abs card"><div class="glow"></div><div><img id="eicon" src="../site/assets/icon.png" alt=""><h1>QuitX</h1><p>Free and open source for macOS 14 and later.</p><span class="pill">Download from GitHub</span><div class="url">quitx.kiron.dev</div></div></div>
+  <div id="fade" class="abs"></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const ease = p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+const out = p => 1 - Math.pow(1 - p, 3);
+const back = p => { const c = 1.6; return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2); };
+const spring = p => p >= 1 ? 1 : 1 - Math.exp(-7 * p) * Math.cos(10 * p);
+const lin = x => x;
+const prog = (t, a, b, f = ease) => f(clamp((t - a) / (b - a)));
+const win = (t, a, b, d = .25) => Math.min(prog(t, a, a + d, out), 1 - prog(t, b - d, b, lin));
+const lerp = (a, b, p) => a + (b - a) * p;
+const between = (t, a, b) => t >= a && t < b;
+function css(el, s) { for (const k in s) el.style[k] = s[k]; }
+function show(el, o) { el.style.opacity = o; el.style.visibility = o <= .001 ? 'hidden' : 'visible'; }
+
+const Z = 1.6;
+const ALL = QX.APPS;
+const BG = QX.BACKGROUND;
+
+const T = {
+  title: 2.4,
+  aOpen: 3.0, aUncheck: 4.1, aQuit: 4.9, aConfirm: 5.9, aRows: 6.05, aToast: 7.0, aClose: 8.2,
+  fOpen: 8.7, fKey: 9.6, fKeyUp: 11.6, fClose: 12.0,
+  bOpen: 12.4, bGear: 13.2, bPick: 14.0, bIn: 14.15, bClose: 15.8,
+  eOpen: 16.2, eMore: 17.0, ePick: 17.9, eGone: 18.05, eClose: 19.4,
+  sIn: 19.8, sHot: 22.0, nIn: 22.6, rIn: 23.4, rClose: 25.6,
+  slWin: 26.0, slToggle: 26.9, slSleep: 28.0, slWake: 30.0, slEnd: 31.2,
+  thOpen: 31.4, thSwap: 32.8, thClose: 34.6,
+  lwIn: 34.8, lwClose: 35.9, lwGone: 36.3, lwEnd: 37.0,
+  uDot: 37.2, uMenu: 38.0, uClick: 38.8, uDl0: 39.1, uDl1: 40.7, uReady: 41.3, uRestart: 42.1,
+  end: 42.6, total: 46.0,
+};
+
+const SFX = [
+  [0.15, 'swell'], [0.7, 'logo'],
+  [T.aOpen, 'click'], [T.aOpen + .02, 'whoosh'], [T.aUncheck, 'click'], [T.aUncheck + .01, 'tick'],
+  [T.aQuit, 'click'], [T.aQuit + .05, 'pop', 7], [T.aConfirm, 'click'], [T.aRows, 'laser'],
+  ...Array.from({ length: 14 }, (_, k) => [T.aRows + .12 + k * .06, 'pop', k]),
+  [T.aToast, 'success'], [T.aClose, 'swoosh'],
+  [T.fOpen, 'click'], [T.fOpen + .02, 'whoosh'], [T.fKey, 'key'], [T.fKey + .15, 'zap'], [T.fClose, 'swoosh'],
+  [T.bOpen, 'click'], [T.bOpen + .02, 'whoosh'], [T.bGear, 'click'], [T.bPick, 'click'], [T.bIn, 'shimmer'], [T.bClose, 'swoosh'],
+  [T.eOpen, 'click'], [T.eOpen + .02, 'whoosh'], [T.eMore, 'click'], [T.ePick, 'click'], [T.eGone, 'lock'], [T.eClose, 'swoosh'],
+  [T.sIn, 'blip'], [T.sHot, 'alarm'], [T.nIn, 'notify'], [T.rIn, 'whoosh'], [T.rClose, 'swoosh'],
+  [T.slWin, 'whoosh'], [T.slToggle, 'click'], [T.slSleep, 'sleep'], [T.slWake, 'wake'],
+  [T.thOpen, 'click'], [T.thOpen + .02, 'whoosh'], [T.thSwap, 'glass'], [T.thClose, 'swoosh'],
+  [T.lwClose, 'click'], [T.lwGone, 'laser'],
+  [T.uDot, 'notify'], [T.uMenu, 'click'], [T.uMenu + .02, 'whoosh'], [T.uClick, 'click'], [T.uDl0, 'download'], [T.uReady, 'success'], [T.uRestart, 'click'],
+  [T.end, 'swell'], [T.end + .35, 'logo'],
+];
+
+const caps = [
+  [T.aOpen - .3, T.aClose + .2, '01', 'Quit one, some or all', 'One list. One click.'],
+  [T.aConfirm - .9, T.aRows, '02', 'Confirm before quit', 'No accidents.'],
+  [T.aRows, T.aClose + .2, '03', 'Play sounds on quit', 'Pew pew. Gone.'],
+  [T.fOpen - .2, T.fClose + .2, '04', 'Normal quit vs force quit', 'Stuck app? Hold Option.'],
+  [T.bOpen - .2, T.bClose + .2, '05', 'View background apps', 'See what’s hiding.'],
+  [T.eOpen - .2, T.eClose + .2, '06', 'Exclude apps', 'Some apps never quit.'],
+  [T.sIn - .2, T.sHot - .1, '07', 'Menu bar stats', 'CPU, memory, GPU, battery.'],
+  [T.sHot - .1, T.rClose + .2, '08', 'CPU & memory warnings', 'Too hot? You get a heads-up.'],
+  [T.slWin - .2, T.slEnd + .1, '09', 'Quit apps when Mac sleeps', 'Wake up to a clean slate.'],
+  [T.thOpen - .2, T.thClose + .2, '10', 'Classic or Liquid Glass', 'Your Mac, your look.'],
+  [T.lwIn - .1, T.lwEnd + .1, '11', 'Quit when the last window closes', 'Close it, and it’s gone.'],
+  [T.uDot - .1, T.end, '12', 'Updates from GitHub', 'Verified, then swapped in.'],
+];
+
+let L = { qx: [0, 0] };
+
+function anchorInfo(zoom) {
+  const qr = $('qx').getBoundingClientRect();
+  const cx = qr.left + qr.width / 2;
+  const left = Math.min(cx - 135 * zoom, 1440 - 270 * zoom - 8);
+  return { left, arrowX: (cx - left) / zoom, top: qr.bottom + 1 };
+}
+
+function anchorPop(el, zoom) {
+  const a = anchorInfo(zoom);
+  el.style.zoom = zoom;
+  el.style.left = (a.left / zoom) + 'px';
+  el.style.top = (a.top / zoom) + 'px';
+}
+
+function rowFade(names, t0, step, dur = .3) {
+  const style = {};
+  names.forEach((n, k) => {
+    const a = t0 + k * step;
+    const g = prog(currentT, a, a + dur, out);
+    if (g > 0) style[n] = `height:${25 * (1 - g)}px;margin-top:${-2 * g}px;opacity:${1 - prog(currentT, a, a + dur * .6, lin)};transform:translateX(${g * 14}px)`;
+  });
+  return style;
+}
+
+let currentT = 0;
+function popState(t) {
+  if (between(t, T.aOpen, T.aClose + .3)) {
+    const quitNames = ALL.filter(a => a.n !== 'Music').map(a => a.n);
+    const gone = t >= T.aRows + .12 + 13 * .06 + .3;
+    const apps = gone ? ALL.filter(a => a.n === 'Music') : ALL;
+    const unchecked = t >= T.aUncheck;
+    const o = { apps, hover: t >= T.aUncheck - .4 && t < T.aQuit - .3 ? 'Music' : null, unselected: unchecked ? ['Music'] : [] };
+    if (gone) { o.selected = []; o.unselected = []; }
+    o.press = between(t, T.aQuit - .05, T.aQuit + .12);
+    if (between(t, T.aQuit + .05, T.aRows)) o.overlay = QX.confirm({ count: 14, all: false, press: between(t, T.aConfirm - .05, T.aConfirm + .12) });
+    if (!gone && t >= T.aRows) o.rowStyle = rowFade(quitNames, T.aRows + .12, .06);
+    if (between(t, T.aToast, T.aClose + .3)) o.toast = '14 apps quit';
+    return { o, open: [T.aOpen, T.aClose], zoom: Z };
+  }
+  if (between(t, T.fOpen, T.fClose + .3)) {
+    return { o: { apps: ALL.slice(0, 12), force: between(t, T.fKey, T.fKeyUp), hover: 'Google Chrome' }, open: [T.fOpen, T.fClose], zoom: Z };
+  }
+  if (between(t, T.bOpen, T.bClose + .3)) {
+    const shown = t >= T.bIn;
+    const base = ALL.slice(0, 9);
+    let apps = base;
+    const rs = {};
+    if (shown) {
+      apps = [...base.slice(0, 3), BG[0], BG[1], base[3], BG[2], ...base.slice(4)];
+      BG.forEach((b, k) => {
+        const g = prog(t, T.bIn + k * .1, T.bIn + k * .1 + .35, out);
+        rs[b.n] = `height:${25 * g}px;opacity:${g}`;
+      });
+    }
+    return { o: { apps, gearOn: between(t, T.bGear - .05, T.bPick + .1), hl: t >= T.bIn + .4 ? 'Docker Desktop' : null, rowStyle: rs }, open: [T.bOpen, T.bClose], zoom: Z };
+  }
+  if (between(t, T.eOpen, T.eClose + .3)) {
+    const base = ALL.slice(0, 11);
+    const rs = {};
+    if (t >= T.eGone) { const g = prog(t, T.eGone, T.eGone + .4, out); rs['Music'] = `height:${25 * (1 - g)}px;margin-top:${-2 * g}px;opacity:${1 - g}`; }
+    const apps = t >= T.eGone + .45 ? base.filter(a => a.n !== 'Music') : base;
+    return { o: { apps, hover: t >= T.eOpen + .4 && t < T.eGone ? 'Music' : null, moreOn: between(t, T.eMore - .05, T.ePick + .05) ? 'Music' : null, rowStyle: rs }, open: [T.eOpen, T.eClose], zoom: Z };
+  }
+  if (between(t, T.thOpen, T.thClose + .3)) {
+    return { o: { apps: ALL.slice(0, 10), hover: 'Music' }, open: [T.thOpen, T.thClose], zoom: Z, theme: true };
+  }
+  return null;
+}
+
+function renderPop(t) {
+  const st = popState(t);
+  const pop = $('pop');
+  if (!st) { show(pop, 0); pop.innerHTML = ''; return; }
+  st.o.arrowX = anchorInfo(st.zoom).arrowX;
+  if (st.theme) {
+    const g = prog(t, T.thSwap, T.thSwap + .5);
+    pop.innerHTML = `<div style="position:relative"><div style="opacity:${1 - g}">${QX.popover(st.o)}</div><div style="position:absolute;inset:0;opacity:${g}">${QX.popover(Object.assign({}, st.o, { glass: true }))}</div></div>`;
+  } else {
+    pop.innerHTML = QX.popover(st.o);
+  }
+  anchorPop(pop, st.zoom);
+  const o = win(t, st.open[0], st.open[1] + .25, .2);
+  show(pop, o);
+  pop.firstElementChild.style.transformOrigin = '50% 0';
+  pop.firstElementChild.style.transform = `scale(${lerp(.95, 1, prog(t, st.open[0], st.open[0] + .45, spring))})`;
+}
+
+function renderMenus(t) {
+  const m = $('menu'), m2 = $('menu2');
+  m.innerHTML = ''; m2.innerHTML = ''; show(m, 0); show(m2, 0);
+  if (between(t, T.bGear, T.bPick + .25)) {
+    m.innerHTML = QX.menu([{ t: 'Refresh Apps', icon: 'refresh', k: '⌘R' }, { t: 'View Background Apps', icon: 'eye', k: '⌘B', on: t >= T.bPick - .45, id: 'mBg' }, { t: 'Reopen Recently Quit', icon: 'undo', chev: true }, '-', { t: 'Settings', icon: 'settings', k: '⌘,' }, { t: 'Help', icon: 'help', k: '⌘?' }, { t: 'Quit', icon: 'quit', k: '⌘Q' }]);
+    const g = document.querySelector('#pop [data-role="gear"]');
+    if (g) {
+      const r = g.getBoundingClientRect();
+      m.style.zoom = 1.4;
+      m.style.left = Math.min(r.left - 8, 1430 - 236 * 1.4) / 1.4 + 'px';
+      m.style.top = (r.bottom + 4) / 1.4 + 'px';
+    }
+    show(m, win(t, T.bGear, T.bPick + .25, .12));
+  }
+  if (between(t, T.eMore, T.ePick + .25)) {
+    m2.innerHTML = QX.menu([{ t: 'Quit', icon: 'quit', k: '⌘Q' }, { t: 'Force Quit', icon: 'boltLine', k: '⌥⌘Q' }, { t: 'Restart', icon: 'restart', k: '⌘R' }, { t: 'Quit In', icon: 'timer', chev: true }, { t: 'Quit Other Apps', icon: 'others' }, '-', { t: 'Add to Exclude List', icon: 'nosign', k: '⌘E', on: t >= T.ePick - .45, id: 'mEx' }, { t: 'Reveal in Finder', icon: 'finder', k: '⌘F' }]);
+    const r = document.querySelector('#pop [data-app="Music"] .more');
+    if (r) {
+      const rr = r.getBoundingClientRect();
+      m2.style.zoom = 1.4;
+      m2.style.left = (rr.left - 236 * 1.4 - 6) / 1.4 + 'px';
+      m2.style.top = (rr.top - 4) / 1.4 + 'px';
+    }
+    show(m2, win(t, T.eMore, T.ePick + .25, .12));
+  }
+  if (between(t, T.uMenu, T.uClick + .25)) {
+    m.innerHTML = QX.menu([{ t: 'Update to v1.1.9…', dot: true, on: t >= T.uClick - .45, id: 'mUp' }, '-', { t: 'Settings', icon: 'settings', k: '⌘,' }, { t: 'Help', icon: 'help', k: '⌘?' }, { t: "What's New", icon: 'sparkles', k: '⌘N' }, { t: 'Check for Updates', icon: 'refresh', k: '⌘U' }, { t: 'About', icon: 'info', k: '⌘I' }, '-', { t: 'Quit', icon: 'quit', k: '⌘Q' }]);
+    const qr = $('qx').getBoundingClientRect();
+    m.style.zoom = 1.15;
+    m.style.left = Math.min(qr.left - 4, 1430 - 236 * 1.15) / 1.15 + 'px';
+    m.style.top = (qr.bottom + 4) / 1.15 + 'px';
+    show(m, win(t, T.uMenu, T.uClick + .25, .12));
+  }
+}
+
+function renderStats(t) {
+  const on = between(t, T.sIn, T.rClose + .6);
+  const g = on ? prog(t, T.sIn, T.sIn + .5, out) * (1 - prog(t, T.rClose + .2, T.rClose + .6, lin)) : 0;
+  const ramp = prog(t, T.sHot - 1.2, T.sHot, ease);
+  const cpu = Math.round(lerp(12 + Math.sin(t * 6) * 2, 92, ramp));
+  const mem = lerp(9.4, 13.8, ramp).toFixed(1);
+  $('stats').innerHTML = QX.stats({ cpu: `${cpu}%`, mem: `${mem} GB`, gpu: `${Math.round(8 + 4 * Math.sin(t * 3))}%`, bat: '82%' });
+  const s = $('stats').firstElementChild;
+  if (s && t >= T.sHot - .3) s.querySelector('span').style.color = '#FF9F0A';
+  const w = $('stats').scrollWidth;
+  $('statsWrap').style.width = `${w * g}px`;
+  $('statsWrap').style.opacity = g;
+  $('statsWrap').style.marginRight = g > 0 ? '0' : '-14px';
+  $('sysbatt').style.display = g > .01 ? 'none' : 'block';
+}
+
+function renderRescue(t) {
+  const r = $('rescue');
+  if (!between(t, T.rIn, T.rClose + .3)) { show(r, 0); r.innerHTML = ''; return; }
+  r.innerHTML = QX.rescue({ arrowX: anchorInfo(Z).arrowX, title: 'High CPU usage', detail: 'System CPU stayed at 92% (limit 80%). QuitX wants to quit inactive apps. Your call.', targets: [{ n: 'Google Chrome', i: 'chrome', v: '48%' }, { n: 'Docker Desktop', v: '21%' }, { n: 'Visual Studio Code', i: 'vscode', v: '17%' }] });
+  anchorPop(r, Z);
+  const o = win(t, T.rIn, T.rClose + .25, .2);
+  show(r, o);
+  r.firstElementChild.style.transformOrigin = '50% 0';
+  r.firstElementChild.style.transform = `scale(${lerp(.95, 1, prog(t, T.rIn, T.rIn + .45, spring))})`;
+}
+
+function renderNote(t) {
+  const n = $('note');
+  if (!between(t, T.nIn, T.rClose)) { show(n, 0); n.innerHTML = ''; return; }
+  n.innerHTML = QX.note({ title: 'High CPU usage', body: 'System CPU load stayed at 92% (limit 80%). QuitX will ask you before quitting inactive apps.' });
+  n.style.zoom = 1.2;
+  const p = prog(t, T.nIn, T.nIn + .5, out) * (1 - prog(t, T.rIn - .2, T.rIn + .2, lin));
+  n.style.left = (1440 - 12 - 344 * 1.2) / 1.2 + 'px';
+  n.style.top = '36px';
+  n.style.transform = `translateX(${(1 - prog(t, T.nIn, T.nIn + .5, out)) * 380}px)`;
+  show(n, p);
+}
+
+function renderSettings(t) {
+  const s = $('settingsWin');
+  if (!between(t, T.slWin, T.slSleep + .2)) { show(s, 0); s.innerHTML = ''; return; }
+  s.innerHTML = QX.settings({ tab: 'Automation', content: QX.automation({ sleep: t >= T.slToggle, hl: t >= T.slToggle ? 'sleep' : null }) });
+  s.style.zoom = 1.15;
+  s.style.left = (720 - 300 * 1.15) / 1.15 + 'px';
+  s.style.top = 150 / 1.15 + 'px';
+  const o = prog(t, T.slWin, T.slWin + .35, out) * (1 - prog(t, T.slSleep - .2, T.slSleep + .2, lin));
+  show(s, o);
+  s.firstElementChild.style.transform = `scale(${lerp(.96, 1, prog(t, T.slWin, T.slWin + .5, spring))})`;
+}
+
+function measure(key, t, sel, dx = .5, dy = .5) {
+  render(t, true);
+  const el = typeof sel === 'string' ? document.querySelector(sel) : sel();
+  if (!el) { L[key] = L.qx; return; }
+  const r = el.getBoundingClientRect();
+  L[key] = [r.left + r.width * dx, r.top + r.height * dy];
+}
+
+function path(t, pts) {
+  if (t <= pts[0][0]) return [pts[0][1], pts[0][2]];
+  for (let i = 1; i < pts.length; i++) {
+    const [t1, x1, y1] = pts[i], [t0, x0, y0] = pts[i - 1];
+    if (t <= t1) {
+      const p = ease((t - t0) / Math.max(1e-6, t1 - t0));
+      const arc = Math.sin(p * Math.PI) * Math.min(40, Math.hypot(x1 - x0, y1 - y0) * .08);
+      return [lerp(x0, x1, p) + arc * .4, lerp(y0, y1, p) - arc];
+    }
+  }
+  const l = pts[pts.length - 1]; return [l[1], l[2]];
+}
+
+let CURSOR = null;
+function buildCursor() {
+  measure('qx', 1, '#qx');
+  measure('aUnc', T.aUncheck - .1, '#pop [data-app="Music"] .qx-cb');
+  measure('aBtn', T.aQuit - .1, '#pop [data-role="quit"]');
+  measure('aOk', T.aConfirm - .1, '#pop [data-role="confirm"]');
+  measure('fRow', T.fKey, '#pop [data-app="Google Chrome"] .pw');
+  measure('bGear', T.bGear - .1, '#pop [data-role="gear"]');
+  measure('bItem', T.bPick - .1, '#mBg', .3);
+  measure('eMore', T.eMore - .1, '#pop [data-app="Music"] .more');
+  measure('eItem', T.ePick - .1, '#mEx', .3);
+  measure('rBtn', T.rIn + 1, '#rescue .btns span');
+  measure('slTog', T.slToggle - .1, '#settingsWin #r-sleep .qx-cb');
+  measure('close1', T.lwClose - .1, '#close1');
+  measure('uItem', T.uClick - .1, '#mUp', .3);
+  measure('uBtn', T.uRestart - .1, '#updb2');
+  const q = L.qx;
+  CURSOR = [
+    [T.title, 760, 560], [T.aOpen - .35, ...q], [T.aOpen + .4, ...q],
+    [T.aUncheck - .3, ...L.aUnc], [T.aQuit - .45, ...L.aUnc], [T.aQuit - .05, ...L.aBtn], [T.aConfirm - .4, ...L.aBtn], [T.aConfirm - .05, ...L.aOk],
+    [T.aClose - .3, L.aOk[0] + 30, L.aOk[1] + 200],
+    [T.fOpen - .05, ...q], [T.fOpen + .4, ...q], [T.fKey - .1, ...L.fRow], [T.fClose - .3, ...L.fRow],
+    [T.bOpen - .05, ...q], [T.bOpen + .3, ...q], [T.bGear - .05, ...L.bGear], [T.bPick - .5, ...L.bGear], [T.bPick - .05, ...L.bItem], [T.bClose - .3, L.bItem[0], L.bItem[1] + 120],
+    [T.eOpen - .05, ...q], [T.eOpen + .3, ...q], [T.eMore - .05, ...L.eMore], [T.ePick - .5, ...L.eMore], [T.ePick - .05, ...L.eItem], [T.eClose - .3, L.eItem[0] + 40, L.eItem[1] + 160],
+    [T.sIn + .4, 900, 420], [T.rIn + .9, 900, 420], [T.rClose - .05, ...L.rBtn],
+    [T.slWin + .3, ...L.rBtn], [T.slToggle - .05, ...L.slTog], [T.slSleep, ...L.slTog],
+    [T.thOpen - .05, ...q], [T.thOpen + .4, ...q], [T.thClose - .2, q[0] - 120, q[1] + 300],
+    [T.lwClose - .05, ...L.close1], [T.uDot + .2, ...L.close1],
+    [T.uMenu - .05, ...q], [T.uMenu + .25, ...q], [T.uClick - .05, ...L.uItem], [T.uDl0 + .4, ...L.uItem], [T.uReady + .2, L.uBtn[0] + 40, L.uBtn[1] + 40], [T.uRestart - .05, ...L.uBtn], [T.end, ...L.uBtn],
+  ];
+}
+
+const CLICKS = [T.aOpen, T.aUncheck, T.aQuit, T.aConfirm, T.fOpen, T.bOpen, T.bGear, T.bPick, T.eOpen, T.eMore, T.ePick, T.rClose, T.slToggle, T.thOpen, T.lwClose, T.uMenu, T.uClick, T.uRestart];
+
+function render(t, measuring = false) {
+  currentT = t;
+  show($('title'), 1 - prog(t, T.title - .3, T.title + .2, lin));
+  const ip = prog(t, .3, 1.3, spring);
+  css($('ticon'), { transform: `scale(${lerp(.6, 1, ip)}) translateY(${(1 - ip) * 20}px)`, opacity: prog(t, .3, .7) });
+  css($('tglow'), { opacity: prog(t, .2, 1.4), transform: `scale(${lerp(.7, 1.05, prog(t, .2, 2.4))})` });
+  css($('tword'), { opacity: prog(t, .8, 1.3), transform: `translateY(${(1 - prog(t, .8, 1.4, out)) * 14}px)` });
+  css($('ttag'), { opacity: prog(t, 1.2, 1.7), transform: `translateY(${(1 - prog(t, 1.2, 1.8, out)) * 10}px)` });
+  show($('end'), prog(t, T.end, T.end + .5));
+  css($('eicon'), { transform: `scale(${lerp(.82, 1, prog(t, T.end, T.end + 1, spring))})` });
+  show($('fade'), Math.max(prog(t, T.total - .5, T.total, lin), 1 - prog(t, 0, .35, lin)));
+
+  const pre = prog(t, T.slWin - .5, T.slWin, out) * (1 - prog(t, T.slSleep - .1, T.slSleep + .1, lin));
+  const lw = t >= T.lwIn ? prog(t, T.lwIn, T.lwIn + .4, out) * (1 - prog(t, T.lwClose + .05, T.lwGone, lin)) : 0;
+  show($('doc1'), Math.max(pre, lw));
+  css($('doc1'), { transform: `scale(${t >= T.lwClose ? lerp(1, .9, prog(t, T.lwClose + .05, T.lwGone, lin)) : 1})` });
+  show($('doc2'), pre);
+  $('front').textContent = (t >= T.lwIn && t < T.lwGone + .3) ? 'TextEdit' : 'Finder';
+
+  const sl = between(t, T.slSleep, T.slWake + .6) ? Math.min(prog(t, T.slSleep, T.slSleep + .5), 1 - prog(t, T.slWake, T.slWake + .6, lin)) : 0;
+  show($('sleep'), sl);
+  const clockMin = Math.floor(lerp(41, 59, prog(t, T.slSleep, T.slWake, lin)));
+  $('sleepclock').textContent = `12:${clockMin} AM`;
+  $('sleepsub').textContent = 'Asleep · quit window 12 AM – 6 AM';
+  $('clock').innerHTML = t > T.slWake ? 'Fri Oct 23&nbsp;&nbsp;7:30 AM' : 'Fri Oct 23&nbsp;&nbsp;9:41 AM';
+
+  renderStats(t);
+  renderPop(t);
+  renderMenus(t);
+  renderRescue(t);
+  renderNote(t);
+  renderSettings(t);
+
+  const qxActive = popState(t) !== null || between(t, T.rIn, T.rClose) || between(t, T.uMenu, T.uClick + .1);
+  css($('qx'), { background: qxActive ? 'rgba(255,255,255,.22)' : 'transparent' });
+
+  const dotIn = prog(t, T.uDot, T.uDot + .35, back);
+  show($('qxdot'), t >= T.uRestart + .2 ? 0 : clamp(dotIn));
+  css($('qxdot'), { transform: `scale(${dotIn})` });
+  const ring = prog(t, T.uDot + .1, T.uDot + .9, out);
+  show($('qxring'), t > T.uDot && t < T.uDot + .9 ? (1 - ring) * .9 : 0);
+  css($('qxring'), { transform: `scale(${lerp(.6, 2.2, ring)})` });
+
+  const uO = win(t, T.uClick + .15, T.end + .2, .3);
+  show($('upd'), uO);
+  css($('upd'), { transform: `scale(${lerp(.95, 1, prog(t, T.uClick + .15, T.uClick + .6, spring))})` });
+  const dl = prog(t, T.uDl0, T.uDl1, x => 1 - Math.pow(1 - x, 1.6));
+  const downloading = t < T.uDl1;
+  const ready = t >= T.uReady;
+  $('updh').textContent = ready ? 'Ready to Install v1.1.9' : (downloading ? 'Downloading v1.1.9...' : 'Verifying Update...');
+  $('updt1').textContent = ready ? 'The latest version has been downloaded and verified.' : (downloading ? '' : 'Extracting and verifying package contents...');
+  $('updt2').innerHTML = ready ? 'QuitX will restart to finish installing the update.' : (downloading ? `<span>${(dl * 4.6).toFixed(1)} MB of 4.6 MB</span><span>${dl < 1 ? (2.1 + Math.sin(t * 7) * .3).toFixed(1) + ' MB/s' : ''}</span>` : '');
+  $('updbarwrap').style.display = ready ? 'none' : 'block';
+  $('updbar').style.width = `${(downloading ? dl : 1) * 100}%`;
+  $('updb1').textContent = ready ? 'Later' : 'Cancel';
+  $('updb2').textContent = 'Restart & Update';
+  $('updb2').style.display = ready ? 'inline-flex' : 'none';
+  $('updbadge').style.background = ready ? '#30D158' : 'transparent';
+  $('updbadge').innerHTML = ready ? '<svg width="12" height="12" viewBox="0 0 12 12"><path d="M2.4 6.3l2.3 2.3L9.8 3.4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '';
+  css($('updbadge'), { transform: `scale(${ready ? prog(t, T.uReady, T.uReady + .4, back) : 0})` });
+  css($('updb2'), { filter: between(t, T.uRestart - .05, T.uRestart + .14) ? 'brightness(.86)' : 'none' });
+
+  const kO = win(t, T.fKey - .1, T.fKeyUp + .1, .15);
+  show($('keycap'), kO);
+  css($('keycap'), { transform: `scale(${lerp(.9, 1, kO)})` });
+  const tagO = win(t, T.thOpen + .2, T.thClose, .25);
+  show($('themeTag'), tagO);
+  css($('themeTag'), { left: '96px', top: '130px' });
+  $('tagClassic').className = t < T.thSwap + .2 ? 'on' : '';
+  $('tagGlass').className = t >= T.thSwap + .2 ? 'on' : '';
+
+  let co = 0;
+  for (const [a, b, n, k, h] of caps) {
+    const o = win(t, a, b, .3);
+    if (o > 0) { $('capk').innerHTML = `<i>${n}</i>${k}`; $('caph').textContent = h; co = Math.max(co, o); css($('caption'), { transform: `translateY(${(1 - o) * 12}px)` }); }
+  }
+  show($('caption'), co);
+
+  const statsZoom = prog(t, T.sIn - .3, T.sIn + .6) * (1 - prog(t, T.sHot + .2, T.nIn + .4));
+  css($('cam'), { transformOrigin: '86% 0%', transform: `scale(${1 + .5 * statsZoom})` });
+
+  if (measuring || !CURSOR) return;
+  const [cx, cy] = path(t, CURSOR);
+  const press = CLICKS.some(p => t >= p - .05 && t < p + .09);
+  css($('cursor'), { left: `${cx - 3}px`, top: `${cy - 2}px`, transform: `scale(${press ? .85 : 1})` });
+  show($('cursor'), t < T.title - .2 || t > T.end || between(t, T.slSleep, T.slWake + .3) ? 0 : 1);
+  let rp = -1;
+  for (const c of CLICKS) if (t >= c && t < c + .4) rp = (t - c) / .4;
+  show($('ripple'), rp >= 0 ? (1 - rp) * .6 : 0);
+  css($('ripple'), { left: `${cx}px`, top: `${cy}px`, transform: `scale(${lerp(.3, 1.4, out(clamp(rp)))})` });
+}
+
+window.render = render;
+window.TOTAL = T.total;
+window.SFX = SFX;
+window.addEventListener('load', () => {
+  buildCursor();
+  if (location.hash === '#play') { const s = performance.now(); const loop = () => { render(((performance.now() - s) / 1000) % T.total); requestAnimationFrame(loop); }; loop(); }
+  else render(5);
+  window.READY = true;
+});
+</script>
+</body>
+</html>

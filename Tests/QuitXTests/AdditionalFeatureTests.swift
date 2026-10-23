@@ -208,9 +208,9 @@ struct SettingsTabTests {
     @Test("SettingsTab content heights")
     func testSettingsTabContentHeights() {
         if #available(macOS 26.0, *) {
-            #expect(SettingsTab.general.contentHeight == 326)
+            #expect(SettingsTab.general.contentHeight == 386)
         } else {
-            #expect(SettingsTab.general.contentHeight == 296)
+            #expect(SettingsTab.general.contentHeight == 356)
         }
         #expect(SettingsTab.automation.contentHeight == 416)
         #expect(SettingsTab.advanced.contentHeight == 266)

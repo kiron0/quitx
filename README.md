@@ -5,7 +5,7 @@
 <h1 align="center">QuitX for macOS</h1>
 
 <p align="center">
-  Fast, minimal menubar companion to quit, force quit, and manage running macOS apps.
+  Fast, minimal menu bar companion to quit, force quit, and manage running macOS apps.
 </p>
 
 <p align="center">
@@ -21,30 +21,53 @@
   </a>
 </p>
 
+<p align="center"><a href="https://quitx.kiron.dev">quitx.kiron.dev</a></p>
+
 ---
 
-## Preview
-
 <p align="center">
-  <img src="Support/Screenshots/screenshot-1.jpg" width="100%" alt="QuitX Overview" />
+  <img src="Support/Screenshots/hero.jpg" width="100%" alt="The QuitX menu listing running apps with a Quit All button" />
 </p>
+
+## Features
+
+| | |
+|---|---|
+| **Quit one, some, or all** | Every running app in one list, grouped with its windows and helpers. Search, sort by name, CPU or memory. |
+| **Confirm before quit** | A quick confirmation before Quit All, and optionally before single quits and restarts. |
+| **Normal quit or force quit** | Normal quit lets apps save first. Hold <kbd>⌥</kbd> to force quit, or make Force quit the default. |
+| **View background apps** | Show helpers and agents that never appear in the Dock, with identical instances grouped. <kbd>⌘B</kbd> |
+| **Exclude apps** | Excluded apps leave the list and are never quit, manually or automatically. Music apps can be protected with one switch. |
+| **Menu bar stats** | Live CPU, memory, GPU and battery in the menu bar, as icons or text. Click a stat for a detailed view. |
+| **CPU and memory warnings** | When CPU or memory stays over your limit, QuitX notifies you and offers to quit inactive apps. |
+| **Quit apps when your Mac sleeps** | Close everything on sleep, only between the hours you pick. |
+| **Classic or Liquid Glass** | The solid classic look, or translucent Liquid Glass on macOS 26. |
+| **Sounds on quit** | A short arcade laser every time an app goes. Switch it off any time. |
+| **Last window closes, app quits** | Close an app's last window and it quits. Spaces, full screen and minimize never count. |
+| **Automation** | Quit inactive apps after a while, per-app quit timers, and a battery saver. |
+| **Global shortcuts** | Open the menu, Quit All or Force Quit All from anywhere. |
+| **In-app updates** | Updates straight from GitHub Releases, verified before install. |
 
 <table width="100%">
   <tr>
-    <td width="50%">
-      <img src="Support/Screenshots/screenshot-2.jpg" alt="Optional Force Quit" />
-      <p align="center"><strong>Force Quit Mode</strong><br/><sub>Hold <kbd>⌥ Option</kbd> to toggle all actions to force quit.</sub></p>
-    </td>
-    <td width="50%">
-      <img src="Support/Screenshots/screenshot-3.jpg" alt="Background Apps" />
-      <p align="center"><strong>Background Processes</strong><br/><sub>Inspect and terminate hidden background processes.</sub></p>
-    </td>
+    <td width="50%"><img src="Support/Screenshots/force.jpg" alt="Force Quit All while Option is held" /><p align="center"><strong>Normal or force quit</strong></p></td>
+    <td width="50%"><img src="Support/Screenshots/confirm.jpg" alt="Quit 14 Apps? confirmation" /><p align="center"><strong>Confirm before quit</strong></p></td>
   </tr>
   <tr>
-    <td colspan="2">
-      <img src="Support/Screenshots/screenshot-4.jpg" alt="Preferences and Shortcuts" />
-      <p align="center"><strong>Preferences & Shortcuts</strong><br/><sub>Configure auto-quit timers, exclusions, global shortcuts, and audio cues.</sub></p>
-    </td>
+    <td width="50%"><img src="Support/Screenshots/background.jpg" alt="Background apps in the QuitX list" /><p align="center"><strong>Background apps</strong></p></td>
+    <td width="50%"><img src="Support/Screenshots/exclude.jpg" alt="Add to Exclude List in a row menu" /><p align="center"><strong>Exclude apps</strong></p></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="Support/Screenshots/stats.jpg" alt="CPU, memory, GPU and battery in the menu bar" /><p align="center"><strong>Menu bar stats</strong></p></td>
+    <td width="50%"><img src="Support/Screenshots/health.jpg" alt="High CPU usage warning" /><p align="center"><strong>CPU and memory warnings</strong></p></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="Support/Screenshots/sleep.jpg" alt="Quit apps when Mac sleeps setting" /><p align="center"><strong>Quit on sleep</strong></p></td>
+    <td width="50%"><img src="Support/Screenshots/theme.jpg" alt="Classic and Liquid Glass styles" /><p align="center"><strong>Classic or Liquid Glass</strong></p></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="Support/Screenshots/sounds.jpg" alt="Play cool sounds setting" /><p align="center"><strong>Sounds on quit</strong></p></td>
+    <td width="50%"><img src="Support/Screenshots/updates.jpg" alt="Restart to Update and the Update window" /><p align="center"><strong>In-app updates</strong></p></td>
   </tr>
 </table>
 
@@ -55,8 +78,10 @@
 ### Terminal
 
 ```bash
-curl -fsSL https://quitx.js.org/install | bash
+curl -fsSL https://quitx.kiron.dev/install | bash
 ```
+
+The script downloads the latest release from GitHub, checks its SHA-256 checksum, bundle and code signature, installs QuitX in `/Applications` and opens it. Don't run it with `sudo`; it asks for a password only if `/Applications` needs one. Read it first at [quitx.kiron.dev/install](https://quitx.kiron.dev/install) or in [`site/install`](site/install).
 
 ### Manual
 
@@ -64,20 +89,16 @@ curl -fsSL https://quitx.js.org/install | bash
 2. Drag **QuitX** into `/Applications`.
 3. Launch from Applications or Spotlight. It lives in your menu bar.
 
----
-
-## CLI Companion
-
-QuitX also includes a Node-based terminal CLI:
-
-```bash
-npm install -g @coreify/quitx
-quitx
-```
-
-The macOS app stores preferences independently in standard `UserDefaults` (`io.coreify.quitx`).
+QuitX updates itself from GitHub Releases. Turn automatic checks and background downloads on or off in Settings → General.
 
 ---
+
+## Docs
+
+- [How QuitX works](docs/HOW-IT-WORKS.md)
+- [Signing releases](docs/SIGNING.md)
+- Website source: [`site/`](site), deployed by [`pages.yml`](.github/workflows/pages.yml)
+- Screenshots and demo video: [`video/`](video) (`node video/render-shots.mjs`, `node video/render.mjs`)
 
 ## License
 

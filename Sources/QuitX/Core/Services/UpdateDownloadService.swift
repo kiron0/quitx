@@ -20,8 +20,6 @@ enum UpdateError: LocalizedError, Equatable {
     case invalidBundle
     case invalidChecksum
     case invalidSignature
-    case missingDigest
-    case missingSignature
     case versionMismatch
     case destinationNotWritable(String)
     case scriptExecutionFailed(String)
@@ -43,11 +41,7 @@ enum UpdateError: LocalizedError, Equatable {
         case .invalidChecksum:
             return "Update download checksum does not match the expected value."
         case .invalidSignature:
-            return "Update application code signature is missing or invalid."
-        case .missingDigest:
-            return "Update metadata is missing its checksum digest."
-        case .missingSignature:
-            return "Update metadata is missing its publisher signature."
+            return "The update is not signed by the same publisher as this copy of QuitX."
         case .versionMismatch:
             return "Update application version does not match the expected version."
         case .destinationNotWritable(let path):
@@ -77,18 +71,23 @@ final class UpdateDownloadService: NSObject, ObservableObject {
     private var stagedDirURL: URL?
     private(set) var currentDownloadURL: URL?
     private(set) var currentDigest: String?
-    private(set) var currentEdSignature: String?
+    private(set) var installWhenReady = false
 
     override init() {
         super.init()
     }
 
-    func startDownload(from url: URL, version: String, digest: String? = nil, edSignature: String? = nil) {
+    var readyVersion: String? {
+        if case .ready(_, let version) = state { return version }
+        return nil
+    }
+
+    func startDownload(from url: URL, version: String, digest: String? = nil, installWhenReady: Bool = false) {
         cancelDownload()
 
         currentDownloadURL = url
         currentDigest = digest
-        currentEdSignature = edSignature
+        self.installWhenReady = installWhenReady
         targetVersion = version
         downloadProgress = 0.0
         bytesDownloaded = 0
@@ -113,8 +112,7 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         startDownload(
             from: url,
             version: targetVersion,
-            digest: currentDigest,
-            edSignature: currentEdSignature
+            digest: currentDigest
         )
     }
 
@@ -136,7 +134,7 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         targetVersion = ""
         currentDownloadURL = nil
         currentDigest = nil
-        currentEdSignature = nil
+        installWhenReady = false
     }
 
     private func isActive(session: URLSession, task: URLSessionTask) -> Bool {
@@ -274,40 +272,7 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         }
     }
 
-    nonisolated static func verifyEdSignature(
-        of url: URL,
-        signatureBase64: String,
-        publicKeyBase64: String = QuitXConstants.compiledEdPublicKey
-    ) throws {
-        guard let signature = Data(base64Encoded: signatureBase64),
-              let publicKeyRaw = Data(base64Encoded: publicKeyBase64),
-              let publicKey = try? Curve25519.Signing.PublicKey(rawRepresentation: publicKeyRaw)
-        else {
-            throw UpdateError.invalidSignature
-        }
-
-        let payload = try Data(contentsOf: url)
-        guard publicKey.isValidSignature(signature, for: payload) else {
-            throw UpdateError.invalidSignature
-        }
-    }
-
-    nonisolated static func currentTeamIdentifier() -> String? {
-        let bundleURL = Bundle.main.bundleURL
-        var code: SecStaticCode?
-        guard SecStaticCodeCreateWithPath(bundleURL as CFURL, [], &code) == errSecSuccess,
-              let code
-        else { return nil }
-
-        var info: CFDictionary?
-        guard SecCodeCopySigningInformation(code, SecCSFlags(rawValue: kSecCSSigningInformation), &info) == errSecSuccess,
-              let info = info as? [String: Any]
-        else { return nil }
-
-        return info[kSecCodeInfoTeamIdentifier as String] as? String
-    }
-
-    nonisolated static func validateSignature(of appURL: URL, expectedTeamIdentifier: String?) throws {
+    nonisolated static func validateSignature(of appURL: URL, requirement: SecRequirement? = currentDesignatedRequirement()) throws {
         var code: SecStaticCode?
         guard SecStaticCodeCreateWithPath(appURL as CFURL, [], &code) == errSecSuccess,
               let code
@@ -318,35 +283,29 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         let flags = SecCSFlags(
             rawValue: kSecCSCheckAllArchitectures | kSecCSStrictValidate | kSecCSCheckNestedCode
         )
-
-        let unsignedStatus = SecStaticCodeCheckValidity(code, flags, nil)
-        guard unsignedStatus == errSecSuccess else {
+        guard SecStaticCodeCheckValidity(code, flags, requirement) == errSecSuccess else {
             throw UpdateError.invalidSignature
         }
+    }
 
-        guard let expectedTeamIdentifier, !expectedTeamIdentifier.isEmpty else { return }
-
-        guard let bundleId = Bundle(url: appURL)?.bundleIdentifier else {
-            throw UpdateError.invalidSignature
-        }
-
-        let requirementText = """
-        anchor apple generic and
-        identifier "\(bundleId)" and
-        certificate leaf[subject.OU] = "\(expectedTeamIdentifier)"
-        """
-
+    nonisolated static func currentDesignatedRequirement() -> SecRequirement? {
+        var selfCode: SecCode?
+        guard SecCodeCopySelf([], &selfCode) == errSecSuccess, let selfCode else { return nil }
+        var staticCode: SecStaticCode?
+        guard SecCodeCopyStaticCode(selfCode, [], &staticCode) == errSecSuccess, let staticCode else { return nil }
+        guard !isAdHocSigned(staticCode) else { return nil }
         var requirement: SecRequirement?
-        guard SecRequirementCreateWithString(requirementText as CFString, [], &requirement) == errSecSuccess,
-              let requirement
-        else {
-            throw UpdateError.invalidSignature
-        }
+        guard SecCodeCopyDesignatedRequirement(staticCode, [], &requirement) == errSecSuccess else { return nil }
+        return requirement
+    }
 
-        let status = SecStaticCodeCheckValidity(code, flags, requirement)
-        guard status == errSecSuccess else {
-            throw UpdateError.invalidSignature
-        }
+    nonisolated static func isAdHocSigned(_ code: SecStaticCode) -> Bool {
+        var info: CFDictionary?
+        guard SecCodeCopySigningInformation(code, SecCSFlags(rawValue: kSecCSSigningInformation), &info) == errSecSuccess,
+              let dict = info as? [String: Any]
+        else { return true }
+        let flags = (dict[kSecCodeInfoFlags as String] as? NSNumber)?.uint32Value ?? 0
+        return flags & SecCodeSignatureFlags.adhoc.rawValue != 0
     }
 
     nonisolated static func validateUpdateBundle(at appURL: URL, expectedVersion: String) throws {
@@ -364,13 +323,15 @@ final class UpdateDownloadService: NSObject, ObservableObject {
             }
         }
 
-        try validateSignature(of: appURL, expectedTeamIdentifier: currentTeamIdentifier())
+        try validateSignature(of: appURL)
     }
 
-    nonisolated static func resolveDestinationAppURL() -> URL {
-        let mainBundle = Bundle.main.bundleURL
-        if mainBundle.pathExtension == "app" {
-            return mainBundle
+    nonisolated static func resolveDestinationAppURL(current: URL = Bundle.main.bundleURL) -> URL {
+        if current.pathExtension == "app" {
+            let readOnly = (try? current.resourceValues(forKeys: [.volumeIsReadOnlyKey]).volumeIsReadOnly) ?? false
+            if !current.path.contains("/AppTranslocation/") && !readOnly {
+                return current
+            }
         }
 
         let systemApp = URL(fileURLWithPath: "/Applications/QuitX.app")
@@ -384,69 +345,102 @@ final class UpdateDownloadService: NSObject, ObservableObject {
             return userApp
         }
 
-        return URL(fileURLWithPath: "/Applications/QuitX.app")
+        return systemApp
+    }
+
+    nonisolated static func shellQuoted(_ value: String) -> String {
+        "'" + value.replacingOccurrences(of: "'", with: "'\\''") + "'"
+    }
+
+    nonisolated static func adminAppleScript(runningScriptAt scriptPath: String, arguments: [String]) -> String {
+        let command = (["/bin/bash", scriptPath] + arguments).map(shellQuoted).joined(separator: " ")
+        let escaped = command
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+        return "do shell script \"\(escaped)\" with administrator privileges"
     }
 
     nonisolated static func generateRelaunchScript() -> String {
         return """
         #!/bin/bash
-        set -euo pipefail
+        set -uo pipefail
+
+        swap_app() {
+            local SRC_APP="$1"
+            local DEST_APP="$2"
+            local DEST_DIR
+            DEST_DIR="$(dirname "$DEST_APP")"
+            local NEW_APP="$DEST_DIR/.QuitX.new.$$"
+            local OLD_APP="$DEST_DIR/.QuitX.old.$$"
+
+            mkdir -p "$DEST_DIR" || return 1
+            rm -rf "$NEW_APP" "$OLD_APP"
+            ditto "$SRC_APP" "$NEW_APP" || { rm -rf "$NEW_APP"; return 1; }
+
+            if [ -e "$DEST_APP" ]; then
+                mv "$DEST_APP" "$OLD_APP" || { rm -rf "$NEW_APP"; return 1; }
+            fi
+
+            if mv "$NEW_APP" "$DEST_APP"; then
+                rm -rf "$OLD_APP"
+            else
+                rm -rf "$NEW_APP"
+                if [ -e "$OLD_APP" ]; then
+                    mv "$OLD_APP" "$DEST_APP"
+                fi
+                return 1
+            fi
+
+            xattr -rd com.apple.quarantine "$DEST_APP" 2>/dev/null || true
+            return 0
+        }
+
+        if [ "${1:-}" = "--swap" ]; then
+            swap_app "$2" "$3"
+            exit $?
+        fi
 
         TARGET_PID="$1"
         SRC_APP="$2"
         DEST_APP="$3"
+        CURRENT_APP="${4:-$3}"
+        ADMIN_SCRIPT="${5:-}"
 
         COUNT=0
         while kill -0 "$TARGET_PID" 2>/dev/null; do
             sleep 0.1
             COUNT=$((COUNT + 1))
-            if [ "$COUNT" -ge 50 ]; then
+            if [ "$COUNT" -ge 100 ]; then
                 break
             fi
         done
 
-        DEST_DIR="$(dirname "$DEST_APP")"
-        NEW_APP="$DEST_DIR/.QuitX.new.$$"
-        OLD_APP="$DEST_DIR/.QuitX.old.$$"
-
-        rm -rf "$NEW_APP" "$OLD_APP"
-
-        ditto "$SRC_APP" "$NEW_APP"
-
-        if [ -e "$DEST_APP" ]; then
-            mv "$DEST_APP" "$OLD_APP"
-        fi
-
-        if mv "$NEW_APP" "$DEST_APP"; then
-            rm -rf "$OLD_APP"
+        if [ -n "$ADMIN_SCRIPT" ]; then
+            /usr/bin/osascript -e "$ADMIN_SCRIPT" >/dev/null 2>&1
+            STATUS=$?
         else
-            rm -rf "$NEW_APP"
-
-            if [ -e "$OLD_APP" ]; then
-                mv "$OLD_APP" "$DEST_APP"
-            fi
-
-            exit 1
+            swap_app "$SRC_APP" "$DEST_APP"
+            STATUS=$?
         fi
 
-        xattr -rd com.apple.quarantine "$DEST_APP" 2>/dev/null || true
         rm -rf "$(dirname "$SRC_APP")"
 
-        open "$DEST_APP"
+        if [ "$STATUS" -eq 0 ] && [ -d "$DEST_APP" ]; then
+            open "$DEST_APP"
+        else
+            open "$CURRENT_APP"
+        fi
 
         rm -- "$0"
         """
     }
 
     func installAndRelaunch(stagedURL: URL) {
-        let destURL = Self.resolveDestinationAppURL()
+        let currentURL = Bundle.main.bundleURL
+        let destURL = Self.resolveDestinationAppURL(current: currentURL)
         let parentDir = destURL.deletingLastPathComponent()
-
-        guard FileManager.default.isWritableFile(atPath: parentDir.path) else {
-            let error = UpdateError.destinationNotWritable(parentDir.path)
-            state = .failed(message: error.localizedDescription)
-            return
-        }
+        let needsAdmin = !FileManager.default.isWritableFile(atPath: parentDir.path)
+            || (FileManager.default.fileExists(atPath: destURL.path) && !FileManager.default.isWritableFile(atPath: destURL.path))
 
         stagedDirURL = nil
 
@@ -457,6 +451,11 @@ final class UpdateDownloadService: NSObject, ObservableObject {
             try Self.generateRelaunchScript().write(to: scriptURL, atomically: true, encoding: .utf8)
             try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: scriptURL.path)
 
+            let adminScript = needsAdmin
+                ? Self.adminAppleScript(runningScriptAt: scriptURL.path, arguments: ["--swap", stagedURL.path, destURL.path])
+                : ""
+            let relaunchTarget = currentURL.pathExtension == "app" ? currentURL : destURL
+
             let process = Process()
             process.executableURL = URL(fileURLWithPath: "/bin/bash")
             process.arguments = [
@@ -466,7 +465,9 @@ final class UpdateDownloadService: NSObject, ObservableObject {
                 scriptURL.path,
                 String(ProcessInfo.processInfo.processIdentifier),
                 stagedURL.path,
-                destURL.path
+                destURL.path,
+                relaunchTarget.path,
+                adminScript
             ]
             process.standardInput = FileHandle.nullDevice
             process.standardOutput = FileHandle.nullDevice
@@ -477,7 +478,7 @@ final class UpdateDownloadService: NSObject, ObservableObject {
             NSApp.terminate(nil)
         } catch {
             try? FileManager.default.removeItem(at: scriptURL)
-            state = .failed(message: "Failed to launch updater: \(error.localizedDescription)")
+            state = .failed(message: UpdateError.scriptExecutionFailed(error.localizedDescription).localizedDescription)
         }
     }
 
@@ -555,22 +556,15 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         }
         let version = targetVersion
         let digest = currentDigest
-        let edSignature = currentEdSignature
         defer { finishSession(completedSession, task: completedTask) }
 
         do {
-            guard let digest, !digest.isEmpty else {
-                throw UpdateError.missingDigest
+            if let digest, !digest.isEmpty {
+                let dmgURL = persistentDMG
+                try await Task.detached {
+                    try Self.verifyDigest(of: dmgURL, expectedDigest: digest)
+                }.value
             }
-            guard let edSignature, !edSignature.isEmpty else {
-                throw UpdateError.missingSignature
-            }
-
-            let dmgURL = persistentDMG
-            try await Task.detached {
-                try Self.verifyDigest(of: dmgURL, expectedDigest: digest)
-                try Self.verifyEdSignature(of: dmgURL, signatureBase64: edSignature)
-            }.value
 
             guard isActive(session: completedSession, task: completedTask) else {
                 try? FileManager.default.removeItem(at: persistentDMG.deletingLastPathComponent())
@@ -597,6 +591,9 @@ final class UpdateDownloadService: NSObject, ObservableObject {
             }
 
             state = .ready(stagedURL: stagedURL, version: version)
+            if installWhenReady {
+                UpdateNotifier.notifyReady(version: version)
+            }
         } catch {
             guard isActive(session: completedSession, task: completedTask) else {
                 try? FileManager.default.removeItem(at: persistentDMG.deletingLastPathComponent())

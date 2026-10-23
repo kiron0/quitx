@@ -241,8 +241,13 @@ final class HogNotificationDelegate: NSObject, UNUserNotificationCenterDelegate 
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
+        let identifier = response.notification.request.identifier
         Task { @MainActor in
-            RescueConsentController.shared.reopenFromNotification()
+            if identifier.hasPrefix(UpdateNotifier.identifierPrefix) {
+                AppUpdateWindowController.shared.showCheckWindow()
+            } else {
+                RescueConsentController.shared.reopenFromNotification()
+            }
         }
         completionHandler()
     }
