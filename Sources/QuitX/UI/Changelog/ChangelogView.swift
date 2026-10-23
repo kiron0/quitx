@@ -143,8 +143,8 @@ struct ChangelogView: View {
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(QuitXTheme.accent)
 
-                    if release.version == currentVersion {
-                        Text("Current")
+                    if release.version == (state.releases.first?.version ?? currentVersion) {
+                        Text("Latest")
                             .font(.system(size: 8, weight: .bold))
                             .foregroundStyle(QuitXTheme.accent)
                             .padding(.horizontal, 4.5)
@@ -389,8 +389,8 @@ struct ChangelogView: View {
 
     private func releaseRow(_ release: ReleaseChangelog) -> some View {
         let isSelected = state.selection == release.version
-        let isCurrent = release.version == currentVersion
-        let symbol = isCurrent ? "sparkles" : "clock.arrow.circlepath"
+        let isLatest = release.version == (state.releases.first?.version ?? currentVersion)
+        let symbol = isLatest ? "sparkles" : "clock.arrow.circlepath"
 
         return Button {
             state.selection = release.version
@@ -398,7 +398,7 @@ struct ChangelogView: View {
             HStack(alignment: .top, spacing: 8) {
                 Image(systemName: symbol)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(isSelected ? QuitXTheme.accent : (isCurrent ? QuitXTheme.accent : Color.secondary))
+                    .foregroundStyle(isSelected ? QuitXTheme.accent : (isLatest ? QuitXTheme.accent : Color.secondary))
                     .frame(width: 14)
                     .padding(.top, 2)
 
@@ -410,8 +410,8 @@ struct ChangelogView: View {
 
                         Spacer(minLength: 0)
 
-                        if isCurrent {
-                            Text("Current")
+                        if isLatest {
+                            Text("Latest")
                                 .font(.system(size: 8, weight: .bold))
                                 .foregroundStyle(QuitXTheme.accent)
                                 .padding(.horizontal, 4)
@@ -490,7 +490,9 @@ struct ChangelogView: View {
     }
 
     private func contentHeader(for release: ReleaseChangelog) -> some View {
-        HStack(alignment: .center, spacing: 12) {
+        let isLatest = release.version == (state.releases.first?.version ?? currentVersion)
+
+        return HStack(alignment: .center, spacing: 12) {
             QuitXAppIconView(size: 38, cornerRadius: 8)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -500,8 +502,8 @@ struct ChangelogView: View {
                         .foregroundStyle(Color.primary)
                         .lineLimit(1)
 
-                    if release.version == currentVersion {
-                        Text("Current")
+                    if isLatest {
+                        Text("Latest")
                             .font(.system(size: 8, weight: .bold))
                             .foregroundStyle(QuitXTheme.accent)
                             .padding(.horizontal, 4.5)
@@ -512,7 +514,7 @@ struct ChangelogView: View {
                     }
                 }
 
-                Text(release.summary.isEmpty ? (release.version == currentVersion ? "Installed and running on your Mac." : "Release notes and improvements.") : release.summary)
+                Text(release.summary.isEmpty ? (isLatest ? "Latest version for your Mac." : "Release notes and improvements.") : release.summary)
                     .font(.system(size: 11.5))
                     .foregroundStyle(Color.secondary)
                     .lineLimit(1)
