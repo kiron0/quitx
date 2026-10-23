@@ -22,7 +22,7 @@ body:
     attributes:
       label: QuitX version
       description: Shown in Settings → About
-      placeholder: "1.1.9"
+      placeholder: "1.2.0"
     validations:
       required: true
   - type: input

@@ -13,7 +13,16 @@ struct GeneralTabView: View {
         VStack(alignment: .leading, spacing: 5) {
 
             row(label: "Startup:") {
-                toggle("Open QuitX at login", isOn: $launchService.isEnabled)
+                HStack(spacing: 8) {
+                    toggle("Open QuitX at login", isOn: $launchService.isEnabled)
+                    if launchService.isEnabled && launchService.requiresApproval {
+                        Button("Allow in Login Items") { launchService.openLoginItemsSettings() }
+                            .buttonStyle(.link)
+                            .font(.system(size: 11))
+                            .help("macOS is waiting for you to allow QuitX in System Settings ▸ General ▸ Login Items.")
+                    }
+                }
+                .onAppear { launchService.refresh() }
             } help: {
                 HelpPopoverButton(text: "This one is pretty self explanatory, so here's an easter egg instead of a helpful tooltip. 🐇🍳")
             }
@@ -66,14 +75,14 @@ struct GeneralTabView: View {
                         configStore.config.showMenuBarStats = $0
                         configStore.config.menuBarShowCpu = $0
                         configStore.config.menuBarShowMemory = $0
-                        configStore.config.menuBarShowGpu = $0
-                        configStore.config.batteryMenuBarEnabled = $0
+                        configStore.config.menuBarShowGpu = $0 && HardwareCapabilities.hasGpuStatistics
+                        configStore.config.batteryMenuBarEnabled = $0 && HardwareCapabilities.hasBattery
                         configStore.save()
                         StatusItemController.shared?.updateMenuBarStats()
                     }
                 ))
             } help: {
-                HelpPopoverButton(text: "Your Mac's vital signs on blast! Shows live CPU, memory, GPU, and battery in your menu bar. Click any stat for its own dedicated window. 🏎️⚡")
+                HelpPopoverButton(text: HardwareCapabilities.hasBattery ? "Your Mac's vital signs on blast! Shows live CPU, memory, GPU, and battery in your menu bar. Click any stat for its own dedicated window. 🏎️⚡" : "Your Mac's vital signs on blast! Shows live CPU, memory, and GPU in your menu bar. Click any stat for its own dedicated window. 🏎️⚡")
             }
 
             row(label: "") {
@@ -82,7 +91,7 @@ struct GeneralTabView: View {
                         get: { configStore.config.menuBarShowCpu },
                         set: {
                             configStore.config.menuBarShowCpu = $0
-                            configStore.config.showMenuBarStats = configStore.config.menuBarStatsEnabled
+                            configStore.config.showMenuBarStats = configStore.config.availableMenuBarStatsEnabled
                             configStore.save()
                             StatusItemController.shared?.updateMenuBarStats()
                         }
@@ -91,34 +100,38 @@ struct GeneralTabView: View {
                         get: { configStore.config.menuBarShowMemory },
                         set: {
                             configStore.config.menuBarShowMemory = $0
-                            configStore.config.showMenuBarStats = configStore.config.menuBarStatsEnabled
+                            configStore.config.showMenuBarStats = configStore.config.availableMenuBarStatsEnabled
                             configStore.save()
                             StatusItemController.shared?.updateMenuBarStats()
                         }
                     ))
-                    toggle("GPU", isOn: Binding(
-                        get: { configStore.config.menuBarShowGpu },
-                        set: {
-                            configStore.config.menuBarShowGpu = $0
-                            configStore.config.showMenuBarStats = configStore.config.menuBarStatsEnabled
-                            configStore.save()
-                            StatusItemController.shared?.updateMenuBarStats()
-                        }
-                    ))
-                    toggle("Battery", isOn: Binding(
-                        get: { configStore.config.batteryMenuBarEnabled },
-                        set: {
-                            configStore.config.batteryMenuBarEnabled = $0
-                            configStore.config.showMenuBarStats = configStore.config.menuBarStatsEnabled
-                            configStore.save()
-                            StatusItemController.shared?.updateMenuBarStats()
-                        }
-                    ))
+                    if HardwareCapabilities.hasGpuStatistics {
+                        toggle("GPU", isOn: Binding(
+                            get: { configStore.config.menuBarShowGpu },
+                            set: {
+                                configStore.config.menuBarShowGpu = $0
+                                configStore.config.showMenuBarStats = configStore.config.availableMenuBarStatsEnabled
+                                configStore.save()
+                                StatusItemController.shared?.updateMenuBarStats()
+                            }
+                        ))
+                    }
+                    if HardwareCapabilities.hasBattery {
+                        toggle("Battery", isOn: Binding(
+                            get: { configStore.config.batteryMenuBarEnabled },
+                            set: {
+                                configStore.config.batteryMenuBarEnabled = $0
+                                configStore.config.showMenuBarStats = configStore.config.availableMenuBarStatsEnabled
+                                configStore.save()
+                                StatusItemController.shared?.updateMenuBarStats()
+                            }
+                        ))
+                    }
                 }
                 .disabled(!configStore.config.showMenuBarStats)
                 .opacity(configStore.config.showMenuBarStats ? 1.0 : 0.42)
             } help: {
-                HelpPopoverButton(text: "Assemble your menu bar dream team! Toggle CPU, memory, GPU, or battery independently. The master switch commands them all. 🕹️📊")
+                HelpPopoverButton(text: HardwareCapabilities.hasBattery ? "Assemble your menu bar dream team! Toggle CPU, memory, GPU, or battery independently. The master switch commands them all. 🕹️📊" : "Assemble your menu bar dream team! Toggle CPU, memory, or GPU independently. The master switch commands them all. 🕹️📊")
             }
 
             row(label: "") {
@@ -141,8 +154,8 @@ struct GeneralTabView: View {
                         }
                     }
                 }
-                .disabled(!configStore.config.menuBarStatsEnabled)
-                .opacity(configStore.config.menuBarStatsEnabled ? 1.0 : 0.42)
+                .disabled(!configStore.config.availableMenuBarStatsEnabled)
+                .opacity(configStore.config.availableMenuBarStatsEnabled ? 1.0 : 0.42)
             }
 
             row(label: "") {
@@ -165,8 +178,8 @@ struct GeneralTabView: View {
                         }
                     }
                 }
-                .disabled(!configStore.config.menuBarStatsEnabled)
-                .opacity(configStore.config.menuBarStatsEnabled ? 1.0 : 0.42)
+                .disabled(!configStore.config.availableMenuBarStatsEnabled)
+                .opacity(configStore.config.availableMenuBarStatsEnabled ? 1.0 : 0.42)
             }
 
             if #available(macOS 26.0, *) {

@@ -247,6 +247,30 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         showMenuBarStats && (menuBarShowCpu || menuBarShowMemory || menuBarShowGpu || batteryMenuBarEnabled)
     }
 
+    func menuBarStatsEnabled(hasBattery: Bool, hasGpu: Bool) -> Bool {
+        showMenuBarStats && (menuBarShowCpu || menuBarShowMemory || (menuBarShowGpu && hasGpu) || (batteryMenuBarEnabled && hasBattery))
+    }
+
+    func adjustedForHardware(hasBattery: Bool, hasGpu: Bool) -> QuitXConfig {
+        var copy = self
+        if !hasBattery {
+            copy.batteryMenuBarEnabled = false
+            copy.batterySaverEnabled = false
+        }
+        if !hasGpu {
+            copy.menuBarShowGpu = false
+        }
+        return copy
+    }
+
+    var hardwareAdjusted: QuitXConfig {
+        adjustedForHardware(hasBattery: HardwareCapabilities.hasBattery, hasGpu: HardwareCapabilities.hasGpuStatistics)
+    }
+
+    var availableMenuBarStatsEnabled: Bool {
+        menuBarStatsEnabled(hasBattery: HardwareCapabilities.hasBattery, hasGpu: HardwareCapabilities.hasGpuStatistics)
+    }
+
     enum MenuBarStatStyle: String, Codable, Equatable, CaseIterable, Sendable {
         case icon = "Icon"
         case text = "Text"

@@ -44,7 +44,8 @@
 | **Classic or Liquid Glass** | The solid classic look, or translucent Liquid Glass on macOS 26. |
 | **Sounds on quit** | A short arcade laser every time an app goes. Switch it off any time. |
 | **Last window closes, app quits** | Close an app's last window and it quits. Spaces, full screen and minimize never count. |
-| **Automation** | Quit inactive apps after a while, per-app quit timers, and a battery saver. |
+| **Automation** | Quit inactive apps after a while, per-app quit timers, and a battery saver on MacBooks. |
+| **Uninstall apps** | Remove an app with its caches, preferences and support files, all preselected with sizes. Everything goes to the Trash. Apple and system apps are never offered. |
 | **Global shortcuts** | Open the menu, Quit All or Force Quit All from anywhere. |
 | **In-app updates** | Updates straight from GitHub Releases, verified before install. |
 

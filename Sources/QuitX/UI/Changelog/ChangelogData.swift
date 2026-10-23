@@ -2,6 +2,19 @@ import Foundation
 
 extension ChangelogProvider {
     static let appReleases: [ReleaseChangelog] = [
+        ReleaseChangelog("1.2.0", "App uninstaller & hardware-aware settings", [
+            ("New Features", [
+                "**Uninstall Apps**: Choose Uninstall in an app's ••• menu. QuitX finds the app and its leftover support files, caches, preferences, containers, saved state, logs, and launch items, with sizes. Everything starts selected; click Remove to move them to the Trash.",
+                "**Safe by Design**: Apple apps, parts of macOS, helpers inside other apps, and QuitX itself can't be uninstalled. The app quits normally first, never by force, and your Documents and Desktop are never searched."
+            ]),
+            ("Improvements", [
+                "**Settings Match Your Mac**: Battery stats and Save power on battery only appear on Macs with a battery, and the GPU stat only when macOS reports GPU usage. A Mac mini no longer shows options it can't use."
+            ]),
+            ("Fixes", [
+                "**Empty Menu Bar Stats**: A battery-only stats setting carried over to a Mac without a battery no longer leaves an empty menu bar item."
+            ])
+        ]),
+
         ReleaseChangelog("1.1.9", "In-app updates, What's New redesign & settings polish", [
             ("New Features", [
                 "**Updates Straight From GitHub**: QuitX now checks this project's GitHub Releases directly. No update server, no keys, nothing else in between.",

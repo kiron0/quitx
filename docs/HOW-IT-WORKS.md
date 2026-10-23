@@ -27,6 +27,21 @@ QuitX is a menu bar app that quits, force quits and manages running macOS apps. 
 | CPU hog alerts | `proc_listallpids` and `proc_taskinfo` sampled with an adaptive interval | `CpuUsageSampler.swift`, `HogMonitor.swift` |
 | Global shortcuts | Carbon `RegisterEventHotKey` | `Core/Services/ShortcutManager.swift` |
 
+## Uninstalling apps
+
+The ••• menu offers **Uninstall…** only for apps with a real `.app` bundle that isn't Apple's (`com.apple.*`), isn't under `/System`, `/Library/Apple` or `/usr`, isn't a helper inside another app, isn't a translocated copy and isn't QuitX. `AppUninstaller` then lists:
+
+- the app bundle and any other copies macOS knows for the same bundle identifier (copies on other volumes or in the Trash are skipped);
+- entries directly inside `~/Library` folders (Application Support, Application Scripts, Containers, Group Containers, Caches, HTTPStorages, WebKit, Cookies, Preferences, Preferences/ByHost, Saved Application State, Logs, Logs/DiagnosticReports, LaunchAgents), the matching `/Library` folders (Application Support, Caches, Preferences, Logs, LaunchAgents, LaunchDaemons, PrivilegedHelperTools) and the temporary folders.
+
+An entry matches when its name is the bundle identifier or starts with it followed by a dot. In Application Support, Caches and Logs, a folder named exactly like the app or its executable also matches, if the name has at least 4 characters and isn't a generic word. Documents, Desktop and the home folder are never searched. Sizes are allocated sizes on disk.
+
+Remove quits the app normally and waits up to 8 seconds. It never force quits; if the app is still open, nothing is removed. Selected items move to the Trash. Items QuitX can't move, such as files installed by an installer package, are moved after an administrator prompt. macOS may ask you to allow QuitX under **Privacy & Security › App Management** before it can remove an app bundle.
+
+## Hardware-aware settings
+
+`HardwareCapabilities` checks for an internal battery in the IOKit power sources and for GPU statistics. Without a battery, the Battery stat and **Save power on battery** are hidden, and both are treated as off. Without GPU statistics, the GPU stat is hidden.
+
 ## Accessibility permission
 
 QuitX only needs Accessibility for window-based features. `Core/Services/AccessibilityPermission.swift` owns that state: it never prompts on its own, listens for the system `com.apple.accessibility.api` change notification, and offers Repair (`tccutil reset`) when a grant was lost. Builds use a stable designated requirement, so macOS keeps the grant across updates. See [SIGNING.md](SIGNING.md).

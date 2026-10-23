@@ -375,7 +375,7 @@ final class StatusItemController: NSObject {
             while let self = self, self.isShown {
                 try? await Task.sleep(nanoseconds: 2_000_000_000)
                 guard !Task.isCancelled, self.isShown else { break }
-                let cfg = ConfigStore.shared.config
+                let cfg = ConfigStore.shared.config.hardwareAdjusted
                 let powerSources = cfg.batterySaverEnabled
                     ? BatterySaver.currentDescriptions()
                     : nil
@@ -468,7 +468,7 @@ final class StatusItemController: NSObject {
     }
 
     func updateMenuBarStats(sample providedSample: MenuBarSample? = nil) {
-        let cfg = ConfigStore.shared.config
+        let cfg = ConfigStore.shared.config.hardwareAdjusted
         guard cfg.menuBarStatsEnabled else {
             removeStatsItem()
             return
@@ -671,7 +671,7 @@ final class StatusItemController: NSObject {
             while true {
                 try? await Task.sleep(nanoseconds: interval)
                 guard !Task.isCancelled, let self else { break }
-                let cfg = ConfigStore.shared.config
+                let cfg = ConfigStore.shared.config.hardwareAdjusted
                 guard cfg.menuBarStatsEnabled else {
                     self.removeStatsItem()
                     interval = 5_000_000_000

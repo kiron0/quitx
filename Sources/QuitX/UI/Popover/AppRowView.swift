@@ -205,6 +205,16 @@ struct AppRowView: View {
             ))
         }
 
+        if let bundleId = app.bundleId,
+           AppUninstaller.canUninstall(bundleIdentifier: bundleId, bundleURL: AppUninstaller.resolvedBundleURL(pid: app.pid, bundleIdentifier: bundleId)) {
+            menu.addItem(.separator())
+            menu.addItem(MenuHelper.makeItem(
+                title: "Uninstall",
+                systemSymbolName: "trash",
+                action: { UninstallWindowController.shared.show(app: app) }
+            ))
+        }
+
         return menu
     }
 

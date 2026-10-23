@@ -55,7 +55,7 @@ enum SettingsTab: String, CaseIterable {
         case .general:
             if #available(macOS 26.0, *) { return 386 }
             return 356
-        case .automation: return 416
+        case .automation: return HardwareCapabilities.hasBattery ? 416 : 386
         case .advanced:  return 266
         case .exclude:   return 306
         case .shortcuts: return 221

@@ -241,7 +241,8 @@
     .fbody { padding: 24px 26px 28px; }
     .fbody p { margin-top: 8px; color: var(--muted); font-size: 15.5px; }
     .fbody .play { margin-top: 16px; }
-    .mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 16px; }
+    .mini { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 16px; }
+    @media (max-width: 1180px) { .mini { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 960px) { .fgrid, .mini { grid-template-columns: 1fr; } }
     @media (prefers-reduced-motion: reduce) { .fcard .media img { transition: none; } }
     .ipaths { display: grid; grid-template-columns: 1fr; gap: 16px; }
@@ -284,6 +285,7 @@
       <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></symbol>
       <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
       <symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M5.7 5.7l12.6 12.6"/></symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M9 7V4h6v3"/></symbol>
       <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
       <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
       <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="currentColor" stroke="none"/></symbol>
@@ -410,12 +412,17 @@
           <article class="tile third reveal">
             <div class="ico"><svg class="i" aria-hidden="true"><use href="#i-timer"/></svg></div>
             <h3>Auto quit and timers</h3>
-            <p>Quit apps you haven't touched in a while, set a timer on one app, and save power on battery.</p>
+            <p>Quit apps you haven't touched in a while, set a timer on one app, and save power on battery on a MacBook.</p>
           </article>
           <article class="tile third reveal">
             <div class="ico"><svg class="i" aria-hidden="true"><use href="#i-command"/></svg></div>
             <h3>Global shortcuts</h3>
             <p>Open the menu, Quit All or Force Quit All from anywhere with your own key combos.</p>
+          </article>
+          <article class="tile third reveal">
+            <div class="ico"><svg class="i" aria-hidden="true"><use href="#i-trash"/></svg></div>
+            <h3>Uninstall with leftovers</h3>
+            <p>Remove an app and the caches, preferences and support files it left behind. Everything goes to the Trash, so nothing is lost by mistake.</p>
           </article>
         </div>
       </div>

@@ -90,7 +90,11 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Row actions",
-                    body: "Open the three-dot menu beside the quit button to quit, force quit, restart, exclude, or reveal an app in Finder."
+                    body: "Open the three-dot menu beside the quit button to quit, force quit, restart, exclude, reveal an app in Finder, or uninstall it."
+                ),
+                QuitXHelpSection(
+                    title: "Uninstall apps",
+                    body: "Choose Uninstall in an app row's menu to open the uninstaller. It finds the app and the files it left in your Library: application support, caches, preferences, containers, saved state, logs, and launch items. Everything starts selected; uncheck anything you want to keep, then click Remove. QuitX quits the app normally first and moves the files to the Trash, so you can put them back until you empty it. Apple apps, parts of macOS, helpers inside other apps, and QuitX itself can't be uninstalled. Your Documents and Desktop are never touched."
                 ),
                 QuitXHelpSection(
                     title: "Quit Other Apps",
@@ -219,7 +223,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "Menu bar stats readout",
-                    body: "Enable Show stats in menu bar in Settings > General, then choose CPU, Memory, GPU, and Battery independently. Configure Style format with Icon (SF Symbols) or Text (CPU / MEM / GPU prefixes), and Memory format with Gigabytes (GB) or Percentage (%). The readout updates every second, or every 5 seconds under battery saver."
+                    body: "Enable Show stats in menu bar in Settings > General, then choose CPU, Memory, GPU, and Battery independently. Configure Style format with Icon (SF Symbols) or Text (CPU / MEM / GPU prefixes), and Memory format with Gigabytes (GB) or Percentage (%). The readout updates every second, or every 5 seconds under battery saver. Battery options appear only on Macs with a battery, and GPU only when macOS reports GPU statistics."
                 ),
                 QuitXHelpSection(
                     title: "Stats detail panel",
@@ -227,7 +231,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Battery saver mode",
-                    body: "Enable Save power on battery to reduce power consumption when unplugged. Inactivity auto-quit timeouts automatically halve (e.g. 60m to 30m), and live stats refresh slows from 2 seconds to 10 seconds."
+                    body: "On a MacBook, enable Save power on battery to reduce power consumption when unplugged. Inactivity auto-quit timeouts automatically halve (e.g. 60m to 30m), and live stats refresh slows from 2 seconds to 10 seconds."
                 ),
                 QuitXHelpSection(
                     title: "Automatic AC restore",

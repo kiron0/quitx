@@ -2,6 +2,19 @@
 
 All notable changes to QuitX macOS App will be documented in this file.
 
+## 1.2.0
+
+### Added
+
+- App uninstaller: **Uninstall…** in the app row's ••• menu opens a window (`UninstallWindowController`, `UninstallView`) that scans for the app bundle and its leftovers with `AppUninstaller`. Results are grouped (Application, Application Support, Caches, Preferences, Containers, Saved State, Logs, Launch Items, Other Files) with sizes and file counts, every item preselected, Select All / Deselect All, and a **Remove N files (size)** button.
+- Leftovers are matched by bundle identifier in `~/Library` (Application Support, Application Scripts, Containers, Group Containers, Caches, HTTPStorages, WebKit, Cookies, Preferences, ByHost, Saved Application State, Logs, DiagnosticReports, LaunchAgents), `/Library` (Application Support, Caches, Preferences, Logs, LaunchAgents, LaunchDaemons, PrivilegedHelperTools) and temporary folders. Folder-name matching is limited to Application Support, Caches and Logs, and skips names shorter than 4 characters or generic ones. Documents, Desktop and the home folder are never searched.
+- Removal quits the app normally (never force) and waits up to 8 seconds, then moves items to the Trash. Items the user can't move are retried with an administrator prompt. Apple apps, `/System` apps, helpers inside other bundles, translocated copies and QuitX itself are not eligible.
+- `HardwareCapabilities` detects an internal battery (IOKit power sources) and GPU statistics.
+
+### Changed
+
+- Settings ▸ General hides the Battery menu bar stat and Settings ▸ Automation hides **Save power on battery** on Macs without a battery; the GPU stat is hidden when macOS reports no GPU statistics. The menu bar uses `QuitXConfig.hardwareAdjusted`, so settings synced from a MacBook don't produce an empty stats item.
+
 ## 1.1.9
 
 ### Added

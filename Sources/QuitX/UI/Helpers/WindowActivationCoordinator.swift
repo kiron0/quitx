@@ -9,6 +9,7 @@ enum WindowActivationCoordinator {
             || HelpWindowController.shared.isOpen
             || AppUpdateWindowController.shared.isOpen
             || ChangelogWindowController.shared.isOpen
+            || UninstallWindowController.shared.isOpen
         guard let application = NSApp else { return }
         let policy: NSApplication.ActivationPolicy = hasOpenWindow ? .regular : .accessory
         guard application.activationPolicy() != policy else { return }
