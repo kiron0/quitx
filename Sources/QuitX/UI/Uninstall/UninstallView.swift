@@ -41,23 +41,6 @@ private struct ScanPulse: View {
     }
 }
 
-private struct UninstallSearchFieldBackground: View {
-    let isFocused: Bool
-    let isGlass: Bool
-
-    var body: some View {
-        RoundedRectangle(cornerRadius: 7)
-            .fill(isGlass ? Color.primary.opacity(0.07) : Color(nsColor: .textBackgroundColor))
-            .overlay(
-                RoundedRectangle(cornerRadius: 7)
-                    .strokeBorder(
-                        isFocused ? QuitXTheme.accent.opacity(0.65) : Color.primary.opacity(isGlass ? 0.12 : 0.15),
-                        lineWidth: 0.8
-                    )
-            )
-    }
-}
-
 struct UninstallView: View {
     @ObservedObject var model: UninstallViewModel
     @ObservedObject private var configStore: ConfigStore = ConfigStore.shared
@@ -85,11 +68,8 @@ struct UninstallView: View {
         .frame(minWidth: 560, minHeight: 460)
         .background {
             if LiquidGlass.enabled {
-                ZStack {
-                    LiquidGlassFill(shape: Rectangle())
-                    Color(NSColor.windowBackgroundColor).opacity(0.72)
-                }
-                .ignoresSafeArea()
+                LiquidGlassFill(shape: Rectangle())
+                    .ignoresSafeArea()
             } else {
                 QuitXTheme.windowBackground
                     .ignoresSafeArea()
@@ -190,7 +170,7 @@ struct UninstallView: View {
         }
         .padding(.horizontal, 8)
         .frame(height: 28)
-        .background(UninstallSearchFieldBackground(isFocused: !model.searchText.isEmpty, isGlass: LiquidGlass.enabled))
+        .background(SearchFieldGlassBackground(isFocused: !model.searchText.isEmpty))
     }
 
     private func pickerRow(_ app: UninstallViewModel.PickerApp) -> some View {

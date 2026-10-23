@@ -62,10 +62,6 @@ QuitX updates itself straight from this repository's GitHub Releases. There is n
 
 Settings and excluded apps live in `UserDefaults` (`io.coreify.quitx`), so they carry over unchanged.
 
-### Older versions
-
-QuitX 1.1.8 and earlier asked a Cloudflare Worker for updates and required an Ed25519-signed `updates.json`. The release workflow still publishes that file when the `UPDATE_ED25519_PRIVATE_KEY` secret exists, so those versions can update once to a GitHub-based build. After most people have moved over, delete the secret and the Worker; older copies can then update from the website or the Releases page.
-
 ## Terminal installer
 
 `curl -fsSL https://quitx.kiron.dev/install | bash` runs `site/install`, which GitHub Pages serves from the website. It finds the latest release through the GitHub API, downloads the DMG, checks the SHA-256 digest GitHub publishes, the bundle identifier, the version and the code signature, then swaps the app into `/Applications` (restoring the old copy if that fails) and opens it. It never runs as root and uses `sudo` only when `/Applications` isn't writable.

@@ -17,6 +17,8 @@ All notable changes to QuitX macOS App will be documented in this file.
 
 ### Changed
 
+- Removed the legacy update path for QuitX 1.1.8 and earlier: releases no longer publish `updates.json` and `Scripts/sign-update.sh` is gone. Those versions can update from the website or the Releases page.
+- The battery stats panel no longer resizes while loading: it shows its final layout with an animated battery icon and placeholder rows, and always reserves all seven detail rows.
 - Settings ▸ General hides the Battery menu bar stat and Settings ▸ Automation hides **Save power on battery** on Macs without a battery; the GPU stat is hidden when macOS reports no GPU statistics. The menu bar uses `QuitXConfig.hardwareAdjusted`, so settings synced from a MacBook don't produce an empty stats item.
 
 ## 1.1.9

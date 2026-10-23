@@ -37,10 +37,6 @@ The first certificate-signed release changes the designated requirement once, so
 2. Bump the version with `npm run bump` (updates `package.json` and `Support/Info.plist`) and commit.
 3. Push a `vX.Y.Z` tag, or run **Actions → Release**.
 
-## Legacy update key
-
-`UPDATE_ED25519_PRIVATE_KEY` is only used to publish `updates.json` for QuitX 1.1.8 and earlier, which update through the old Cloudflare Worker. Current versions don't use any key. Keep the secret and the Worker for a transition period, then delete both.
-
 ## Notarization
 
 Notarizing with an Apple Developer ID would remove the "right-click → Open" step on first launch. It isn't set up yet.

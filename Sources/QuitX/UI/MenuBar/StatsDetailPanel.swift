@@ -799,112 +799,15 @@ struct StatsDetailView: View {
         }
     }
 
+    private static let batteryDetailRowCount = 7
+    private static let batteryDetailsHeight: CGFloat = CGFloat(batteryDetailRowCount) * 18 + CGFloat(batteryDetailRowCount - 1) * 4.5
+
     private var batteryContent: some View {
         Group {
             if let battery = model.battery {
-                VStack(alignment: .leading, spacing: 10) {
-                    windowTitleHeader(
-                        title: "Battery Status",
-                        symbol: battery.isCharging ? "bolt.fill" : "battery.100"
-                    )
-
-                    card {
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack(alignment: .center, spacing: 10) {
-                                Image(systemName: BatteryDetailSampler.menuBarSymbolName(
-                                    percent: battery.percent,
-                                    charging: battery.isCharging
-                                ))
-                                    .font(.system(size: 28))
-                                    .foregroundStyle(Color.primary)
-                                Text("\(battery.percent)%")
-                                    .font(.system(size: 22, weight: .semibold))
-                                    .foregroundStyle(Color.primary)
-                                Spacer()
-                            }
-                            Text("Power Source: \(battery.isACPower ? "Power Adapter" : "Battery")")
-                                .font(.system(size: 11))
-                                .foregroundStyle(Color.secondary)
-                            if let timeText = batteryNativeTimeText(battery) {
-                                Text(timeText)
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(Color.secondary)
-                            }
-                            if battery.isACPower, let limit = battery.chargingLimitPercent {
-                                let reachedLimit = battery.percent >= limit
-                                Text("\(reachedLimit ? "Charged to" : "Charging to") \(limit)% Limit")
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(Color.secondary)
-                            }
-                        }
-                        .padding(.vertical, 2)
-                    }
-
-                    VStack(alignment: .leading, spacing: 5) {
-                        SectionHeader(title: "Details")
-                        card {
-                            VStack(alignment: .leading, spacing: 4.5) {
-                                let showFlow = battery.isCharging || !battery.isACPower
-                                if showFlow, let watts = battery.powerW {
-                                    DetailRow(title: "Power:", value: String(format: "%.1f W", watts))
-                                }
-                                if showFlow, let amps = battery.amperageMA {
-                                    DetailRow(
-                                        title: "Amperage:",
-                                        value: String(format: "%+.0f mA", Double(amps)),
-                                        dotColor: StatsTheme.orange
-                                    )
-                                }
-                                if let volts = battery.voltageMV {
-                                    DetailRow(title: "Voltage:", value: String(format: "%.2f V", Double(volts) / 1000.0))
-                                }
-                                if let temp = battery.tempC {
-                                    DetailRow(
-                                        title: "Temperature:",
-                                        value: String(format: "%.1f °C", temp),
-                                        dotColor: temp > 35 ? StatsTheme.orange : StatsTheme.green
-                                    )
-                                }
-                                if let charge = battery.chargeMAh, let design = battery.designCapacityMAh, design > 0 {
-                                    DetailRow(
-                                        title: "Charge:",
-                                        value: "\(charge) / \(design) mAh",
-                                        dotColor: StatsTheme.blue
-                                    )
-                                }
-                                if let cycles = battery.cycleCount {
-                                    DetailRow(title: "Cycle Count:", value: "\(cycles)")
-                                }
-                                if let health = battery.healthPercent {
-                                    DetailRow(title: "Max Capacity:", value: "\(health)%")
-                                }
-                            }
-                        }
-                    }
-
-                    statsTabFooterButton(
-                        title: "Open Battery Settings",
-                        symbol: "batteryblock"
-                    ) {
-                        openBatterySettings()
-                    }
-                }
-            } else if model.isBatteryLoading {
-                VStack(spacing: 8) {
-                    windowTitleHeader(title: "Battery Status", symbol: "battery.100")
-                    card {
-                        HStack(spacing: 9) {
-                            ProgressView()
-                                .controlSize(.small)
-                            Text("Loading battery details…")
-                                .font(.system(size: 12))
-                                .foregroundStyle(Color.secondary)
-                            Spacer()
-                        }
-                        .frame(minHeight: 56)
-                    }
-                }
-                .frame(maxWidth: .infinity)
+                batteryLayout(battery)
+            } else if model.isBatteryLoading || HardwareCapabilities.hasBattery {
+                batteryLoadingLayout
             } else {
                 VStack(alignment: .leading, spacing: 10) {
                     windowTitleHeader(title: "Battery Status", symbol: "batteryblock.slash")
@@ -924,6 +827,138 @@ struct StatsDetailView: View {
                 .frame(maxWidth: .infinity)
             }
         }
+    }
+
+    private func batteryLayout(_ battery: BatterySnapshot) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            windowTitleHeader(
+                title: "Battery Status",
+                symbol: battery.isCharging ? "bolt.fill" : "battery.100"
+            )
+
+            card {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(alignment: .center, spacing: 10) {
+                        Image(systemName: BatteryDetailSampler.menuBarSymbolName(
+                            percent: battery.percent,
+                            charging: battery.isCharging
+                        ))
+                            .font(.system(size: 28))
+                            .foregroundStyle(Color.primary)
+                        Text("\(battery.percent)%")
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundStyle(Color.primary)
+                        Spacer()
+                    }
+                    Text("Power Source: \(battery.isACPower ? "Power Adapter" : "Battery")")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.secondary)
+                    Text(batterySecondaryLine(battery) ?? " ")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.secondary)
+                }
+                .padding(.vertical, 2)
+            }
+
+            VStack(alignment: .leading, spacing: 5) {
+                SectionHeader(title: "Details")
+                card {
+                    VStack(alignment: .leading, spacing: 4.5) {
+                        let showFlow = battery.isCharging || !battery.isACPower
+                        DetailRow(title: "Power:", value: showFlow ? battery.powerW.map { String(format: "%.1f W", $0) } ?? "—" : "—")
+                        DetailRow(
+                            title: "Amperage:",
+                            value: showFlow ? battery.amperageMA.map { String(format: "%+.0f mA", Double($0)) } ?? "—" : "—",
+                            dotColor: StatsTheme.orange
+                        )
+                        DetailRow(title: "Voltage:", value: battery.voltageMV.map { String(format: "%.2f V", Double($0) / 1000.0) } ?? "—")
+                        DetailRow(
+                            title: "Temperature:",
+                            value: battery.tempC.map { String(format: "%.1f °C", $0) } ?? "—",
+                            dotColor: (battery.tempC ?? 0) > 35 ? StatsTheme.orange : StatsTheme.green
+                        )
+                        DetailRow(
+                            title: "Charge:",
+                            value: batteryChargeText(battery),
+                            dotColor: StatsTheme.blue
+                        )
+                        DetailRow(title: "Cycle Count:", value: battery.cycleCount.map { "\($0)" } ?? "—")
+                        DetailRow(title: "Max Capacity:", value: battery.healthPercent.map { "\($0)%" } ?? "—")
+                    }
+                    .frame(height: Self.batteryDetailsHeight, alignment: .top)
+                }
+            }
+
+            statsTabFooterButton(
+                title: "Open Battery Settings",
+                symbol: "batteryblock"
+            ) {
+                openBatterySettings()
+            }
+        }
+    }
+
+    private var batteryLoadingLayout: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            windowTitleHeader(title: "Battery Status", symbol: "battery.100")
+
+            card {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(alignment: .center, spacing: 10) {
+                        TimelineView(.animation) { context in
+                            let phase = context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 1.6) / 1.6
+                            let level = Int(phase * 4)
+                            Image(systemName: ["battery.0", "battery.25", "battery.50", "battery.75", "battery.100"][min(level, 4)])
+                                .font(.system(size: 28))
+                                .foregroundStyle(Color.secondary)
+                        }
+                        Text("Reading battery…")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(Color.secondary)
+                        Spacer()
+                    }
+                    Text("Power Source: Battery")
+                        .font(.system(size: 11))
+                        .redacted(reason: .placeholder)
+                    Text("Time remaining")
+                        .font(.system(size: 11))
+                        .redacted(reason: .placeholder)
+                }
+                .padding(.vertical, 2)
+            }
+
+            VStack(alignment: .leading, spacing: 5) {
+                SectionHeader(title: "Details")
+                card {
+                    VStack(alignment: .leading, spacing: 4.5) {
+                        ForEach(["Power:", "Amperage:", "Voltage:", "Temperature:", "Charge:", "Cycle Count:", "Max Capacity:"], id: \.self) { title in
+                            DetailRow(title: title, value: "00.0 W")
+                                .redacted(reason: .placeholder)
+                        }
+                    }
+                    .frame(height: Self.batteryDetailsHeight, alignment: .top)
+                }
+            }
+
+            statsTabFooterButton(
+                title: "Open Battery Settings",
+                symbol: "batteryblock"
+            ) {
+                openBatterySettings()
+            }
+        }
+    }
+
+    private func batterySecondaryLine(_ battery: BatterySnapshot) -> String? {
+        if battery.isACPower, let limit = battery.chargingLimitPercent {
+            return "\(battery.percent >= limit ? "Charged to" : "Charging to") \(limit)% Limit"
+        }
+        return batteryNativeTimeText(battery)
+    }
+
+    private func batteryChargeText(_ battery: BatterySnapshot) -> String {
+        guard let charge = battery.chargeMAh, let design = battery.designCapacityMAh, design > 0 else { return "—" }
+        return "\(charge) / \(design) mAh"
     }
 
     private func batteryNativeTimeText(_ battery: BatterySnapshot) -> String? {

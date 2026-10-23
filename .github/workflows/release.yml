@@ -128,19 +128,6 @@ jobs:
           echo "Packaging QuitX-${TAG}.zip..."
           ditto -c -k --sequesterRsrc --keepParent .build/QuitX.app ".build/QuitX-${TAG}.zip"
 
-      - name: Legacy Update Metadata
-        shell: bash
-        env:
-          UPDATE_ED25519_PRIVATE_KEY: ${{ secrets.UPDATE_ED25519_PRIVATE_KEY }}
-        run: |
-          TAG="${{ steps.meta.outputs.tag }}"
-          VERSION="${{ steps.meta.outputs.version }}"
-          if [ -z "$UPDATE_ED25519_PRIVATE_KEY" ]; then
-            echo "::warning::UPDATE_ED25519_PRIVATE_KEY is not set, so no updates.json is published. QuitX 1.1.8 and earlier will not see this release in-app; they can still update from the website or Releases page."
-            exit 0
-          fi
-          ./Scripts/sign-update.sh ".build/QuitX-${TAG}.dmg" "$VERSION" .build/updates.json
-
       - name: Write release notes
         shell: bash
         run: |
@@ -186,8 +173,7 @@ jobs:
           files: |
             .build/QuitX-*.dmg
             .build/QuitX-*.zip
-            .build/updates.json
-          fail_on_unmatched_files: false
+          fail_on_unmatched_files: true
           draft: false
           prerelease: false
 
