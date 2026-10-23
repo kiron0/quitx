@@ -42,6 +42,32 @@ enum QuitXTheme {
     }
 }
 
+struct SearchFieldGlassBackground: View {
+    var isFocused: Bool = false
+    var cornerRadius: CGFloat = 7
+
+    var body: some View {
+        ZStack {
+            if LiquidGlass.enabled {
+                LiquidGlassFill(shape: RoundedRectangle(cornerRadius: cornerRadius))
+                Color.primary.opacity(0.04)
+            } else {
+                Color.primary.opacity(0.06)
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+        .overlay(
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .strokeBorder(
+                    isFocused
+                        ? QuitXTheme.accent.opacity(0.65)
+                        : Color.primary.opacity(LiquidGlass.enabled ? 0.16 : 0.09),
+                    lineWidth: 0.8
+                )
+        )
+    }
+}
+
 struct VisualEffectBlur: NSViewRepresentable {
     var material: NSVisualEffectView.Material
     var blendingMode: NSVisualEffectView.BlendingMode

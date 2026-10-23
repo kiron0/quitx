@@ -147,7 +147,7 @@ struct WelcomeView: View {
     }
 }
 
-private struct WelcomePrimaryButtonStyle: ButtonStyle {
+struct WelcomePrimaryButtonStyle: ButtonStyle {
     let color: Color
 
     func makeBody(configuration: Configuration) -> some View {

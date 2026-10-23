@@ -23,16 +23,19 @@ final class ChangelogViewState: ObservableObject {
     @Published var selection: String?
     @Published var searchText = ""
     @Published var hoveredVersion: String?
+    @Published var isExpanded: Bool = false
 
     func load(initialVersion: String?, currentVersion: String) {
         let loaded = ChangelogProvider.releases()
         self.releases = loaded
-        if let initial = initialVersion, loaded.contains(where: { $0.version == initial }) {
+        let latestVersion = loaded.first?.version ?? currentVersion
+
+        if let initial = initialVersion, initial != latestVersion, loaded.contains(where: { $0.version == initial }) {
             self.selection = initial
-        } else if let match = loaded.first(where: { $0.version == currentVersion }) {
-            self.selection = match.version
+            self.isExpanded = true
         } else {
-            self.selection = loaded.first?.version ?? currentVersion
+            self.selection = latestVersion
+            self.isExpanded = false
         }
     }
 }
@@ -40,15 +43,21 @@ final class ChangelogViewState: ObservableObject {
 struct ChangelogView: View {
     let initialVersion: String?
     let onDismiss: (() -> Void)?
+    let onToggleExpand: ((Bool) -> Void)?
 
     @StateObject private var state = ChangelogViewState()
     @ObservedObject private var configStore: ConfigStore = ConfigStore.shared
 
     private let currentVersion = UpdateChecker.shared.currentVersion
 
-    init(initialVersion: String? = nil, onDismiss: (() -> Void)? = nil) {
+    init(
+        initialVersion: String? = nil,
+        onDismiss: (() -> Void)? = nil,
+        onToggleExpand: ((Bool) -> Void)? = nil
+    ) {
         self.initialVersion = initialVersion
         self.onDismiss = onDismiss
+        self.onToggleExpand = onToggleExpand
     }
 
     private var filteredReleases: [ReleaseChangelog] {
@@ -61,12 +70,13 @@ struct ChangelogView: View {
     }
 
     var body: some View {
-        HStack(spacing: 0) {
-            sidebar
-
-            detail
+        Group {
+            if state.isExpanded {
+                expandedView
+            } else {
+                compactView
+            }
         }
-        .frame(minWidth: 740, maxWidth: .infinity, minHeight: 520, maxHeight: .infinity)
         .background {
             if LiquidGlass.enabled {
                 LiquidGlassFill(shape: Rectangle())
@@ -84,6 +94,182 @@ struct ChangelogView: View {
             guard !filteredReleases.contains(where: { $0.version == state.selection }) else { return }
             state.selection = filteredReleases.first?.version
         }
+    }
+
+    private var compactView: some View {
+        let release = selectedRelease ?? state.releases.first
+        return VStack(spacing: 0) {
+            if let release {
+                compactHero(for: release)
+                    .padding(.top, 22)
+                    .padding(.bottom, 16)
+                    .padding(.horizontal, 22)
+
+                compactHighlights(for: release)
+                    .padding(.horizontal, 22)
+            } else {
+                VStack(spacing: 8) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 28))
+                        .foregroundStyle(QuitXTheme.accent)
+                    Text("No release notes found")
+                        .font(.system(size: 13, weight: .semibold))
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+
+            Spacer(minLength: 12)
+
+            compactActions
+                .padding(.horizontal, 22)
+                .padding(.bottom, 20)
+        }
+        .frame(width: 400, height: 490)
+    }
+
+    private func compactHero(for release: ReleaseChangelog) -> some View {
+        VStack(spacing: 9) {
+            QuitXAppIconView(size: 58, cornerRadius: 13)
+
+            VStack(spacing: 3) {
+                Text("What's New in QuitX")
+                    .font(.system(size: 19, weight: .bold))
+                    .foregroundStyle(Color.primary)
+
+                HStack(spacing: 6) {
+                    Text("Version \(release.version)")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(QuitXTheme.accent)
+
+                    if release.version == currentVersion {
+                        Text("Current")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundStyle(QuitXTheme.accent)
+                            .padding(.horizontal, 4.5)
+                            .padding(.vertical, 1)
+                            .background(
+                                Capsule().fill(QuitXTheme.accent.opacity(0.18))
+                            )
+                    }
+                }
+            }
+
+            if !release.summary.isEmpty {
+                Text(release.summary)
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(Color.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .padding(.horizontal, 10)
+            }
+        }
+    }
+
+    private func compactHighlights(for release: ReleaseChangelog) -> some View {
+        ScrollView(.vertical, showsIndicators: true) {
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(release.sections) { section in
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 6) {
+                            Image(systemName: sectionSymbol(for: section.title))
+                                .font(.system(size: 10.5, weight: .semibold))
+                                .foregroundStyle(QuitXTheme.accent)
+
+                            Text(section.title)
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(Color.primary)
+                        }
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            ForEach(section.items, id: \.self) { item in
+                                HStack(alignment: .firstTextBaseline, spacing: 7) {
+                                    Text("•")
+                                        .font(.system(size: 11.5, weight: .bold))
+                                        .foregroundStyle(QuitXTheme.accent.opacity(0.85))
+
+                                    Text(Self.renderedItem(item))
+                                        .font(.system(size: 11.5))
+                                        .foregroundStyle(Color.primary.opacity(0.92))
+                                        .lineSpacing(2)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                        .textSelection(.enabled)
+                                }
+                            }
+                        }
+                        .padding(.leading, 4)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+        }
+        .frame(maxHeight: 230)
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
+        )
+    }
+
+    private func sectionSymbol(for title: String) -> String {
+        let lower = title.lowercased()
+        if lower.contains("feature") || lower.contains("add") || lower.contains("new") {
+            return "plus.circle.fill"
+        } else if lower.contains("fix") || lower.contains("bug") {
+            return "wrench.and.screwdriver.fill"
+        } else if lower.contains("improve") || lower.contains("update") || lower.contains("change") {
+            return "sparkles"
+        } else if lower.contains("security") || lower.contains("permission") {
+            return "lock.shield.fill"
+        }
+        return "checkmark.circle.fill"
+    }
+
+    private var compactActions: some View {
+        VStack(spacing: 10) {
+            Button("Got It") {
+                onDismiss?()
+            }
+            .buttonStyle(WelcomePrimaryButtonStyle(color: QuitXTheme.accent))
+
+            HStack {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.22)) {
+                        state.isExpanded = true
+                    }
+                    onToggleExpand?(true)
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .font(.system(size: 11))
+                        Text("All Versions…")
+                            .font(.system(size: 11.5, weight: .medium))
+                    }
+                    .foregroundStyle(QuitXTheme.accent)
+                }
+                .buttonStyle(.plain)
+
+                Spacer()
+
+                Button("GitHub Releases") {
+                    if let url = URL(string: "https://github.com/kiron0/quitx/releases") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 11.5))
+                .foregroundStyle(Color.secondary)
+            }
+            .padding(.horizontal, 2)
+        }
+    }
+    private var expandedView: some View {
+        HStack(spacing: 0) {
+            sidebar
+
+            detail
+        }
+        .frame(width: 740, height: 520)
     }
 
     private var sidebar: some View {
@@ -126,19 +312,7 @@ struct ChangelogView: View {
             }
             .padding(.horizontal, 8)
             .frame(height: 28)
-            .background(
-                RoundedRectangle(cornerRadius: 7)
-                    .fill(Color(NSColor.textBackgroundColor).opacity(0.65))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 7)
-                    .strokeBorder(
-                        state.searchText.isEmpty
-                            ? Color.primary.opacity(0.09)
-                            : QuitXTheme.accent.opacity(0.55),
-                        lineWidth: 0.8
-                    )
-            )
+            .background(SearchFieldGlassBackground(isFocused: !state.searchText.isEmpty))
             .padding(.horizontal, 10)
             .padding(.top, 38)
             .padding(.bottom, 8)
@@ -389,19 +563,32 @@ struct ChangelogView: View {
     @ViewBuilder
     private func footerLinks(for release: ReleaseChangelog) -> some View {
         HStack(spacing: 8) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.22)) {
+                    state.isExpanded = false
+                }
+                onToggleExpand?(false)
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 10))
+                    Text("Latest Only")
+                }
+            }
+
             Button("Check for Updates") {
                 Task {
                     await UpdateChecker.shared.checkForUpdates(isUserInitiated: true)
                 }
             }
 
+            Spacer()
+
             Button("All Releases") {
                 if let url = URL(string: "https://github.com/kiron0/quitx/releases") {
                     NSWorkspace.shared.open(url)
                 }
             }
-
-            Spacer()
 
             Button("Report an Issue") {
                 NSWorkspace.shared.open(QuitXConstants.issuesURL)

@@ -5,7 +5,11 @@ import SwiftUI
 final class ChangelogWindowController: NSObject, NSWindowDelegate {
     static let shared = ChangelogWindowController()
 
+    static let compactSize = NSSize(width: 400, height: 490)
+    static let expandedSize = NSSize(width: 740, height: 520)
+
     private var window: NSWindow?
+    private(set) var isExpanded: Bool = false
 
     var isOpen: Bool { window != nil }
 
@@ -47,7 +51,14 @@ final class ChangelogWindowController: NSObject, NSWindowDelegate {
     func show(version: String? = nil) {
         StatusItemController.shared?.closePopover()
 
+        let targetVersion = version ?? UpdateChecker.shared.currentVersion
+        let latestVersion = ChangelogProvider.releases().first?.version ?? targetVersion
+        let shouldStartExpanded = (version != nil && version != latestVersion)
+
         if let window {
+            if isExpanded != shouldStartExpanded {
+                setExpanded(shouldStartExpanded, animate: false)
+            }
             if !Self.isRunningTests {
                 if let screen = WindowPositioner.targetScreen {
                     window.setFrameOrigin(WindowPositioner.topBiasedOrigin(for: window.frame.size, on: screen))
@@ -57,12 +68,16 @@ final class ChangelogWindowController: NSObject, NSWindowDelegate {
             return
         }
 
-        let targetVersion = version ?? UpdateChecker.shared.currentVersion
+        self.isExpanded = shouldStartExpanded
+        let initialSize = shouldStartExpanded ? Self.expandedSize : Self.compactSize
 
         let rootView = ChangelogView(
             initialVersion: targetVersion,
             onDismiss: { [weak self] in
                 self?.close()
+            },
+            onToggleExpand: { [weak self] expanded in
+                self?.setExpanded(expanded)
             }
         )
 
@@ -73,9 +88,9 @@ final class ChangelogWindowController: NSObject, NSWindowDelegate {
         window.titlebarAppearsTransparent = true
         window.titlebarSeparatorStyle = .none
         window.titleVisibility = .hidden
-        window.setContentSize(NSSize(width: 740, height: 520))
-        window.minSize = window.frame.size
-        window.maxSize = window.frame.size
+        window.setContentSize(initialSize)
+        window.minSize = initialSize
+        window.maxSize = initialSize
         window.collectionBehavior = [.fullScreenNone]
         window.isOpaque = false
         window.isReleasedWhenClosed = false
@@ -104,14 +119,33 @@ final class ChangelogWindowController: NSObject, NSWindowDelegate {
         WindowAnimator.present(window, targetFrame: targetFrame)
     }
 
+    func setExpanded(_ expanded: Bool, animate: Bool = true) {
+        self.isExpanded = expanded
+        guard let window else { return }
+        let targetSize = expanded ? Self.expandedSize : Self.compactSize
+        guard window.frame.size != targetSize else { return }
+
+        var currentFrame = window.frame
+        let widthDelta = targetSize.width - currentFrame.size.width
+        let heightDelta = targetSize.height - currentFrame.size.height
+        currentFrame.origin.x -= widthDelta / 2
+        currentFrame.origin.y -= heightDelta / 2
+        currentFrame.size = targetSize
+        window.minSize = targetSize
+        window.maxSize = targetSize
+        window.setFrame(currentFrame, display: true, animate: !Self.isRunningTests && animate)
+    }
+
     func close() {
         window?.close()
         window = nil
+        isExpanded = false
         WindowActivationCoordinator.update()
     }
 
     func windowWillClose(_ notification: Notification) {
         window = nil
+        isExpanded = false
         WindowActivationCoordinator.update()
     }
 }

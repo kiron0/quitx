@@ -466,19 +466,7 @@ struct HelpView: View {
             }
             .padding(.horizontal, 8)
             .frame(height: 28)
-            .background(
-                RoundedRectangle(cornerRadius: 7)
-                    .fill(Color(NSColor.textBackgroundColor).opacity(0.65))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 7)
-                    .strokeBorder(
-                        state.searchText.isEmpty
-                            ? Color.primary.opacity(0.09)
-                            : QuitXTheme.accent.opacity(0.55),
-                        lineWidth: 0.8
-                    )
-            )
+            .background(SearchFieldGlassBackground(isFocused: !state.searchText.isEmpty))
             .padding(.horizontal, 10)
             .padding(.top, 38)
             .padding(.bottom, 8)
