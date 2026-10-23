@@ -13,12 +13,22 @@ All notable changes to QuitX macOS App will be documented in this file.
 - Terminal installer: `curl -fsSL https://quitx.kiron.dev/install | bash` (`site/install`) downloads the latest release from GitHub, verifies the SHA-256 digest, bundle identifier, version and code signature, swaps the app into `/Applications` with rollback, and opens it. The website moves to quitx.kiron.dev (`site/CNAME`).
 - Website, README screenshots and demo video cover every feature: quit, confirm, force quit, background apps, exclusions, menu bar stats, CPU and memory warnings, quit on sleep, Classic and Liquid Glass, sounds, last-window quit and updates. Screenshots render from `video/shots.html` with `node video/render-shots.mjs`; the video renders from `video/demo.html` with its sound design from `video/sfx.py`.
 - Optional stable self-signed release certificate (`Scripts/create-signing-cert.sh`, `MACOS_SIGNING_*` secrets) with a signature check step in the release workflow.
+- Playful tooltips and icons added to Shortcuts, Exclude, General, and About tabs in Settings.
+- What's New window redesign: welcome-style compact latest release view with expandable version history sidebar, glass styling, and unified section card icons.
 
 ### Changed
 
 - Removed the Cloudflare Worker, the pinned Ed25519 public key and `Scripts/generate-update-key.sh`. Updates are verified with the GitHub asset SHA-256 digest, bundle identifier, exact version, strict nested code signature, and the running app's designated requirement when it is not ad-hoc signed.
 - The installer helper installs to `/Applications` when QuitX runs from a disk image or translocated folder, asks for an administrator password only when the app folder isn't writable, and reopens the old copy if the swap fails.
 - `updates.json` is now optional and only published (when `UPDATE_ED25519_PRIVATE_KEY` is set) so QuitX 1.1.8 and earlier can still update through the old Worker.
+- Centralized GitHub repository and release URLs in `QuitXConstants`.
+- Website hero pill updated to permanent Open Source badge.
+
+### Fixed
+
+- What's New window: fixed bottom transparent gap by removing titlebar height inflation in `ChangelogWindowController`.
+- What's New window: fixed version selection desync when collapsing from detailed view to compact view.
+- Terminal installer: fixed `mount_dir: unbound variable` error and added check to avoid re-downloading if the installed version is already equal to or newer than release.
 
 ## 1.1.8
 

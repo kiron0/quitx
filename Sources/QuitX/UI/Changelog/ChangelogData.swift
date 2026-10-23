@@ -2,11 +2,20 @@ import Foundation
 
 extension ChangelogProvider {
     static let appReleases: [ReleaseChangelog] = [
-        ReleaseChangelog("1.1.9", "Updates straight from GitHub", [
+        ReleaseChangelog("1.1.9", "In-app updates, What's New redesign & settings polish", [
             ("New Features", [
                 "**Updates Straight From GitHub**: QuitX now checks this project's GitHub Releases directly. No update server, no keys, nothing else in between.",
                 "**Update in the Menu**: When a new version ships, the menu bar icon gets a red dot and both menus offer Update or Restart to Update at the top.",
                 "**Automatic Update Settings**: Settings ▸ General lets you turn automatic checks on or off and have new versions download and verify in the background."
+            ]),
+            ("Improvements", [
+                "**Refined What's New Experience**: Compact welcome-style view focusing on the latest release, with quick sidebar access to browse previous version notes.",
+                "**Playful Settings Tooltips**: Added humorous tooltips and icons across Shortcuts, Exclusions, General, and About tabs.",
+                "**One-Line Terminal Installer**: Fast installation via `curl -fsSL https://quitx.kiron.dev/install | bash` with checksum verification and version checks."
+            ]),
+            ("Fixes", [
+                "**Changelog Navigation**: Resolved version selection desync when switching between compact and detailed release views.",
+                "**Window Layout**: Fixed bottom spacing gap in What's New window on compact and expanded modes."
             ])
         ]),
 
