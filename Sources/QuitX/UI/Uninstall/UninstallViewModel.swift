@@ -232,6 +232,20 @@ final class UninstallViewModel: ObservableObject {
         }
     }
 
+    var allSelected: Bool { !items.isEmpty && selected.count == items.count }
+    var pickerAllSelected: Bool {
+        let visible = filteredPickerApps
+        return !visible.isEmpty && visible.allSatisfy { pickerSelection.contains($0.id) }
+    }
+    var pickerNoneSelected: Bool { !filteredPickerApps.contains { pickerSelection.contains($0.id) } }
+
+    var searchLocationCount: Int {
+        AppUninstaller.searchRoots(
+            home: FileManager.default.homeDirectoryForCurrentUser,
+            temporaryDirectory: URL(fileURLWithPath: NSTemporaryDirectory())
+        ).count * max(targets.count, 1)
+    }
+
     func selectAll() { selected = Set(items.map(\.id)) }
     func deselectAll() { selected.removeAll() }
 
@@ -319,7 +333,6 @@ final class UninstallViewModel: ObservableObject {
 
     private func performRemoval(_ chosen: [LeftoverItem], forceQuitAll: Bool) async -> AppUninstaller.RemovalResult {
         var outcome = AppUninstaller.RemovalResult()
-        var dockApps: [DockCleaner.App] = []
         for target in targets {
             let owned = chosen.filter { $0.targetID == target.id }
             guard !owned.isEmpty else { continue }
@@ -336,14 +349,6 @@ final class UninstallViewModel: ObservableObject {
             let result = await AppUninstaller.moveToTrash(owned.map(\.url))
             outcome.trashed.append(contentsOf: result.trashed)
             outcome.failed.append(contentsOf: result.failed)
-            let removedBundles = result.trashed.filter { $0.pathExtension.lowercased() == "app" }.map(\.path)
-            if !removedBundles.isEmpty {
-                dockApps.append(DockCleaner.App(bundleIdentifier: target.bundleIdentifier, bundlePaths: removedBundles))
-            }
-        }
-        if !dockApps.isEmpty {
-            let apps = dockApps
-            _ = await Task.detached(priority: .userInitiated) { DockCleaner.remove(apps) }.value
         }
         return outcome
     }

@@ -120,7 +120,7 @@ struct UninstallerTests {
     }
 }
 
-@Suite("Uninstaller grouping and Dock")
+@Suite("Uninstaller grouping")
 struct UninstallerGroupingTests {
     private func item(_ path: String, _ category: LeftoverCategory, _ target: String) -> LeftoverItem {
         LeftoverItem(url: URL(fileURLWithPath: path), category: category, bytes: 10, fileCount: 1, targetID: target)
@@ -157,23 +157,6 @@ struct UninstallerGroupingTests {
         #expect(!AppUninstaller.isInside("/Applications/Cool App Pro.app/Contents/MacOS/Cool App Pro", bundles: bundles))
         #expect(!AppUninstaller.isInside("/usr/bin/cool", bundles: bundles))
         #expect(!AppUninstaller.isInside(nil, bundles: bundles))
-    }
-
-    @Test("Dock tiles are removed by bundle id or path, others kept")
-    func dockTiles() {
-        let tiles: [[String: Any]] = [
-            ["tile-data": ["bundle-identifier": "com.example.CoolApp", "file-data": ["_CFURLString": "file:///Applications/Cool%20App.app/", "_CFURLStringType": 15]]],
-            ["tile-data": ["file-data": ["_CFURLString": "file:///Users/me/Applications/Cool%20App.app/", "_CFURLStringType": 15]]],
-            ["tile-data": ["bundle-identifier": "com.apple.Safari", "file-data": ["_CFURLString": "file:///Applications/Safari.app/", "_CFURLStringType": 15]]],
-            ["tile-type": "spacer-tile"],
-        ]
-        let app = DockCleaner.App(bundleIdentifier: "com.example.coolapp", bundlePaths: ["/Users/me/Applications/Cool App.app"])
-        let kept = DockCleaner.removing([app], from: tiles)
-        #expect(kept?.count == 2)
-        #expect(((kept?[0]["tile-data"] as? [String: Any])?["bundle-identifier"] as? String) == "com.apple.Safari")
-        let other = DockCleaner.App(bundleIdentifier: "com.example.none", bundlePaths: ["/Applications/None.app"])
-        #expect(DockCleaner.removing([other], from: tiles) == nil)
-        #expect(DockCleaner.normalizedPath("file:///Applications/Cool%20App.app/") == "/Applications/Cool App.app")
     }
 }
 

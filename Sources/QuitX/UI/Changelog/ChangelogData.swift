@@ -6,7 +6,7 @@ extension ChangelogProvider {
             ("New Features", [
                 "**Uninstall Apps**: Choose Uninstall in an app's ••• menu. QuitX finds the app and its leftover support files, caches, preferences, containers, saved state, logs, and launch items, with sizes. Everything starts selected; confirm and they go to the Trash.",
                 "**Uninstall Several at Once**: Uninstall Apps… in the menu lists your installed apps. Pick as many as you like and review all their files together.",
-                "**Clean Exit**: The app is force quit before removal and taken out of the Dock. Hover any file to show it in Finder or remove just that one.",
+                "**Clean Exit**: The app is force quit before removal. Hover any file to show it in Finder or remove just that one.",
                 "**Safe by Design**: Apple apps, parts of macOS, helpers inside other apps, and QuitX itself can't be uninstalled, and your Documents and Desktop are never searched."
             ]),
             ("Improvements", [

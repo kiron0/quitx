@@ -6,8 +6,62 @@ private final class UninstallHoverState: ObservableObject {
     @Published var button: String?
 }
 
+private final class ScanPulseState: ObservableObject {
+    @Published var pulse = false
+}
+
+private struct ScanPulse: View {
+    @StateObject private var state = ScanPulseState()
+    private let tint = Color(nsColor: .systemBlue)
+
+    var body: some View {
+        ZStack {
+            ForEach(0..<2, id: \.self) { index in
+                Circle()
+                    .stroke(tint.opacity(0.35), lineWidth: 1.5)
+                    .frame(width: 44, height: 44)
+                    .scaleEffect(state.pulse ? 1.8 : 1.0)
+                    .opacity(state.pulse ? 0 : 0.7)
+                    .animation(
+                        .easeOut(duration: 1.4)
+                            .repeatForever(autoreverses: false)
+                            .delay(Double(index) * 0.7),
+                        value: state.pulse
+                    )
+            }
+            Circle()
+                .fill(tint.opacity(0.12))
+                .frame(width: 44, height: 44)
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(tint)
+        }
+        .frame(width: 80, height: 80)
+        .onAppear { state.pulse = true }
+    }
+}
+
+private struct UninstallSearchFieldBackground: View {
+    let isFocused: Bool
+    let isGlass: Bool
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 7)
+            .fill(isGlass ? Color.primary.opacity(0.07) : Color(nsColor: .textBackgroundColor))
+            .overlay(
+                RoundedRectangle(cornerRadius: 7)
+                    .strokeBorder(
+                        isFocused ? QuitXTheme.accent.opacity(0.65) : Color.primary.opacity(isGlass ? 0.12 : 0.15),
+                        lineWidth: 0.8
+                    )
+            )
+    }
+}
+
 struct UninstallView: View {
     @ObservedObject var model: UninstallViewModel
+    @ObservedObject private var configStore: ConfigStore = ConfigStore.shared
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var onDismiss: () -> Void
 
     @StateObject private var hover = UninstallHoverState()
@@ -31,8 +85,11 @@ struct UninstallView: View {
         .frame(minWidth: 560, minHeight: 460)
         .background {
             if LiquidGlass.enabled {
-                LiquidGlassFill(shape: Rectangle())
-                    .ignoresSafeArea()
+                ZStack {
+                    LiquidGlassFill(shape: Rectangle())
+                    Color(NSColor.windowBackgroundColor).opacity(0.72)
+                }
+                .ignoresSafeArea()
             } else {
                 QuitXTheme.windowBackground
                     .ignoresSafeArea()
@@ -65,7 +122,7 @@ struct UninstallView: View {
 
             Group {
                 if model.isLoadingApps && model.pickerApps.isEmpty {
-                    loading("Finding installed apps…")
+                    loading("Finding installed apps…", detail: nil)
                 } else if model.filteredPickerApps.isEmpty {
                     Text(model.searchText.isEmpty ? "No apps can be uninstalled." : "No apps match \u{201C}\(model.searchText)\u{201D}.")
                         .font(.system(size: 12))
@@ -89,8 +146,10 @@ struct UninstallView: View {
             HStack(spacing: 8) {
                 Button("Select All") { model.selectAllPicker() }
                     .buttonStyle(UninstallSecondaryButtonStyle())
+                    .disabled(model.pickerAllSelected)
                 Button("Deselect All") { model.deselectAllPicker() }
                     .buttonStyle(UninstallSecondaryButtonStyle())
+                    .disabled(model.pickerNoneSelected)
                 Spacer(minLength: 8)
                 let count = model.pickerSelection.count
                 Button {
@@ -131,7 +190,7 @@ struct UninstallView: View {
         }
         .padding(.horizontal, 8)
         .frame(height: 28)
-        .background(SearchFieldGlassBackground(isFocused: !model.searchText.isEmpty))
+        .background(UninstallSearchFieldBackground(isFocused: !model.searchText.isEmpty, isGlass: LiquidGlass.enabled))
     }
 
     private func pickerRow(_ app: UninstallViewModel.PickerApp) -> some View {
@@ -266,14 +325,19 @@ struct UninstallView: View {
     private var reviewContent: some View {
         switch model.phase {
         case .scanning:
-            loading(model.targets.count == 1 ? "Looking for \(model.targets[0].name)'s files…" : "Looking for files from \(model.targets.count) apps…")
+            loading("Scanning for related files…", detail: "Checking \(model.searchLocationCount) locations")
         case .ready, .removing:
             leftoverList
                 .overlay {
                     if model.phase == .removing {
                         ZStack {
                             Color(NSColor.windowBackgroundColor).opacity(0.7)
-                            loading(model.runningTargets.isEmpty ? "Moving files to the Trash…" : "Force quitting and moving files to the Trash…")
+                            VStack(spacing: 10) {
+                                ProgressView().controlSize(.small)
+                                Text(model.runningTargets.isEmpty ? "Moving files to the Trash…" : "Force quitting and moving files to the Trash…")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
                 }
@@ -282,13 +346,32 @@ struct UninstallView: View {
         }
     }
 
-    private func loading(_ text: String) -> some View {
-        VStack(spacing: 10) {
-            ProgressView().controlSize(.small)
-            Text(text)
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
+    private func loading(_ text: String, detail: String?) -> some View {
+        VStack(spacing: 14) {
+            Spacer()
+            if reduceMotion {
+                ProgressView(text)
+            } else {
+                ScanPulse()
+                Text(text)
+                    .font(.system(size: 13, weight: .medium))
+            }
+            if let detail {
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
+            Spacer()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func rowDivider(leading: CGFloat) -> some View {
+        Rectangle()
+            .fill(Color.primary.opacity(0.08))
+            .frame(height: 0.5)
+            .padding(.leading, leading)
     }
 
     private var leftoverList: some View {
@@ -354,7 +437,8 @@ struct UninstallView: View {
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 9)
+        .overlay(alignment: .bottom) { rowDivider(leading: 74) }
         .contentShape(Rectangle())
         .onTapGesture {
             withAnimation(.easeInOut(duration: 0.15)) { model.toggleCollapsed(group) }
@@ -406,8 +490,8 @@ struct UninstallView: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Text(showsCategory
-                     ? "\(item.category.title) · \(displayPath(item.url.deletingLastPathComponent()))"
-                     : displayPath(item.url.deletingLastPathComponent()))
+                     ? "\(item.category.title) · \(displayPath(item.url))"
+                     : displayPath(item.url))
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -434,11 +518,12 @@ struct UninstallView: View {
                 .foregroundStyle(.secondary)
                 .frame(minWidth: 56, alignment: .trailing)
         }
-        .padding(.leading, 22)
+        .padding(.leading, 36)
         .padding(.trailing, 4)
-        .padding(.vertical, 4)
-        .frame(minHeight: 32)
-        .background(RoundedRectangle(cornerRadius: 6).fill(isHovered ? Color.primary.opacity(0.05) : Color.clear))
+        .padding(.vertical, 7)
+        .frame(minHeight: 40)
+        .background(Rectangle().fill(isHovered ? Color.primary.opacity(0.04) : Color.clear))
+        .overlay(alignment: .bottom) { rowDivider(leading: 84) }
         .contentShape(Rectangle())
         .onTapGesture { if model.phase == .ready { model.toggle(item) } }
         .onHover { hovering in
@@ -560,8 +645,10 @@ struct UninstallView: View {
                     }
                     Button("Select All") { model.selectAll() }
                         .buttonStyle(UninstallSecondaryButtonStyle())
+                        .disabled(model.allSelected)
                     Button("Deselect All") { model.deselectAll() }
                         .buttonStyle(UninstallSecondaryButtonStyle())
+                        .disabled(model.selected.isEmpty)
                     Spacer(minLength: 8)
                     removeButton
                 }
@@ -648,9 +735,18 @@ struct UninstallPrimaryButtonStyle: ButtonStyle {
 
 struct UninstallSecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
+        UninstallSecondaryButtonBody(configuration: configuration)
+    }
+}
+
+private struct UninstallSecondaryButtonBody: View {
+    let configuration: ButtonStyleConfiguration
+    @Environment(\.isEnabled) private var isEnabled
+
+    var body: some View {
         configuration.label
             .font(.system(size: 12, weight: .medium))
-            .foregroundStyle(Color.primary.opacity(configuration.isPressed ? 0.55 : 0.85))
+            .foregroundStyle(Color.primary.opacity(isEnabled ? (configuration.isPressed ? 0.55 : 0.85) : 0.3))
             .padding(.horizontal, 12)
             .frame(height: 28)
             .background(
@@ -659,7 +755,7 @@ struct UninstallSecondaryButtonStyle: ButtonStyle {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 6)
-                    .stroke(Color.primary.opacity(0.12), lineWidth: 0.5)
+                    .stroke(Color.primary.opacity(isEnabled ? 0.12 : 0.06), lineWidth: 0.5)
             )
     }
 }
