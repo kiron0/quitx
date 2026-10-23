@@ -290,7 +290,7 @@
   <main id="top">
     <div class="hero">
       <div class="wrap">
-        <a class="badge" href="#updates"><b id="badgeVer">New in 1.1.8</b>Updates now come straight from GitHub</a>
+        <a class="badge" href="https://github.com/kiron0/quitx"><b>Open Source</b>100% free &amp; MIT licensed on GitHub</a>
         <h1>Quit everything. <span>Keep what matters.</span></h1>
         <p class="lede">QuitX lives in your menu bar and lists every running app, grouped with its windows and helpers. Quit one, some, or all of them in a click. Apps still get to ask about unsaved work.</p>
         <div class="cta">
@@ -595,8 +595,6 @@
           if (dmg && dmg.browser_download_url.startsWith('https://')) document.querySelectorAll('a.dl').forEach(a => { a.href = dmg.browser_download_url; });
           if (release.tag_name) {
             document.querySelectorAll('.ver').forEach(el => { el.textContent = release.tag_name; });
-            const badgeVer = document.getElementById('badgeVer');
-            if (badgeVer) badgeVer.textContent = `New in ${release.tag_name.replace(/^v/, '')}`;
           }
         })
         .catch(() => {});
