@@ -1,12 +1,16 @@
 import AppKit
 import SwiftUI
 
+private final class UninstallHoverState: ObservableObject {
+    @Published var itemID: String?
+    @Published var button: String?
+}
+
 struct UninstallView: View {
     @ObservedObject var model: UninstallViewModel
     var onDismiss: () -> Void
 
-    @State private var hoveredItemID: String?
-    @State private var hoveredButton: String?
+    @StateObject private var hover = UninstallHoverState()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -170,11 +174,11 @@ struct UninstallView: View {
         .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: 6)
-                .fill(isSelected ? QuitXTheme.accent.opacity(0.10) : (hoveredItemID == app.id ? Color.primary.opacity(0.05) : Color.clear))
+                .fill(isSelected ? QuitXTheme.accent.opacity(0.10) : (hover.itemID == app.id ? Color.primary.opacity(0.05) : Color.clear))
         )
         .contentShape(Rectangle())
         .onTapGesture { model.togglePicker(app) }
-        .onHover { hoveredItemID = $0 ? app.id : (hoveredItemID == app.id ? nil : hoveredItemID) }
+        .onHover { hover.itemID = $0 ? app.id : (hover.itemID == app.id ? nil : hover.itemID) }
         .contextMenu {
             Button("Uninstall \(app.target.name)…") { model.startReview([app.target], fromPicker: true) }
             Button("Reveal in Finder") { NSWorkspace.shared.activateFileViewerSelecting([app.target.bundleURL]) }
@@ -375,7 +379,7 @@ struct UninstallView: View {
     }
 
     private func itemRow(_ item: LeftoverItem, showsCategory: Bool) -> some View {
-        let isHovered = hoveredItemID == item.id
+        let isHovered = hover.itemID == item.id
         return HStack(spacing: 8) {
             Button { model.toggle(item) } label: {
                 QuitXSelectionCheckbox(isSelected: model.selected.contains(item.id))
@@ -439,9 +443,9 @@ struct UninstallView: View {
         .onTapGesture { if model.phase == .ready { model.toggle(item) } }
         .onHover { hovering in
             if hovering {
-                hoveredItemID = item.id
-            } else if hoveredItemID == item.id {
-                hoveredItemID = nil
+                hover.itemID = item.id
+            } else if hover.itemID == item.id {
+                hover.itemID = nil
             }
         }
         .contextMenu {
@@ -456,14 +460,14 @@ struct UninstallView: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(hoveredButton == id ? tint : Color.secondary)
+                .foregroundStyle(hover.button == id ? tint : Color.secondary)
                 .frame(width: 24, height: 22)
-                .background(RoundedRectangle(cornerRadius: 5).fill(Color.primary.opacity(hoveredButton == id ? 0.12 : 0.06)))
+                .background(RoundedRectangle(cornerRadius: 5).fill(Color.primary.opacity(hover.button == id ? 0.12 : 0.06)))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .help(help)
-        .onHover { hoveredButton = $0 ? id : (hoveredButton == id ? nil : hoveredButton) }
+        .onHover { hover.button = $0 ? id : (hover.button == id ? nil : hover.button) }
     }
 
     private func displayPath(_ url: URL) -> String {
