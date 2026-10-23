@@ -15,7 +15,7 @@ struct AboutTabView: View {
                 QuitXAppIconView(size: 70, cornerRadius: 14)
 
                 VStack(alignment: .leading, spacing: 5) {
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    HStack(alignment: .center, spacing: 6) {
                         Text(QuitXConstants.appName)
                             .font(.system(size: 14, weight: .bold))
                             .foregroundStyle(Color.primary)
@@ -23,6 +23,8 @@ struct AboutTabView: View {
                         Text("⚡️ Version \(updateChecker.currentVersion)")
                             .font(.system(size: 11))
                             .foregroundStyle(Color.secondary)
+
+                        HelpPopoverButton(text: "Handcrafted with espresso, sweat, and swiftness. Keeping your Mac neat since day one! ☕️🚀")
                     }
 
                     Text(QuitXConstants.copyright)

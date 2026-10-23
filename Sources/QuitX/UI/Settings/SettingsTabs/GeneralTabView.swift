@@ -39,7 +39,7 @@ struct GeneralTabView: View {
                     }
                 ))
             } help: {
-                HelpPopoverButton(text: "QuitX asks GitHub for the latest release a few times a day. When a new version ships, it shows up at the top of the QuitX menu.")
+                HelpPopoverButton(text: "QuitX dispatches carrier pigeons to GitHub a few times a day to scout fresh releases. Never miss shiny new bits! 🕊️📡")
             }
 
             row(label: "") {
@@ -56,7 +56,7 @@ struct GeneralTabView: View {
                 .disabled(!configStore.config.autoUpdate)
                 .opacity(configStore.config.autoUpdate ? 1 : 0.45)
             } help: {
-                HelpPopoverButton(text: "New versions download and get verified in the background. Choose Restart to Update in the menu when it suits you.")
+                HelpPopoverButton(text: "Stealth ninja delivery. Downloads and verifies updates behind the scenes so you can restart whenever you're ready. 🥷📦")
             }
 
             row(label: "Menu Bar:") {
@@ -228,7 +228,7 @@ struct GeneralTabView: View {
                 }
                 .font(.system(size: 11.5))
             } help: {
-                HelpPopoverButton(text: "Restores preferences, shortcuts, and login settings to their defaults. Asks for confirmation first. 🧼")
+                HelpPopoverButton(text: "The nuclear reset button. Restores all preferences, shortcuts, and launch settings back to factory-fresh glory. Asks first! 🧼💥")
             }
 
             Spacer(minLength: 0)

@@ -80,19 +80,22 @@ struct ShortcutsTabView: View {
                     id: "activate",
                     title: "Activate menu",
                     isEnabled: $sm.activateMenuEnabled,
-                    keys: $sm.activateMenuKeys
+                    keys: $sm.activateMenuKeys,
+                    help: "Summons QuitX anywhere on your desktop with zero mouse clicks. Instant command central! ⚡️🛸"
                 )
                 shortcutRow(
                     id: "quit",
                     title: "Quit all apps",
                     isEnabled: $sm.quitAllEnabled,
-                    keys: $sm.quitAllKeys
+                    keys: $sm.quitAllKeys,
+                    help: "The tidy-desk magic wand! Politely dismisses every open app without collateral damage. 🧹🪄"
                 )
                 shortcutRow(
                     id: "force",
                     title: "Force quit all",
                     isEnabled: $sm.forceQuitAllEnabled,
-                    keys: $sm.forceQuitAllKeys
+                    keys: $sm.forceQuitAllKeys,
+                    help: "The nuclear option! Mercilessly terminates stubborn frozen apps when they ignore gentle requests. 💥🚨"
                 )
             }
             .padding(.horizontal, 24)
@@ -179,7 +182,7 @@ struct ShortcutsTabView: View {
         }
     }
 
-    private func shortcutRow(id: String, title: String, isEnabled: Binding<Bool>, keys: Binding<[String]>) -> some View {
+    private func shortcutRow(id: String, title: String, isEnabled: Binding<Bool>, keys: Binding<[String]>, help: String) -> some View {
         let active = isEnabled.wrappedValue
         let isRecording = (viewState.recordingRow == id)
         let keyList = keys.wrappedValue
@@ -197,6 +200,8 @@ struct ShortcutsTabView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+
+            HelpPopoverButton(text: help)
 
             Spacer()
 

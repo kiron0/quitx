@@ -7,9 +7,15 @@ struct ExcludeTabView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Apps on this list stay out of manual and automatic Quit actions.")
-                .font(.system(size: 12))
-                .foregroundStyle(Color.secondary)
+            HStack(alignment: .center) {
+                Text("Apps on this list stay out of manual and automatic Quit actions.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.secondary)
+
+                Spacer()
+
+                HelpPopoverButton(text: "VIP velvet rope immunity! Apps on this list get total immunity from all manual quits, hotkeys, and automated sweeps. 🎟️🛡️")
+            }
 
             Group {
                 if configStore.config.exclude.isEmpty {
