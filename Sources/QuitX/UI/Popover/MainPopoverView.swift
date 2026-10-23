@@ -380,7 +380,7 @@ struct MainPopoverView: View {
         }
 
         menu.addItem(MenuHelper.makeItem(
-            title: "Uninstall Apps…",
+            title: "Uninstall Apps",
             systemSymbolName: "trash",
             action: {
                 UninstallWindowController.shared.showPicker()

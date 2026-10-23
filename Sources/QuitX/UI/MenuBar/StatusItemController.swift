@@ -717,7 +717,7 @@ final class StatusItemController: NSObject {
         }
 
         menu.addItem(MenuHelper.makeItem(
-            title: "Uninstall Apps…",
+            title: "Uninstall Apps",
             action: #selector(openUninstaller),
             target: self,
             systemSymbolName: "trash"
