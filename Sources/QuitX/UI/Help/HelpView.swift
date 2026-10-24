@@ -726,7 +726,7 @@ struct HelpView: View {
                 }
 
             case "privacy-support":
-                Button("About") {
+                Button("About QuitX") {
                     SettingsWindowController.shared.show(tab: .about)
                 }
                 Button("Contact Support") {

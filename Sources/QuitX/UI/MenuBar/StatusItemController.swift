@@ -760,7 +760,7 @@ final class StatusItemController: NSObject {
         ))
 
         menu.addItem(MenuHelper.makeItem(
-            title: "About",
+            title: "About QuitX",
             action: #selector(openAbout),
             target: self,
             keyEquivalent: "i",
@@ -771,7 +771,7 @@ final class StatusItemController: NSObject {
         menu.addItem(.separator())
 
         menu.addItem(MenuHelper.makeItem(
-            title: "Quit",
+            title: "Quit QuitX",
             action: #selector(quitApp),
             target: self,
             keyEquivalent: "q",

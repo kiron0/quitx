@@ -456,7 +456,7 @@ struct MainPopoverView: View {
         ))
 
         menu.addItem(MenuHelper.makeItem(
-            title: "About",
+            title: "About QuitX",
             keyEquivalent: "i",
             assetName: "preferences-about",
             systemSymbolName: "info.circle",
@@ -469,7 +469,7 @@ struct MainPopoverView: View {
         menu.addItem(.separator())
 
         menu.addItem(MenuHelper.makeItem(
-            title: "Quit",
+            title: "Quit QuitX",
             keyEquivalent: "q",
             assetName: "settings-quit",
             systemSymbolName: "power",
