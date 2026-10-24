@@ -43,17 +43,14 @@ struct ExcludeTabView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             if configStore.config.portsEnabled {
-                HStack(spacing: 10) {
-                    QuitXSegmentedControl(
-                        segments: [
-                            QuitXSegment(value: ExcludeSection.apps, title: "Apps", symbol: "square.grid.2x2"),
-                            QuitXSegment(value: ExcludeSection.ports, title: "Ports", symbol: "network")
-                        ],
-                        selection: Binding(get: { state.section }, set: { state.select($0) })
-                    )
-                    .frame(width: 220)
-                    Spacer()
-                }
+                QuitXSegmentedControl(
+                    segments: [
+                        QuitXSegment(value: ExcludeSection.apps, title: "Apps", symbol: "square.grid.2x2"),
+                        QuitXSegment(value: ExcludeSection.ports, title: "Ports", symbol: "network")
+                    ],
+                    selection: Binding(get: { state.section }, set: { state.select($0) })
+                )
+                .frame(maxWidth: .infinity)
             }
 
             HStack(alignment: .center) {

@@ -3,7 +3,10 @@ import SwiftUI
 struct PortsTabView: View {
     @EnvironmentObject private var configStore: ConfigStore
 
-    static let contentHeight: CGFloat = 360
+    static var contentHeight: CGFloat {
+        if #available(macOS 26.0, *) { return 370 }
+        return 340
+    }
 
     private var enabled: Bool { configStore.config.portsEnabled }
 
