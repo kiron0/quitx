@@ -40,7 +40,7 @@ Every removal asks for confirmation first. Removing the selection force quits ea
 
 ## Ports
 
-Settings ▸ Ports ▸ **Enable port killing** adds an Apps / Ports switch to the menu; QuitX remembers the last tab (`QuitXPopoverTab`). While the Ports tab is open, `PortListViewModel` rescans every 2–10 seconds (`portsRefreshSeconds`) and updates CPU and memory every 2 seconds. With the listening port count on (shown in the menu bar stats item), it keeps scanning in the background at most every 15 seconds; otherwise it stops when the menu closes.
+Settings ▸ Ports ▸ **Enable port killing** adds an Apps / Ports switch to the menu; QuitX remembers the last tab (`QuitXPopoverTab`). While the Ports tab is open, `PortListViewModel` rescans every 1–10 seconds (`portsRefreshSeconds`) and updates CPU and memory every 2 seconds. With the listening port count on (shown in the menu bar stats item), it keeps scanning in the background at most every 15 seconds; otherwise it stops when the menu closes.
 
 | Step | What happens | Where |
 |---|---|---|

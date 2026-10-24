@@ -50,7 +50,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
     var portsShowMenuBarCount: Bool = false
     var portsRefreshSeconds: Int = 3
 
-    static let portRefreshChoices: [Int] = [2, 3, 5, 10]
+    static let portRefreshChoices: [Int] = [1, 2, 3, 5, 10]
     static let menuBarRefreshChoices: [Int] = [1, 2, 3, 5, 10]
 
     private enum CodingKeys: String, CodingKey {

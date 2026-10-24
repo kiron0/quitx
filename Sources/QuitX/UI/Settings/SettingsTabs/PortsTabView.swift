@@ -3,10 +3,7 @@ import SwiftUI
 struct PortsTabView: View {
     @EnvironmentObject private var configStore: ConfigStore
 
-    static var contentHeight: CGFloat {
-        if #available(macOS 26.0, *) { return 370 }
-        return 340
-    }
+    static let contentHeight: CGFloat = 340
 
     private var enabled: Bool { configStore.config.portsEnabled }
 
@@ -33,7 +30,7 @@ struct PortsTabView: View {
                 row(label: "Refresh:") {
                     Picker("", selection: binding(\.portsRefreshSeconds)) {
                         ForEach(QuitXConfig.portRefreshChoices, id: \.self) { seconds in
-                            Text("Every \(seconds) seconds").tag(seconds)
+                            Text(seconds == 1 ? "Every second" : "Every \(seconds) seconds").tag(seconds)
                         }
                     }
                     .frame(width: 175, alignment: .leading)
