@@ -136,6 +136,8 @@ struct PortDetailsView: View {
                     .font(.system(size: 11))
                 }
 
+                Spacer()
+
                 Button {
                     ProcessTraceWindowController.shared.show(port: port)
                 } label: {
@@ -145,8 +147,6 @@ struct PortDetailsView: View {
                     }
                     .font(.system(size: 11))
                 }
-
-                Spacer()
             }
             .padding(.horizontal, 18)
             .padding(.vertical, 12)
