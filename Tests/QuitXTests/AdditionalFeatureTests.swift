@@ -166,11 +166,12 @@ struct SettingsTabTests {
     @Test("SettingsTab all cases")
     func testSettingsTabCases() {
         let all = SettingsTab.allCases
-        #expect(all.count == 6)
+        #expect(all.count == 7)
         #expect(all.contains(.general))
         #expect(all.contains(.automation))
         #expect(all.contains(.advanced))
         #expect(all.contains(.exclude))
+        #expect(all.contains(.ports))
         #expect(all.contains(.shortcuts))
         #expect(all.contains(.about))
     }
@@ -215,7 +216,8 @@ struct SettingsTabTests {
         let expectedAutomationHeight: CGFloat = HardwareCapabilities.hasBattery ? 416 : 386
         #expect(SettingsTab.automation.contentHeight == expectedAutomationHeight)
         #expect(SettingsTab.advanced.contentHeight == 266)
-        #expect(SettingsTab.exclude.contentHeight == 306)
+        #expect(SettingsTab.exclude.contentHeight == 336)
+        #expect(SettingsTab.ports.contentHeight == PortsTabView.contentHeight)
         #expect(SettingsTab.shortcuts.contentHeight == 221)
         #expect(SettingsTab.about.contentHeight == 186)
     }
@@ -253,7 +255,7 @@ struct HelpContentTests {
     @Test("Help topics have unique identifiers and complete content")
     func testHelpTopicsAreComplete() {
         let topics = QuitXHelpTopic.all
-        #expect(topics.count == 13)
+        #expect(topics.count == 14)
         #expect(Set(topics.map(\.id)).count == topics.count)
         #expect(Set(topics.map(\.category)) == Set(QuitXHelpCategory.allCases))
         #expect(topics.allSatisfy { !$0.title.isEmpty && !$0.summary.isEmpty && !$0.sections.isEmpty })
@@ -265,6 +267,7 @@ struct HelpContentTests {
         #expect(QuitXHelpTopic.all.first { $0.id == "finder-trash" }?.matches("permanently empties") == true)
         #expect(QuitXHelpTopic.all.first { $0.id == "recently-quit" }?.matches("reopen") == true)
         #expect(QuitXHelpTopic.all.first { $0.id == "menu-battery" }?.matches("battery saver") == true)
+        #expect(QuitXHelpTopic.all.first { $0.id == "ports" }?.matches("SIGKILL") == true)
         #expect(QuitXHelpTopic.all.allSatisfy { $0.matches("   ") })
     }
 }

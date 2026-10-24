@@ -5,7 +5,7 @@ import SwiftUI
 @MainActor
 final class StatusItemController: NSObject {
     static weak var shared: StatusItemController?
-    static let popoverWidth: CGFloat = 270
+    static let popoverWidth: CGFloat = 330
 
     private var statusItem: NSStatusItem
     private var statsStatusItem: NSStatusItem?
@@ -15,6 +15,7 @@ final class StatusItemController: NSObject {
         var memWidth: CGFloat? = nil
         var gpuWidth: CGFloat? = nil
         var batWidth: CGFloat? = nil
+        var portWidth: CGFloat? = nil
     }
     private var segmentMetrics = SegmentMetrics()
     private var window: ArrowPopoverWindow?
@@ -32,6 +33,7 @@ final class StatusItemController: NSObject {
     private var menuStatsTask: Task<Void, Never>?
     private var resignKeyObserver: NSObjectProtocol?
     private var updateObservers: Set<AnyCancellable> = []
+    private var portConfigObserver: AnyCancellable?
 
     var isShown: Bool {
         window?.isVisible ?? false
@@ -47,6 +49,73 @@ final class StatusItemController: NSObject {
         startEventMonitor()
         startWorkspaceObservers()
         observeUpdates()
+        observePortSettings()
+    }
+
+    private func observePortSettings() {
+        portConfigObserver = ConfigStore.shared.$config
+            .map { [$0.portsEnabled ? 1 : 0, $0.portsShowMenuBarCount ? 1 : 0, $0.portsRefreshSeconds, $0.portsIncludeUDP ? 1 : 0]}
+            .removeDuplicates()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                let ports = PortListViewModel.shared
+                if ConfigStore.shared.config.portsEnabled {
+                    ports.stopAutoRefresh()
+                } else {
+                    ports.clearWhenDisabled()
+                }
+                self.syncPortMonitoring()
+                self.updateMenuBarPortCount(ConfigStore.shared.config.portsEnabled && ports.hasLoadedOnce ? ports.listenerCount : nil)
+                self.updatePopoverSize()
+            }
+    }
+
+    var isPortsTabActive: Bool {
+        ConfigStore.shared.config.portsEnabled && AppListViewModel.shared.activeTab == .ports
+    }
+
+    func syncPortMonitoring() {
+        let config = ConfigStore.shared.config
+        let ports = PortListViewModel.shared
+        guard config.portsEnabled else {
+            ports.stopAutoRefresh()
+            updateMenuBarPortCount(nil)
+            return
+        }
+        if isShown && isPortsTabActive {
+            ports.startAutoRefresh()
+        } else if config.portsShowMenuBarCount {
+            ports.startAutoRefresh(interval: max(15, config.portsRefreshSeconds))
+        } else {
+            ports.stopAutoRefresh()
+        }
+    }
+
+    private var menuBarPortCount: Int?
+    private var lastMenuBarSample: MenuBarSample?
+    private var popoverResizeScheduled = false
+
+    func updateMenuBarPortCount(_ count: Int?) {
+        let config = ConfigStore.shared.config
+        let visible = (config.portsEnabled && config.portsShowMenuBarCount) ? count : nil
+        guard visible != menuBarPortCount || (visible != nil && statsStatusItem == nil) else { return }
+        menuBarPortCount = visible
+        updateMenuBarStats(sample: lastMenuBarSample)
+    }
+
+    static func showsPortCount(_ config: QuitXConfig, count: Int?) -> Bool {
+        config.portsEnabled && config.portsShowMenuBarCount && count != nil
+    }
+
+    func scheduleUpdatePopoverSize() {
+        guard !popoverResizeScheduled else { return }
+        popoverResizeScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.popoverResizeScheduled = false
+            self.updatePopoverSize()
+        }
     }
 
     private func observeUpdates() {
@@ -220,14 +289,25 @@ final class StatusItemController: NSObject {
     @MainActor
     func updatePopoverSize() {
         let vm = AppListViewModel.shared
-        let count = vm.filteredApps.count
+        let portsEnabled = ConfigStore.shared.config.portsEnabled
+        let tabBarHeight: CGFloat = portsEnabled ? 29 : 0
+        let count: Int
+        let groupHeaders: Int
+        if isPortsTabActive {
+            let ports = PortListViewModel.shared
+            count = ports.hasLoadedOnce ? ports.visibleCount : 0
+            groupHeaders = ports.hasLoadedOnce ? ports.visibleGroupCount : 0
+        } else {
+            count = vm.filteredApps.count
+            groupHeaders = 0
+        }
         let calculated: CGFloat
         if count == 0 {
-            calculated = 175
+            calculated = 175 + tabBarHeight
         } else {
-            let baseHeight: CGFloat = 94
+            let baseHeight: CGFloat = 94 + tabBarHeight
             let rowHeight: CGFloat = 27
-            calculated = baseHeight + (CGFloat(count) * rowHeight)
+            calculated = baseHeight + (CGFloat(count) * rowHeight) + CGFloat(groupHeaders) * 17
         }
 
         let minPopoverHeight: CGFloat = 220
@@ -320,12 +400,14 @@ final class StatusItemController: NSObject {
     func closePopover() {
         AppListViewModel.shared.cancelConfirmQuitAll()
         AppListViewModel.shared.cancelIndividualAction()
+        PortListViewModel.shared.pendingKillConfirmation = nil
         if isShown {
             lastCloseTimestamp = Date()
         }
         stopLiveMonitoring()
         removeOutsideClickMonitor()
         window?.orderOut(nil)
+        syncPortMonitoring()
     }
 
     @MainActor
@@ -356,6 +438,8 @@ final class StatusItemController: NSObject {
             refreshVisibleApps()
             installOutsideClickMonitor()
             startLiveMonitoring()
+            if isPortsTabActive { PortListViewModel.shared.randomizeQuote() }
+            syncPortMonitoring()
         }
     }
 
@@ -388,7 +472,9 @@ final class StatusItemController: NSObject {
                 self.liveTickCount += 1
                 let skip = throttled && self.liveTickCount % 5 != 0
                 if !skip {
-                    await AppListViewModel.shared.updateLiveStats()
+                    if !self.isPortsTabActive {
+                        await AppListViewModel.shared.updateLiveStats()
+                    }
                     self.updatePopoverSize()
                 }
             }
@@ -469,7 +555,9 @@ final class StatusItemController: NSObject {
 
     func updateMenuBarStats(sample providedSample: MenuBarSample? = nil) {
         let cfg = ConfigStore.shared.config.hardwareAdjusted
-        guard cfg.menuBarStatsEnabled else {
+        let statsOn = cfg.menuBarStatsEnabled
+        let portCount = Self.showsPortCount(cfg, count: menuBarPortCount) ? menuBarPortCount : nil
+        guard statsOn || portCount != nil else {
             removeStatsItem()
             return
         }
@@ -486,30 +574,34 @@ final class StatusItemController: NSObject {
             button.imagePosition = .imageLeading
         }
 
-        let sample = providedSample ?? Self.sampleMenuBar(config: cfg)
-        let cpu = sample.cpu
-        let memoryUsed = sample.memoryUsed
-        let battery = cfg.batteryMenuBarEnabled ? sample.battery : nil
-        let gpu = cfg.menuBarShowGpu ? sample.gpu : nil
+        let sample: MenuBarSample? = statsOn ? (providedSample ?? Self.sampleMenuBar(config: cfg)) : nil
+        if let sample { lastMenuBarSample = sample }
+        let showCpu = statsOn && cfg.menuBarShowCpu
+        let showMemory = statsOn && cfg.menuBarShowMemory
+        let cpu = sample?.cpu ?? 0
+        let memoryUsed = sample?.memoryUsed ?? 0
+        let battery = statsOn && cfg.batteryMenuBarEnabled ? sample?.battery : nil
+        let gpu = statsOn && cfg.menuBarShowGpu ? sample?.gpu : nil
 
-        let cpuText = cfg.menuBarShowCpu ? BatterySaver.percentText(cpu) : "off"
-        let memText = cfg.menuBarShowMemory ? BatterySaver.compactMemoryText(bytes: memoryUsed, unit: cfg.menuBarMemoryUnit) : "off"
+        let cpuText = showCpu ? BatterySaver.percentText(cpu) : "off"
+        let memText = showMemory ? BatterySaver.compactMemoryText(bytes: memoryUsed, unit: cfg.menuBarMemoryUnit) : "off"
         let gpuText = gpu.map { BatterySaver.percentText($0.deviceUtilization) } ?? "off"
         let batteryKey = battery.map { "\($0.percent)-\($0.isCharging)-\($0.isACPower)" } ?? "none"
         let gpuKey = gpu.map { "\(Int($0.deviceUtilization.rounded()))-\($0.memoryUsedBytes)" } ?? "none"
-        let titleKey = "\(cfg.menuBarStatStyle.rawValue)|\(cfg.menuBarShowCpu)|\(cfg.menuBarShowMemory)|\(cfg.menuBarShowGpu)|\(cpuText)|\(memText)|\(gpuKey)|\(batteryKey)"
+        let portKey = portCount.map(String.init) ?? "none"
+        let titleKey = "\(cfg.menuBarStatStyle.rawValue)|\(showCpu)|\(showMemory)|\(cfg.menuBarShowGpu)|\(cpuText)|\(memText)|\(gpuKey)|\(batteryKey)|\(portKey)"
         if titleKey == lastStatTitleKey {
             return
         }
 
-        let cpuAttr: NSAttributedString? = cfg.menuBarShowCpu ? Self.statSegmentTitle(
+        let cpuAttr: NSAttributedString? = showCpu ? Self.statSegmentTitle(
             symbolNames: ["cpu"],
             fallback: "CPU",
             text: cpuText,
             style: cfg.menuBarStatStyle
         ) : nil
 
-        let memAttr: NSAttributedString? = cfg.menuBarShowMemory ? Self.statSegmentTitle(
+        let memAttr: NSAttributedString? = showMemory ? Self.statSegmentTitle(
             symbolNames: ["memorychip", "internaldrive"],
             fallback: "MEM",
             text: memText,
@@ -579,6 +671,19 @@ final class StatusItemController: NSObject {
             fullTitle.append(batAttr)
             didAppend = true
         }
+        let portAttr: NSAttributedString? = portCount.map {
+            Self.statSegmentTitle(
+                symbolNames: ["network"],
+                fallback: "PORTS",
+                text: "\($0)",
+                style: cfg.menuBarStatStyle
+            )
+        }
+        if let portAttr {
+            if didAppend { fullTitle.append(sepAttr) }
+            fullTitle.append(portAttr)
+            didAppend = true
+        }
         guard didAppend else {
             removeStatsItem()
             return
@@ -592,7 +697,8 @@ final class StatusItemController: NSObject {
             sepWidth: sepAttr.size().width,
             memWidth: memAttr?.size().width,
             gpuWidth: gpuAttr?.size().width,
-            batWidth: batAttr?.size().width
+            batWidth: batAttr?.size().width,
+            portWidth: portAttr?.size().width
         )
     }
 
@@ -620,8 +726,26 @@ final class StatusItemController: NSObject {
             return
         }
 
+        if clickedPortSegment(on: button, window: buttonWindow) {
+            StatsDetailController.shared.close()
+            AppListViewModel.shared.selectTab(.ports)
+            showPopover()
+            return
+        }
         let (mode, anchorX) = resolveClickedStat(on: button, window: buttonWindow)
         StatsDetailController.shared.toggle(from: button, mode: mode, anchorScreenX: anchorX)
+    }
+
+    private func clickedPortSegment(on button: NSStatusBarButton, window: NSWindow) -> Bool {
+        guard let portWidth = segmentMetrics.portWidth else { return false }
+        let buttonScreenRect = window.convertToScreen(button.bounds)
+        let fullWidth = button.attributedTitle.size().width
+        let titleInsetX = max(0, (button.bounds.width - fullWidth) / 2)
+        let portStartX = buttonScreenRect.minX + titleInsetX + fullWidth - portWidth
+        let hasOtherSegments = segmentMetrics.cpuWidth != nil || segmentMetrics.memWidth != nil
+            || segmentMetrics.gpuWidth != nil || segmentMetrics.batWidth != nil
+        guard hasOtherSegments else { return true }
+        return NSEvent.mouseLocation.x >= portStartX - segmentMetrics.sepWidth / 2
     }
 
     private func resolveClickedStat(on button: NSStatusBarButton, window: NSWindow) -> (StatsDetailModel.Mode, CGFloat) {
@@ -673,7 +797,7 @@ final class StatusItemController: NSObject {
                 guard !Task.isCancelled, let self else { break }
                 let cfg = ConfigStore.shared.config.hardwareAdjusted
                 guard cfg.menuBarStatsEnabled else {
-                    self.removeStatsItem()
+                    self.updateMenuBarStats(sample: nil)
                     interval = 5_000_000_000
                     continue
                 }

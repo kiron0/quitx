@@ -120,7 +120,7 @@ jobs:
           mkdir -p "$DMG_STAGE"
           cp -R .build/QuitX.app "$DMG_STAGE/"
           ln -s /Applications "$DMG_STAGE/Applications"
-          hdiutil create -volname "QuitX" -srcfolder "$DMG_STAGE" -ov -format UDZO ".build/QuitX-${TAG}.dmg"
+          hdiutil create -volname "QuitX" -srcfolder "$DMG_STAGE" -ov -format ULFO ".build/QuitX-${TAG}.dmg"
 
       - name: Create ZIP Archive
         run: |

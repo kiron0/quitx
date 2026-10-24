@@ -407,6 +407,9 @@ final class LastWindowQuitService: ObservableObject {
     private var closeObservers: [pid_t: AXWindowCloseObserver] = [:]
 
     private let pollInterval: Duration = .seconds(1)
+    private var cachedIndex: (index: RunningAppIndex, keys: [pid_t: String], builtAt: Date)?
+    private var workspaceTokens: [NSObjectProtocol] = []
+    private static let indexLifetime: TimeInterval = 60
     private let requiredEmptySamples = 2
 
     init(
@@ -503,8 +506,39 @@ final class LastWindowQuitService: ObservableObject {
         }
     }
 
+    private func runningIndex() -> (index: RunningAppIndex, keys: [pid_t: String]) {
+        if let cachedIndex, Date().timeIntervalSince(cachedIndex.builtAt) < Self.indexLifetime {
+            return (cachedIndex.index, cachedIndex.keys)
+        }
+        let index = RunningAppIndex(NSWorkspace.shared.runningApplications)
+        var keys: [pid_t: String] = [:]
+        for app in index.apps {
+            keys[app.processIdentifier] = Self.appKey(for: app, index: index)
+        }
+        cachedIndex = (index, keys, Date())
+        return (index, keys)
+    }
+
+    private func observeWorkspaceChanges() {
+        guard workspaceTokens.isEmpty else { return }
+        let center = NSWorkspace.shared.notificationCenter
+        for name in [NSWorkspace.didLaunchApplicationNotification, NSWorkspace.didTerminateApplicationNotification] {
+            workspaceTokens.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.cachedIndex = nil }
+            })
+        }
+    }
+
+    private func stopObservingWorkspaceChanges() {
+        let center = NSWorkspace.shared.notificationCenter
+        workspaceTokens.forEach { center.removeObserver($0) }
+        workspaceTokens.removeAll()
+        cachedIndex = nil
+    }
+
     private func startPolling() {
         guard pollTask == nil else { return }
+        observeWorkspaceChanges()
         installCloseIntentMonitors()
         pollTask = Task { @MainActor [weak self] in
             while !Task.isCancelled {
@@ -579,6 +613,7 @@ final class LastWindowQuitService: ObservableObject {
         pollTask?.cancel()
         pollTask = nil
         removeCloseIntentMonitors()
+        stopObservingWorkspaceChanges()
     }
 
     private func installCloseIntentMonitors() {
@@ -717,10 +752,11 @@ final class LastWindowQuitService: ObservableObject {
     private func currentGroups() -> [String: [NSRunningApplication]] {
         let ownPid = ProcessInfo.processInfo.processIdentifier
         var groups: [String: [NSRunningApplication]] = [:]
-        for app in NSWorkspace.shared.runningApplications {
+        let (index, keys) = runningIndex()
+        for app in index.apps {
             let pid = app.processIdentifier
-            guard pid > 0, pid != ownPid, !app.isTerminated else { continue }
-            groups[Self.appKey(for: app), default: []].append(app)
+            guard pid > 0, pid != ownPid, QuitService.processIsRunning(pid) else { continue }
+            groups[keys[pid] ?? Self.appKey(for: app, index: index), default: []].append(app)
         }
         if let restrictedPID {
             groups = groups.filter { $0.value.contains { $0.processIdentifier == restrictedPID } }
@@ -781,8 +817,43 @@ final class LastWindowQuitService: ObservableObject {
         }
     }
 
+    struct RunningAppIndex {
+        let apps: [NSRunningApplication]
+        let bundlePaths: [pid_t: String]
+        let enclosingPaths: [pid_t: String]
+        let byBundlePath: [String: [NSRunningApplication]]
+
+        init(_ running: [NSRunningApplication]) {
+            var apps: [NSRunningApplication] = []
+            var bundlePaths: [pid_t: String] = [:]
+            var enclosingPaths: [pid_t: String] = [:]
+            var byBundlePath: [String: [NSRunningApplication]] = [:]
+            for app in running where app.processIdentifier > 0 && QuitService.processIsRunning(app.processIdentifier) {
+                apps.append(app)
+                let pid = app.processIdentifier
+                guard let url = app.bundleURL?.standardizedFileURL else { continue }
+                bundlePaths[pid] = url.path
+                byBundlePath[url.path, default: []].append(app)
+                if let enclosing = LastWindowQuitWindowCounter.enclosingAppURL(for: url) {
+                    enclosingPaths[pid] = enclosing.path
+                }
+            }
+            self.apps = apps
+            self.bundlePaths = bundlePaths
+            self.enclosingPaths = enclosingPaths
+            self.byBundlePath = byBundlePath
+        }
+    }
+
     static func appKey(for app: NSRunningApplication) -> String {
-        let root = rootRunningApplication(for: app)
+        appKey(for: app, index: RunningAppIndex(NSWorkspace.shared.runningApplications))
+    }
+
+    static func appKey(for app: NSRunningApplication, index: RunningAppIndex) -> String {
+        let root = rootRunningApplication(for: app, index: index)
+        if let path = index.bundlePaths[root.processIdentifier] ?? index.bundlePaths[app.processIdentifier] {
+            return path
+        }
         if let url = (root.bundleURL ?? app.bundleURL)?.standardizedFileURL {
             return url.path
         }
@@ -807,10 +878,14 @@ final class LastWindowQuitService: ObservableObject {
     }
 
     static func rootRunningApplication(for app: NSRunningApplication) -> NSRunningApplication {
-        guard let enclosingURL = LastWindowQuitWindowCounter.enclosingAppURL(for: app.bundleURL) else { return app }
-        let parents = NSWorkspace.shared.runningApplications.filter {
-            !$0.isTerminated && $0.bundleURL?.standardizedFileURL == enclosingURL
-        }
+        rootRunningApplication(for: app, index: RunningAppIndex(NSWorkspace.shared.runningApplications))
+    }
+
+    static func rootRunningApplication(for app: NSRunningApplication, index: RunningAppIndex) -> NSRunningApplication {
+        let enclosingPath = index.enclosingPaths[app.processIdentifier]
+            ?? LastWindowQuitWindowCounter.enclosingAppURL(for: app.bundleURL)?.path
+        guard let enclosingPath else { return app }
+        let parents = index.byBundlePath[enclosingPath] ?? []
         let ancestor = parents.first {
             ProcessTree.isDescendant(app.processIdentifier, ofAny: [$0.processIdentifier])
         }

@@ -66,6 +66,35 @@ run_job() {
     return "$rc"
 }
 
+clean_build() {
+    rm -rf "$ROOT_DIR/.build/release" "$ROOT_DIR/.build/arm64-apple-macosx/release" "$ROOT_DIR/.build/x86_64-apple-macosx/release"
+    ./Scripts/build.sh
+}
+
+sample_app() {
+    local pid
+    pid=$(pgrep -x QuitX | head -n1)
+    [[ -n "$pid" ]] || { echo "QuitX is not running"; return 1; }
+    echo "pid $pid $(ps -o command= -p "$pid")"
+    local i
+    for i in $(seq 1 20); do
+        ps -o %cpu=,rss= -p "$pid"
+        sleep 1
+    done
+    echo "children: $(pgrep -P "$pid" | wc -l | tr -d ' ')"
+    /usr/bin/sample "$pid" 8 -mayDie -file "$QA_DIR/sample.txt" >/dev/null 2>&1 && echo "stack sample: .qa/sample.txt"
+}
+
+launch_build() {
+    [[ -d "$ROOT_DIR/.build/QuitX.app" ]] || { echo "no build at .build/QuitX.app, run build first"; return 1; }
+    osascript -e 'tell application id "io.coreify.quitx" to quit' >/dev/null 2>&1 || true
+    local n=0
+    while pgrep -x QuitX >/dev/null 2>&1 && (( n < 25 )); do sleep 0.2; n=$((n + 1)); done
+    open "$ROOT_DIR/.build/QuitX.app"
+    sleep 2
+    pgrep -x QuitX >/dev/null 2>&1 && echo "QuitX running from .build/QuitX.app"
+}
+
 handle() {
     local req="$1" cmd arg=""
     cmd=${req%% *}
@@ -77,9 +106,13 @@ handle() {
     case "$cmd" in
         ping) printf 'pong %s\n' "$(now)" > "$QA_DIR/pong" ;;
         build) run_job build ./Scripts/build.sh ;;
+        rebuild) run_job build clean_build ;;
         test) run_job test swift_test "$arg" ;;
         check) run_job build ./Scripts/build.sh && run_job test swift_test "$arg" ;;
         last-window) run_job last-window ./Scripts/test-last-window.sh ;;
+        launch) run_job launch launch_build ;;
+        stats) run_job stats sample_app ;;
+        reload) set_status reloading; rm -f "$PID_FILE"; exec /bin/bash "$SCRIPT_PATH" run ;;
         *) echo "rejected command: $cmd" > "$QA_DIR/rejected.log" ;;
     esac
 }
@@ -195,5 +228,5 @@ case "${1:-run}" in
     status) show_status ;;
     install) install_agent ;;
     uninstall) uninstall_agent ;;
-    *) echo "usage: $0 [run|start|stop|status|install|uninstall]" >&2; exit 2 ;;
+    *) echo "usage: $0 [run|start|stop|status|install|uninstall]  requests: test [filter], build, check [filter], rebuild, last-window, launch, stats, reload, ping" >&2; exit 2 ;;
 esac

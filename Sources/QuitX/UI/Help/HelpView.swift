@@ -161,6 +161,35 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             ]
         ),
         QuitXHelpTopic(
+            id: "ports",
+            category: .essentials,
+            title: "Ports",
+            symbol: "network",
+            summary: "Find and free ports held by dev servers, databases and Docker containers.",
+            sections: [
+                QuitXHelpSection(
+                    title: "Turn it on",
+                    body: "Enable port killing in Settings > Ports. An Apps and Ports switch then appears above the main button. QuitX remembers which one you used last. Turn it off and the Ports tab and its settings go away."
+                ),
+                QuitXHelpSection(
+                    title: "The list",
+                    body: "Every TCP listener (and UDP if you turn it on) with its port, app, Docker container, exposure (Local, LAN or Public), memory and CPU. The list refreshes on its own every few seconds while it's open; pick the interval in Settings > Ports. Search by port, app, command or folder, and group by project folder, Docker container or process tree."
+                ),
+                QuitXHelpSection(
+                    title: "Kill ports",
+                    body: "Select ports and click Kill, or use the power button on a row. Kill sends SIGTERM and escalates only if the listener won't let go; hold ⌥ (Option) or choose Force kill in Settings to send SIGKILL. Dev servers are stopped with their whole process tree, Homebrew services through brew services, and Docker ports by stopping the container. macOS services and apps with windows are protected and can't be killed here."
+                ),
+                QuitXHelpSection(
+                    title: "Row menu",
+                    body: "The ••• menu shows details, traces the process tree, interrupts with SIGINT, excludes it, copies the port, PID or command, opens Terminal in its folder, and opens it in your browser."
+                ),
+                QuitXHelpSection(
+                    title: "Menu bar count and diagnostics",
+                    body: "Show listening port count adds the number of listening ports to the menu bar stats, next to CPU, memory and battery, kept current in the background. Click it to open the Ports tab. Settings > Exclude has a Ports tab while port killing is on: Add Ports… excludes ports picked from the ones listening now or typed by hand, like 3000, 5173 or 8000-8010. The gear menu can export redacted diagnostics or copy recent listener history; tokens and passwords in commands are removed."
+                )
+            ]
+        ),
+        QuitXHelpTopic(
             id: "exclude",
             category: .essentials,
             title: "Exclude Apps",

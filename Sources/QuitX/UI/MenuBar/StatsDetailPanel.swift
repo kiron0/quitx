@@ -905,7 +905,7 @@ struct StatsDetailView: View {
             card {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(alignment: .center, spacing: 10) {
-                        TimelineView(.animation) { context in
+                        TimelineView(.periodic(from: .now, by: 0.4)) { context in
                             let phase = context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 1.6) / 1.6
                             let level = Int(phase * 4)
                             Image(systemName: ["battery.0", "battery.25", "battery.50", "battery.75", "battery.100"][min(level, 4)])

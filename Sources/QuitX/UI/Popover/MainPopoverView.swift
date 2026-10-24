@@ -11,6 +11,7 @@ private final class PopoverUIState: ObservableObject {
 struct MainPopoverView: View {
     @EnvironmentObject private var configStore: ConfigStore
     @ObservedObject private var vm = AppListViewModel.shared
+    @ObservedObject private var portsVM = PortListViewModel.shared
     @StateObject private var uiState = PopoverUIState()
 
     private static let goldColor = QuitXTheme.accent
@@ -24,16 +25,33 @@ struct MainPopoverView: View {
             Color.clear
                 .frame(height: 12)
 
-            quitAllButton
+            if configStore.config.portsEnabled {
+                PopoverTabBar(selection: Binding(
+                    get: { vm.activeTab },
+                    set: { vm.selectTab($0) }
+                ))
                 .padding(.horizontal, 8)
                 .padding(.top, 5)
-                .padding(.bottom, 4)
+            }
+
+            Group {
+                if isPortsTab {
+                    portsActionButton
+                } else {
+                    quitAllButton
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.top, 5)
+            .padding(.bottom, 4)
 
             searchBarRow
                 .padding(.horizontal, 8)
                 .padding(.bottom, 4)
 
-            if vm.isLoading && vm.apps.isEmpty {
+            if isPortsTab {
+                portsContent
+            } else if vm.isLoading && vm.apps.isEmpty {
                 VStack {
                     Spacer()
                     ProgressView()
@@ -56,7 +74,7 @@ struct MainPopoverView: View {
                 .padding(.top, 3)
                 .padding(.bottom, 6)
         }
-        .frame(width: 270)
+        .frame(width: StatusItemController.popoverWidth)
         .frame(minHeight: 220)
         .frame(maxHeight: .infinity)
         .arrowPopoverChrome(arrowX: vm.popoverArrowX, classicBackground: AnyView(QuitXTheme.popoverBackground))
@@ -74,7 +92,24 @@ struct MainPopoverView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: vm.showToast)
         .overlay {
-            if vm.showConfirmQuitAll {
+            if isPortsTab, let request = portsVM.pendingKillConfirmation {
+                QuitConfirmationOverlay(
+                    title: request.title,
+                    subtitle: request.message,
+                    confirmTitle: request.confirmButtonTitle,
+                    systemImage: request.isForced ? "bolt.trianglebadge.exclamationmark.fill" : "questionmark.circle.fill",
+                    isForced: request.isForced,
+                    onConfirm: {
+                        portsVM.confirmPending()
+                    },
+                    onCancel: {
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            portsVM.pendingKillConfirmation = nil
+                        }
+                    }
+                )
+                .transition(.opacity.combined(with: .scale(scale: 0.95)))
+            } else if vm.showConfirmQuitAll {
                 QuitConfirmationOverlay(
                     count: vm.confirmationTargetCount,
                     isAll: vm.confirmationTargetsAreEverything,
@@ -131,6 +166,13 @@ struct MainPopoverView: View {
         .animation(.easeInOut(duration: 0.18), value: vm.showConfirmQuitAll)
         .animation(.easeInOut(duration: 0.18), value: vm.pendingIndividualAction)
         .clipShape(popoverShape(arrowX: vm.popoverArrowX))
+        .animation(.easeInOut(duration: 0.18), value: portsVM.pendingKillConfirmation != nil)
+        .onChange(of: portsVM.visibleCount) {
+            StatusItemController.shared?.scheduleUpdatePopoverSize()
+        }
+        .onChange(of: vm.activeTab) {
+            StatusItemController.shared?.scheduleUpdatePopoverSize()
+        }
         .onChange(of: vm.filteredApps.count) {
             StatusItemController.shared?.updatePopoverSize()
         }
@@ -215,35 +257,130 @@ struct MainPopoverView: View {
         .onHover { uiState.isQuitAllHovered = $0 }
     }
 
+    private var isPortsTab: Bool {
+        configStore.config.portsEnabled && vm.activeTab == .ports
+    }
+
+    private var searchBinding: Binding<String> {
+        isPortsTab ? $portsVM.searchQuery : $vm.searchQuery
+    }
+
+    private var searchText: String {
+        isPortsTab ? portsVM.searchQuery : vm.searchQuery
+    }
+
+    @ViewBuilder
+    private var portsContent: some View {
+        if !portsVM.hasLoadedOnce {
+            PortsLoadingView()
+                .frame(maxHeight: .infinity)
+        } else if portsVM.filteredPorts.isEmpty {
+            VStack(spacing: 10) {
+                Spacer()
+                Image(systemName: "network")
+                    .font(.system(size: 30))
+                    .foregroundStyle(Self.goldColor)
+                Text(portsVM.searchQuery.isEmpty ? "No listening ports. All clear!" : "No ports match '\(portsVM.searchQuery)'")
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(Color.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+                Spacer()
+            }
+            .frame(maxHeight: .infinity)
+        } else {
+            PortListView(vm: portsVM, needsScrolling: vm.listNeedsScrolling)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        }
+    }
+
+    private var portsActionButton: some View {
+        let isForced = portsVM.isForceMode
+        let count = portsVM.selectedVisibleCount
+        let isActive = count > 0
+        let canStart = isActive && !portsVM.isBatchKilling
+        let isAll = portsVM.isEverythingSelected
+        let title: String
+        if isForced {
+            title = isAll ? "Force Kill All Ports" : (isActive ? "Force Kill \(count) \(count == 1 ? "Port" : "Ports")" : "Force Kill Selected Ports")
+        } else {
+            title = isAll ? "Kill All Ports" : (isActive ? "Kill \(count) \(count == 1 ? "Port" : "Ports")" : "Kill Selected Ports")
+        }
+
+        return Button {
+            portsVM.confirmAndKillSelectedPorts(force: isForced)
+        } label: {
+            HStack(spacing: 5) {
+                if portsVM.isBatchKilling {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(Color.black.opacity(0.88))
+                        .scaleEffect(0.65)
+                    Text("Killing…")
+                        .font(.system(size: 12, weight: .bold))
+                } else {
+                    if isForced {
+                        Image(systemName: "bolt.fill")
+                            .font(.system(size: 10, weight: .bold))
+                    }
+                    Text(title)
+                        .font(.system(size: 12, weight: .bold))
+                }
+            }
+            .foregroundStyle(isActive ? Color.black.opacity(0.88) : Color.primary.opacity(0.35))
+            .opacity(canStart || portsVM.isBatchKilling ? 1 : 0.55)
+            .frame(maxWidth: .infinity)
+            .frame(height: 24)
+            .background(
+                isActive
+                    ? Self.goldGradient
+                    : LinearGradient(colors: [Color.primary.opacity(0.08), Color.primary.opacity(0.08)], startPoint: .top, endPoint: .bottom)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .shadow(
+                color: isActive ? Self.goldColor.opacity(uiState.isQuitAllHovered ? 0.3 : 0.12) : Color.clear,
+                radius: 2,
+                y: 1
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(!canStart)
+        .onHover { uiState.isQuitAllHovered = $0 }
+    }
+
     private var searchBarRow: some View {
         HStack(spacing: 8) {
 
             Button {
-                vm.toggleSelectAll()
+                if isPortsTab {
+                    portsVM.toggleSelectAll()
+                } else {
+                    vm.toggleSelectAll()
+                }
             } label: {
                 QuitXSelectionCheckbox(
-                    isSelected: vm.isAllSelected,
-                    isPartial: vm.isPartiallySelected
+                    isSelected: isPortsTab ? portsVM.isAllSelected : vm.isAllSelected,
+                    isPartial: isPortsTab ? portsVM.isPartiallySelected : vm.isPartiallySelected
                 )
             }
             .buttonStyle(.plain)
             .contentShape(Rectangle())
-            .help(vm.isAllSelected ? "Deselect All" : "Select All")
+            .help((isPortsTab ? portsVM.isAllSelected : vm.isAllSelected) ? "Deselect All" : "Select All")
 
             HStack(spacing: 5) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 11))
                     .foregroundStyle(Color.secondary)
 
-                TextField("", text: $vm.searchQuery, prompt: Text("Search").foregroundColor(Color.secondary))
+                TextField("", text: searchBinding, prompt: Text(isPortsTab ? "Search ports, apps, folders" : "Search").foregroundColor(Color.secondary))
                     .textFieldStyle(.plain)
                     .font(.system(size: 11.5))
                     .foregroundStyle(Color.primary)
                     .disableInitialFocus()
 
-                if !vm.searchQuery.isEmpty {
+                if !searchText.isEmpty {
                     Button {
-                        vm.searchQuery = ""
+                        searchBinding.wrappedValue = ""
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 11))
@@ -284,7 +421,7 @@ struct MainPopoverView: View {
     private var footerRow: some View {
         HStack {
             if !configStore.config.disableQuitTips {
-                Text(vm.currentQuote)
+                Text(isPortsTab ? portsVM.currentQuote : vm.currentQuote)
                     .font(.system(size: 11, weight: .regular))
                     .foregroundStyle(Color.secondary)
                     .lineLimit(1)
@@ -312,14 +449,48 @@ struct MainPopoverView: View {
         let menu = NSMenu()
         menu.autoenablesItems = false
 
-        menu.addItem(MenuHelper.makeItem(
-            title: "Refresh Apps",
-            keyEquivalent: "r",
-            systemSymbolName: "arrow.clockwise",
-            action: {
-                Task { await vm.refresh() }
+        if isPortsTab {
+            let portsVM = PortListViewModel.shared
+            menu.addItem(MenuHelper.makeItem(
+                title: "Refresh Ports",
+                keyEquivalent: "r",
+                systemSymbolName: "arrow.clockwise",
+                action: {
+                    Task { await portsVM.refresh() }
+                }
+            ))
+            if !portsVM.ports.isEmpty {
+                menu.addItem(MenuHelper.makeItem(
+                    title: "Export Port Diagnostics…",
+                    systemSymbolName: "square.and.arrow.up",
+                    action: { PortDiagnosticsExporter.export() }
+                ))
             }
-        ))
+            if !ListenerHistoryStore.shared.entries.isEmpty {
+                menu.addItem(MenuHelper.makeItem(
+                    title: "Copy Recent Listener History",
+                    systemSymbolName: "clock.arrow.circlepath",
+                    action: { PortDiagnosticsExporter.copyHistory() }
+                ))
+            }
+            menu.addItem(MenuHelper.makeItem(
+                title: "Port Settings",
+                systemSymbolName: "network",
+                action: {
+                    StatusItemController.shared?.closePopover()
+                    SettingsWindowController.shared.show(tab: .ports)
+                }
+            ))
+        } else {
+            menu.addItem(MenuHelper.makeItem(
+                title: "Refresh Apps",
+                keyEquivalent: "r",
+                systemSymbolName: "arrow.clockwise",
+                action: {
+                    Task { await vm.refresh() }
+                }
+            ))
+        }
 
         let bgTitle = vm.showBackgroundApps ? "Hide Background Apps" : "View Background Apps"
         let bgAsset = vm.showBackgroundApps ? "settings-background-apps-hide" : "settings-background-apps-show"
@@ -483,15 +654,16 @@ struct MainPopoverView: View {
 
     private func optionsMenu() -> NSMenu {
         let recentKey = RecentlyQuitService.shared.menuKey
+        let tabKey = "\(recentKey)|\(isPortsTab)|\(portsVM.ports.isEmpty)|\(ListenerHistoryStore.shared.entries.isEmpty)"
         if let menu = uiState.cachedOptionsMenu,
            uiState.cachedMenuBgState == vm.showBackgroundApps,
-           uiState.cachedMenuRecentKey == recentKey {
+           uiState.cachedMenuRecentKey == tabKey {
             return menu
         }
         let menu = buildOptionsMenu()
         uiState.cachedOptionsMenu = menu
         uiState.cachedMenuBgState = vm.showBackgroundApps
-        uiState.cachedMenuRecentKey = recentKey
+        uiState.cachedMenuRecentKey = tabKey
         return menu
     }
 }

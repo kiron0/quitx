@@ -308,7 +308,7 @@ struct AutomationTabView: View {
         .padding(.horizontal, 20)
         .padding(.top, 14)
         .padding(.bottom, 10)
-        .frame(width: 480, height: SettingsTab.automation.contentHeight, alignment: .topLeading)
+        .frame(width: SettingsTab.contentWidth, height: SettingsTab.automation.contentHeight, alignment: .topLeading)
         .background(QuitXTheme.paneBackground)
         .onAppear {
             state.syncFromMinutes(configStore.config.quitInactiveAfterMinutes)

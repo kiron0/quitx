@@ -46,6 +46,7 @@
 | **Last window closes, app quits** | Close an app's last window and it quits. Spaces, full screen and minimize never count. |
 | **Automation** | Quit inactive apps after a while, per-app quit timers, and a battery saver on MacBooks. |
 | **Uninstall apps** | Remove one app or several at once with their caches, preferences and support files, preselected with sizes. Confirms first, force quits and moves everything to the Trash. Apple and system apps are never offered. |
+| **Ports** | Optional Ports tab: every listening port with its app, folder and Docker container, refreshed live. Kill one or many, trace the process tree, exclude ports and show the count in the menu bar. Turn it on in Settings ▸ Ports. |
 | **Global shortcuts** | Open the menu, Quit All or Force Quit All from anywhere. |
 | **In-app updates** | Updates straight from GitHub Releases, verified before install. |
 

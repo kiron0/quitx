@@ -191,6 +191,9 @@ final class UpdateDownloadService: NSObject, ObservableObject {
             mountPoint.path,
             "-nobrowse",
             "-readonly",
+            "-noverify",
+            "-noautofsck",
+            "-noautoopen",
             "-quiet"
         ]
 

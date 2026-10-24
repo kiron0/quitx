@@ -38,6 +38,17 @@ An entry matches when its name is the bundle identifier or starts with it follow
 
 Every removal asks for confirmation first. Removing the selection force quits each app (every instance, plus processes whose executable is inside its bundle) without saving, because a running app would rewrite its files. If an app can't be force quit, its files are left alone. Hovering an item shows **Show in Finder** and **Remove** for that item alone; removing a single file doesn't quit the app, removing the app bundle does. Selected items move to the Trash. QuitX doesn't edit or restart the Dock; macOS shows a removed app's Dock icon with a question mark until you drag it out. Items QuitX can't move, such as files installed by an installer package, are moved after an administrator prompt. macOS may ask you to allow QuitX under **Privacy & Security › App Management** before it can remove an app bundle.
 
+## Ports
+
+Settings ▸ Ports ▸ **Enable port killing** adds an Apps / Ports switch to the menu; QuitX remembers the last tab (`QuitXPopoverTab`). While the Ports tab is open, `PortListViewModel` rescans every 2–10 seconds (`portsRefreshSeconds`) and updates CPU and memory every 2 seconds. With the listening port count on (shown in the menu bar stats item), it keeps scanning in the background at most every 15 seconds; otherwise it stops when the menu closes.
+
+| Step | What happens | Where |
+|---|---|---|
+| Discover | Listening sockets are read straight from the kernel with libproc (`proc_pidfdinfo`), about 100× faster than `lsof`, which remains only as a fallback. Working directories also come from the kernel. One `ps` call covers just the listeners and their parent processes, and `docker ps` runs only when a container runtime owns a port (cached 15 s) | `SocketScanner`, `PortService.fetchListeningPorts`, `DockerService` |
+| Protect | macOS daemons, Apple bundles, `/System` and `/usr/libexec` executables, apps with windows, editor helpers and QuitX itself are hidden and never signalled | `SystemPortProtection` |
+| Kill | Rechecks PID, executable path and start time; Docker ports stop the container; Homebrew services stop through `brew services`; dev servers stop with their process tree; SIGTERM escalates to SIGKILL only if needed; success means the port stayed free for 0.75 s | `PortService.killPort` |
+| History | Opened, closed and kill events are kept (last 200) for Copy Recent Listener History and Export Port Diagnostics, with tokens and passwords redacted | `ListenerHistoryStore` |
+
 ## Hardware-aware settings
 
 `HardwareCapabilities` checks for an internal battery in the IOKit power sources and for GPU statistics. Without a battery, the Battery stat and **Save power on battery** are hidden, and both are treated as off. Without GPU statistics, the GPU stat is hidden.

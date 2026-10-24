@@ -87,6 +87,7 @@
     .meta { position: relative; margin-top: 18px; font-size: 14px; color: var(--faint); display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: center; }
     .meta span { display: inline-flex; align-items: center; gap: 6px; }
     .meta svg.i { width: 15px; height: 15px; }
+    .dlcount b { color: var(--text); font-weight: 650; font-variant-numeric: tabular-nums; }
 
     .stage { position: relative; margin: 64px auto 0; max-width: 1180px; }
     .frame { position: relative; border-radius: 22px; overflow: hidden; background: #000; aspect-ratio: 16 / 10;
@@ -325,6 +326,7 @@
           <span><svg class="i" aria-hidden="true"><use href="#i-apple"/></svg>macOS 14 or later</span>
           <span><svg class="i" aria-hidden="true"><use href="#i-code"/></svg>Free and open source (MIT)</span>
           <span><svg class="i" aria-hidden="true"><use href="#i-lock"/></svg>No account, no tracking</span>
+          <span class="dlcount" hidden title="Total downloads from GitHub Releases, updated live"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg><b data-downloads>0</b>&nbsp;downloads</span>
         </div>
 
         <div class="stage">
@@ -659,6 +661,61 @@
           }
         })
         .catch(() => {});
+
+      const countEls = document.querySelectorAll('[data-downloads]');
+      const countWrap = document.querySelectorAll('.dlcount');
+      const cacheKey = 'quitx-downloads';
+      let shown = 0;
+      const render = (total, animate) => {
+        if (!Number.isFinite(total) || total <= 0) return;
+        countWrap.forEach(el => { el.hidden = false; });
+        const from = animate ? shown : total;
+        const start = performance.now();
+        const step = now => {
+          const t = Math.min(1, (now - start) / 900);
+          const value = Math.round(from + (total - from) * (1 - Math.pow(1 - t, 3)));
+          countEls.forEach(el => { el.textContent = value.toLocaleString('en-US'); });
+          if (t < 1) requestAnimationFrame(step);
+        };
+        if (animate && !matchMedia('(prefers-reduced-motion: reduce)').matches) requestAnimationFrame(step);
+        else countEls.forEach(el => { el.textContent = total.toLocaleString('en-US'); });
+        shown = total;
+      };
+      const readCache = () => {
+        try { return JSON.parse(localStorage.getItem(cacheKey) || 'null'); } catch { return null; }
+      };
+      const writeCache = total => {
+        try { localStorage.setItem(cacheKey, JSON.stringify({ total, at: Date.now() })); } catch {}
+      };
+      const fetchDownloads = async () => {
+        let total = 0;
+        for (let page = 1; page <= 10; page++) {
+          const r = await fetch(`https://api.github.com/repos/kiron0/quitx/releases?per_page=100&page=${page}`, { headers: { Accept: 'application/vnd.github+json' } });
+          if (!r.ok) return null;
+          const releases = await r.json();
+          for (const release of releases) {
+            for (const asset of release.assets || []) {
+              if (/\.(dmg|zip)$/i.test(asset.name)) total += asset.download_count || 0;
+            }
+          }
+          if (releases.length < 100) break;
+        }
+        return total;
+      };
+      const refreshDownloads = async () => {
+        const cached = readCache();
+        if (cached && Date.now() - cached.at < 4 * 60 * 1000) { render(cached.total, shown === 0); return; }
+        try {
+          const total = await fetchDownloads();
+          if (total) { writeCache(total); render(total, true); }
+          else if (cached) render(cached.total, shown === 0);
+        } catch {
+          if (cached) render(cached.total, shown === 0);
+        }
+      };
+      refreshDownloads();
+      setInterval(() => { if (!document.hidden) refreshDownloads(); }, 5 * 60 * 1000);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshDownloads(); });
     })();
   </script>
 </body>

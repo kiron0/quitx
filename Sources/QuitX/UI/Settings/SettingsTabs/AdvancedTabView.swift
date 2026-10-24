@@ -91,7 +91,7 @@ struct AdvancedTabView: View {
         .padding(.horizontal, 20)
         .padding(.top, 14)
         .padding(.bottom, 10)
-        .frame(width: 480, height: SettingsTab.advanced.contentHeight, alignment: .topLeading)
+        .frame(width: SettingsTab.contentWidth, height: SettingsTab.advanced.contentHeight, alignment: .topLeading)
         .background(QuitXTheme.paneBackground)
     }
 }

@@ -172,7 +172,7 @@ struct ShortcutsTabView: View {
         }
         .padding(.top, 16)
         .padding(.bottom, 16)
-        .frame(width: 480, height: 221, alignment: .topLeading)
+        .frame(width: SettingsTab.contentWidth, height: 221, alignment: .topLeading)
         .background(QuitXTheme.paneBackground)
         .onAppear {
             viewState.startMonitor(sm: sm)

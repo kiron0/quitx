@@ -6,9 +6,12 @@ enum SettingsTab: String, CaseIterable {
     case general = "General"
     case automation = "Automation"
     case advanced = "Advanced"
+    case ports = "Ports"
     case exclude = "Exclude"
     case shortcuts = "Shortcuts"
     case about = "About"
+
+    static let contentWidth: CGFloat = 560
 
     var toolbarItemIdentifier: NSToolbarItem.Identifier {
         NSToolbarItem.Identifier(rawValue)
@@ -19,6 +22,7 @@ enum SettingsTab: String, CaseIterable {
         case .general:   return "preferences-general"
         case .automation: return "preferences-automation"
         case .advanced:  return "preferences-advanced"
+        case .ports:     return "preferences-ports"
         case .exclude:   return "preferences-exclude"
         case .shortcuts: return "preferences-shortcuts"
         case .about:     return "preferences-about"
@@ -30,6 +34,7 @@ enum SettingsTab: String, CaseIterable {
         case .general:   return "gearshape"
         case .automation: return "timer"
         case .advanced:  return "slider.horizontal.3"
+        case .ports:     return "network"
         case .exclude:   return "nosign"
         case .shortcuts: return "command"
         case .about:     return "bolt.fill"
@@ -57,7 +62,8 @@ enum SettingsTab: String, CaseIterable {
             return 356
         case .automation: return HardwareCapabilities.hasBattery ? 416 : 386
         case .advanced:  return 266
-        case .exclude:   return 306
+        case .ports:     return PortsTabView.contentHeight
+        case .exclude:   return ExcludeTabView.contentHeight
         case .shortcuts: return 221
         case .about:     return 186
         }
@@ -271,6 +277,9 @@ struct SettingsContainerView: View {
             case .advanced:
                 AdvancedTabView()
                     .environmentObject(configStore)
+            case .ports:
+                PortsTabView()
+                    .environmentObject(configStore)
             case .exclude:
                 ExcludeTabView()
                     .environmentObject(configStore)
@@ -280,7 +289,7 @@ struct SettingsContainerView: View {
                 AboutTabView()
             }
         }
-        .frame(width: 480, height: tabModel.activeTab.contentHeight, alignment: .top)
+        .frame(width: SettingsTab.contentWidth, height: tabModel.activeTab.contentHeight, alignment: .top)
         .overlay(alignment: .top) {
             if LiquidGlass.enabled {
                 Color.primary.opacity(0.12)

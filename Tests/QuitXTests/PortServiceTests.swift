@@ -1,0 +1,354 @@
+import Testing
+import Foundation
+import AppKit
+@testable import QuitX
+
+@Suite("Port service")
+struct PortServiceTests {
+    @Test("Dev process name matching")
+    func testIsDevProcess() {
+        #expect(PortService.isDevProcess(name: "node"))
+        #expect(PortService.isDevProcess(name: "vite"))
+        #expect(PortService.isDevProcess(name: "next-server"))
+        #expect(PortService.isDevProcess(name: "bun"))
+        #expect(PortService.isDevProcess(name: "python3"))
+        #expect(PortService.isDevProcess(name: "cargo"))
+        #expect(PortService.isDevProcess(name: "mongod"))
+        #expect(PortService.isDevProcess(name: "postgres"))
+        #expect(PortService.isDevProcess(name: "redis-server"))
+        #expect(PortService.isDevProcess(name: "unknown", command: "/usr/local/bin/node server.js"))
+        #expect(PortService.isDevProcess(name: "unknown", command: "bun run dev"))
+        #expect(!PortService.isDevProcess(name: "Finder"))
+        #expect(!PortService.isDevProcess(name: "ControlCenter"))
+    }
+
+    @Test("Port sorting logic")
+    func testPortSorting() {
+        let p1 = PortInfo(port: 3000, pid: 100, processName: "node", memoryBytes: 200 * 1024 * 1024, cpuUsage: 5.0)
+        let p2 = PortInfo(port: 8080, pid: 200, processName: "python", memoryBytes: 50 * 1024 * 1024, cpuUsage: 15.0)
+        let p3 = PortInfo(port: 5173, pid: 300, processName: "vite", memoryBytes: 100 * 1024 * 1024, cpuUsage: 1.0)
+
+        let ports = [p1, p2, p3]
+
+        let byPortAsc = ports.sorted { $0.port < $1.port }
+        #expect(byPortAsc.map(\.port) == [3000, 5173, 8080])
+
+        let byPortDesc = ports.sorted { $0.port > $1.port }
+        #expect(byPortDesc.map(\.port) == [8080, 5173, 3000])
+
+        let byName = ports.sorted { $0.processName.localizedCaseInsensitiveCompare($1.processName) == .orderedAscending }
+        #expect(byName.map(\.processName) == ["node", "python", "vite"])
+
+        let byMemory = ports.sorted { $0.memoryBytes > $1.memoryBytes }
+        #expect(byMemory.map(\.port) == [3000, 5173, 8080])
+
+        let byCpu = ports.sorted { $0.cpuUsage > $1.cpuUsage }
+        #expect(byCpu.map(\.port) == [8080, 3000, 5173])
+    }
+
+    @Test("App resolution for runtimes and docker")
+    func testAppResolution() {
+        let service = PortService.shared
+        let dockerInfo = DockerInfo(
+            containerId: "abc",
+            name: "postgres-db",
+            image: "postgres:15",
+            ports: "5432",
+            publishedPort: 5432
+        )
+        let dockerRes = service.resolveApp(pid: 9999, processName: "com.docker.backend", docker: dockerInfo)
+        #expect(dockerRes.appName == "Docker (postgres-db)")
+        #expect(dockerRes.bundleId == "com.docker.docker")
+
+        let nodeRes = service.resolveApp(pid: 8888, processName: "node")
+        #expect(nodeRes.appName == "Node.js")
+
+        let pgRes = service.resolveApp(pid: 7777, processName: "postgres")
+        #expect(pgRes.appName == "PostgreSQL")
+
+        let redisRes = service.resolveApp(pid: 6666, processName: "redis-server")
+        #expect(redisRes.appName == "Redis")
+    }
+
+    @Test("Dev process listening on port is not protected and resolves to Node.js")
+    func testDevProcessNotProtected() {
+        let isProtected = SystemPortProtection.isSystemProtected(
+            pid: 96009,
+            processName: "node",
+            bundleIdentifier: nil,
+            executablePath: "/opt/homebrew/Cellar/node/26.10.0_2/bin/node"
+        )
+        #expect(!isProtected)
+
+        let appRes = PortService.shared.resolveApp(pid: 96009, processName: "node", command: "node server.js")
+        #expect(appRes.appName == "Node.js")
+        #expect(appRes.bundleId == nil)
+    }
+
+    @Test("Homebrew services match resolved executable or binary name")
+    func testHomebrewServiceMatching() {
+        #expect(PortService.homebrewServiceMatches(
+            executablePath: "/opt/homebrew/Cellar/mongodb-community/8.0.0/bin/mongod",
+            arguments: ["/opt/homebrew/opt/mongodb-community/bin/mongod", "--config", "/opt/homebrew/etc/mongod.conf"]
+        ))
+        #expect(!PortService.homebrewServiceMatches(
+            executablePath: "/opt/homebrew/bin/node",
+            arguments: ["/opt/homebrew/opt/mongodb-community/bin/mongod"]
+        ))
+        #expect(PortService.homebrewServiceMatches(
+            executablePath: "/opt/homebrew/Cellar/mysql/9.4.0/bin/mysqld",
+            arguments: ["/opt/homebrew/Cellar/mysql/9.4.0/bin/mysqld_safe"]
+        ))
+        #expect(!PortService.homebrewServiceMatches(
+            executablePath: "/tmp/mongod",
+            arguments: ["/tmp/mongod"]
+        ))
+        #expect(!PortService.homebrewServiceMatches(
+            executablePath: "/opt/homebrew/Cellar/postgresql@14/14.12/bin/postgres",
+            arguments: ["/opt/homebrew/opt/postgresql@16/bin/postgres"]
+        ))
+    }
+
+    @Test("lsof parser handles IPv4, IPv6, UDP, and malformed records")
+    func testListenerParsing() {
+        let fixture = """
+        p101
+        cnode
+        Ldev
+        PTCP
+        n127.0.0.1:3000
+        TST=LISTEN
+        n[::]:3001
+        p202
+        cmDNS
+        Ldev
+        PUDP
+        n*:5353
+        pbad
+        nmalformed
+        """
+        let parsed = PortService.shared.parseLsofOutput(fixture)
+        #expect(parsed.count == 3)
+        #expect(parsed[0].port == 3000)
+        #expect(parsed[0].address == "127.0.0.1")
+        #expect(parsed[1].port == 3001)
+        #expect(parsed[1].address == "::")
+        #expect(parsed[2].proto == "UDP")
+        #expect(parsed[2].port == 5353)
+    }
+
+    @Test("process identity rejects PID, executable, or start-time changes")
+    func testProcessIdentityMatching() {
+        let expected = ProcessIdentitySnapshot(pid: 42, executablePath: "/bin/node", startTime: 10)
+        #expect(PortService.identitiesMatch(expected: expected, current: expected))
+        #expect(!PortService.identitiesMatch(expected: expected, current: .init(pid: 43, executablePath: "/bin/node", startTime: 10)))
+        #expect(!PortService.identitiesMatch(expected: expected, current: .init(pid: 42, executablePath: "/bin/python", startTime: 10)))
+        #expect(!PortService.identitiesMatch(expected: expected, current: .init(pid: 42, executablePath: "/bin/node", startTime: 11)))
+    }
+
+    @Test("parser remains bounded at large process counts", arguments: [50, 500, 5_000])
+    func testParserPerformance(count: Int) {
+        let fixture = (0..<count).map { index in
+            "p\(index + 100)\ncnode\nLdev\nPTCP\nn127.0.0.1:\(10_000 + index)\nTST=LISTEN"
+        }.joined(separator: "\n")
+        let started = Date()
+        let result = PortService.shared.parseLsofOutput(fixture)
+        #expect(result.count == count)
+        #expect(Date().timeIntervalSince(started) < 5)
+    }
+}
+
+@Suite("Docker service")
+struct DockerServiceTests {
+    @Test("DockerInfo published port matching")
+    func testDockerInfoMatching() {
+        let docker = DockerInfo(
+            containerId: "abcd1234efgh",
+            name: "redis-cache",
+            image: "redis:7-alpine",
+            ports: "0.0.0.0:6379->6379/tcp, :::6379->6379/tcp",
+            publishedPort: 6379
+        )
+
+        #expect(docker.name == "redis-cache")
+        #expect(docker.publishedPort == 6379)
+        #expect(docker.containerId == "abcd1234efgh")
+    }
+
+    @Test("Docker published ranges parse without IPv6 duplicates")
+    func testDockerRanges() {
+        let ports = DockerService.shared.extractPorts(from: "0.0.0.0:8000-8002->80-82/tcp, :::8000->80/tcp")
+        #expect(ports == [8000, 8001, 8002, 8000])
+    }
+}
+
+@Suite("Port diagnostics tests")
+struct PortDiagnosticsTests {
+    @Test("Diagnostics redact secrets")
+    func testRedaction() {
+        let value = ListenerHistoryStore.redact("token=abc password=hunter2 API_KEY=xyz")
+        #expect(!value.contains("abc"))
+        #expect(!value.contains("hunter2"))
+        #expect(!value.contains("xyz"))
+        #expect(value.contains("<redacted>"))
+    }
+}
+
+@Suite("SystemPortProtection Tests")
+struct SystemPortProtectionTests {
+    @Test("Critical daemon names are protected")
+    func testCriticalDaemons() {
+        #expect(SystemPortProtection.isSystemProtected(pid: 9999, processName: "rapportd"))
+        #expect(SystemPortProtection.isSystemProtected(pid: 9999, processName: "ControlCenter"))
+        #expect(SystemPortProtection.isSystemProtected(pid: 9999, processName: "mDNSResponder"))
+        #expect(SystemPortProtection.isSystemProtected(pid: 9999, processName: "launchd"))
+        #expect(!SystemPortProtection.isSystemProtected(pid: 9999, processName: "node"))
+    }
+
+    @Test("Critical bundle identifiers and self are protected")
+    func testBundleIds() {
+        #expect(SystemPortProtection.isSystemProtected(pid: 9999, bundleIdentifier: "com.apple.controlcenter"))
+        #expect(SystemPortProtection.isSystemProtected(pid: 9999, bundleIdentifier: "com.apple.dock"))
+        #expect(SystemPortProtection.isSystemProtected(pid: 9999, bundleIdentifier: "io.coreify.quitx"))
+        #expect(!SystemPortProtection.isSystemProtected(pid: 9999, bundleIdentifier: "com.google.Chrome"))
+    }
+
+    @Test("Protected path prefixes")
+    func testProtectedPaths() {
+        #expect(SystemPortProtection.isSystemProtected(pid: 9999, executablePath: "/System/Library/CoreServices/ControlCenter.app/Contents/MacOS/ControlCenter"))
+        #expect(SystemPortProtection.isSystemProtected(pid: 9999, executablePath: "/usr/libexec/rapportd"))
+        #expect(SystemPortProtection.isSystemProtected(pid: 9999, executablePath: "/usr/sbin/mDNSResponder"))
+        #expect(!SystemPortProtection.isSystemProtected(pid: 9999, executablePath: "/opt/homebrew/bin/node"))
+    }
+
+    @Test("Special PID protection")
+    func testSpecialPids() {
+        #expect(SystemPortProtection.isSystemProtected(pid: 0))
+        #expect(SystemPortProtection.isSystemProtected(pid: 1))
+        #expect(SystemPortProtection.isSystemProtected(pid: ProcessInfo.processInfo.processIdentifier))
+    }
+
+    @Test("PortInfo protection and kill rejection")
+    func testPortInfoKillRejection() async {
+        let protectedPort = PortInfo(
+            port: 5000,
+            pid: 9999,
+            processName: "ControlCenter",
+            appBundleId: "com.apple.controlcenter",
+            isSystemProtected: true
+        )
+        #expect(SystemPortProtection.isSystemProtected(port: protectedPort))
+
+        let killed = await PortService.shared.killPort(protectedPort)
+        #expect(!killed)
+
+        let killedTree = await PortService.shared.terminateProcessTree(pid: 1)
+        #expect(!killedTree)
+    }
+
+    @Test("Dynamic, brand-free editor/IDE detection")
+    func testDynamicEditorDetection() {
+        #expect(SystemPortProtection.isEditorHelperProcess(name: "language_server_macos_arm"))
+        #expect(SystemPortProtection.isEditorHelperProcess(name: "extensionHost"))
+        #expect(SystemPortProtection.isEditorHelperProcess(name: "helper", command: "node --type=extensionHost"))
+        #expect(SystemPortProtection.isEditorHelperProcess(name: "helper", command: "node --type=ptyHost"))
+        #expect(SystemPortProtection.isEditorHelperProcess(name: "Code Helper (Plugin)", command: "/Applications/AnyEditor.app/Contents/Frameworks/Code Helper.app/Contents/MacOS/Code Helper"))
+        #expect(!SystemPortProtection.isEditorHelperProcess(name: "node"))
+
+        #expect(PortService.isIDEOrEditor("Electron", command: "/Applications/SomeEditor.app/Contents/MacOS/Electron"))
+        #expect(PortService.isIDEOrEditor("SomeEditor", command: "/Applications/SomeEditor.app/Contents/MacOS/SomeEditor"))
+        #expect(PortService.isIDEOrEditor("language_server", command: "/whatever/bin/language_server"))
+        #expect(!PortService.isIDEOrEditor("node"))
+        #expect(!PortService.isIDEOrEditor("code-server"))
+        #expect(!PortService.isIDEOrEditor("bun", command: "bun run dev"))
+    }
+
+    @Test("Helper processes are protected from the kill path")
+    func testHelperProtection() {
+        #expect(SystemPortProtection.isSystemProtected(pid: 9999, processName: "language_server_macos_arm"))
+        #expect(PortService.isHostBoundary(pid: 9999, name: "language_server_macos_arm"))
+        #expect(PortService.isHostBoundary(pid: 9999, name: "zsh"))
+        #expect(PortService.isHostBoundary(pid: 9999, name: "bash"))
+        #expect(!PortService.isHostBoundary(pid: 9999, name: "bun"))
+        #expect(!PortService.isHostBoundary(pid: 9999, name: "node"))
+    }
+
+    @Test("App-bundle processes are app-internal hosts, not dev servers")
+    func testAppBundleHost() {
+        let claude = "/Users/x/Library/Application Support/Claude/claude-code/2.0/claude.app/Contents/MacOS/claude"
+        #expect(SystemPortProtection.isAppBundleExecutable(claude))
+        #expect(SystemPortProtection.isSystemProtected(pid: 9999, processName: "claude", executablePath: claude))
+        #expect(PortService.isIDEOrEditor("claude", command: claude))
+        #expect(SystemPortProtection.isAppBundleExecutable("/Applications/Docker.app/Contents/MacOS/com.docker.backend"))
+        #expect(!SystemPortProtection.isAppBundleExecutable("/opt/homebrew/bin/node"))
+        #expect(!SystemPortProtection.isSystemProtected(pid: 9999, processName: "node", executablePath: "/opt/homebrew/bin/node"))
+    }
+}
+
+@Suite("Port audit regression tests")
+struct PortAuditRegressionTests {
+    @Test("lsof parser keeps each file's own protocol when TCP and UDP share a process")
+    func testProtocolAttributionAcrossFiles() {
+        let fixture = """
+        p300
+        cdaemon
+        Ldev
+        f5
+        PTCP
+        n*:7000
+        TST=LISTEN
+        f6
+        PUDP
+        n*:7001
+        """
+        let parsed = PortService.shared.parseLsofOutput(fixture)
+        #expect(parsed.count == 2)
+        #expect(parsed[0].port == 7000)
+        #expect(parsed[0].proto == "TCP")
+        #expect(parsed[1].port == 7001)
+        #expect(parsed[1].proto == "UDP")
+    }
+
+    @Test("lsof parser closes a record when the next file's protocol arrives without an f field")
+    func testProtocolAttributionWithoutFileField() {
+        let fixture = """
+        p301
+        cdaemon
+        PTCP
+        n127.0.0.1:7100
+        TST=LISTEN
+        PUDP
+        n*:7101
+        """
+        let parsed = PortService.shared.parseLsofOutput(fixture)
+        #expect(parsed.map(\.proto) == ["TCP", "UDP"])
+        #expect(parsed.map(\.port) == [7100, 7101])
+    }
+
+    @Test("Docker ownership is not attributed to known local runtimes")
+    func testDockerOwnership() {
+        #expect(PortService.canOwnDockerPublishedPort(processName: "com.docker.backend"))
+        #expect(PortService.canOwnDockerPublishedPort(processName: "OrbStack Helper"))
+        #expect(PortService.canOwnDockerPublishedPort(processName: "vpnkit-bridge"))
+        #expect(!PortService.canOwnDockerPublishedPort(processName: "postgres"))
+        #expect(!PortService.canOwnDockerPublishedPort(processName: "node"))
+    }
+
+    @Test("Targeted ps CPU output parses and skips malformed lines")
+    func testCPUParsing() {
+        let parsed = PortService.parseCPUOutput("  101   1.5\n 202 0.0\ngarbage\n")
+        #expect(parsed[101] == 1.5)
+        #expect(parsed[202] == 0.0)
+        #expect(parsed.count == 2)
+    }
+
+    @Test("Redaction covers flag-style secrets and bearer tokens")
+    func testFlagRedaction() {
+        let flags = ListenerHistoryStore.redact("node server.js --token abc123 --port 3000")
+        #expect(!flags.contains("abc123"))
+        #expect(flags.contains("--port 3000"))
+        let bearer = ListenerHistoryStore.redact("Authorization: Bearer xyz789")
+        #expect(!bearer.contains("xyz789"))
+        #expect(!bearer.contains("=<redacted>"))
+    }
+}

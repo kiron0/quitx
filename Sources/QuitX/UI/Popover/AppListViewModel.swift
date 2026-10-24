@@ -38,6 +38,7 @@ final class AppListViewModel: ObservableObject {
     @Published private(set) var selectedVisibleCount: Int = 0
     @Published private(set) var selectedTotalCount: Int = 0
     @Published var isOptionKeyPressed: Bool = false
+    @Published private(set) var activeTab: PopoverTab = PopoverTab.stored()
     private var resistantPids = [String: pid_t]()
 
     static func flagResistantApps(
@@ -568,6 +569,23 @@ final class AppListViewModel: ObservableObject {
         if !succeeded {
             triggerToast(message: "Couldn’t restart \(app.name). Try force quit.", isError: true)
         }
+    }
+
+    func selectTab(_ tab: PopoverTab) {
+        guard tab != activeTab else { return }
+        activeTab = tab
+        tab.store()
+        cancelConfirmQuitAll()
+        cancelIndividualAction()
+        if PortListViewModel.shared.pendingKillConfirmation != nil {
+            PortListViewModel.shared.pendingKillConfirmation = nil
+        }
+        StatusItemController.shared?.syncPortMonitoring()
+        StatusItemController.shared?.scheduleUpdatePopoverSize()
+    }
+
+    func showToastMessage(_ message: String, isError: Bool = false) {
+        triggerToast(message: message, isError: isError)
     }
 
     func performToastAction() {

@@ -3,6 +3,7 @@ import AppKit
 
 enum QuitXTheme {
     static let accent = Color(red: 254/255, green: 188/255, blue: 51/255)
+    static let forceColor = accent
     static let accentNSColor = NSColor(srgbRed: 254/255, green: 188/255, blue: 51/255, alpha: 1.0)
     static let windowBackgroundNSColor = NSColor.windowBackgroundColor
     static let cardBackground = Color.primary.opacity(0.035)

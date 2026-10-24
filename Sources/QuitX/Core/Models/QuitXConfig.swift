@@ -39,6 +39,19 @@ struct QuitXConfig: Codable, Equatable, Sendable {
     var batterySaverEnabled: Bool = false
     var quitTimers: [String: Double] = [:]
     var liquidGlassEnabled: Bool = true
+    var portsEnabled: Bool = false
+    var portsExcluded: [Int] = []
+    var portsForceKill: Bool = false
+    var portsConfirmKill: Bool = true
+    var portsSelectAllByDefault: Bool = false
+    var portsSortBy: PortSortBy = .portAsc
+    var portsDockerStopTimeout: Int = 5
+    var portsIncludeUDP: Bool = false
+    var portsGrouping: ListenerGrouping = .none
+    var portsShowMenuBarCount: Bool = false
+    var portsRefreshSeconds: Int = 3
+
+    static let portRefreshChoices: [Int] = [2, 3, 5, 10]
 
     private enum CodingKeys: String, CodingKey {
         case exclude, force, includeFinder, includeTrash, includeBackground, groupBackground
@@ -50,6 +63,9 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         case hogAlertEnabled, hogCpuThreshold
         case memoryPressureQuitEnabled, memoryPressureThresholdMB, batterySaverEnabled
         case quitTimers, liquidGlassEnabled
+        case portsEnabled, portsExcluded, portsForceKill, portsConfirmKill, portsSelectAllByDefault, portsSortBy
+        case portsDockerStopTimeout, portsIncludeUDP, portsGrouping
+        case portsShowMenuBarCount, portsRefreshSeconds
     }
 
     init(
@@ -173,6 +189,21 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         batterySaverEnabled = Self.dec(container, .batterySaverEnabled, defaults.batterySaverEnabled)
         quitTimers = Self.decDoubleMap(container, .quitTimers, defaults.quitTimers)
         liquidGlassEnabled = Self.dec(container, .liquidGlassEnabled, defaults.liquidGlassEnabled)
+        portsEnabled = Self.dec(container, .portsEnabled, defaults.portsEnabled)
+        portsExcluded = Self.validPorts(Self.dec(container, .portsExcluded, defaults.portsExcluded))
+        portsForceKill = Self.dec(container, .portsForceKill, defaults.portsForceKill)
+        portsConfirmKill = Self.dec(container, .portsConfirmKill, defaults.portsConfirmKill)
+        portsSelectAllByDefault = Self.dec(container, .portsSelectAllByDefault, defaults.portsSelectAllByDefault)
+        portsSortBy = Self.dec(container, .portsSortBy, defaults.portsSortBy)
+        portsDockerStopTimeout = min(max(Self.dec(container, .portsDockerStopTimeout, defaults.portsDockerStopTimeout), 1), 60)
+        portsIncludeUDP = Self.dec(container, .portsIncludeUDP, defaults.portsIncludeUDP)
+        portsGrouping = Self.dec(container, .portsGrouping, defaults.portsGrouping)
+        portsShowMenuBarCount = Self.dec(container, .portsShowMenuBarCount, defaults.portsShowMenuBarCount)
+        portsRefreshSeconds = min(max(Self.dec(container, .portsRefreshSeconds, defaults.portsRefreshSeconds), 1), 60)
+    }
+
+    static func validPorts(_ ports: [Int]) -> [Int] {
+        Array(Set(ports.filter { (1...65535).contains($0) })).sorted()
     }
 
     private static func dec<T: Decodable>(_ container: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys, _ fallback: T) -> T {

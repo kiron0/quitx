@@ -127,7 +127,7 @@ final class AutoQuitService {
     }
 
     private func runningApplicationsWithResolvedPids() -> [(NSRunningApplication, pid_t)] {
-        let applications = NSWorkspace.shared.runningApplications.filter { !$0.isTerminated }
+        let applications = NSWorkspace.shared.runningApplications
         let needsRecovery = applications.contains {
             $0.processIdentifier <= 0 && $0.executableURL != nil
         }

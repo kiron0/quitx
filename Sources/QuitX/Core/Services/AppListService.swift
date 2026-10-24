@@ -43,7 +43,7 @@ final class AppListService {
     private static func pidRecoveryIndex() async -> [String: pid_t] {
         let workspaceApps = NSWorkspace.shared.runningApplications
         let needsRecovery = workspaceApps.contains {
-            !$0.isTerminated && $0.processIdentifier <= 0 && $0.executableURL != nil
+            $0.processIdentifier <= 0 && $0.executableURL != nil && !$0.isTerminated
         }
         guard needsRecovery else { return [:] }
         return await Task.detached(priority: .utility) {
@@ -55,7 +55,7 @@ final class AppListService {
     private static func pidRecoveryIndexSynchronously() -> [String: pid_t] {
         let workspaceApps = NSWorkspace.shared.runningApplications
         let needsRecovery = workspaceApps.contains {
-            !$0.isTerminated && $0.processIdentifier <= 0 && $0.executableURL != nil
+            $0.processIdentifier <= 0 && $0.executableURL != nil && !$0.isTerminated
         }
         guard needsRecovery else { return [:] }
         return pidsByNormalizedPath(runningProcessPaths())
@@ -65,7 +65,6 @@ final class AppListService {
     private static func runningSnapshots(pidsByPath: [String: pid_t]) -> [RunningAppSnapshot] {
         var seenPids = Set<pid_t>()
         return NSWorkspace.shared.runningApplications.compactMap { app -> RunningAppSnapshot? in
-            guard !app.isTerminated else { return nil }
             guard let pid = resolvedProcessIdentifier(
                 reportedPid: app.processIdentifier,
                 executablePath: app.executableURL?.path,

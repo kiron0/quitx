@@ -4,7 +4,26 @@ All notable changes to QuitX macOS App will be documented in this file.
 
 ## 1.2.1
 
+### Added
+
+- Ports tab: **Settings ▸ Ports ▸ Enable port killing** adds an Apps / Ports switch above the main button in the menu. Every option in the tab stays disabled until it's enabled, and the switch disappears when it's off. The last tab used is remembered (`PopoverTab`, `QuitXPopoverTab` in `UserDefaults`).
+- The Ports list (`PortListViewModel`, `PortService`, `DockerService`) shows TCP listeners (UDP optional) with app, command, folder, Docker container, exposure, memory and CPU, refreshes on its own every 2, 3, 5 or 10 seconds while open, and updates CPU and memory every 2 seconds.
+- The main button follows the tab: Quit / Force Quit for apps, Kill / Force Kill for ports, with the same confirmation card. Hold ⌥ or set **Default: Force kill** for SIGKILL.
+- Kill escalates SIGTERM to SIGKILL only when needed, verifies the port was released, kills dev-server process trees, stops Homebrew services with `brew services` and Docker ports by stopping the container (configurable stop timeout). Process identity is rechecked before every signal; macOS services and apps with windows are protected.
+- Row menu: Details, Trace Process Tree, Interrupt (SIGINT), exclude, copy port / PID / command, Open Terminal Here, Open in Browser.
+- Settings ▸ Ports: refresh interval, UDP, listening port count in the menu bar stats item (next to CPU, memory, GPU and battery; click it to open the Ports tab), grouping (project, Docker, process), sort, default signal, confirmation, select-all default, Docker stop timeout, and a shortcut to the excluded ports. **Add Ports…** in Settings ▸ Exclude ▸ Ports opens a window (`ExcludePortPickerView`) to pick listening ports or type ports and ranges with validation (`PortEntryParser`).
+- Gear menu on the Ports tab: Refresh Ports, Export Port Diagnostics (secrets redacted), Copy Recent Listener History, Port Settings.
+- Faster port discovery: `SocketScanner` reads listening sockets and working directories from the kernel (libproc) in a few milliseconds instead of spawning `lsof` (about 320 ms); `ps` only covers listeners and their parents, and `docker ps` runs only when a container runtime owns a port. Background scans for the menu bar count run every 15 s.
+- Excluded ports are managed in Settings ▸ Exclude, which shows Apps / Ports tabs when port killing is on (remembered between visits). Each excluded port shows the app listening on it, with select, remove and Add Ports….
+- Less CPU when idle: Quit When Last Window Closes no longer rebuilds its app list every second. It used to query LaunchServices once per running app per second (`NSRunningApplication.isTerminated` and friends) and compare every app with every other app; it now keeps an index that is rebuilt only when apps launch or quit (or at most once a minute), and checks liveness with `kill(pid, 0)`. The app list and Auto Quit skip the same LaunchServices round trips.
+- Fixed: switching between the Apps and Ports tabs could freeze and crash QuitX (an endless layout pass caused by a per-frame loading animation and resizing the menu during layout).
+- Fixed: the Ports view model no longer reads a main-actor singleton in a default argument (Swift 6 warning).
+- Website: live total download count from GitHub Releases in the hero, refreshed every 5 minutes.
+
 ### Changed
+
+- The menu is 330 pt wide (was 270) and Settings 560 pt (was 480).
+- Faster update preparation: the updater mounts the downloaded disk image with `-noverify -noautofsck -noautoopen`, skipping hdiutil's full checksum pass (the SHA-256 digest and code signature are still checked), and releases are built as `ULFO` (LZFSE) disk images, which decompress faster than `UDZO`. The terminal installer mounts the same way.
 
 - Menu item labels: **About** and **Quit** in the menu bar right-click menu, popover gear menu, and Help view are now explicitly labeled **About QuitX** and **Quit QuitX** for clarity.
 
