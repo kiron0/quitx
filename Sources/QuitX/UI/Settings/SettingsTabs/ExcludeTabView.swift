@@ -88,7 +88,8 @@ struct ExcludeTabView: View {
             }
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 16)
+        .padding(.top, 16)
+        .padding(.bottom, SettingsTab.bottomPadding)
         .frame(width: SettingsTab.contentWidth, height: Self.contentHeight, alignment: .topLeading)
         .background(QuitXTheme.paneBackground)
         .overlay {

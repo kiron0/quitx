@@ -116,7 +116,7 @@ struct AboutTabView: View {
             .padding(.horizontal, 24)
         }
         .padding(.top, 16)
-        .padding(.bottom, 16)
+        .padding(.bottom, SettingsTab.bottomPadding)
         .frame(width: SettingsTab.contentWidth, height: 186, alignment: .topLeading)
         .background(QuitXTheme.paneBackground)
     }

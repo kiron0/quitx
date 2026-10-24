@@ -171,7 +171,7 @@ struct ShortcutsTabView: View {
             }
         }
         .padding(.top, 16)
-        .padding(.bottom, 16)
+        .padding(.bottom, SettingsTab.bottomPadding)
         .frame(width: SettingsTab.contentWidth, height: 221, alignment: .topLeading)
         .background(QuitXTheme.paneBackground)
         .onAppear {

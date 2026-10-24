@@ -12,6 +12,7 @@ enum SettingsTab: String, CaseIterable {
     case about = "About"
 
     static let contentWidth: CGFloat = 560
+    static let bottomPadding: CGFloat = 16
 
     var toolbarItemIdentifier: NSToolbarItem.Identifier {
         NSToolbarItem.Identifier(rawValue)
