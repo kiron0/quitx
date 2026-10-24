@@ -141,23 +141,10 @@ struct ProcessTraceWindowView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.vertical, 8)
+                .padding(.top, 8)
+                .padding(.bottom, 14)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            Divider()
-
-            HStack {
-                Spacer()
-                Button("Close") {
-                    onClose()
-                }
-                .font(.system(size: 11))
-                .keyboardShortcut(.cancelAction)
-                .disabled(uiState.isKilling || uiState.showingKillConfirmation)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
         }
         .frame(minWidth: 460, maxWidth: .infinity, minHeight: 380, maxHeight: .infinity)
         .background {
@@ -190,6 +177,13 @@ struct ProcessTraceWindowView: View {
             }
         }
         .animation(.easeInOut(duration: 0.18), value: uiState.showingKillConfirmation)
+        .onExitCommand {
+            if uiState.showingKillConfirmation {
+                uiState.showingKillConfirmation = false
+            } else {
+                onClose()
+            }
+        }
         .ignoresSafeArea()
     }
 

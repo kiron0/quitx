@@ -44,6 +44,32 @@ struct PortDetailsView: View {
                 }
 
                 Spacer()
+
+                Button {
+                    if port.isSystemProtected {
+                        PortListViewModel.shared.showToastMessage("Port is protected by system", isError: true)
+                        return
+                    }
+                    if ConfigStore.shared.config.portsConfirmKill {
+                        uiState.showingKillConfirmation = true
+                    } else {
+                        performKill()
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "power")
+                        Text(uiState.isKilling ? "Killing..." : "Kill")
+                    }
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.orange)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.orange.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: 5))
+                }
+                .buttonStyle(.plain)
+                .disabled(uiState.isKilling || port.isSystemProtected)
+                .opacity((uiState.isKilling || port.isSystemProtected) ? 0.5 : 1.0)
             }
             .padding(.horizontal, 18)
             .padding(.top, 4)
@@ -121,23 +147,6 @@ struct PortDetailsView: View {
                 }
 
                 Spacer()
-
-                Button("Close") {
-                    onClose()
-                }
-                .font(.system(size: 11))
-                .keyboardShortcut(.cancelAction)
-
-                Button(port.isSystemProtected ? "Protected" : "Kill Port") {
-                    guard !port.isSystemProtected else { return }
-                    if ConfigStore.shared.config.portsConfirmKill {
-                        uiState.showingKillConfirmation = true
-                    } else {
-                        performKill()
-                    }
-                }
-                .font(.system(size: 11, weight: .semibold))
-                .disabled(uiState.isKilling || port.isSystemProtected)
             }
             .padding(.horizontal, 18)
             .padding(.vertical, 12)
@@ -157,8 +166,8 @@ struct PortDetailsView: View {
                 QuitConfirmationOverlay(
                     title: "Kill Port :\(port.port)?",
                     subtitle: "Terminating \(port.processName) (PID \(port.pid)) will close this port listener.",
-                    confirmTitle: "Kill Port",
-                    systemImage: "questionmark.circle.fill",
+                    confirmTitle: "Kill",
+                    systemImage: "power",
                     isForced: false,
                     cardWidth: 260,
                     onConfirm: {
@@ -173,6 +182,13 @@ struct PortDetailsView: View {
             }
         }
         .animation(.easeInOut(duration: 0.18), value: uiState.showingKillConfirmation)
+        .onExitCommand {
+            if uiState.showingKillConfirmation {
+                uiState.showingKillConfirmation = false
+            } else {
+                onClose()
+            }
+        }
         .ignoresSafeArea()
     }
 
