@@ -6,7 +6,7 @@ All notable changes to QuitX macOS App will be documented in this file.
 
 ### Changed
 
-- 
+- Menu item labels: **About** and **Quit** in the menu bar right-click menu, popover gear menu, and Help view are now explicitly labeled **About QuitX** and **Quit QuitX** for clarity.
 
 ## 1.2.0
 

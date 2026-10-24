@@ -2,6 +2,12 @@ import Foundation
 
 extension ChangelogProvider {
     static let appReleases: [ReleaseChangelog] = [
+        ReleaseChangelog("1.2.1", "Clearer menu item labels", [
+            ("Improvements", [
+                "**Clear Menu Item Labels**: About and Quit menu items in the menu bar right-click menu, popover gear menu, and Help view are now explicitly labeled **About QuitX** and **Quit QuitX**."
+            ])
+        ]),
+
         ReleaseChangelog("1.2.0", "App uninstaller & hardware-aware settings", [
             ("New Features", [
                 "**Uninstall Apps**: Choose Uninstall in an app's ••• menu. QuitX finds the app and its leftover support files, caches, preferences, containers, saved state, logs, and launch items, with sizes. Everything starts selected; confirm and they go to the Trash.",
