@@ -38,13 +38,13 @@
 | **Normal quit or force quit** | Normal quit lets apps save first. Hold <kbd>⌥</kbd> to force quit, or make Force quit the default. |
 | **View background apps** | Show helpers and agents that never appear in the Dock, with identical instances grouped. <kbd>⌘B</kbd> |
 | **Exclude apps** | Excluded apps leave the list and are never quit, manually or automatically. Music apps can be protected with one switch. |
-| **Menu bar stats** | Live CPU, memory, GPU and battery in the menu bar, as icons or text. Click a stat for a detailed view. |
+| **Menu bar stats** | Live CPU, memory, GPU and battery in the menu bar, as icons or text, with your choice of refresh rate. Click a stat for a detailed view. |
 | **CPU and memory warnings** | When CPU or memory stays over your limit, QuitX notifies you and offers to quit inactive apps. |
 | **Quit apps when your Mac sleeps** | Close everything on sleep, only between the hours you pick. |
 | **Classic or Liquid Glass** | The solid classic look, or translucent Liquid Glass on macOS 26. |
 | **Sounds on quit** | A short arcade laser every time an app goes. Switch it off any time. |
 | **Last window closes, app quits** | Close an app's last window and it quits. Spaces, full screen and minimize never count. |
-| **Automation** | Quit inactive apps after a while, per-app quit timers, and a battery saver on MacBooks. |
+| **Automation** | Quit inactive apps after a while and per-app quit timers. Slows itself down in Low Power Mode. |
 | **Uninstall apps** | Remove one app or several at once with their caches, preferences and support files, preselected with sizes. Confirms first, force quits and moves everything to the Trash. Apple and system apps are never offered. |
 | **Ports** | Optional Ports tab: every listening port with its app, folder and Docker container, refreshed live. Kill one or many, trace the process tree, exclude ports and show the count in the menu bar. Turn it on in Settings ▸ Ports. |
 | **Global shortcuts** | Open the menu, Quit All or Force Quit All from anywhere. |
@@ -70,6 +70,10 @@
   <tr>
     <td width="50%"><img src="Support/Screenshots/sounds.jpg" alt="Play cool sounds setting" /><p align="center"><strong>Sounds on quit</strong></p></td>
     <td width="50%"><img src="Support/Screenshots/updates.jpg" alt="Restart to Update and the Update window" /><p align="center"><strong>In-app updates</strong></p></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="Support/Screenshots/ports.jpg" alt="The Ports tab listing listening ports" /><p align="center"><strong>Free up busy ports</strong></p></td>
+    <td width="50%"><img src="Support/Screenshots/portsSettings.jpg" alt="Ports settings with Enable port killing turned on" /><p align="center"><strong>Ports settings</strong></p></td>
   </tr>
 </table>
 

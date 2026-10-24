@@ -58,11 +58,10 @@ struct PortListViewModelTests {
 
     @Test("Port settings decode with defaults and sanitize ranges")
     func decoding() throws {
-        let json = #"{"portsEnabled":true,"portsExcluded":[0,80,80,70000],"portsDockerStopTimeout":500,"portsRefreshSeconds":0,"portsSortBy":"cpuDesc"}"#
+        let json = #"{"portsEnabled":true,"portsExcluded":[0,80,80,70000],"portsRefreshSeconds":0,"portsSortBy":"cpuDesc"}"#
         let config = try JSONDecoder().decode(QuitXConfig.self, from: Data(json.utf8))
         #expect(config.portsEnabled)
         #expect(config.portsExcluded == [80])
-        #expect(config.portsDockerStopTimeout == 60)
         #expect(config.portsRefreshSeconds == 1)
         #expect(config.portsSortBy == .cpuDesc)
         #expect(!QuitXConfig.default.portsEnabled)

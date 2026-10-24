@@ -459,12 +459,7 @@ final class StatusItemController: NSObject {
             while let self = self, self.isShown {
                 try? await Task.sleep(nanoseconds: 2_000_000_000)
                 guard !Task.isCancelled, self.isShown else { break }
-                let cfg = ConfigStore.shared.config.hardwareAdjusted
-                let powerSources = cfg.batterySaverEnabled
-                    ? BatterySaver.currentDescriptions()
-                    : nil
-                let throttled = cfg.batterySaverEnabled
-                    && BatterySaver.isOnBattery(descriptions: powerSources ?? [])
+                let throttled = BatterySaver.isLowPowerMode
                 if throttled != self.lastThrottled {
                     self.liveTickCount = 0
                     self.lastThrottled = throttled
@@ -535,21 +530,17 @@ final class StatusItemController: NSObject {
         let memoryUsed: UInt64
         let battery: BatteryMenuBarSnapshot?
         let gpu: GpuUsageService.Snapshot?
-        let onBattery: Bool
     }
 
     nonisolated static func sampleMenuBar(config cfg: QuitXConfig) -> MenuBarSample {
-        let needsPower = cfg.batterySaverEnabled || cfg.batteryMenuBarEnabled
-        let powerSources = needsPower ? BatterySaver.currentDescriptions() : nil
+        let powerSources = cfg.batteryMenuBarEnabled ? BatterySaver.currentDescriptions() : nil
         return MenuBarSample(
             cpu: SystemUsage.cpuPercent(consumer: "menuBar"),
             memoryUsed: SystemUsage.memoryUsedBytes(),
             battery: cfg.batteryMenuBarEnabled
                 ? BatteryDetailSampler.menuBarSnapshot(descriptions: powerSources)
                 : nil,
-            gpu: cfg.menuBarShowGpu ? GpuUsageService.snapshot() : nil,
-            onBattery: cfg.batterySaverEnabled
-                && BatterySaver.isOnBattery(descriptions: powerSources ?? [])
+            gpu: cfg.menuBarShowGpu ? GpuUsageService.snapshot() : nil
         )
     }
 
@@ -805,7 +796,7 @@ final class StatusItemController: NSObject {
                     StatusItemController.sampleMenuBar(config: cfg)
                 }.value
                 guard !Task.isCancelled else { break }
-                interval = sample.onBattery ? 5_000_000_000 : 1_000_000_000
+                interval = BatterySaver.menuBarInterval(refreshSeconds: cfg.menuBarRefreshSeconds, lowPowerMode: BatterySaver.isLowPowerMode)
                 self.updateMenuBarStats(sample: sample)
             }
         }

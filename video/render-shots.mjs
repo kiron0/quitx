@@ -20,7 +20,7 @@ const site = resolve(root, 'site/assets/shots');
 mkdirSync(readme, { recursive: true });
 mkdirSync(site, { recursive: true });
 
-const scenes = ['hero', 'force', 'confirm', 'background', 'exclude', 'stats', 'health', 'sleep', 'theme', 'sounds', 'updates', 'settings'];
+const scenes = ['hero', 'force', 'confirm', 'background', 'exclude', 'stats', 'health', 'sleep', 'theme', 'sounds', 'updates', 'settings', 'ports', 'portsSettings'];
 const browser = await chromium.launch();
 
 async function open(hash) {

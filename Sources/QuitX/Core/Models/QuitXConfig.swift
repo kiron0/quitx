@@ -36,7 +36,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
     var hogCpuThreshold: Double = 80
     var memoryPressureQuitEnabled: Bool = false
     var memoryPressureThresholdMB: Int = 1024
-    var batterySaverEnabled: Bool = false
+    var menuBarRefreshSeconds: Int = 1
     var quitTimers: [String: Double] = [:]
     var liquidGlassEnabled: Bool = true
     var portsEnabled: Bool = false
@@ -45,13 +45,13 @@ struct QuitXConfig: Codable, Equatable, Sendable {
     var portsConfirmKill: Bool = true
     var portsSelectAllByDefault: Bool = false
     var portsSortBy: PortSortBy = .portAsc
-    var portsDockerStopTimeout: Int = 5
     var portsIncludeUDP: Bool = false
     var portsGrouping: ListenerGrouping = .none
     var portsShowMenuBarCount: Bool = false
     var portsRefreshSeconds: Int = 3
 
     static let portRefreshChoices: [Int] = [2, 3, 5, 10]
+    static let menuBarRefreshChoices: [Int] = [1, 2, 3, 5, 10]
 
     private enum CodingKeys: String, CodingKey {
         case exclude, force, includeFinder, includeTrash, includeBackground, groupBackground
@@ -61,10 +61,10 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         case quitWhenLastWindowClosed
         case sleepLockStartMinutes, sleepLockEndMinutes, sleepLockUse24Hour
         case hogAlertEnabled, hogCpuThreshold
-        case memoryPressureQuitEnabled, memoryPressureThresholdMB, batterySaverEnabled
+        case memoryPressureQuitEnabled, memoryPressureThresholdMB, menuBarRefreshSeconds
         case quitTimers, liquidGlassEnabled
         case portsEnabled, portsExcluded, portsForceKill, portsConfirmKill, portsSelectAllByDefault, portsSortBy
-        case portsDockerStopTimeout, portsIncludeUDP, portsGrouping
+        case portsIncludeUDP, portsGrouping
         case portsShowMenuBarCount, portsRefreshSeconds
     }
 
@@ -104,7 +104,6 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         hogCpuThreshold: Double = 80,
         memoryPressureQuitEnabled: Bool = false,
         memoryPressureThresholdMB: Int = 1024,
-        batterySaverEnabled: Bool = false,
         quitTimers: [String: Double] = [:],
         liquidGlassEnabled: Bool = true
     ) {
@@ -143,7 +142,6 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         self.hogCpuThreshold = hogCpuThreshold
         self.memoryPressureQuitEnabled = memoryPressureQuitEnabled
         self.memoryPressureThresholdMB = memoryPressureThresholdMB
-        self.batterySaverEnabled = batterySaverEnabled
         self.quitTimers = quitTimers
         self.liquidGlassEnabled = liquidGlassEnabled
     }
@@ -186,7 +184,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         hogCpuThreshold = Self.dec(container, .hogCpuThreshold, defaults.hogCpuThreshold)
         memoryPressureQuitEnabled = Self.dec(container, .memoryPressureQuitEnabled, defaults.memoryPressureQuitEnabled)
         memoryPressureThresholdMB = Self.dec(container, .memoryPressureThresholdMB, defaults.memoryPressureThresholdMB)
-        batterySaverEnabled = Self.dec(container, .batterySaverEnabled, defaults.batterySaverEnabled)
+        menuBarRefreshSeconds = min(max(Self.dec(container, .menuBarRefreshSeconds, defaults.menuBarRefreshSeconds), 1), 60)
         quitTimers = Self.decDoubleMap(container, .quitTimers, defaults.quitTimers)
         liquidGlassEnabled = Self.dec(container, .liquidGlassEnabled, defaults.liquidGlassEnabled)
         portsEnabled = Self.dec(container, .portsEnabled, defaults.portsEnabled)
@@ -195,7 +193,6 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         portsConfirmKill = Self.dec(container, .portsConfirmKill, defaults.portsConfirmKill)
         portsSelectAllByDefault = Self.dec(container, .portsSelectAllByDefault, defaults.portsSelectAllByDefault)
         portsSortBy = Self.dec(container, .portsSortBy, defaults.portsSortBy)
-        portsDockerStopTimeout = min(max(Self.dec(container, .portsDockerStopTimeout, defaults.portsDockerStopTimeout), 1), 60)
         portsIncludeUDP = Self.dec(container, .portsIncludeUDP, defaults.portsIncludeUDP)
         portsGrouping = Self.dec(container, .portsGrouping, defaults.portsGrouping)
         portsShowMenuBarCount = Self.dec(container, .portsShowMenuBarCount, defaults.portsShowMenuBarCount)
@@ -286,7 +283,6 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         var copy = self
         if !hasBattery {
             copy.batteryMenuBarEnabled = false
-            copy.batterySaverEnabled = false
         }
         if !hasGpu {
             copy.menuBarShowGpu = false

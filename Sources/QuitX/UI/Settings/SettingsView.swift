@@ -59,9 +59,9 @@ enum SettingsTab: String, CaseIterable {
     var contentHeight: CGFloat {
         switch self {
         case .general:
-            if #available(macOS 26.0, *) { return 386 }
-            return 356
-        case .automation: return HardwareCapabilities.hasBattery ? 416 : 386
+            if #available(macOS 26.0, *) { return 416 }
+            return 386
+        case .automation: return 386
         case .advanced:  return 266
         case .ports:     return PortsTabView.contentHeight
         case .exclude:   return ExcludeTabView.contentHeight

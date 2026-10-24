@@ -32,12 +32,19 @@
     timer: '<svg viewBox="0 0 16 16"><circle cx="8" cy="9" r="5.3"/><path d="M8 6.2V9l2 1.3M6.2 1.8h3.6"/></svg>',
     windows: '<svg viewBox="0 0 16 16"><rect x="1.5" y="4" width="10" height="9" rx="1.4"/><path d="M4.5 4V3a1 1 0 0 1 1-1H14a1 1 0 0 1 .5.9V10a1 1 0 0 1-1 1h-2"/></svg>',
     chev: '<svg viewBox="0 0 16 16"><path d="M6 3.5L10.5 8 6 12.5"/></svg>',
+    network: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.2"/><path d="M1.8 8h12.4M8 1.8c1.8 1.9 2.6 3.9 2.6 6.2S9.8 12.3 8 14.2M8 1.8C6.2 3.7 5.4 5.7 5.4 8s.8 4.3 2.6 6.2"/></svg>',
+    grid: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2.2" y="2.2" width="4.6" height="4.6" rx="1"/><rect x="9.2" y="2.2" width="4.6" height="4.6" rx="1"/><rect x="2.2" y="9.2" width="4.6" height="4.6" rx="1"/><rect x="9.2" y="9.2" width="4.6" height="4.6" rx="1"/></svg>',
+    sliders: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 4h7M12 4h2M2 8h2M7 8h7M2 12h5M10 12h4"/><circle cx="10.5" cy="4" r="1.5"/><circle cx="5.5" cy="8" r="1.5"/><circle cx="8.5" cy="12" r="1.5"/></svg>',
+    trace: '<svg viewBox="0 0 16 16"><circle cx="4" cy="3.5" r="1.6"/><circle cx="4" cy="12.5" r="1.6"/><circle cx="12" cy="8" r="1.6"/><path d="M4 5.1v5.8M5.4 4.3l5.2 2.9"/></svg>',
+    folder: '<svg viewBox="0 0 16 16"><path d="M2 4.5A1.5 1.5 0 0 1 3.5 3H6l1.5 1.5h5A1.5 1.5 0 0 1 14 6v5.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 11.5z"/></svg>',
+    copy: '<svg viewBox="0 0 16 16"><rect x="5" y="5" width="8.5" height="8.5" rx="1.6"/><path d="M11 5V3.6A1.1 1.1 0 0 0 9.9 2.5H3.6a1.1 1.1 0 0 0-1.1 1.1v6.3A1.1 1.1 0 0 0 3.6 11H5"/></svg>',
   };
 
   const tabIcons = {
     General: '<svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="2.8"/><path d="M10 2v2.4M10 15.6V18M2 10h2.4M15.6 10H18M4.3 4.3l1.7 1.7M14 14l1.7 1.7M4.3 15.7L6 14M14 6l1.7-1.7"/></svg>',
     Automation: '<svg viewBox="0 0 20 20"><circle cx="10" cy="11" r="6.5"/><path d="M10 7.5V11l2.4 1.6M8 2.2h4"/></svg>',
     Advanced: '<svg viewBox="0 0 20 20"><path d="M3 5h9M15 5h2M3 10h3M9 10h8M3 15h7M13 15h4"/><circle cx="13.5" cy="5" r="1.6"/><circle cx="7.5" cy="10" r="1.6"/><circle cx="11.5" cy="15" r="1.6"/></svg>',
+    Ports: '<svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7.5"/><path d="M2.5 10h15M10 2.5c2.2 2.3 3.2 4.8 3.2 7.5s-1 5.2-3.2 7.5M10 2.5C7.8 4.8 6.8 7.3 6.8 10s1 5.2 3.2 7.5"/></svg>',
     Exclude: '<svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/><path d="M5 5l10 10"/></svg>',
     Shortcuts: '<svg viewBox="0 0 20 20"><path d="M7 7V5.5A2 2 0 1 0 5.5 7.5H7zm0 0h6m-6 0v6m6-6V5.5a2 2 0 1 1 1.5 2H13zm0 0v6m0 0h-6m6 0v1.5a2 2 0 1 0 1.5-2H13zm-6 0v1.5A2 2 0 1 1 5.5 12.5H7z"/></svg>',
     About: '<svg viewBox="0 0 20 20"><path d="M11 2L4 11.5h5L8.5 18 16 8.5h-5z"/></svg>',
@@ -95,7 +102,42 @@
     const off = o.buttonOff || count === 0;
     const btn = `<div class="quit${off ? ' off' : ''}${o.press ? ' press' : ''}" data-role="quit">${o.force && !off ? S.bolt : ''}${title}</div>`;
     const headCb = isAll ? 'on' : (count > 0 ? 'part' : '');
-    return `<div class="qx-pop${o.glass ? ' glass' : ''}">${arrow(o.arrowX, o.glass)}<div class="body"><div style="height:5px"></div>${btn}<div class="search"><span class="qx-cb ${headCb}"></span><div class="field">${S.search}Search</div></div><div class="list">${list}</div><div class="foot"><span>${o.footer}</span><span class="gear${o.gearOn ? ' on' : ''}" data-role="gear">${S.gear}</span></div>${o.overlay || ''}${o.toast ? `<div class="qx-toast">${S.check}${o.toast}</div>` : ''}</div></div>`;
+    return `<div class="qx-pop${o.glass ? ' glass' : ''}${o.tabs ? ' wide' : ''}">${arrow(o.arrowX, o.glass)}<div class="body"><div style="height:5px"></div>${o.tabs ? tabbar('apps') : ''}${btn}<div class="search"><span class="qx-cb ${headCb}"></span><div class="field">${S.search}Search</div></div><div class="list">${list}</div><div class="foot"><span>${o.footer}</span><span class="gear${o.gearOn ? ' on' : ''}" data-role="gear">${S.gear}</span></div>${o.overlay || ''}${o.toast ? `<div class="qx-toast">${S.check}${o.toast}</div>` : ''}</div></div>`;
+  }
+
+  function tabbar(active) {
+    return `<div class="tabbar"><span class="${active === 'apps' ? 'on' : ''}">${S.grid}Apps</span><span class="${active === 'ports' ? 'on' : ''}">${S.network}Ports</span></div>`;
+  }
+
+  const PORTS = [
+    { p: 3000, n: 'node', i: 'vscode', exp: 'Local', mem: '174 MB' },
+    { p: 5173, n: 'vite', i: 'vscode', exp: 'Local', mem: '92 MB' },
+    { p: 5432, n: 'postgres', exp: 'Local', mem: '38 MB' },
+    { p: 6379, n: 'redis-server', exp: 'Local', mem: '11 MB' },
+    { p: 8000, n: 'python3', i: 'terminal', exp: 'Public', mem: '64 MB' },
+    { p: 8080, n: 'api', docker: true, exp: 'Public', mem: '' },
+  ];
+
+  function portRow(x, o) {
+    const sel = o.selected === 'all' ? !o.unselected.includes(x.p) : o.selected.includes(x.p);
+    const cls = ['row', 'prow'];
+    if (o.hover === x.p) cls.push('hover');
+    if (o.hl === x.p) cls.push('hl');
+    const pw = o.force ? 'pw force' : (o.hover === x.p ? 'pw on' : 'pw');
+    const badges = `${x.docker ? '<span class="badge docker">docker</span>' : ''}<span class="badge ${x.exp === 'Public' ? 'pub' : 'loc'}">${x.exp}</span>`;
+    return `<div class="${cls.join(' ')}" data-port="${x.p}"><span class="qx-cb${sel ? ' on' : ''}"></span>${icon(x)}<span class="pnum">:${x.p}</span><span class="name">${x.n}${badges}</span><span class="use">${x.mem}</span><span class="more${o.moreOn === x.p ? ' on' : ''}">${S.more}</span><span class="${pw}">${o.force ? S.bolt : S.power}</span></div>`;
+  }
+
+  function ports(o = {}) {
+    o = Object.assign({ selected: [], unselected: [], ports: PORTS, arrowX: 165, footer: 'Free up occupied ports 🧹' }, o);
+    const list = o.ports.map(x => portRow(x, o)).join('');
+    const count = o.selected === 'all' ? o.ports.length - o.unselected.length : o.selected.length;
+    const isAll = o.selected === 'all' && o.unselected.length === 0;
+    const noun = count === 1 ? 'Port' : 'Ports';
+    const title = o.force ? (isAll ? 'Force Kill All Ports' : (count ? `Force Kill ${count} ${noun}` : 'Force Kill Selected Ports')) : (isAll ? 'Kill All Ports' : (count ? `Kill ${count} ${noun}` : 'Kill Selected Ports'));
+    const btn = `<div class="quit${count === 0 ? ' off' : ''}" data-role="quit">${o.force && count ? S.bolt : ''}${title}</div>`;
+    const headCb = isAll ? 'on' : (count > 0 ? 'part' : '');
+    return `<div class="qx-pop wide${o.glass ? ' glass' : ''}">${arrow(o.arrowX, o.glass)}<div class="body"><div style="height:5px"></div>${tabbar('ports')}${btn}<div class="search"><span class="qx-cb ${headCb}"></span><div class="field">${S.search}Search ports, apps, folders</div></div><div class="list">${list}</div><div class="foot"><span>${o.footer}</span><span class="gear${o.gearOn ? ' on' : ''}" data-role="gear">${S.sliders}</span></div>${o.overlay || ''}${o.toast ? `<div class="qx-toast">${S.check}${o.toast}</div>` : ''}</div></div>`;
   }
 
   function confirm(o) {
@@ -115,7 +157,7 @@
   }
 
   function stats(o) {
-    return `<div class="qx-stats">${o.cpu != null ? `<span>${S.cpu}${o.cpu}</span>` : ''}${o.mem != null ? `<span>${S.mem}${o.mem}</span>` : ''}${o.gpu != null ? `<span>${S.gpu}${o.gpu}</span>` : ''}${o.bat != null ? `<span>${S.batt.replace('<svg', '<svg style="width:22px;height:12px"')}${o.bat}</span>` : ''}</div>`;
+    return `<div class="qx-stats">${o.ports != null ? `<span class="pc">${S.network}${o.ports}</span>` : ''}${o.cpu != null ? `<span>${S.cpu}${o.cpu}</span>` : ''}${o.mem != null ? `<span>${S.mem}${o.mem}</span>` : ''}${o.gpu != null ? `<span>${S.gpu}${o.gpu}</span>` : ''}${o.bat != null ? `<span>${S.batt.replace('<svg', '<svg style="width:22px;height:12px"')}${o.bat}</span>` : ''}</div>`;
   }
 
   function rescue(o) {
@@ -145,6 +187,7 @@
       r('', cb('Download and prepare updates automatically'), { hl: o.hl === 'updates' }),
       r('Menu Bar:', cb('Show stats in menu bar', o.stats !== false), { hl: o.hl === 'stats', id: 'r-stats' }),
       r('', `<span class="sub">${cb('CPU', o.stats !== false)}${cb('Memory', o.stats !== false)}${cb('GPU', o.stats !== false)}${cb('Battery', o.stats !== false)}</span>`, { hl: o.hl === 'stats', help: false }),
+      r('Refresh:', '<span class="select">Every second</span>', { hl: o.hl === 'stats' || o.hl === 'refresh' }),
       r('Appearance:', `<span class="sub" id="appearance">${radio('Classic', o.glass === false)}${radio('Liquid Glass', o.glass !== false)}</span>`, { hl: o.hl === 'theme' }),
       r('Sort:', '<span class="select">A-Z Alphabetical</span>'),
       r('Default:', `<span class="select" id="default-mode">${o.force ? 'Force quit' : 'Normal quit'}</span>`, { hl: o.hl === 'default' }),
@@ -154,7 +197,6 @@
   function automation(o = {}) {
     const sleep = o.sleep !== false;
     return [
-      r('Power:', cb('Save power on battery', false)),
       r('Sleep:', cb('Quit apps when Mac sleeps', sleep), { hl: o.hl === 'sleep', id: 'r-sleep' }),
       r('', `<span class="sub"><span class="small">Time format</span>${radio('24-hour', false)}${radio('12-hour', true)}</span>`, { dim: !sleep, help: false, hl: o.hl === 'sleep' }),
       r('', `<span class="sub"><span class="small">From:</span><span class="select">12</span>:<span class="select">00</span><span class="select">AM</span></span>`, { dim: !sleep, help: false, hl: o.hl === 'sleep' }),
@@ -188,5 +230,23 @@
     return `<p class="note">Apps on this list stay out of manual and automatic Quit actions.</p><div class="qx-excl"><div class="sel"><span class="qx-cb"></span>Select All<em>${list.length} excluded</em></div>${rows}</div><div style="display:flex;justify-content:space-between;margin-top:12px"><span class="btn-sm">+&nbsp;&nbsp;Add Apps…</span><span class="btn-sm" style="opacity:.45">Remove</span></div>`;
   }
 
-  window.QX = { S, APPS, BACKGROUND, icon, popover, confirm, menu, stats, rescue, note, settings, general, automation, advanced, exclude };
+  function portSettings(o = {}) {
+    const on = o.enabled !== false;
+    const d = { dim: !on };
+    return [
+      r('Ports:', cb('Enable port killing', on), { hl: o.hl === 'enable' }),
+      '<hr class="sep">',
+      r('Refresh:', '<span class="select">Every 3 seconds</span>', d),
+      r('Discovery:', cb('Include UDP listeners', false), d),
+      r('Menu bar:', cb('Show listening port count', o.count !== false), { dim: !on, hl: o.hl === 'count' }),
+      r('Group by:', '<span class="select">None</span>', d),
+      r('Sort:', '<span class="select">Port (Low to High)</span>', d),
+      r('Default:', '<span class="select">Kill (SIGTERM)</span>', d),
+      r('Safety:', cb('Confirm before killing ports'), { dim: !on, hl: o.hl === 'safety' }),
+      r('Selection:', cb('Select all ports by default', false), d),
+      r('Exclude:', `<span class="btn-sm">${S.nosign.replace('<svg', '<svg style="width:13px;height:13px;margin-right:7px;fill:none;stroke:currentColor;stroke-width:1.5"')}Manage Excluded Ports…</span>`, d),
+    ].join('');
+  }
+
+  window.QX = { S, APPS, BACKGROUND, PORTS, icon, popover, ports, confirm, menu, stats, rescue, note, settings, general, automation, advanced, exclude, portSettings };
 })();

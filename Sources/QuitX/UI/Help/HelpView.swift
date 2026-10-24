@@ -252,19 +252,15 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "Menu bar stats readout",
-                    body: "Enable Show stats in menu bar in Settings > General, then choose CPU, Memory, GPU, and Battery independently. Configure Style format with Icon (SF Symbols) or Text (CPU / MEM / GPU prefixes), and Memory format with Gigabytes (GB) or Percentage (%). The readout updates every second, or every 5 seconds under battery saver. Battery options appear only on Macs with a battery, and GPU only when macOS reports GPU statistics."
+                    body: "Enable Show stats in menu bar in Settings > General, then choose CPU, Memory, GPU, and Battery independently. Configure Style format with Icon (SF Symbols) or Text (CPU / MEM / GPU prefixes), and Memory format with Gigabytes (GB) or Percentage (%). Choose how often the readout updates under Refresh, from every second to every 10 seconds. Battery options appear only on Macs with a battery, and GPU only when macOS reports GPU statistics."
                 ),
                 QuitXHelpSection(
                     title: "Stats detail panel",
                     body: "Click a menu bar stat to open its detail panel. CPU and memory show live breakdowns and top processes, GPU shows utilization and memory, and battery shows power source, charge time, power draw, voltage, temperature, capacity, and cycle count when macOS reports them. Click the stats item again, click anywhere outside, or press Esc to dismiss it."
                 ),
                 QuitXHelpSection(
-                    title: "Battery saver mode",
-                    body: "On a MacBook, enable Save power on battery to reduce power consumption when unplugged. Inactivity auto-quit timeouts automatically halve (e.g. 60m to 30m), and live stats refresh slows from 2 seconds to 10 seconds."
-                ),
-                QuitXHelpSection(
-                    title: "Automatic AC restore",
-                    body: "Connecting back to AC charger power immediately restores normal 2-second stats refresh and full-length auto-quit intervals."
+                    title: "Low Power Mode",
+                    body: "When macOS Low Power Mode is on, QuitX slows down by itself: menu bar stats update at most every 5 seconds, and live CPU and memory checks every 10 seconds. Turn Low Power Mode off and the normal pace comes back. There is nothing to set up."
                 )
             ]
         ),
@@ -344,7 +340,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "General & Advanced tabs",
-                    body: "Settings > General controls startup, sounds, menu bar stats for CPU, memory, GPU, and battery, macOS 26 Liquid Glass vs Classic appearance theme, sort order, and defaults. Settings > Automation manages sleep scheduling, quit-on-last-window-close, battery saver, health rescue thresholds, and Auto Quit. Settings > Advanced manages background apps, music protection, default selection, tips, confirmations, and Finder/Trash."
+                    body: "Settings > General controls startup, sounds, menu bar stats for CPU, memory, GPU, and battery, macOS 26 Liquid Glass vs Classic appearance theme, sort order, and defaults. Settings > Automation manages sleep scheduling, quit-on-last-window-close, health rescue thresholds, and Auto Quit. Settings > Advanced manages background apps, music protection, default selection, tips, confirmations, and Finder/Trash."
                 ),
                 QuitXHelpSection(
                     title: "Exclude & Shortcuts tabs",

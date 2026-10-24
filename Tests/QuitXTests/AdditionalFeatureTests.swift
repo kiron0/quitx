@@ -209,11 +209,11 @@ struct SettingsTabTests {
     @Test("SettingsTab content heights")
     func testSettingsTabContentHeights() {
         if #available(macOS 26.0, *) {
-            #expect(SettingsTab.general.contentHeight == 386)
+            #expect(SettingsTab.general.contentHeight == 416)
         } else {
-            #expect(SettingsTab.general.contentHeight == 356)
+            #expect(SettingsTab.general.contentHeight == 386)
         }
-        let expectedAutomationHeight: CGFloat = HardwareCapabilities.hasBattery ? 416 : 386
+        let expectedAutomationHeight: CGFloat = 386
         #expect(SettingsTab.automation.contentHeight == expectedAutomationHeight)
         #expect(SettingsTab.advanced.contentHeight == 266)
         #expect(SettingsTab.exclude.contentHeight == 336)
@@ -266,7 +266,7 @@ struct HelpContentTests {
         #expect(QuitXHelpTopic.all.first { $0.id == "exclude" }?.matches("background apps") == true)
         #expect(QuitXHelpTopic.all.first { $0.id == "finder-trash" }?.matches("permanently empties") == true)
         #expect(QuitXHelpTopic.all.first { $0.id == "recently-quit" }?.matches("reopen") == true)
-        #expect(QuitXHelpTopic.all.first { $0.id == "menu-battery" }?.matches("battery saver") == true)
+        #expect(QuitXHelpTopic.all.first { $0.id == "menu-battery" }?.matches("Low Power Mode") == true)
         #expect(QuitXHelpTopic.all.first { $0.id == "ports" }?.matches("SIGKILL") == true)
         #expect(QuitXHelpTopic.all.allSatisfy { $0.matches("   ") })
     }

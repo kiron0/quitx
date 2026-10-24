@@ -70,17 +70,6 @@ struct AutomationTabView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
 
-            if HardwareCapabilities.hasBattery {
-                row(label: "Power:") {
-                    toggle("Save power on battery", isOn: Binding(
-                        get: { configStore.config.batterySaverEnabled },
-                        set: { configStore.config.batterySaverEnabled = $0; configStore.save() }
-                    ))
-                } help: {
-                    HelpPopoverButton(text: "Sip power like fine wine! Auto-quit timers cut in half and CPU checks slow to 10s to spare your battery. 🔋🍷")
-                }
-            }
-
             let sleepOn = configStore.config.quitOnSleep
             row(label: "Sleep:") {
                 toggle("Quit apps when Mac sleeps", isOn: Binding(

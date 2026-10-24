@@ -92,8 +92,8 @@ struct RobustnessTests {
         #expect(MemoryFormatter.format(bytes: 0) == "0 KB")
         #expect(BatterySaver.compactMemoryText(bytes: .max, unit: .percentage, totalBytes: 0) == "0%")
         #expect(BatterySaver.compactMemoryText(bytes: .max, unit: .gb).hasSuffix("G"))
-        #expect(BatterySaver.effectiveTimeout(minutes: 1, saverActive: true) == 1)
-        #expect(BatterySaver.effectiveTimeout(minutes: -5, saverActive: true) == -5)
+        #expect(BatterySaver.menuBarInterval(refreshSeconds: -5, lowPowerMode: false) == 1_000_000_000)
+        #expect(BatterySaver.menuBarInterval(refreshSeconds: 999, lowPowerMode: false) == 60_000_000_000)
     }
 
     @Test("Sorting tolerates NaN and infinite usage without losing rows")

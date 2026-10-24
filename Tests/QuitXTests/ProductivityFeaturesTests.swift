@@ -234,21 +234,14 @@ struct ProductivityFeaturesTests {
         #expect(BatterySaver.isOnBattery(descriptions: battery))
         #expect(!BatterySaver.isOnBattery(descriptions: ac))
         #expect(!BatterySaver.isOnBattery(descriptions: []))
-
-        var config = QuitXConfig.default
-        config.batterySaverEnabled = true
-        #expect(BatterySaver.isSaverActive(config: config, descriptions: battery))
-        #expect(!BatterySaver.isSaverActive(config: config, descriptions: ac))
-        config.batterySaverEnabled = false
-        #expect(!BatterySaver.isSaverActive(config: config, descriptions: battery))
     }
 
-    @Test("Saver halves timeouts with floor and formats readout")
-    func testSaverTimeoutAndReadout() {
-        #expect(BatterySaver.effectiveTimeout(minutes: 60, saverActive: true) == 30)
-        #expect(BatterySaver.effectiveTimeout(minutes: 1, saverActive: true) == 1)
-        #expect(BatterySaver.effectiveTimeout(minutes: 60, saverActive: false) == 60)
-        #expect(BatterySaver.effectiveTimeout(minutes: 0, saverActive: true) == 0)
+    @Test("Menu bar refresh honors the setting and Low Power Mode, and formats readout")
+    func testRefreshIntervalAndReadout() {
+        #expect(BatterySaver.menuBarInterval(refreshSeconds: 1, lowPowerMode: false) == 1_000_000_000)
+        #expect(BatterySaver.menuBarInterval(refreshSeconds: 3, lowPowerMode: false) == 3_000_000_000)
+        #expect(BatterySaver.menuBarInterval(refreshSeconds: 1, lowPowerMode: true) == 5_000_000_000)
+        #expect(BatterySaver.menuBarInterval(refreshSeconds: 10, lowPowerMode: true) == 10_000_000_000)
         let tenGB: UInt64 = 10 * 1024 * 1024 * 1024
         let sixteenGB: UInt64 = 16 * 1024 * 1024 * 1024
         #expect(BatterySaver.menuBarText(cpu: 12.6, memoryUsedBytes: tenGB, enabled: true) == "CPU 13% · Memory 10.0 GB")
@@ -537,7 +530,7 @@ struct ProductivityFeaturesTests {
         cfg.hogCpuThreshold = 95
         cfg.memoryPressureQuitEnabled = true
         cfg.memoryPressureThresholdMB = 4096
-        cfg.batterySaverEnabled = true
+        cfg.menuBarRefreshSeconds = 5
         cfg.quitTimers = ["com.example.timer": 3600]
         cfg.liquidGlassEnabled = false
 
@@ -579,7 +572,7 @@ struct ProductivityFeaturesTests {
         #expect(decoded.hogCpuThreshold == cfg.hogCpuThreshold)
         #expect(decoded.memoryPressureQuitEnabled == cfg.memoryPressureQuitEnabled)
         #expect(decoded.memoryPressureThresholdMB == cfg.memoryPressureThresholdMB)
-        #expect(decoded.batterySaverEnabled == cfg.batterySaverEnabled)
+        #expect(decoded.menuBarRefreshSeconds == 5)
         #expect(decoded.quitTimers == cfg.quitTimers)
         #expect(decoded.liquidGlassEnabled == cfg.liquidGlassEnabled)
     }

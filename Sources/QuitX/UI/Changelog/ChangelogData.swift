@@ -15,6 +15,7 @@ extension ChangelogProvider {
             ]),
             ("Improvements", [
                 "**Remembers Your Tab**: The menu opens on the tab you used last.",
+                "**Menu Bar Refresh**: Choose how often menu bar stats update, from every second to every 10 seconds. QuitX also slows down by itself in Low Power Mode, so Save power on battery is gone.",
                 "**Wider Menu and Settings**: More room for app and port names.",
                 "**Faster Update Install**: Preparing a downloaded update no longer re-verifies the whole disk image, and new releases use a faster disk image format.",
                 "**Clear Menu Item Labels**: About and Quit menu items in the menu bar right-click menu, popover gear menu, and Help view are now explicitly labeled **About QuitX** and **Quit QuitX**."
@@ -30,7 +31,7 @@ extension ChangelogProvider {
             ]),
             ("Improvements", [
                 "**Uninstaller Visuals**: Radar pulse scan animation with live item counter; leftover rows display file paths.",
-                "**Settings Match Your Mac**: Battery stats and Save power on battery only appear on Macs with a battery, and the GPU stat only when macOS reports GPU usage. A Mac mini no longer shows options it can't use.",
+                "**Settings Match Your Mac**: Battery stats only appear on Macs with a battery, and the GPU stat only when macOS reports GPU usage. A Mac mini no longer shows options it can't use.",
                 "**Login Item Approval**: Settings ▸ General shows an inline Allow button if macOS requires permission for Open at login."
             ]),
             ("Fixes", [

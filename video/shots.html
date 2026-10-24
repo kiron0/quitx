@@ -132,6 +132,20 @@
       copy: copy('Settings', 'Yours to tune.<br><span>Nothing to babysit.</span>', 'Launch at login, menu bar stats, sorting, default quit mode and automatic updates. Every option sits on one calm page.', ['Light and dark', 'Liquid Glass on macOS 26']),
       ui: [{ x: 700, y: 120, zoom: 1.2, html: QX.settings({ tab: 'General', content: QX.general({ hl: 'updates' }) }) }],
     }),
+    ports: () => ({
+      mb: { stats: { ports: 6, cpu: '12%', mem: '9.4 GB' } },
+      copy: copy('Port killing', 'Port in use?<br><span>Free it in a click.</span>', 'Turn on Ports in Settings and every listening port shows up next to your apps: dev servers, databases and Docker containers. Kill one, some, or all, with the process tree behind it.', ['Live refresh', 'Docker aware', 'SIGTERM, then SIGKILL']),
+      ui: [
+        { anchor: 'qx', w: 330, html: QX.ports({ selected: [3000, 5173], hover: 3000 }), zoom: 1.6 },
+      ],
+      ring: 'statsItem',
+    }),
+    portsSettings: () => ({
+      mb: { stats: { ports: 6, cpu: '12%', mem: '9.4 GB' } },
+      copy: copy('Ports settings', 'Off until<br><span>you want it.</span>', 'Port killing stays off until you switch it on. Then pick how often the list refreshes, show the port count in the menu bar, and exclude ports that must never be touched.', ['Off by default', 'Exclude ports', 'Confirm before kill']),
+      ui: [{ x: 700, y: 140, zoom: 1.2, html: QX.settings({ tab: 'Ports', content: QX.portSettings({ hl: 'enable' }) }) }],
+      ring: 'statsItem',
+    }),
     advanced: () => ({
       mb: {},
       copy: copy('Advanced', 'Fine print,<br><span>your way.</span>', 'Background apps, music protection, confirmations and extras like closing Finder windows or emptying the Trash.', []),
@@ -162,7 +176,8 @@
     const z = u.zoom || 1;
     if (u.anchor === 'qx' && !u.menu) {
       qx.classList.add('active');
-      const left = Math.min(cx - 135 * z, 1440 - 270 * z - 8);
+      const pw = u.w || 270;
+      const left = Math.min(cx - (pw / 2) * z, 1440 - pw * z - 8);
       const arrow = el.querySelector('.arrow');
       if (arrow) arrow.style.left = ((cx - left) / z) + 'px';
       el.style.left = (left / z) + 'px';
@@ -176,6 +191,12 @@
       el.style.left = (g.left - 8) / z + 'px';
       el.style.top = (g.bottom + 4) / z + 'px';
       if ((g.left - 8) + 236 * z > 1430) el.style.left = (1430 - 236 * z) / z + 'px';
+    } else if (u.besidePort) {
+      const rr = document.querySelector(`[data-port="${u.besidePort}"] .more`).getBoundingClientRect();
+      el.querySelector('.qx-menu').style.width = (u.w || 236) + 'px';
+      const w = (u.w || 236) * z;
+      el.style.left = (rr.left - w - 6) / z + 'px';
+      el.style.top = (rr.top - 4) / z + 'px';
     } else if (u.beside) {
       const rr = document.querySelector(`[data-app="${u.beside}"] .more`).getBoundingClientRect();
       const w = 236 * z;
@@ -198,6 +219,7 @@
     background: ['[data-app="Docker Desktop"]', '.qx-menu'],
     exclude: ['.qx-menu', '[data-app="Music"] .pw'],
     hero: ['[data-role="quit"]', '[data-app="Messages"]'],
+    ports: ['.qx-pop'],
   };
   window.FOCUS_RECT = (() => {
     const sels = FOCUS[id];

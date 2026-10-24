@@ -108,19 +108,6 @@ struct PortsTabView: View {
                     HelpPopoverButton(text: "Start with every listener selected, ready for Kill All.")
                 }
 
-                row(label: "Docker:") {
-                    Stepper(value: Binding(
-                        get: { configStore.config.portsDockerStopTimeout },
-                        set: { configStore.config.portsDockerStopTimeout = min(max($0, 1), 60); configStore.save() }
-                    ), in: 1...60) {
-                        Text("Stop timeout: \(configStore.config.portsDockerStopTimeout) s")
-                            .font(.system(size: 12))
-                            .monospacedDigit()
-                    }
-                } help: {
-                    HelpPopoverButton(text: "How long Docker waits for a container to stop before it kills it. 🐳")
-                }
-
                 row(label: "Exclude:") {
                     Button {
                         UserDefaults.standard.set(ExcludeSection.ports.rawValue, forKey: ExcludeSection.defaultsKey)

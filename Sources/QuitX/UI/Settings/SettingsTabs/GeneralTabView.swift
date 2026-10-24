@@ -182,6 +182,34 @@ struct GeneralTabView: View {
                 .opacity(configStore.config.availableMenuBarStatsEnabled ? 1.0 : 0.42)
             }
 
+            row(label: "") {
+                HStack(spacing: 6) {
+                    Text("Refresh")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.primary)
+                        .frame(width: 86, alignment: .leading)
+
+                    Picker("", selection: Binding(
+                        get: { configStore.config.menuBarRefreshSeconds },
+                        set: {
+                            configStore.config.menuBarRefreshSeconds = $0
+                            configStore.save()
+                            StatusItemController.shared?.startMenuBarStats()
+                        }
+                    )) {
+                        ForEach(QuitXConfig.menuBarRefreshChoices, id: \.self) { seconds in
+                            Text(seconds == 1 ? "Every second" : "Every \(seconds) seconds").tag(seconds)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 150, alignment: .leading)
+                }
+                .disabled(!configStore.config.availableMenuBarStatsEnabled)
+                .opacity(configStore.config.availableMenuBarStatsEnabled ? 1.0 : 0.42)
+            } help: {
+                HelpPopoverButton(text: "How often the menu bar stats update. Slower means less work for your Mac. In Low Power Mode QuitX waits at least 5 seconds. 🐢⚡")
+            }
+
             if #available(macOS 26.0, *) {
                 row(label: "Appearance:") {
                     HStack(spacing: 18) {

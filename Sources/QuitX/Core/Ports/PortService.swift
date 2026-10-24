@@ -102,6 +102,8 @@ public final class PortService {
         "virtualization"
     ]
 
+    static let dockerStopTimeoutSeconds = 10
+
     static func isContainerRuntime(processName: String) -> Bool {
         let lower = processName.lowercased()
         return containerRuntimeMarkers.contains(where: { lower.contains($0) })
@@ -298,7 +300,7 @@ public final class PortService {
     ) async -> Bool {
         progress("Sending \(mode.signalName)")
         if let docker = port.docker {
-            let timeout = max(1, await MainActor.run { ConfigStore.shared.config.portsDockerStopTimeout })
+            let timeout = Self.dockerStopTimeoutSeconds
             guard await DockerService.shared.stopContainer(
                 containerId: docker.containerId,
                 force: mode == .force,

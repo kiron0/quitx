@@ -23,7 +23,7 @@ QuitX is a menu bar app that quits, force quits and manages running macOS apps. 
 | Quit inactive apps | Last-activation timestamps from `NSWorkspace.didActivateApplicationNotification` | `Core/Services/AutoQuitService.swift` |
 | Quit timers and per-app rules | One-shot timers per app | `Core/Services/QuitTimerService.swift`, `PerAppQuitRule.swift` |
 | Quit on sleep | `NSWorkspace.willSleepNotification` and `didWakeNotification`, limited to the time range you set | `Core/Services/SleepService.swift` |
-| Memory pressure and battery saver | `DispatchSource.makeMemoryPressureSource`, IOKit power sources | `MemoryPressureService.swift`, `BatterySaver.swift` |
+| Memory pressure and Low Power Mode | `DispatchSource.makeMemoryPressureSource`; `ProcessInfo.isLowPowerModeEnabled` stretches menu bar stats to at least 5 s and hog checks to 10 s | `MemoryPressureService.swift`, `BatterySaver.swift` |
 | CPU hog alerts | `proc_listallpids` and `proc_taskinfo` sampled with an adaptive interval | `CpuUsageSampler.swift`, `HogMonitor.swift` |
 | Global shortcuts | Carbon `RegisterEventHotKey` | `Core/Services/ShortcutManager.swift` |
 
@@ -51,7 +51,7 @@ Settings ▸ Ports ▸ **Enable port killing** adds an Apps / Ports switch to th
 
 ## Hardware-aware settings
 
-`HardwareCapabilities` checks for an internal battery in the IOKit power sources and for GPU statistics. Without a battery, the Battery stat and **Save power on battery** are hidden, and both are treated as off. Without GPU statistics, the GPU stat is hidden.
+`HardwareCapabilities` checks for an internal battery in the IOKit power sources and for GPU statistics. Without a battery, the Battery stat is hidden and treated as off. Without GPU statistics, the GPU stat is hidden.
 
 ## Accessibility permission
 

@@ -178,14 +178,11 @@ struct HardwareCapabilitiesTests {
         config.menuBarShowMemory = false
         config.menuBarShowGpu = false
         config.batteryMenuBarEnabled = true
-        config.batterySaverEnabled = true
         #expect(config.menuBarStatsEnabled(hasBattery: true, hasGpu: true))
         #expect(!config.menuBarStatsEnabled(hasBattery: false, hasGpu: true))
         let desktop = config.adjustedForHardware(hasBattery: false, hasGpu: false)
         #expect(!desktop.batteryMenuBarEnabled)
-        #expect(!desktop.batterySaverEnabled)
         let laptop = config.adjustedForHardware(hasBattery: true, hasGpu: true)
         #expect(laptop.batteryMenuBarEnabled)
-        #expect(laptop.batterySaverEnabled)
     }
 }

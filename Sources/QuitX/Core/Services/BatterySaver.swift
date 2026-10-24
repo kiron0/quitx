@@ -18,18 +18,13 @@ enum BatterySaver {
         }
     }
 
-    static func isSaverActive(config: QuitXConfig, descriptions: [[String: Any]]) -> Bool {
-        config.batterySaverEnabled && isOnBattery(descriptions: descriptions)
+    static var isLowPowerMode: Bool {
+        ProcessInfo.processInfo.isLowPowerModeEnabled
     }
 
-    static func isSaverActive(config: QuitXConfig) -> Bool {
-        guard config.batterySaverEnabled else { return false }
-        return isSaverActive(config: config, descriptions: currentDescriptions())
-    }
-
-    static func effectiveTimeout(minutes: Int, saverActive: Bool) -> Int {
-        guard saverActive, minutes > 0 else { return minutes }
-        return max(1, minutes / 2)
+    static func menuBarInterval(refreshSeconds: Int, lowPowerMode: Bool) -> UInt64 {
+        let seconds = max(1, min(60, refreshSeconds))
+        return UInt64(lowPowerMode ? max(5, seconds) : seconds) * 1_000_000_000
     }
 
     static func percentText(_ value: Double) -> String {

@@ -155,7 +155,6 @@ final class AutoQuitService {
         let runningPids = Set(running.map { $0.1 })
         lastActiveTimestamps = lastActiveTimestamps.filter { runningPids.contains($0.key) }
         quittingPids = quittingPids.intersection(runningPids)
-        let saverActive = BatterySaver.isSaverActive(config: config)
 
         let now = Date()
         let excluded = getExcludedSet(from: config.exclude)
@@ -192,14 +191,11 @@ final class AutoQuitService {
 
             let bundleId = app.bundleIdentifier?.lowercased()
             let name = app.localizedName?.lowercased()
-            let timeoutMinutes = BatterySaver.effectiveTimeout(
-                minutes: PerAppQuitRule.timeoutMinutes(
-                    bundleId: app.bundleIdentifier,
-                    name: app.localizedName ?? "",
-                    rules: config.perAppQuitRules,
-                    globalMinutes: globalTimeout
-                ),
-                saverActive: saverActive
+            let timeoutMinutes = PerAppQuitRule.timeoutMinutes(
+                bundleId: app.bundleIdentifier,
+                name: app.localizedName ?? "",
+                rules: config.perAppQuitRules,
+                globalMinutes: globalTimeout
             )
             guard timeoutMinutes > 0 else { continue }
             let threshold = now.addingTimeInterval(-Double(timeoutMinutes) * 60)
