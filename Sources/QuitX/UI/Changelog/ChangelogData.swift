@@ -2,6 +2,17 @@ import Foundation
 
 extension ChangelogProvider {
     static let appReleases: [ReleaseChangelog] = [
+        ReleaseChangelog("1.2.2", "Settings redesign polish & Marquee window protection", [
+            ("New Features", [
+                "**Marquee Window Protection**: Added `io.github.treposting.marquee` to protected apps, keeping Marquee active in the menu bar when closing its last window."
+            ]),
+            ("Improvements", [
+                "**Settings Polish**: Redesigned About tab resource cards with quick links to Help, Updates, and GitHub issues, and added custom outline icons.",
+                "**Menu Bar & Port Performance**: Optimized background refresh loops for menu bar stats and port scanners to minimize CPU wakeups.",
+                "**Refined Confirmations**: Consistent dark surface styling for quit and kill action confirmation overlays."
+            ])
+        ]),
+
         ReleaseChangelog("1.2.1", "Ports tab, faster updates & clearer labels", [
             ("New Features", [
                 "**Ports Tab**: Turn on port killing in Settings ▸ Ports and switch between Apps and Ports above the main button. See every listening port with its app, folder and Docker container, and free it in one click.",

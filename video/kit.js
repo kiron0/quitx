@@ -108,7 +108,7 @@
   }
 
   function tabbar(active) {
-    return `<div class="tabbar"><span class="${active === 'apps' ? 'on' : ''}">${S.grid}Apps</span><span class="${active === 'ports' ? 'on' : ''}">${S.network}Ports</span></div>`;
+    return `<div class="tabbar"><span class="${active === 'apps' ? 'on' : ''}" data-tab="apps">${S.grid}Apps</span><span class="${active === 'ports' ? 'on' : ''}" data-tab="ports">${S.network}Ports</span></div>`;
   }
 
   const PORTS = [
@@ -125,9 +125,10 @@
     const cls = ['row', 'prow'];
     if (o.hover === x.p) cls.push('hover');
     if (o.hl === x.p) cls.push('hl');
+    const style = o.rowStyle && o.rowStyle[x.p] ? ` style="${o.rowStyle[x.p]}"` : '';
     const pw = o.force ? 'pw force' : (o.hover === x.p ? 'pw on' : 'pw');
     const badges = `${x.docker ? '<span class="badge docker">docker</span>' : ''}<span class="badge ${x.exp === 'Public' ? 'pub' : 'loc'}">${x.exp}</span>`;
-    return `<div class="${cls.join(' ')}" data-port="${x.p}"><span class="qx-cb${sel ? ' on' : ''}"></span>${icon(x)}<span class="pnum">:${x.p}</span><span class="name">${x.n}${badges}</span><span class="use">${x.mem}</span><span class="more${o.moreOn === x.p ? ' on' : ''}">${S.more}</span><span class="${pw}">${o.force ? S.bolt : S.power}</span></div>`;
+    return `<div class="${cls.join(' ')}" data-port="${x.p}"${style}><span class="qx-cb${sel ? ' on' : ''}"></span>${icon(x)}<span class="pnum">:${x.p}</span><span class="name">${x.n}${badges}</span><span class="use">${x.mem}</span><span class="more${o.moreOn === x.p ? ' on' : ''}">${S.more}</span><span class="${pw}">${o.force ? S.bolt : S.power}</span></div>`;
   }
 
   function ports(o = {}) {
@@ -187,7 +188,7 @@
   };
 
   function settings(o) {
-    const side = sideGroups.map(([g, tabs]) => `${g ? `<div class="sg">${g}</div>` : ''}${tabs.map(t => `<div class="si${t === o.tab ? ' on' : ''}">${sideIcons[t]}<span>${t}</span></div>`).join('')}`).join('');
+    const side = sideGroups.map(([g, tabs]) => `${g ? `<div class="sg">${g}</div>` : ''}${tabs.map(t => `<div class="si${t === o.tab ? ' on' : ''}" data-tab="${t}">${sideIcons[t]}<span>${t}</span></div>`).join('')}`).join('');
     return `<div class="qx-win qx-settings side"><div class="sb"><span class="lights"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#58565A"></i></span><div class="ss">${S.search}Search settings…</div><div class="sl">${side}</div></div><div class="dt"><div class="dh"><div class="h">${o.tab}</div><div class="sum">${summaries[o.tab] || ''}</div></div><div class="pv"><div class="pane"${o.scroll ? ` style="transform:translateY(-${o.scroll}px)"` : ''}>${o.content}</div></div></div></div>`;
   }
 
@@ -295,5 +296,68 @@
     ].join('');
   }
 
-  window.QX = { S, APPS, BACKGROUND, PORTS, icon, popover, ports, confirm, menu, stats, rescue, note, settings, general, automation, portSettings };
+  function overview(o = {}) {
+    return `<div class="qx-overview">
+      <div class="hero-greet">
+        <h3>Welcome to QuitX</h3>
+        <p>All features, vitals, and quick toggles in one clean view.</p>
+      </div>
+      <div class="stat-row">
+        <div class="stat-tile"><div class="lbl">Smart Rescue</div><div class="val"><span>Active</span><span class="pill green">On</span></div></div>
+        <div class="stat-tile"><div class="lbl">Listening Ports</div><div class="val"><span>6 Ports</span><span class="pill teal">Live</span></div></div>
+        <div class="stat-tile"><div class="lbl">Menu Bar Stats</div><div class="val"><span>CPU &amp; Mem</span><span class="pill gold">4 Items</span></div></div>
+      </div>
+      <div class="grid">
+        <div class="card"><div class="card-icon" style="background:rgba(40,199,180,.15);color:#28C7B4">${S.network}</div><div class="card-info"><b>Port Killing</b><span>Free occupied ports held by Node, Vite, Docker and Postgres.</span></div></div>
+        <div class="card"><div class="card-icon" style="background:rgba(255,159,10,.15);color:#FF9F0A">${T.clock}</div><div class="card-info"><b>Quit on Sleep</b><span>Close open apps when your Mac sleeps, between hours you pick.</span></div></div>
+        <div class="card"><div class="card-icon" style="background:rgba(10,132,255,.15);color:#0A84FF">${S.cpu}</div><div class="card-info"><b>Menu Bar Stats</b><span>Real-time CPU, memory, GPU and battery vitals in your menu bar.</span></div></div>
+        <div class="card"><div class="card-icon" style="background:rgba(191,90,242,.15);color:#BF5AF2">${S.windows}</div><div class="card-info"><b>Last Window Quit</b><span>Quit applications automatically when their last window closes.</span></div></div>
+      </div>
+    </div>`;
+  }
+
+  function aboutTab(o = {}) {
+    return `<div class="qx-about">
+      <div class="hero">
+        <img src="${A}icon.png" alt="">
+        <div class="hero-text">
+          <h2>QuitX <span class="ver">VERSION 1.2.1</span></h2>
+          <div class="tagline">Quit everything. Keep what matters.</div>
+          <div class="status"><svg width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="6" fill="#30D158"/><path d="M3.2 6.2l2 2 3.8-4" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Up to date</div>
+        </div>
+        <span class="hero-btn">Check for Updates</span>
+      </div>
+      <div class="sec"><span class="sec-icon">${S.sparkles}</span><b>Why QuitX</b><i></i></div>
+      <div class="highlights">
+        <div class="hi-card"><div class="hi-icon"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M12.8 1.6C9.6 4.8 8.8 8 8.8 8s-2.4-2.4-5.6-2.4C1.6 8 2.4 12 4.8 14.4c1.6 1.6 4 1.6 5.6 0 2.4-2.4 4-5.6 2.4-12.8z"/></svg></div><div><b>Native</b><span>Fast SwiftUI app with a small footprint.</span></div></div>
+        <div class="hi-card"><div class="hi-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 1.8l5 2v4c0 3-2.2 5.3-5 6.4-2.8-1.1-5-3.4-5-6.4v-4z"/><path d="M6 7.8l1.6 1.6 3-3"/></svg></div><div><b>Private</b><span>No account, tracking or analytics.</span></div></div>
+        <div class="hi-card"><div class="hi-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M5 4.5L1.5 8 5 11.5M11 4.5l3.5 3.5L11 11.5M9.5 2.5l-3 11"/></svg></div><div><b>Open Source</b><span>Free forever under the MIT license.</span></div></div>
+      </div>
+      <div class="sec"><span class="sec-icon">${S.help}</span><b>Resources</b><i></i></div>
+      <div class="resources">
+        <div class="res-card"><div class="ricon" style="background:rgba(10,132,255,.15);color:#0A84FF"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.3"/><path d="M6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4M8 11.6v.2"/></svg></div><b>Help Center</b><p>Guides for every feature.</p><span class="link">Open Help &rarr;</span></div>
+        <div class="res-card"><div class="ricon" style="background:rgba(191,90,242,.15);color:#BF5AF2"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.8l1.4 3.6 3.6 1.4-3.6 1.4L8 11.8 6.6 8.2 3 6.8l3.6-1.4z"/></svg></div><b>What’s New</b><p>Recent features and fixes.</p><span class="link">View Updates &rarr;</span></div>
+        <div class="res-card"><div class="ricon" style="background:rgba(255,69,58,.15);color:#FF453A">${S.warn}</div><b>Report an Issue</b><p>Share feedback or a bug.</p><span class="link">Open GitHub &rarr;</span></div>
+      </div>
+    </div>`;
+  }
+
+  function statsDetail(o = {}) {
+    const cpus = [14, 28, 42, 18, 55, 32, 22, 10];
+    return `<div class="qx-stats-panel">${arrow(o.arrowX || 155)}
+      <div class="sd-sec">
+        <div class="sd-head"><div class="sd-title">${S.cpu}System CPU</div><div class="sd-val">12%</div></div>
+        <div class="sd-bar"><div class="sd-seg-user" style="width:8%"></div><div class="sd-seg-sys" style="width:4%"></div></div>
+        <div class="sd-legend"><span>User 8%</span><span>System 4%</span><span>Idle 88%</span></div>
+        <div class="sd-cores">${cpus.map(h => `<div class="sd-core" style="height:${h}%"></div>`).join('')}</div>
+      </div>
+      <div class="sd-sec" style="margin-bottom:0">
+        <div class="sd-head"><div class="sd-title">${S.mem}Used Memory</div><div class="sd-val">9.4 GB <small style="font-size:11px;font-weight:400;color:var(--qx-sub)">/ 16 GB</small></div></div>
+        <div class="sd-bar"><div class="sd-seg-app" style="width:38%"></div><div class="sd-seg-wire" style="width:13%"></div><div class="sd-seg-comp" style="width:8%"></div></div>
+        <div class="sd-legend"><span>App 6.1 GB</span><span>Wired 2.1 GB</span><span>Compressed 1.2 GB</span></div>
+      </div>
+    </div>`;
+  }
+
+  window.QX = { S, APPS, BACKGROUND, PORTS, icon, popover, ports, confirm, menu, stats, rescue, note, settings, general, automation, portSettings, overview, aboutTab, statsDetail };
 })();

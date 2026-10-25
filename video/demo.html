@@ -98,6 +98,7 @@
       </div>
     </div>
     <div id="settingsWin" class="layer"></div>
+    <div id="statsDetailWin" class="layer"></div>
     <div id="pop" class="layer"></div>
     <div id="menu" class="layer"></div>
     <div id="menu2" class="layer"></div>
@@ -140,17 +141,19 @@ const ALL = QX.APPS;
 const BG = QX.BACKGROUND;
 
 const T = {
-  title: 2.4,
-  aOpen: 3.0, aUncheck: 4.1, aQuit: 4.9, aConfirm: 5.9, aRows: 6.05, aToast: 7.0, aClose: 8.2,
-  fOpen: 8.7, fKey: 9.6, fKeyUp: 11.6, fClose: 12.0,
-  bOpen: 12.4, bGear: 13.2, bPick: 14.0, bIn: 14.15, bClose: 15.8,
-  eOpen: 16.2, eMore: 17.0, ePick: 17.9, eGone: 18.05, eClose: 19.4,
-  sIn: 19.8, sHot: 22.0, nIn: 22.6, rIn: 23.4, rClose: 25.6,
-  slWin: 26.0, slToggle: 26.9, slSleep: 28.0, slWake: 30.0, slEnd: 31.2,
-  thOpen: 31.4, thSwap: 32.8, thClose: 34.6,
-  lwIn: 34.8, lwClose: 35.9, lwGone: 36.3, lwEnd: 37.0,
-  uDot: 37.2, uMenu: 38.0, uClick: 38.8, uDl0: 39.1, uDl1: 40.7, uReady: 41.3, uRestart: 42.1,
-  end: 42.6, total: 46.0,
+  title: 2.2,
+  aOpen: 2.6, aUncheck: 3.7, aQuit: 4.5, aConfirm: 5.4, aRows: 5.55, aToast: 6.4, aClose: 7.4,
+  fOpen: 7.8, fKey: 8.6, fKeyUp: 10.4, fClose: 10.8,
+  pOpen: 11.2, pTab: 11.9, pSel1: 12.8, pSel2: 13.5, pKill: 14.3, pToast: 15.1, pClose: 16.4,
+  bOpen: 16.8, bGear: 17.5, bPick: 18.3, bIn: 18.45, bClose: 20.0,
+  eOpen: 20.4, eMore: 21.1, ePick: 22.0, eGone: 22.15, eClose: 23.6,
+  sIn: 24.0, sdClick: 24.9, sdClose: 27.8, sHot: 28.5, nIn: 29.1, rIn: 29.8, rClose: 32.2,
+  stOpen: 32.8, stPorts: 35.2, stAbout: 37.8, stClose: 41.0,
+  slWin: 41.5, slToggle: 42.4, slSleep: 43.4, slWake: 45.4, slEnd: 46.6,
+  lwIn: 47.0, lwClose: 48.0, lwGone: 48.4, lwEnd: 49.0,
+  thOpen: 49.4, thSwap: 50.8, thClose: 52.6,
+  uDot: 53.0, uMenu: 53.8, uClick: 54.6, uDl0: 54.9, uDl1: 56.5, uReady: 57.1, uRestart: 57.9,
+  end: 58.6, total: 62.0,
 };
 
 const SFX = [
@@ -160,12 +163,21 @@ const SFX = [
   ...Array.from({ length: 14 }, (_, k) => [T.aRows + .12 + k * .06, 'pop', k]),
   [T.aToast, 'success'], [T.aClose, 'swoosh'],
   [T.fOpen, 'click'], [T.fOpen + .02, 'whoosh'], [T.fKey, 'key'], [T.fKey + .15, 'zap'], [T.fClose, 'swoosh'],
+  [T.pOpen, 'click'], [T.pOpen + .02, 'whoosh'], [T.pTab, 'click'], [T.pTab + .02, 'tick'],
+  [T.pSel1, 'click'], [T.pSel1 + .01, 'tick'], [T.pSel2, 'click'], [T.pSel2 + .01, 'tick'],
+  [T.pKill, 'click'], [T.pKill + .05, 'laser'], [T.pKill + .12, 'pop', 0], [T.pKill + .18, 'pop', 1],
+  [T.pToast, 'success'], [T.pClose, 'swoosh'],
   [T.bOpen, 'click'], [T.bOpen + .02, 'whoosh'], [T.bGear, 'click'], [T.bPick, 'click'], [T.bIn, 'shimmer'], [T.bClose, 'swoosh'],
   [T.eOpen, 'click'], [T.eOpen + .02, 'whoosh'], [T.eMore, 'click'], [T.ePick, 'click'], [T.eGone, 'lock'], [T.eClose, 'swoosh'],
-  [T.sIn, 'blip'], [T.sHot, 'alarm'], [T.nIn, 'notify'], [T.rIn, 'whoosh'], [T.rClose, 'swoosh'],
+  [T.sIn, 'blip'], [T.sdClick, 'click'], [T.sdClick + .02, 'whoosh'], [T.sdClose, 'swoosh'],
+  [T.sHot, 'alarm'], [T.nIn, 'notify'], [T.rIn, 'whoosh'], [T.rClose, 'swoosh'],
+  [T.stOpen, 'click'], [T.stOpen + .02, 'whoosh'],
+  [T.stPorts, 'click'], [T.stPorts + .02, 'tick'],
+  [T.stAbout, 'click'], [T.stAbout + .02, 'tick'],
+  [T.stClose, 'swoosh'],
   [T.slWin, 'whoosh'], [T.slToggle, 'click'], [T.slSleep, 'sleep'], [T.slWake, 'wake'],
-  [T.thOpen, 'click'], [T.thOpen + .02, 'whoosh'], [T.thSwap, 'glass'], [T.thClose, 'swoosh'],
   [T.lwClose, 'click'], [T.lwGone, 'laser'],
+  [T.thOpen, 'click'], [T.thOpen + .02, 'whoosh'], [T.thSwap, 'glass'], [T.thClose, 'swoosh'],
   [T.uDot, 'notify'], [T.uMenu, 'click'], [T.uMenu + .02, 'whoosh'], [T.uClick, 'click'], [T.uDl0, 'download'], [T.uReady, 'success'], [T.uRestart, 'click'],
   [T.end, 'swell'], [T.end + .35, 'logo'],
 ];
@@ -175,14 +187,16 @@ const caps = [
   [T.aConfirm - .9, T.aRows, '02', 'Confirm before quit', 'No accidents.'],
   [T.aRows, T.aClose + .2, '03', 'Play sounds on quit', 'Pew pew. Gone.'],
   [T.fOpen - .2, T.fClose + .2, '04', 'Normal quit vs force quit', 'Stuck app? Hold Option.'],
-  [T.bOpen - .2, T.bClose + .2, '05', 'View background apps', 'See what’s hiding.'],
-  [T.eOpen - .2, T.eClose + .2, '06', 'Exclude apps', 'Some apps never quit.'],
-  [T.sIn - .2, T.sHot - .1, '07', 'Menu bar stats', 'CPU, memory, GPU, battery.'],
-  [T.sHot - .1, T.rClose + .2, '08', 'CPU & memory warnings', 'Too hot? You get a heads-up.'],
-  [T.slWin - .2, T.slEnd + .1, '09', 'Quit apps when Mac sleeps', 'Wake up to a clean slate.'],
-  [T.thOpen - .2, T.thClose + .2, '10', 'Classic or Liquid Glass', 'Your Mac, your look.'],
-  [T.lwIn - .1, T.lwEnd + .1, '11', 'Quit when the last window closes', 'Close it, and it’s gone.'],
-  [T.uDot - .1, T.end, '12', 'Updates from GitHub', 'Verified, then swapped in.'],
+  [T.pOpen - .2, T.pClose + .2, '05', 'Kill listening ports', 'Free :3000, :5173, :8080 instantly.'],
+  [T.bOpen - .2, T.bClose + .2, '06', 'View background apps', 'See what’s hiding.'],
+  [T.eOpen - .2, T.eClose + .2, '07', 'Exclude apps', 'Some apps never quit.'],
+  [T.sIn - .2, T.sdClose + .2, '08', 'Menu bar stats & core detail', 'CPU, memory, GPU, ports & per-core meters.'],
+  [T.sHot - .1, T.rClose + .2, '09', 'CPU & memory warnings', 'Too hot? Smart Rescue steps in.'],
+  [T.stOpen - .2, T.stClose + .2, '10', 'All-new Settings dashboard', 'Overview, ports, automation & about.'],
+  [T.slWin - .2, T.slEnd + .1, '11', 'Quit apps when Mac sleeps', 'Wake up to a clean slate.'],
+  [T.lwIn - .1, T.lwEnd + .1, '12', 'Quit when the last window closes', 'Close it, and it’s gone.'],
+  [T.thOpen - .2, T.thClose + .2, '13', 'Classic or Liquid Glass', 'Your Mac, your look.'],
+  [T.uDot - .1, T.end, '14', 'Updates from GitHub', 'Verified, then swapped in.'],
 ];
 
 let L = { qx: [0, 0] };
@@ -218,7 +232,7 @@ function popState(t) {
     const gone = t >= T.aRows + .12 + 13 * .06 + .3;
     const apps = gone ? ALL.filter(a => a.n === 'Music') : ALL;
     const unchecked = t >= T.aUncheck;
-    const o = { apps, hover: t >= T.aUncheck - .4 && t < T.aQuit - .3 ? 'Music' : null, unselected: unchecked ? ['Music'] : [] };
+    const o = { tabs: true, apps, hover: t >= T.aUncheck - .4 && t < T.aQuit - .3 ? 'Music' : null, unselected: unchecked ? ['Music'] : [] };
     if (gone) { o.selected = []; o.unselected = []; }
     o.press = between(t, T.aQuit - .05, T.aQuit + .12);
     if (between(t, T.aQuit + .05, T.aRows)) o.overlay = QX.confirm({ count: 14, all: false, press: between(t, T.aConfirm - .05, T.aConfirm + .12) });
@@ -227,7 +241,35 @@ function popState(t) {
     return { o, open: [T.aOpen, T.aClose], zoom: Z };
   }
   if (between(t, T.fOpen, T.fClose + .3)) {
-    return { o: { apps: ALL.slice(0, 12), force: between(t, T.fKey, T.fKeyUp), hover: 'Google Chrome' }, open: [T.fOpen, T.fClose], zoom: Z };
+    return { o: { tabs: true, apps: ALL.slice(0, 12), force: between(t, T.fKey, T.fKeyUp), hover: 'Google Chrome' }, open: [T.fOpen, T.fClose], zoom: Z };
+  }
+  if (between(t, T.pOpen, T.pClose + .3)) {
+    if (t < T.pTab) {
+      return { o: { tabs: true, apps: ALL.slice(0, 10), hover: null }, open: [T.pOpen, T.pClose], zoom: Z };
+    }
+    const allPorts = QX.PORTS;
+    const killed = t >= T.pKill + .35;
+    const pList = killed ? allPorts.filter(x => x.p !== 3000 && x.p !== 5173) : allPorts;
+    const selected = [];
+    if (t >= T.pSel1 && !killed) selected.push(3000);
+    if (t >= T.pSel2 && !killed) selected.push(5173);
+    const rs = {};
+    if (t >= T.pKill) {
+      [3000, 5173].forEach((p, idx) => {
+        const a = T.pKill + .08 + idx * .06;
+        const g = prog(currentT, a, a + .3, out);
+        if (g > 0) rs[p] = `height:${25 * (1 - g)}px;margin-top:${-2 * g}px;opacity:${1 - g};transform:translateX(${g * 14}px)`;
+      });
+    }
+    const o = {
+      ports: pList,
+      selected,
+      rowStyle: rs,
+      hover: between(t, T.pSel1 - .3, T.pSel1 + .2) ? 3000 : (between(t, T.pSel2 - .3, T.pSel2 + .2) ? 5173 : null),
+      press: between(t, T.pKill - .05, T.pKill + .12),
+      toast: between(t, T.pToast, T.pClose + .3) ? '2 ports freed' : null,
+    };
+    return { isPorts: true, o, open: [T.pOpen, T.pClose], zoom: Z };
   }
   if (between(t, T.bOpen, T.bClose + .3)) {
     const shown = t >= T.bIn;
@@ -241,17 +283,17 @@ function popState(t) {
         rs[b.n] = `height:${25 * g}px;opacity:${g}`;
       });
     }
-    return { o: { apps, gearOn: between(t, T.bGear - .05, T.bPick + .1), hl: t >= T.bIn + .4 ? 'Docker Desktop' : null, rowStyle: rs }, open: [T.bOpen, T.bClose], zoom: Z };
+    return { o: { tabs: true, apps, gearOn: between(t, T.bGear - .05, T.bPick + .1), hl: t >= T.bIn + .4 ? 'Docker Desktop' : null, rowStyle: rs }, open: [T.bOpen, T.bClose], zoom: Z };
   }
   if (between(t, T.eOpen, T.eClose + .3)) {
     const base = ALL.slice(0, 11);
     const rs = {};
     if (t >= T.eGone) { const g = prog(t, T.eGone, T.eGone + .4, out); rs['Music'] = `height:${25 * (1 - g)}px;margin-top:${-2 * g}px;opacity:${1 - g}`; }
     const apps = t >= T.eGone + .45 ? base.filter(a => a.n !== 'Music') : base;
-    return { o: { apps, hover: t >= T.eOpen + .4 && t < T.eGone ? 'Music' : null, moreOn: between(t, T.eMore - .05, T.ePick + .05) ? 'Music' : null, rowStyle: rs }, open: [T.eOpen, T.eClose], zoom: Z };
+    return { o: { tabs: true, apps, hover: t >= T.eOpen + .4 && t < T.eGone ? 'Music' : null, moreOn: between(t, T.eMore - .05, T.ePick + .05) ? 'Music' : null, rowStyle: rs }, open: [T.eOpen, T.eClose], zoom: Z };
   }
   if (between(t, T.thOpen, T.thClose + .3)) {
-    return { o: { apps: ALL.slice(0, 10), hover: 'Music' }, open: [T.thOpen, T.thClose], zoom: Z, theme: true };
+    return { o: { tabs: true, apps: ALL.slice(0, 10), hover: 'Music' }, open: [T.thOpen, T.thClose], zoom: Z, theme: true };
   }
   return null;
 }
@@ -264,6 +306,8 @@ function renderPop(t) {
   if (st.theme) {
     const g = prog(t, T.thSwap, T.thSwap + .5);
     pop.innerHTML = `<div style="position:relative"><div style="opacity:${1 - g}">${QX.popover(st.o)}</div><div style="position:absolute;inset:0;opacity:${g}">${QX.popover(Object.assign({}, st.o, { glass: true }))}</div></div>`;
+  } else if (st.isPorts) {
+    pop.innerHTML = QX.ports(st.o);
   } else {
     pop.innerHTML = QX.popover(st.o);
   }
@@ -317,14 +361,39 @@ function renderStats(t) {
   const ramp = prog(t, T.sHot - 1.2, T.sHot, ease);
   const cpu = Math.round(lerp(12 + Math.sin(t * 6) * 2, 92, ramp));
   const mem = lerp(9.4, 13.8, ramp).toFixed(1);
-  $('stats').innerHTML = QX.stats({ cpu: `${cpu}%`, mem: `${mem} GB`, gpu: `${Math.round(8 + 4 * Math.sin(t * 3))}%`, bat: '82%' });
+  const portsCount = t >= T.pKill ? 4 : 6;
+  $('stats').innerHTML = QX.stats({ ports: portsCount, cpu: `${cpu}%`, mem: `${mem} GB`, gpu: `${Math.round(8 + 4 * Math.sin(t * 3))}%`, bat: '82%' });
   const s = $('stats').firstElementChild;
-  if (s && t >= T.sHot - .3) s.querySelector('span').style.color = '#FF9F0A';
+  if (s && t >= T.sHot - .3) s.querySelector('span:nth-child(2)').style.color = '#FF9F0A';
+  $('stats').style.background = between(t, T.sdClick, T.sdClose + .2) ? 'rgba(255,255,255,.18)' : 'transparent';
+  $('stats').style.borderRadius = '5px';
   const w = $('stats').scrollWidth;
   $('statsWrap').style.width = `${w * g}px`;
   $('statsWrap').style.opacity = g;
   $('statsWrap').style.marginRight = g > 0 ? '0' : '-14px';
   $('sysbatt').style.display = g > .01 ? 'none' : 'block';
+}
+
+function renderStatsDetail(t) {
+  const sd = $('statsDetailWin');
+  if (!between(t, T.sdClick, T.sdClose + .25)) { show(sd, 0); sd.innerHTML = ''; return; }
+  const rCam = $('cam').getBoundingClientRect();
+  const rStats = $('stats').getBoundingClientRect();
+  const scale = rCam.width / 1440;
+  const unscaledLeft = (rStats.left - rCam.left) / scale;
+  const unscaledWidth = rStats.width / scale;
+  const unscaledBottom = (rStats.bottom - rCam.top) / scale;
+  const cx = unscaledLeft + unscaledWidth * .35;
+  const zoom = 1.35;
+  const left = cx - 155 * zoom;
+  sd.innerHTML = QX.statsDetail({ arrowX: 155 });
+  sd.style.zoom = zoom;
+  sd.style.left = (left / zoom) + 'px';
+  sd.style.top = (unscaledBottom + 3) / zoom + 'px';
+  const o = win(t, T.sdClick, T.sdClose + .2, .2);
+  show(sd, o);
+  sd.firstElementChild.style.transformOrigin = '50% 0';
+  sd.firstElementChild.style.transform = `scale(${lerp(.95, 1, prog(t, T.sdClick, T.sdClick + .35, spring))})`;
 }
 
 function renderRescue(t) {
@@ -352,14 +421,36 @@ function renderNote(t) {
 
 function renderSettings(t) {
   const s = $('settingsWin');
-  if (!between(t, T.slWin, T.slSleep + .2)) { show(s, 0); s.innerHTML = ''; return; }
-  s.innerHTML = QX.settings({ tab: 'Automation', content: QX.automation({ sleep: t >= T.slToggle, hl: t >= T.slToggle ? 'sleep' : null }) });
-  s.style.zoom = 1.15;
-  s.style.left = (720 - 340 * 1.15) / 1.15 + 'px';
-  s.style.top = 150 / 1.15 + 'px';
-  const o = prog(t, T.slWin, T.slWin + .35, out) * (1 - prog(t, T.slSleep - .2, T.slSleep + .2, lin));
-  show(s, o);
-  s.firstElementChild.style.transform = `scale(${lerp(.96, 1, prog(t, T.slWin, T.slWin + .5, spring))})`;
+  if (between(t, T.stOpen, T.stClose + .25)) {
+    let tab = 'Overview';
+    let content = QX.overview();
+    if (t >= T.stAbout) {
+      tab = 'About';
+      content = QX.aboutTab();
+    } else if (t >= T.stPorts) {
+      tab = 'Ports';
+      content = QX.portSettings({ enabled: true, count: true });
+    }
+    s.innerHTML = QX.settings({ tab, content });
+    s.style.zoom = 1.15;
+    s.style.left = (720 - 340 * 1.15) / 1.15 + 'px';
+    s.style.top = 130 / 1.15 + 'px';
+    const o = win(t, T.stOpen, T.stClose + .2, .25);
+    show(s, o);
+    s.firstElementChild.style.transform = `scale(${lerp(.96, 1, prog(t, T.stOpen, T.stOpen + .4, spring))})`;
+    return;
+  }
+  if (between(t, T.slWin, T.slSleep + .2)) {
+    s.innerHTML = QX.settings({ tab: 'Automation', content: QX.automation({ sleep: t >= T.slToggle, hl: t >= T.slToggle ? 'sleep' : null }) });
+    s.style.zoom = 1.15;
+    s.style.left = (720 - 340 * 1.15) / 1.15 + 'px';
+    s.style.top = 150 / 1.15 + 'px';
+    const o = prog(t, T.slWin, T.slWin + .35, out) * (1 - prog(t, T.slSleep - .2, T.slSleep + .2, lin));
+    show(s, o);
+    s.firstElementChild.style.transform = `scale(${lerp(.96, 1, prog(t, T.slWin, T.slWin + .5, spring))})`;
+    return;
+  }
+  show(s, 0); s.innerHTML = '';
 }
 
 function measure(key, t, sel, dx = .5, dy = .5) {
@@ -390,32 +481,66 @@ function buildCursor() {
   measure('aBtn', T.aQuit - .1, '#pop [data-role="quit"]');
   measure('aOk', T.aConfirm - .1, '#pop [data-role="confirm"]');
   measure('fRow', T.fKey, '#pop [data-app="Google Chrome"] .pw');
+  measure('pTab', T.pTab - .1, '#pop [data-tab="ports"]');
+  measure('pRow1', T.pSel1 - .1, '#pop [data-port="3000"] .qx-cb');
+  measure('pRow2', T.pSel2 - .1, '#pop [data-port="5173"] .qx-cb');
+  measure('pKill', T.pKill - .1, '#pop [data-role="quit"]');
   measure('bGear', T.bGear - .1, '#pop [data-role="gear"]');
   measure('bItem', T.bPick - .1, '#mBg', .3);
   measure('eMore', T.eMore - .1, '#pop [data-app="Music"] .more');
   measure('eItem', T.ePick - .1, '#mEx', .3);
+  measure('stats', T.sdClick - .1, '#stats');
   measure('rBtn', T.rIn + 1, '#rescue .btns span');
+  measure('stPortsTab', T.stPorts - .1, '#settingsWin [data-tab="Ports"]');
+  measure('stAboutTab', T.stAbout - .1, '#settingsWin [data-tab="About"]');
   measure('slTog', T.slToggle - .1, '#settingsWin #r-sleep .qx-sw');
   measure('close1', T.lwClose - .1, '#close1');
   measure('uItem', T.uClick - .1, '#mUp', .3);
   measure('uBtn', T.uRestart - .1, '#updb2');
   const q = L.qx;
   CURSOR = [
-    [T.title, 760, 560], [T.aOpen - .35, ...q], [T.aOpen + .4, ...q],
+    [T.title, 760, 560],
+    [T.aOpen - .35, ...q], [T.aOpen + .4, ...q],
     [T.aUncheck - .3, ...L.aUnc], [T.aQuit - .45, ...L.aUnc], [T.aQuit - .05, ...L.aBtn], [T.aConfirm - .4, ...L.aBtn], [T.aConfirm - .05, ...L.aOk],
     [T.aClose - .3, L.aOk[0] + 30, L.aOk[1] + 200],
     [T.fOpen - .05, ...q], [T.fOpen + .4, ...q], [T.fKey - .1, ...L.fRow], [T.fClose - .3, ...L.fRow],
+    [T.pOpen - .05, ...q], [T.pOpen + .3, ...q],
+    [T.pTab - .05, ...L.pTab], [T.pTab + .3, ...L.pTab],
+    [T.pSel1 - .05, ...L.pRow1], [T.pSel1 + .25, ...L.pRow1],
+    [T.pSel2 - .05, ...L.pRow2], [T.pSel2 + .25, ...L.pRow2],
+    [T.pKill - .05, ...L.pKill], [T.pKill + .4, ...L.pKill],
+    [T.pClose - .3, L.pKill[0] + 30, L.pKill[1] + 200],
     [T.bOpen - .05, ...q], [T.bOpen + .3, ...q], [T.bGear - .05, ...L.bGear], [T.bPick - .5, ...L.bGear], [T.bPick - .05, ...L.bItem], [T.bClose - .3, L.bItem[0], L.bItem[1] + 120],
     [T.eOpen - .05, ...q], [T.eOpen + .3, ...q], [T.eMore - .05, ...L.eMore], [T.ePick - .5, ...L.eMore], [T.ePick - .05, ...L.eItem], [T.eClose - .3, L.eItem[0] + 40, L.eItem[1] + 160],
-    [T.sIn + .4, 900, 420], [T.rIn + .9, 900, 420], [T.rClose - .05, ...L.rBtn],
-    [T.slWin + .3, ...L.rBtn], [T.slToggle - .05, ...L.slTog], [T.slSleep, ...L.slTog],
+    [T.sIn + .4, 1100, 300], [T.sdClick - .05, ...L.stats], [T.sdClick + .3, ...L.stats],
+    [T.sdClose - .3, L.stats[0] - 80, L.stats[1] + 240],
+    [T.sHot + .2, 900, 420], [T.rIn + .9, 900, 420], [T.rClose - .05, ...L.rBtn],
+    [T.stOpen + .3, 600, 360],
+    [T.stPorts - .05, ...L.stPortsTab], [T.stPorts + .4, ...L.stPortsTab],
+    [T.stAbout - .05, ...L.stAboutTab], [T.stAbout + .4, ...L.stAboutTab],
+    [T.stClose - .3, 720, 500],
+    [T.slWin + .3, 720, 500], [T.slToggle - .05, ...L.slTog], [T.slSleep, ...L.slTog],
+    [T.lwClose - .05, ...L.close1], [T.lwClose + .4, ...L.close1],
     [T.thOpen - .05, ...q], [T.thOpen + .4, ...q], [T.thClose - .2, q[0] - 120, q[1] + 300],
-    [T.lwClose - .05, ...L.close1], [T.uDot + .2, ...L.close1],
+    [T.uDot + .2, q[0] - 120, q[1] + 300],
     [T.uMenu - .05, ...q], [T.uMenu + .25, ...q], [T.uClick - .05, ...L.uItem], [T.uDl0 + .4, ...L.uItem], [T.uReady + .2, L.uBtn[0] + 40, L.uBtn[1] + 40], [T.uRestart - .05, ...L.uBtn], [T.end, ...L.uBtn],
   ];
 }
 
-const CLICKS = [T.aOpen, T.aUncheck, T.aQuit, T.aConfirm, T.fOpen, T.bOpen, T.bGear, T.bPick, T.eOpen, T.eMore, T.ePick, T.rClose, T.slToggle, T.thOpen, T.lwClose, T.uMenu, T.uClick, T.uRestart];
+const CLICKS = [
+  T.aOpen, T.aUncheck, T.aQuit, T.aConfirm,
+  T.fOpen,
+  T.pOpen, T.pTab, T.pSel1, T.pSel2, T.pKill,
+  T.bOpen, T.bGear, T.bPick,
+  T.eOpen, T.eMore, T.ePick,
+  T.sdClick,
+  T.rClose,
+  T.stOpen, T.stPorts, T.stAbout,
+  T.slToggle,
+  T.lwClose,
+  T.thOpen,
+  T.uMenu, T.uClick, T.uRestart,
+];
 
 function render(t, measuring = false) {
   currentT = t;
@@ -444,6 +569,7 @@ function render(t, measuring = false) {
   $('clock').innerHTML = t > T.slWake ? 'Fri Oct 23&nbsp;&nbsp;7:30 AM' : 'Fri Oct 23&nbsp;&nbsp;9:41 AM';
 
   renderStats(t);
+  renderStatsDetail(t);
   renderPop(t);
   renderMenus(t);
   renderRescue(t);
@@ -495,8 +621,8 @@ function render(t, measuring = false) {
   }
   show($('caption'), co);
 
-  const statsZoom = prog(t, T.sIn - .3, T.sIn + .6) * (1 - prog(t, T.sHot + .2, T.nIn + .4));
-  css($('cam'), { transformOrigin: '86% 0%', transform: `scale(${1 + .5 * statsZoom})` });
+  const statsZoom = prog(t, T.sIn - .3, T.sIn + .6) * (1 - prog(t, T.sdClose + .1, T.sdClose + .5));
+  css($('cam'), { transformOrigin: '86% 0%', transform: `scale(${1 + .45 * statsZoom})` });
 
   if (measuring || !CURSOR) return;
   const [cx, cy] = path(t, CURSOR);

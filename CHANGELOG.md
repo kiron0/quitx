@@ -2,6 +2,20 @@
 
 All notable changes to QuitX macOS App will be documented in this file.
 
+## 1.2.2
+
+### Added
+
+- **Marquee Protection**: `io.github.treposting.marquee` is now protected from "Quit when last window closes", keeping the Marquee menu bar helper running when its window is dismissed.
+
+### Changed
+
+- **Settings Redesign Polish**: Redesigned About tab with resource links (Help Center, What's New, Report an Issue), custom outline icons, and app bundle icons in settings.
+- **Confirmation Overlay**: Updated styling for quit and kill action confirmation dialogs to match the macOS dark surface aesthetic.
+- **Performance Optimizations**: Streamlined background refresh loops for menu bar stats and port scanning to reduce CPU wakeups when idle.
+- **Updated Demo & Marketing Assets**: Refreshed demo video and screenshots showcasing the Ports tab, Menu Bar Stats detail panel, and new Settings dashboard.
+
+
 ## 1.2.1
 
 ### Added
