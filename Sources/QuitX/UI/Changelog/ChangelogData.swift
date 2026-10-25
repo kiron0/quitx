@@ -4,13 +4,13 @@ extension ChangelogProvider {
     static let appReleases: [ReleaseChangelog] = [
         ReleaseChangelog("1.2.2", "Settings redesign, Marquee integration & optimizations", [
             ("New Features", [
-                "**Settings Redesign**: Settings now features a fixed 860×600 window with a Help-style sidebar, instant search, and an Overview dashboard showing each feature's status.",
+                "**Settings Redesign**: Settings now features a spacious window with an organized sidebar, instant search, and an Overview dashboard showing each feature's status.",
                 "**More Apps ▸ Marquee**: Explore Marquee, a menu bar companion app for screenshots and clipboard history, right from Settings.",
-                "**Marquee Window Protection**: Added `io.github.treposting.marquee` to protected apps, keeping Marquee active in the menu bar when closing its last window."
+                "**Marquee Window Protection**: Marquee is now protected from accidental quitting, keeping it active in your menu bar when its window is closed."
             ]),
             ("Improvements", [
                 "**Settings Polish**: Redesigned About tab resource cards with quick links to Help, Updates, and GitHub issues, and added custom outline icons.",
-                "**Live Port Count**: Menu bar listening port count now follows your Ports refresh setting (down to 1s) and caches metadata when listeners haven't changed.",
+                "**Live Port Count**: Menu bar listening port count now updates along with your Ports refresh rate and reuses recent scan data to save battery and CPU.",
                 "**Performance Optimizations**: Optimized background refresh loops for menu bar stats and port scanners to minimize CPU wakeups.",
                 "**Refined Confirmations**: Consistent dark surface styling for quit and kill action confirmation overlays."
             ])
@@ -20,10 +20,10 @@ extension ChangelogProvider {
             ("New Features", [
                 "**Ports Tab**: Turn on port killing in Settings ▸ Ports and switch between Apps and Ports above the main button. See every listening port with its app, folder and Docker container, and free it in one click.",
                 "**Always Up to Date**: The Ports list refreshes on its own while it's open, every 1 to 10 seconds, with live CPU and memory.",
-                "**Smart Kill**: Kill escalates only when a listener won't let go, stops dev servers with their child processes, Homebrew services through brew services, and Docker ports by stopping the container. Hold ⌥ to force kill.",
-                "**Row Tools**: Details, process tree trace, interrupt, exclude, copy port, PID or command, open Terminal or the browser.",
+                "**Smart Kill**: Safely stops stubborn listeners, dev servers with child processes, background Homebrew services, and Docker containers. Hold ⌥ to force kill.",
+                "**Row Tools**: View port details, trace process trees, interrupt, exclude, copy details, or jump straight to Terminal or the browser.",
                 "**Exclude Ports**: Settings ▸ Exclude gets an Apps / Ports switch. Pick ports from the ones listening now or type them, with ranges like 8000-8010.",
-                "**Light on Your Mac**: Ports are read straight from the kernel in a few milliseconds instead of running lsof, so scanning barely uses any CPU.",
+                "**Light on Your Mac**: Ports are detected directly from the system in milliseconds without heavy background commands, using almost no CPU.",
                 "**Quieter in the Background**: Quit When Last Window Closes and Auto Quit no longer ask macOS about every running app every second, so QuitX stays near 0% CPU when idle.",
                 "**Listening Port Count**: Optionally show how many ports are listening in the menu bar stats, next to CPU and memory."
             ]),
@@ -64,7 +64,7 @@ extension ChangelogProvider {
             ("Improvements", [
                 "**Refined What's New Experience**: Compact welcome-style view focusing on the latest release, with quick sidebar access to browse previous version notes.",
                 "**Playful Settings Tooltips**: Added humorous tooltips and icons across Shortcuts, Exclusions, General, and About tabs.",
-                "**One-Line Terminal Installer**: Fast installation via `curl -fsSL https://quitx.kiron.dev/install | bash` with checksum verification and version checks."
+                "**One-Line Terminal Installer**: Quick, verified setup directly from the terminal with automatic integrity checks."
             ]),
             ("Fixes", [
                 "**Changelog Navigation**: Resolved version selection desync when switching between compact and detailed release views.",
@@ -92,7 +92,7 @@ extension ChangelogProvider {
                 "**Closing One of Several Windows**: Quit When Last Window Closes waits until every window of the app, across all of its instances, is closed."
             ]),
             ("Improvements", [
-                "**Accurate Multi-Window Tracking**: Queries macOS WindowServer across all virtual displays so multi-window apps remain safely open until their final window closes.",
+                "**Accurate Multi-Window Tracking**: Accurately tracks open windows across all virtual desktops and displays so multi-window apps stay open until their final window is closed.",
                 "**Automatic Update Highlights**: What's New automatically appears once right after updating and restarting QuitX, staying neatly tucked away until your next update.",
                 "**Native Window Chrome**: Clean transparent title bar and sidebar layout perfectly aligned with macOS traffic lights and standard keyboard shortcuts.",
                 "**Polished Settings Tooltips**: Added helpful descriptions and playful icons across Settings tabs."
@@ -106,8 +106,8 @@ extension ChangelogProvider {
                 "**Quit on Last Window Close**: Opt-in automation setting that gracefully terminates apps when you close their last window via the red close button or `⌘W`, keeping your system clean and uncluttered."
             ]),
             ("Improvements", [
-                "**Deep Helper Process Termination**: Quitting complex multi-process apps like **Discord**, **Docker**, **Telegram**, or **Slack** cleanly shuts down all background helpers and orphan daemons in one go.",
-                "**Zero-Lag Background Stats**: Offloaded menu bar telemetry sampling to background threads, eliminating UI hitching and stutter.",
+                "**Deep Helper Process Termination**: Quitting complex apps like **Discord**, **Docker**, **Telegram**, or **Slack** cleanly shuts down all background helpers and leftover services in one go.",
+                "**Zero-Lag Background Stats**: Smoothly gathers menu bar metrics in the background, eliminating any interface stutter or delays.",
                 "**On-Time Quit Timers**: Replaced periodic polling with one-shot timers so scheduled app quits run on time instead of up to a minute late.",
                 "**Streamlined Settings Design**: Reorganized settings into clean, dedicated tab layouts with instant live permission toggles."
             ])
@@ -119,7 +119,7 @@ extension ChangelogProvider {
                 "**Granular Menu Bar Toggles**: Independently toggle CPU, Memory, GPU, and Battery metrics under a master switch so your menu bar shows only what you care about."
             ]),
             ("Improvements", [
-                "**Native Kernel CPU Sampling**: Replaced subprocess invocations with direct kernel Mach task queries, slashing sampling overhead from 90ms down to under 2ms.",
+                "**Instant CPU Sampling**: Greatly reduced CPU measurement overhead, delivering instant updates with virtually zero battery impact.",
                 "**Rock-Solid Sleep Quits**: Unattended sleep terminations verify all target apps are completely closed before allowing your Mac to suspend.",
                 "**Automatic Trash Cleanup**: Optionally empty the macOS Trash automatically when your Mac goes to sleep alongside closing open apps.",
                 "**Window Placement Memory**: Remembers your preferred Settings window position so it stays right where you placed it."
@@ -132,8 +132,8 @@ extension ChangelogProvider {
                 "**Smart Power Throttling**: Automatically cuts background monitoring frequency in half when running on battery power to maximize battery longevity."
             ]),
             ("Improvements", [
-                "**Smooth Visual Compositing**: Standardized drop shadows, corner smoothing, and layer invalidation across all menu bar status popovers to eliminate visual flicker.",
-                "**Robust Process Tree Matching**: Enforced exact bundle ID verification to prevent prefix overlap collisions with background helper daemons."
+                "**Smooth Visuals**: Refined drop shadows and corner smoothing across all menu bar panels to eliminate visual flicker.",
+                "**Reliable Process Matching**: More precise app identification prevents confusion between main apps and similarly named background helpers."
             ])
         ]),
 
@@ -153,7 +153,7 @@ extension ChangelogProvider {
             ]),
             ("Improvements", [
                 "**Intelligent App Protection**: Automatically safeguards essential macOS system components while allowing user utilities to be safely managed.",
-                "**PID Recovery for Workspace Apps**: Resolves process IDs for recovered or unparented applications to guarantee reliable tracking."
+                "**Reliable App Tracking**: Accurately tracks restored or unparented workspace apps to ensure dependable management."
             ])
         ]),
 
