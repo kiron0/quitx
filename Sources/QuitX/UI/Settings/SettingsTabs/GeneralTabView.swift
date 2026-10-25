@@ -280,6 +280,7 @@ struct GeneralTabView: View {
                     confirmTitle: "Reset All",
                     systemImage: "arrow.counterclockwise",
                     isForced: true,
+                    style: .settings,
                     cardWidth: 290,
                     onConfirm: {
                         SettingsResetService.shared.resetAllSettings()

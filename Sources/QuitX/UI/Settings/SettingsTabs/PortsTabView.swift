@@ -48,14 +48,12 @@ struct PortsTabView: View {
                 }
 
                 row(label: "Group By:") {
-                    Picker("", selection: binding(\.portsGrouping)) {
-                        ForEach(ListenerGrouping.allCases, id: \.self) { mode in
-                            Text(mode.rawValue).tag(mode)
-                        }
-                    }
-                    .frame(width: 175, alignment: .leading)
-                    .labelsHidden()
-                    .settingsMenu()
+                    SettingsChoiceTiles(selection: binding(\.portsGrouping), options: [
+                        SettingsChoiceOption(value: .none, title: "None", symbol: "list.bullet"),
+                        SettingsChoiceOption(value: .project, title: "Project", symbol: "folder"),
+                        SettingsChoiceOption(value: .docker, title: "Docker", symbol: "shippingbox"),
+                        SettingsChoiceOption(value: .process, title: "Process", symbol: "arrow.triangle.branch")
+                    ], width: 390)
                 } help: {
                     HelpPopoverButton(text: "Group listeners by project folder, Docker container, or the process tree that started them.")
                 }

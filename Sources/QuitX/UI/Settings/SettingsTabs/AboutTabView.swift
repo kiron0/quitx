@@ -55,48 +55,6 @@ private struct AboutAction: View {
     }
 }
 
-private struct AboutDestination: View {
-    let symbol: String
-    let title: String
-    let detail: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                Image(systemName: symbol)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(QuitXTheme.accent)
-                    .frame(width: 32, height: 32)
-                    .background(QuitXTheme.accent.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.system(size: 11.5, weight: .semibold))
-                    Text(detail)
-                        .font(.system(size: 9.5))
-                        .foregroundStyle(Color.secondary)
-                        .lineLimit(1)
-                }
-
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 8, weight: .bold))
-                    .foregroundStyle(Color.secondary)
-            }
-            .padding(10)
-            .frame(maxWidth: .infinity)
-            .background(QuitXTheme.cardBackground, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
-            )
-            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        }
-        .buttonStyle(.plain)
-    }
-}
-
 struct AboutTabView: View {
     @ObservedObject private var updateChecker = UpdateChecker.shared
 
@@ -124,56 +82,30 @@ struct AboutTabView: View {
                 .padding(.leading, 33)
             }
 
-            HStack(alignment: .top, spacing: 12) {
-                panel(title: "Resources & Support", symbol: "lifepreserver") {
+            panel(title: "Resources", symbol: "lifepreserver") {
+                HStack(alignment: .top, spacing: 28) {
                     VStack(spacing: 10) {
                         AboutAction(symbol: "questionmark.circle", title: "Help Center", detail: "Learn every QuitX feature") {
                             HelpWindowController.shared.show()
                         }
                         Divider().opacity(0.3)
+                        AboutAction(symbol: "sparkles", title: "What's New", detail: "See recent features and fixes") {
+                            ChangelogWindowController.shared.show()
+                        }
+                    }
+                    VStack(spacing: 10) {
                         AboutAction(symbol: "safari", title: "Website", detail: "Downloads, guides and details") {
                             NSWorkspace.shared.open(QuitXConstants.websiteURL)
                         }
                         Divider().opacity(0.3)
-                        AboutAction(symbol: "ladybug", title: "Report an Issue", detail: "Share a bug or feature request") {
+                        AboutAction(symbol: "ladybug", title: "Report an Issue", detail: "Share feedback or report a bug") {
                             NSWorkspace.shared.open(QuitXConstants.issuesURL)
                         }
                     }
                 }
-
-                panel(title: "Quick Actions", symbol: "bolt.circle") {
-                    VStack(spacing: 10) {
-                        AboutAction(symbol: "sparkles", title: "What's New", detail: "See recent features and fixes") {
-                            ChangelogWindowController.shared.show()
-                        }
-                        Divider().opacity(0.3)
-                        AboutAction(symbol: "trash.slash", title: "Uninstall Apps", detail: "Remove apps and leftover files") {
-                            UninstallWindowController.shared.showPicker()
-                        }
-                        Divider().opacity(0.3)
-                        AboutAction(symbol: "envelope", title: "Contact Support", detail: "Send feedback or ask for help") {
-                            if let url = QuitXConstants.contactURL() { NSWorkspace.shared.open(url) }
-                        }
-                    }
-                }
             }
 
-            VStack(alignment: .leading, spacing: 10) {
-                SettingsSectionHeader(title: "Explore QuitX", symbol: "square.grid.2x2")
-
-                HStack(spacing: 10) {
-                    AboutDestination(symbol: "command", title: "Shortcuts", detail: "Work without reaching for the menu") {
-                        SettingsWindowController.shared.show(tab: .shortcuts)
-                    }
-                    AboutDestination(symbol: "timer", title: "Automation", detail: "Quit on sleep, idle or last window") {
-                        SettingsWindowController.shared.show(tab: .automation)
-                    }
-                    AboutDestination(symbol: "nosign", title: "Protected Items", detail: "Manage excluded apps and ports") {
-                        SettingsWindowController.shared.show(tab: .exclude)
-                    }
-                }
-                .padding(.leading, 33)
-            }
+            Spacer(minLength: 16)
 
             HStack(spacing: 7) {
                 Image(systemName: "heart.fill").foregroundStyle(QuitXTheme.accent)
@@ -191,6 +123,7 @@ struct AboutTabView: View {
         }
         .padding(.top, 14)
         .frame(width: SettingsTab.contentWidth, alignment: .topLeading)
+        .frame(minHeight: 470, alignment: .topLeading)
     }
 
     private var hero: some View {
@@ -235,7 +168,7 @@ struct AboutTabView: View {
             content()
         }
         .padding(13)
-        .frame(maxWidth: .infinity, minHeight: 176, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: 104, alignment: .topLeading)
         .background(QuitXTheme.cardBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.08), lineWidth: 0.5))
     }

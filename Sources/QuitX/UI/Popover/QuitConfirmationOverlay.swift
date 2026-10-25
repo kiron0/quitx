@@ -5,12 +5,18 @@ private final class OverlayState: ObservableObject {
     @Published var isConfirmHovered = false
 }
 
+enum QuitConfirmationOverlayStyle {
+    case standard
+    case settings
+}
+
 struct QuitConfirmationOverlay: View {
     let title: String
     let subtitle: String
     let confirmTitle: String
     let systemImage: String
     let isForced: Bool
+    let style: QuitConfirmationOverlayStyle
     let cardWidth: CGFloat
     let onConfirm: () -> Void
     let onCancel: () -> Void
@@ -23,6 +29,7 @@ struct QuitConfirmationOverlay: View {
         confirmTitle: String,
         systemImage: String,
         isForced: Bool,
+        style: QuitConfirmationOverlayStyle = .standard,
         cardWidth: CGFloat = 236,
         onConfirm: @escaping () -> Void,
         onCancel: @escaping () -> Void
@@ -32,6 +39,7 @@ struct QuitConfirmationOverlay: View {
         self.confirmTitle = confirmTitle
         self.systemImage = systemImage
         self.isForced = isForced
+        self.style = style
         self.cardWidth = cardWidth
         self.onConfirm = onConfirm
         self.onCancel = onCancel
@@ -67,7 +75,7 @@ struct QuitConfirmationOverlay: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.45)
+            (style == .settings ? Color.primary.opacity(0.035) : Color.black.opacity(0.45))
                 .ignoresSafeArea()
                 .contentShape(Rectangle())
                 .onTapGesture {}
@@ -150,6 +158,10 @@ struct QuitConfirmationOverlay: View {
                             LiquidGlassFill(shape: cardShape)
                         }
                         .shadow(color: Color.black.opacity(0.35), radius: 10, y: 4)
+                } else if style == .settings {
+                    cardShape
+                        .fill(Color(NSColor.windowBackgroundColor))
+                        .shadow(color: Color.black.opacity(0.22), radius: 12, y: 5)
                 } else {
                     cardShape
                         .fill(Color(NSColor.windowBackgroundColor))
@@ -159,7 +171,10 @@ struct QuitConfirmationOverlay: View {
             .overlay {
                 let cardShape = RoundedRectangle(cornerRadius: 12)
                 cardShape
-                    .stroke(Color.primary.opacity(LiquidGlass.enabled ? 0.18 : 0.12), lineWidth: 0.8)
+                    .stroke(
+                        style == .settings ? QuitXTheme.accent.opacity(0.30) : Color.primary.opacity(LiquidGlass.enabled ? 0.18 : 0.12),
+                        lineWidth: style == .settings ? 1 : 0.8
+                    )
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

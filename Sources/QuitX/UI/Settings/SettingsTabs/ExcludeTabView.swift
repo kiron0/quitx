@@ -97,6 +97,7 @@ struct ExcludeTabView: View {
                     confirmTitle: request.removesAll ? "Remove All" : "Remove",
                     systemImage: "trash.fill",
                     isForced: true,
+                    style: .settings,
                     cardWidth: 260,
                     onConfirm: {
                         configStore.removeExcludedApps(Set(request.identifiers))
@@ -119,6 +120,7 @@ struct ExcludeTabView: View {
                     confirmTitle: request.removesAll ? "Remove All" : "Remove",
                     systemImage: "trash.fill",
                     isForced: true,
+                    style: .settings,
                     cardWidth: 260,
                     onConfirm: {
                         let removed = Set(request.ports)
@@ -223,6 +225,9 @@ struct ExcludeTabView: View {
             } label: {
                 Label("Add Apps…", systemImage: "plus")
             }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
+            .tint(QuitXTheme.accent)
 
             Spacer()
 

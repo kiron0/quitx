@@ -88,11 +88,6 @@ struct SettingsRow<Content: View, Help: View>: View {
             .frame(maxWidth: .infinity, minHeight: 34, alignment: .leading)
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
-            .background(QuitXTheme.cardBackground, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
-            )
             .padding(.leading, 33)
         }
     }
