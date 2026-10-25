@@ -51,7 +51,7 @@ struct PortsTabView: View {
                     SettingsChoiceTiles(selection: binding(\.portsGrouping), options: [
                         SettingsChoiceOption(value: .none, title: "None", symbol: "list.bullet"),
                         SettingsChoiceOption(value: .project, title: "Project", symbol: "folder"),
-                        SettingsChoiceOption(value: .docker, title: "Docker", symbol: "shippingbox", appBundleIdentifier: "com.docker.docker"),
+                        SettingsChoiceOption(value: .docker, title: "Docker", symbol: "shippingbox", iconStyle: .dockerOutline),
                         SettingsChoiceOption(value: .process, title: "Process", symbol: "arrow.triangle.branch")
                     ], width: 390)
                 } help: {

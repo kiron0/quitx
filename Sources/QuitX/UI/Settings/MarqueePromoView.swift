@@ -118,6 +118,7 @@ struct MarqueePromoView: View {
 
                 footer
             }
+            .padding(.top, 14)
             .padding(.bottom, 24)
             .frame(width: SettingsTab.contentWidth, alignment: .leading)
         }

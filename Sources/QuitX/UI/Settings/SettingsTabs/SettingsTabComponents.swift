@@ -1,4 +1,3 @@
-import AppKit
 import SwiftUI
 
 struct SettingsSectionHeader: View {
@@ -220,9 +219,64 @@ struct SettingsChoiceOption<Value: Hashable>: Identifiable {
     let value: Value
     let title: String
     let symbol: String
-    var appBundleIdentifier: String? = nil
+    var iconStyle: SettingsChoiceIconStyle = .system
 
     var id: Value { value }
+}
+
+enum SettingsChoiceIconStyle {
+    case system
+    case dockerOutline
+}
+
+private struct DockerOutlineIcon: View {
+    let color: Color
+
+    var body: some View {
+        Canvas { context, size in
+            let scale = min(size.width, size.height) / 24
+            context.scaleBy(x: scale, y: scale)
+
+            var containers = Path()
+            for rect in [
+                CGRect(x: 3, y: 8, width: 4, height: 4),
+                CGRect(x: 8, y: 8, width: 4, height: 4),
+                CGRect(x: 13, y: 8, width: 4, height: 4),
+                CGRect(x: 8, y: 3, width: 4, height: 4),
+                CGRect(x: 13, y: 3, width: 4, height: 4)
+            ] {
+                containers.addRoundedRect(in: rect, cornerSize: CGSize(width: 0.7, height: 0.7))
+            }
+            context.stroke(containers, with: .color(color), lineWidth: 1.35)
+
+            var whale = Path()
+            whale.move(to: CGPoint(x: 2, y: 13.5))
+            whale.addLine(to: CGPoint(x: 17.5, y: 13.5))
+            whale.addCurve(
+                to: CGPoint(x: 10.5, y: 21),
+                control1: CGPoint(x: 17, y: 18.5),
+                control2: CGPoint(x: 14.5, y: 21)
+            )
+            whale.addCurve(
+                to: CGPoint(x: 2, y: 13.5),
+                control1: CGPoint(x: 6, y: 21),
+                control2: CGPoint(x: 3, y: 18)
+            )
+            whale.move(to: CGPoint(x: 17.2, y: 13.5))
+            whale.addCurve(
+                to: CGPoint(x: 21.5, y: 9.5),
+                control1: CGPoint(x: 19.3, y: 13.3),
+                control2: CGPoint(x: 20.7, y: 12)
+            )
+            whale.move(to: CGPoint(x: 19.2, y: 10.8))
+            whale.addLine(to: CGPoint(x: 18.5, y: 7.5))
+            whale.addLine(to: CGPoint(x: 21.5, y: 9.5))
+            whale.addLine(to: CGPoint(x: 23, y: 7))
+            context.stroke(whale, with: .color(color), style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+        }
+        .frame(width: 20, height: 20)
+        .accessibilityHidden(true)
+    }
 }
 
 struct SettingsChoiceTiles<Value: Hashable>: View {
@@ -241,9 +295,8 @@ struct SettingsChoiceTiles<Value: Hashable>: View {
                 } label: {
                     VStack(spacing: 5) {
                         Group {
-                            if let bundleIdentifier = option.appBundleIdentifier,
-                               NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleIdentifier) != nil {
-                                AppIconView(bundleId: bundleIdentifier, size: 20, cornerRadius: 4)
+                            if option.iconStyle == .dockerOutline {
+                                DockerOutlineIcon(color: selected ? QuitXTheme.accent : Color.secondary)
                             } else {
                                 Image(systemName: option.symbol)
                                     .font(.system(size: 13, weight: .semibold))

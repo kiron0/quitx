@@ -172,8 +172,8 @@ struct QuitConfirmationOverlay: View {
                 let cardShape = RoundedRectangle(cornerRadius: 12)
                 cardShape
                     .stroke(
-                        style == .settings ? QuitXTheme.accent.opacity(0.30) : Color.primary.opacity(LiquidGlass.enabled ? 0.18 : 0.12),
-                        lineWidth: style == .settings ? 1 : 0.8
+                        style == .settings ? Color.clear : Color.primary.opacity(LiquidGlass.enabled ? 0.18 : 0.12),
+                        lineWidth: style == .settings ? 0 : 0.8
                     )
             }
         }
