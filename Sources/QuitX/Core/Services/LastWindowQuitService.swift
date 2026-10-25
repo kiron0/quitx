@@ -30,6 +30,10 @@ enum LastWindowQuitPolicy {
             || lowerName == "finder"
             || lowerName == "trash" { return false }
 
+        if let lowerBundleId, QuitXConstants.lastWindowProtectedBundleIds.contains(lowerBundleId) {
+            return false
+        }
+
         let excluded = Set(config.exclude.map { $0.lowercased() })
         if excluded.contains(lowerName) { return false }
         if let lowerBundleId, excluded.contains(lowerBundleId) { return false }

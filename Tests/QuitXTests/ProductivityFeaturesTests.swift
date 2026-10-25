@@ -731,6 +731,7 @@ struct LastWindowQuitTests {
         #expect(!eligible(bundleId: "io.coreify.quitx", name: "QuitX"))
         #expect(!eligible(bundleId: "com.apple.dock", name: "Dock"))
         #expect(!eligible(bundleId: nil, name: "Finder"))
+        #expect(!eligible(bundleId: "io.github.treposting.marquee", name: "Marquee"))
     }
 
     @Test("Exclusions, music protection, and Never rules block eligibility")

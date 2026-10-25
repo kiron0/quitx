@@ -49,6 +49,10 @@ enum QuitXConstants {
         static let trash = "com.apple.trash"
     }
 
+    static let lastWindowProtectedBundleIds: Set<String> = [
+        "io.github.treposting.marquee"
+    ]
+
     static let supportEmail = "hello@kiron.dev"
     static let githubRepository = "kiron0/quitx"
     static let websiteURL = URL(string: "https://quitx.kiron.dev")!
