@@ -260,7 +260,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Low Power Mode",
-                    body: "When macOS Low Power Mode is on, QuitX slows down by itself: menu bar stats update at most every 5 seconds, and live CPU and memory checks every 10 seconds. Turn Low Power Mode off and the normal pace comes back. There is nothing to set up."
+                    body: "When macOS Low Power Mode is on, QuitX slows down by itself: menu bar stats and the stats window update at most every 5 seconds, and live CPU and memory checks every 10 seconds. Turn Low Power Mode off and the normal pace comes back. There is nothing to set up."
                 )
             ]
         ),

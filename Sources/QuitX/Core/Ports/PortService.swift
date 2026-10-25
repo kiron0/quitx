@@ -37,7 +37,7 @@ private actor PortScanGate {
             _ = await inFlight.task.value
             return await run(cacheKey: cacheKey, operation)
         }
-        if let cached, cached.key == cacheKey, Date().timeIntervalSince(cached.date) < 1 { return cached.ports }
+        if let cached, cached.key == cacheKey, Date().timeIntervalSince(cached.date) < 0.4 { return cached.ports }
         let id = UUID()
         let task = Task { await operation() }
         inFlight = (id, cacheKey, task)
@@ -53,7 +53,39 @@ public final class PortService {
     private let scanGate = PortScanGate()
     private let metricsLock = NSLock()
     private var storedScanMetrics = PortScanMetrics()
+    private let reuseLock = NSLock()
+    private var lastFullScan: (signature: [String], ports: [PortInfo], date: Date)?
+    static let metadataReuseSeconds: TimeInterval = 10
     private init() {}
+
+    static func listenerSignature(_ parsed: [RawParsedLsof]) -> [String] {
+        parsed.map { "\($0.proto)|\($0.port)|\($0.pid)|\($0.address)|\($0.state)" }.sorted()
+    }
+
+    private func reusableScan(signature: [String]) -> [PortInfo]? {
+        reuseLock.lock()
+        let previous = lastFullScan
+        reuseLock.unlock()
+        guard let previous, previous.signature == signature,
+              Date().timeIntervalSince(previous.date) < Self.metadataReuseSeconds else { return nil }
+        var memoryByPid: [pid_t: UInt64] = [:]
+        return previous.ports.map { port in
+            let memory: UInt64
+            if let known = memoryByPid[port.pid] {
+                memory = known
+            } else {
+                memory = memoryUsage(pid: port.pid)
+                memoryByPid[port.pid] = memory
+            }
+            return port.updatingStats(memoryBytes: memory, cpuUsage: port.cpuUsage)
+        }
+    }
+
+    private func storeFullScan(signature: [String], ports: [PortInfo]) {
+        reuseLock.lock()
+        lastFullScan = (signature, ports, Date())
+        reuseLock.unlock()
+    }
 
     public var lastScanMetrics: PortScanMetrics {
         metricsLock.lock()
@@ -140,7 +172,21 @@ public final class PortService {
             parsed = parseLsofOutput(output)
         }
         let discoveryFinished = Date()
-        if parsed.isEmpty { return [] }
+        if parsed.isEmpty {
+            storeFullScan(signature: [], ports: [])
+            return []
+        }
+        let signature = Self.listenerSignature(parsed)
+        if let reused = reusableScan(signature: signature) {
+            let finished = Date()
+            updateScanMetrics(PortScanMetrics(
+                discovery: discoveryFinished.timeIntervalSince(scanStarted),
+                metadata: 0,
+                assembly: finished.timeIntervalSince(discoveryFinished),
+                total: finished.timeIntervalSince(scanStarted)
+            ))
+            return reused
+        }
 
         let pids = Array(Set(parsed.map(\.pid)))
         let relevantPids = SocketScanner.withAncestors(pids)
@@ -231,6 +277,7 @@ public final class PortService {
             }
             return $0.port < $1.port
         }
+        storeFullScan(signature: signature, ports: results)
         let finished = Date()
         updateScanMetrics(PortScanMetrics(
             discovery: discoveryFinished.timeIntervalSince(scanStarted),

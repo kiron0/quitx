@@ -135,6 +135,27 @@ struct PortKillIntegrationTests {
         #expect(killed)
         #expect(await Self.waitUntilDead(listener.pid))
         #expect(Self.portIsFree(listener.port))
+        try? await Task.sleep(nanoseconds: 500_000_000)
+        #expect(await PortService.shared.fetchListeningPorts().contains { $0.port == listener.port } == false)
+    }
+
+    @Test("Repeat scans reuse metadata while listeners are unchanged")
+    func repeatScanReusesMetadata() async throws {
+        let listener = try await Self.startListener()
+        defer { listener.cleanup() }
+        let first = try #require(await Self.scannedPort(listener))
+        var reused = false
+        for _ in 0..<6 {
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            let ports = await PortService.shared.fetchListeningPorts()
+            let again = ports.first { $0.port == listener.port && $0.pid == listener.pid }
+            #expect(again?.processStartTime == first.processStartTime)
+            if PortService.shared.lastScanMetrics.metadata == 0 {
+                reused = true
+                break
+            }
+        }
+        #expect(reused)
     }
 
     @Test("Process ignoring SIGTERM and SIGINT is escalated to SIGKILL", arguments: [TerminationMode.terminate, .interrupt])

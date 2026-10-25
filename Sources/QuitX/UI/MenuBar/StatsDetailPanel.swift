@@ -47,7 +47,7 @@ final class StatsDetailModel: ObservableObject {
 
     var memUsed: UInt64 { memApp + memWired + memCompressed }
 
-    private var timer: Timer?
+    private var loopTask: Task<Void, Never>?
     private var sampleGeneration = 0
     private var gpuTask: Task<Void, Never>?
     private var batteryTask: Task<Void, Never>?
@@ -71,19 +71,35 @@ final class StatsDetailModel: ObservableObject {
         stop()
         cpuLevels = SystemUsage.cpuTopology().levels
         tick()
-        let timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            MainActor.assumeIsolated {
+        startLoop()
+    }
+
+    static func refreshInterval(config: QuitXConfig? = nil, lowPowerMode: Bool? = nil) -> UInt64 {
+        let resolved = config ?? ConfigStore.shared.config
+        return BatterySaver.menuBarInterval(refreshSeconds: resolved.menuBarRefreshSeconds, lowPowerMode: lowPowerMode ?? BatterySaver.isLowPowerMode)
+    }
+
+    var isRunning: Bool { loopTask != nil }
+
+    func restartLoop() {
+        guard loopTask != nil else { return }
+        startLoop()
+    }
+
+    private func startLoop() {
+        loopTask?.cancel()
+        loopTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: StatsDetailModel.refreshInterval())
+                guard !Task.isCancelled, let self else { return }
                 self.tick()
             }
         }
-        RunLoop.main.add(timer, forMode: .common)
-        self.timer = timer
     }
 
     func stop() {
-        timer?.invalidate()
-        timer = nil
+        loopTask?.cancel()
+        loopTask = nil
         sampleGeneration += 1
         gpuTask?.cancel()
         gpuTask = nil
@@ -166,6 +182,7 @@ final class StatsDetailModel: ObservableObject {
             }
         }
 
+        StatusItemController.shared?.applyDetailSample(cpu: cpu, memoryUsed: memUsed)
         appendHistory(&cpuHistory, value: cpu)
         if memTotal > 0 {
             appendHistory(&memHistory, value: Double(memUsed) / Double(memTotal) * 100)
@@ -1012,6 +1029,11 @@ final class StatsDetailController {
     private init() {}
 
     var isVisible: Bool { window?.isVisible ?? false }
+
+    func refreshIntervalChanged() {
+        guard isVisible else { return }
+        model?.restartLoop()
+    }
 
     func toggle(from button: NSStatusBarButton, mode: StatsDetailModel.Mode, anchorScreenX: CGFloat? = nil) {
         if isVisible {

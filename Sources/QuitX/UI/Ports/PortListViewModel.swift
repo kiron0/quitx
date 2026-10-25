@@ -215,14 +215,21 @@ final class PortListViewModel: ObservableObject {
             }
             while !Task.isCancelled {
                 guard let self, self.isEnabled, self.autoRefreshGeneration == generation else { return }
+                let started = DispatchTime.now().uptimeNanoseconds
                 await self.refresh()
+                let spent = DispatchTime.now().uptimeNanoseconds &- started
                 do {
-                    try await Task.sleep(nanoseconds: UInt64(interval) * 1_000_000_000)
+                    try await Task.sleep(nanoseconds: Self.nextRefreshDelay(intervalSeconds: interval, spentNanoseconds: spent))
                 } catch {
                     return
                 }
             }
         }
+    }
+
+    nonisolated static func nextRefreshDelay(intervalSeconds: Int, spentNanoseconds: UInt64) -> UInt64 {
+        let period = UInt64(max(1, intervalSeconds)) * 1_000_000_000
+        return max(100_000_000, period > spentNanoseconds ? period - spentNanoseconds : 0)
     }
 
     func stopAutoRefresh() {

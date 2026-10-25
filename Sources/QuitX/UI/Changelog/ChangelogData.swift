@@ -16,6 +16,8 @@ extension ChangelogProvider {
             ("Improvements", [
                 "**Remembers Your Tab**: The menu opens on the tab you used last.",
                 "**Menu Bar Refresh**: Choose how often menu bar stats update, from every second to every 10 seconds. QuitX also slows down by itself in Low Power Mode, so Save power on battery is gone.",
+                "**Matching Stats**: The stats window you open from the menu bar now updates at the same pace as the menu bar and shows the exact same CPU and memory numbers.",
+                "**Live Port Count**: The listening port count in the menu bar now follows your Ports refresh setting, even at every second, instead of updating every 15 seconds. Repeat scans reuse what QuitX already knows, so it stays light.",
                 "**Wider Menu and Settings**: More room for app and port names.",
                 "**Faster Update Install**: Preparing a downloaded update no longer re-verifies the whole disk image, and new releases use a faster disk image format.",
                 "**Clear Menu Item Labels**: About and Quit menu items in the menu bar right-click menu, popover gear menu, and Help view are now explicitly labeled **About QuitX** and **Quit QuitX**."

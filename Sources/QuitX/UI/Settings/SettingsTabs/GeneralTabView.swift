@@ -207,7 +207,7 @@ struct GeneralTabView: View {
                 .disabled(!configStore.config.availableMenuBarStatsEnabled)
                 .opacity(configStore.config.availableMenuBarStatsEnabled ? 1.0 : 0.42)
             } help: {
-                HelpPopoverButton(text: "How often the menu bar stats update. Slower means less work for your Mac. In Low Power Mode QuitX waits at least 5 seconds. 🐢⚡")
+                HelpPopoverButton(text: "How often the menu bar stats and the stats window update, so both always show the same numbers. Slower means less work for your Mac. In Low Power Mode QuitX waits at least 5 seconds. 🐢⚡")
             }
 
             if #available(macOS 26.0, *) {

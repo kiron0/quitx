@@ -86,13 +86,14 @@ final class StatusItemController: NSObject {
         if isShown && isPortsTabActive {
             ports.startAutoRefresh()
         } else if config.portsShowMenuBarCount {
-            ports.startAutoRefresh(interval: max(15, config.portsRefreshSeconds))
+            ports.startAutoRefresh(interval: config.portsRefreshSeconds)
         } else {
             ports.stopAutoRefresh()
         }
     }
 
     private var menuBarPortCount: Int?
+    private var detailSampleTask: Task<Void, Never>?
     private var lastMenuBarSample: MenuBarSample?
     private var popoverResizeScheduled = false
 
@@ -532,11 +533,12 @@ final class StatusItemController: NSObject {
         let gpu: GpuUsageService.Snapshot?
     }
 
-    nonisolated static func sampleMenuBar(config cfg: QuitXConfig) -> MenuBarSample {
+    nonisolated static func sampleMenuBar(config cfg: QuitXConfig, cpu: Double? = nil, memoryUsed: UInt64? = nil) -> MenuBarSample {
         let powerSources = cfg.batteryMenuBarEnabled ? BatterySaver.currentDescriptions() : nil
+        let menuBarCpu = SystemUsage.cpuPercent(consumer: "menuBar")
         return MenuBarSample(
-            cpu: SystemUsage.cpuPercent(consumer: "menuBar"),
-            memoryUsed: SystemUsage.memoryUsedBytes(),
+            cpu: cpu ?? menuBarCpu,
+            memoryUsed: memoryUsed ?? SystemUsage.memoryUsedBytes(),
             battery: cfg.batteryMenuBarEnabled
                 ? BatteryDetailSampler.menuBarSnapshot(descriptions: powerSources)
                 : nil,
@@ -565,7 +567,7 @@ final class StatusItemController: NSObject {
             button.imagePosition = .imageLeading
         }
 
-        let sample: MenuBarSample? = statsOn ? (providedSample ?? Self.sampleMenuBar(config: cfg)) : nil
+        let sample: MenuBarSample? = statsOn ? (providedSample ?? lastMenuBarSample ?? Self.sampleMenuBar(config: cfg)) : nil
         if let sample { lastMenuBarSample = sample }
         let showCpu = statsOn && cfg.menuBarShowCpu
         let showMemory = statsOn && cfg.menuBarShowMemory
@@ -780,25 +782,48 @@ final class StatusItemController: NSObject {
     func startMenuBarStats() {
         menuStatsTask?.cancel()
         SystemUsage.prime()
-        updateMenuBarStats()
+        let initialConfig = ConfigStore.shared.config.hardwareAdjusted
+        updateMenuBarStats(sample: initialConfig.menuBarStatsEnabled ? Self.sampleMenuBar(config: initialConfig) : nil)
+        StatsDetailController.shared.refreshIntervalChanged()
         menuStatsTask = Task { @MainActor [weak self] in
-            var interval: UInt64 = 1_000_000_000
+            var interval = BatterySaver.menuBarInterval(refreshSeconds: initialConfig.menuBarRefreshSeconds, lowPowerMode: BatterySaver.isLowPowerMode)
+            var elapsed: UInt64 = 0
             while true {
-                try? await Task.sleep(nanoseconds: interval)
+                try? await Task.sleep(nanoseconds: interval > elapsed ? interval - elapsed : 0)
                 guard !Task.isCancelled, let self else { break }
+                let started = DispatchTime.now().uptimeNanoseconds
                 let cfg = ConfigStore.shared.config.hardwareAdjusted
                 guard cfg.menuBarStatsEnabled else {
                     self.updateMenuBarStats(sample: nil)
                     interval = 5_000_000_000
+                    elapsed = 0
+                    continue
+                }
+                interval = BatterySaver.menuBarInterval(refreshSeconds: cfg.menuBarRefreshSeconds, lowPowerMode: BatterySaver.isLowPowerMode)
+                if StatsDetailController.shared.isVisible {
+                    elapsed = 0
                     continue
                 }
                 let sample = await Task.detached(priority: .utility) {
                     StatusItemController.sampleMenuBar(config: cfg)
                 }.value
                 guard !Task.isCancelled else { break }
-                interval = BatterySaver.menuBarInterval(refreshSeconds: cfg.menuBarRefreshSeconds, lowPowerMode: BatterySaver.isLowPowerMode)
                 self.updateMenuBarStats(sample: sample)
+                elapsed = DispatchTime.now().uptimeNanoseconds &- started
             }
+        }
+    }
+
+    func applyDetailSample(cpu: Double, memoryUsed: UInt64) {
+        let cfg = ConfigStore.shared.config.hardwareAdjusted
+        guard cfg.menuBarStatsEnabled else { return }
+        detailSampleTask?.cancel()
+        detailSampleTask = Task { @MainActor [weak self] in
+            let sample = await Task.detached(priority: .utility) {
+                StatusItemController.sampleMenuBar(config: cfg, cpu: cpu, memoryUsed: memoryUsed)
+            }.value
+            guard !Task.isCancelled, let self else { return }
+            self.updateMenuBarStats(sample: sample)
         }
     }
 
