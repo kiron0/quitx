@@ -353,7 +353,7 @@ function renderSettings(t) {
   if (!between(t, T.slWin, T.slSleep + .2)) { show(s, 0); s.innerHTML = ''; return; }
   s.innerHTML = QX.settings({ tab: 'Automation', content: QX.automation({ sleep: t >= T.slToggle, hl: t >= T.slToggle ? 'sleep' : null }) });
   s.style.zoom = 1.15;
-  s.style.left = (720 - 300 * 1.15) / 1.15 + 'px';
+  s.style.left = (720 - 340 * 1.15) / 1.15 + 'px';
   s.style.top = 150 / 1.15 + 'px';
   const o = prog(t, T.slWin, T.slWin + .35, out) * (1 - prog(t, T.slSleep - .2, T.slSleep + .2, lin));
   show(s, o);

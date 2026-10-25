@@ -2,71 +2,120 @@ import SwiftUI
 import AppKit
 import Combine
 
-enum SettingsTab: String, CaseIterable {
+enum SettingsCategory: String, CaseIterable, Identifiable {
+    case start = ""
+    case app = "App"
+    case quitting = "Quitting"
+    case developer = "Developer"
+    case quitx = "QuitX"
+    case moreApps = "More Apps"
+
+    var id: String { rawValue }
+}
+
+enum SettingsTab: String, CaseIterable, Identifiable {
+    case overview = "Overview"
     case general = "General"
+    case shortcuts = "Shortcuts"
     case automation = "Automation"
     case advanced = "Advanced"
-    case ports = "Ports"
     case exclude = "Exclude"
-    case shortcuts = "Shortcuts"
+    case ports = "Ports"
     case about = "About"
+    case marquee = "Marquee"
 
-    static let contentWidth: CGFloat = 560
-    static let bottomPadding: CGFloat = 16
+    static let windowSize = NSSize(width: 860, height: 600)
+    static let sidebarWidth: CGFloat = 220
+    static let detailWidth: CGFloat = windowSize.width - sidebarWidth
+    static let detailHorizontalPadding: CGFloat = 28
+    static let contentWidth: CGFloat = detailWidth - detailHorizontalPadding * 2
 
-    var toolbarItemIdentifier: NSToolbarItem.Identifier {
-        NSToolbarItem.Identifier(rawValue)
-    }
+    var id: String { rawValue }
 
-    var iconName: String {
+    var title: String { rawValue }
+
+    var category: SettingsCategory {
         switch self {
-        case .general:   return "preferences-general"
-        case .automation: return "preferences-automation"
-        case .advanced:  return "preferences-advanced"
-        case .ports:     return "preferences-ports"
-        case .exclude:   return "preferences-exclude"
-        case .shortcuts: return "preferences-shortcuts"
-        case .about:     return "preferences-about"
+        case .overview: return .start
+        case .general, .shortcuts: return .app
+        case .automation, .advanced, .exclude: return .quitting
+        case .ports: return .developer
+        case .about: return .quitx
+        case .marquee: return .moreApps
         }
     }
 
-    var fallbackSymbolName: String {
+    var symbol: String {
         switch self {
-        case .general:   return "gearshape"
+        case .overview:   return "square.grid.2x2"
+        case .general:    return "gearshape"
+        case .shortcuts:  return "command"
         case .automation: return "timer"
-        case .advanced:  return "slider.horizontal.3"
-        case .ports:     return "network"
-        case .exclude:   return "nosign"
-        case .shortcuts: return "command"
-        case .about:     return "bolt.fill"
+        case .advanced:   return "slider.horizontal.3"
+        case .exclude:    return "nosign"
+        case .ports:      return "network"
+        case .about:      return "bolt.fill"
+        case .marquee:    return "viewfinder"
         }
     }
 
-    var toolbarImage: NSImage? {
-        if let img = AssetImages.load(iconName) {
-            let copy = img.copy() as? NSImage ?? img
-            copy.size = NSSize(width: 19, height: 19)
-            copy.isTemplate = true
-            return copy
-        }
-        let sym = NSImage(systemSymbolName: fallbackSymbolName, accessibilityDescription: rawValue)
-        let copy = sym?.copy() as? NSImage
-        copy?.size = NSSize(width: 19, height: 19)
-        copy?.isTemplate = true
-        return copy ?? sym
-    }
-
-    var contentHeight: CGFloat {
+    var summary: String {
         switch self {
-        case .general:
-            if #available(macOS 26.0, *) { return 416 }
-            return 386
-        case .automation: return 386
-        case .advanced:  return 266
-        case .ports:     return PortsTabView.contentHeight
-        case .exclude:   return ExcludeTabView.contentHeight
-        case .shortcuts: return 221
-        case .about:     return 186
+        case .overview:   return "Everything QuitX can do. Click a card to jump to its settings."
+        case .general:    return "Startup, sounds, updates, menu bar stats and how QuitX looks."
+        case .shortcuts:  return "Open QuitX or quit apps from anywhere with your own key combos."
+        case .automation: return "Let QuitX quit apps on sleep, after their last window, or when they sit idle."
+        case .advanced:   return "Background apps, music protection, confirmations and extra list items."
+        case .exclude:    return "Apps and ports QuitX never quits, manually or automatically."
+        case .ports:      return "Find and free ports held by dev servers, databases and Docker."
+        case .about:      return "Version, updates and ways to get in touch."
+        case .marquee:    return "Capture the screen. Keep the clipboard."
+        }
+    }
+
+    var keywords: String {
+        switch self {
+        case .overview:   return "features cards everything help uninstall apps what's new changelog tools"
+        case .general:    return "login startup sounds updates download menu bar stats cpu memory gpu battery refresh appearance liquid glass classic sort default normal force quit"
+        case .shortcuts:  return "keyboard hotkey key combo activate menu quit all force quit all settings refresh help what's new changelog uninstall apps"
+        case .automation: return "sleep schedule last window close accessibility cpu hog memory pressure rescue auto quit inactive idle timer"
+        case .advanced:   return "background helpers group instances music protection select by default tips confirm finder windows empty trash"
+        case .exclude:    return "exclude exclusion list never quit protect immune ports"
+        case .ports:      return "port kill listener tcp udp docker refresh menu bar count group sort sigterm sigkill confirm"
+        case .about:      return "version update check github contact support website"
+        case .marquee:    return "more apps screenshot recording screen capture clipboard color picker measure ocr"
+        }
+    }
+
+    var fallbackSymbolName: String { symbol }
+
+    var headerTitle: String {
+        switch self {
+        case .overview: return "Overview"
+        case .marquee: return "More Apps"
+        default: return title
+        }
+    }
+
+    var headerSummary: String {
+        switch self {
+        case .marquee: return "Another free, open-source Mac app worth a look."
+        default: return summary
+        }
+    }
+
+    func matches(_ query: String) -> Bool {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return true }
+        let features = SettingsFeature.allCases.filter { $0.tab == self }.map { "\($0.title) \($0.detail)" }
+        let haystack = ([title, summary, keywords] + features).joined(separator: " ")
+        return trimmed.split(separator: " ").allSatisfy { haystack.localizedCaseInsensitiveContains($0) }
+    }
+
+    static var byCategory: [(category: SettingsCategory, tabs: [SettingsTab])] {
+        SettingsCategory.allCases.compactMap { category in
+            let tabs = allCases.filter { $0.category == category }
+            return tabs.isEmpty ? nil : (category, tabs)
         }
     }
 }
@@ -254,66 +303,5 @@ struct HelpPopoverButton: View {
             state.hide()
         }
         .background(PopoverAnchorView { state.anchorView = $0 })
-    }
-}
-
-final class SettingsTabViewModel: ObservableObject {
-    @Published var activeTab: SettingsTab = .general
-    @Published var glassTopInset: CGFloat = 0
-}
-
-struct SettingsContainerView: View {
-    @ObservedObject var tabModel: SettingsTabViewModel
-    @EnvironmentObject private var configStore: ConfigStore
-
-    var body: some View {
-        ZStack(alignment: .top) {
-            switch tabModel.activeTab {
-            case .general:
-                GeneralTabView()
-                    .environmentObject(configStore)
-            case .automation:
-                AutomationTabView()
-                    .environmentObject(configStore)
-            case .advanced:
-                AdvancedTabView()
-                    .environmentObject(configStore)
-            case .ports:
-                PortsTabView()
-                    .environmentObject(configStore)
-            case .exclude:
-                ExcludeTabView()
-                    .environmentObject(configStore)
-            case .shortcuts:
-                ShortcutsTabView()
-            case .about:
-                AboutTabView()
-            }
-        }
-        .frame(width: SettingsTab.contentWidth, height: tabModel.activeTab.contentHeight, alignment: .top)
-        .overlay(alignment: .top) {
-            if LiquidGlass.enabled {
-                Color.primary.opacity(0.12)
-                    .frame(height: 0.5)
-            }
-        }
-        .background {
-            if LiquidGlass.enabled {
-                ZStack(alignment: .top) {
-                    LiquidGlassFill(shape: Rectangle())
-                    if tabModel.glassTopInset > 0 {
-                        QuitXTheme.cardBackground
-                            .frame(height: tabModel.glassTopInset)
-                    }
-                }
-                .ignoresSafeArea()
-            } else {
-                QuitXTheme.windowBackground
-            }
-        }
-        .onChange(of: tabModel.activeTab) { _, _ in
-            HelpPopoverState.closeAll()
-            NotificationCenter.default.post(name: QuitXConstants.Notifications.dismissSettingsTooltips, object: nil)
-        }
     }
 }

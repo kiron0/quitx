@@ -336,14 +336,18 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             category: .preferences,
             title: "Settings and Updates",
             symbol: "gearshape",
-            summary: "Explore all Settings tabs, app configuration, and verified in-app updates.",
+            summary: "Find your way around Settings, app configuration, and verified in-app updates.",
             sections: [
                 QuitXHelpSection(
-                    title: "General & Advanced tabs",
+                    title: "Finding your way around",
+                    body: "Settings opens on Overview: a card for every feature with its current state, like On, Off or Normal. Click a card to jump to its page. The sidebar groups pages into App, Quitting, Developer and QuitX, and Search settings… finds a page by any word, such as sleep, docker or liquid glass. Press Return to open the first match."
+                ),
+                QuitXHelpSection(
+                    title: "General, Automation & Advanced",
                     body: "Settings > General controls startup, sounds, menu bar stats for CPU, memory, GPU, and battery, macOS 26 Liquid Glass vs Classic appearance theme, sort order, and defaults. Settings > Automation manages sleep scheduling, quit-on-last-window-close, health rescue thresholds, and Auto Quit. Settings > Advanced manages background apps, music protection, default selection, tips, confirmations, and Finder/Trash."
                 ),
                 QuitXHelpSection(
-                    title: "Exclude & Shortcuts tabs",
+                    title: "Exclude & Shortcuts",
                     body: "Settings > Exclude manages your protected apps list. Settings > Shortcuts allows recording global hotkeys with conflict checks."
                 ),
                 QuitXHelpSection(

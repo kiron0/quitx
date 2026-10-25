@@ -2,238 +2,109 @@ import AppKit
 import Combine
 import SwiftUI
 
-private final class SettingsWindow: NSWindow {
-    override func animationResizeTime(_ newFrame: NSRect) -> TimeInterval {
-        0
+@MainActor
+final class SettingsNavigationModel: ObservableObject {
+    @Published private(set) var selection: SettingsTab = .overview
+    @Published var searchText = ""
+    @Published var hoveredTab: SettingsTab?
+    @Published var hoveredCard: String?
+
+    func select(_ tab: SettingsTab) {
+        guard selection != tab else { return }
+        HelpPopoverState.closeAll()
+        NotificationCenter.default.post(name: QuitXConstants.Notifications.dismissSettingsTooltips, object: nil)
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            selection = tab
+        }
     }
 }
 
 @MainActor
-final class SettingsWindowController: NSObject, NSWindowDelegate, NSToolbarDelegate {
+final class SettingsWindowController: NSObject, NSWindowDelegate {
     static let shared = SettingsWindowController()
+
+    let navigation = SettingsNavigationModel()
     private var window: NSWindow?
-    private var activeTab: SettingsTab = .general
-    private let tabModel = SettingsTabViewModel()
-    private var hostingController: NSHostingController<AnyView>?
-    private var toolbar: NSToolbar?
-    private var chromeObserver: AnyCancellable?
-    private var appliedGlass: Bool?
-
-    private override init() {
-        super.init()
-        chromeObserver = ConfigStore.shared.$config
-            .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
-                Task { @MainActor in self?.applyWindowChrome() }
-            }
-    }
-
-    func applyWindowChrome() {
-        guard let win = window else { return }
-        let enabled = LiquidGlass.enabled
-        guard appliedGlass != enabled else { return }
-        appliedGlass = enabled
-        let savedFrame = win.frame
-        if enabled {
-            if !win.styleMask.contains(.fullSizeContentView) {
-                win.styleMask.insert(.fullSizeContentView)
-            }
-            win.isOpaque = false
-            win.backgroundColor = .clear
-            let inset = win.frame.height - win.contentRect(forFrameRect: win.frame).height
-            if inset > 0 {
-                tabModel.glassTopInset = inset
-            }
-        } else {
-            if win.styleMask.contains(.fullSizeContentView) {
-                win.styleMask.remove(.fullSizeContentView)
-            }
-            win.backgroundColor = QuitXTheme.toolbarBackgroundNSColor
-            win.isOpaque = true
-            tabModel.glassTopInset = 0
-        }
-        win.titlebarAppearsTransparent = true
-        if win.frame != savedFrame {
-            win.setFrame(savedFrame, display: true, animate: false)
-        }
-    }
 
     var isOpen: Bool { window != nil }
+    var activeTab: SettingsTab { navigation.selection }
 
     func show(tab: SettingsTab? = nil) {
         StatusItemController.shared?.closePopover()
 
-        let targetTab = tab ?? .general
-
-        if let win = window {
-            dismissTooltips(for: win)
-            if let tab = tab {
-                switchToTab(tab)
+        if let window {
+            dismissTooltips(for: window)
+            if let tab { navigation.select(tab) }
+            if let screen = WindowPositioner.targetScreen, !window.frame.intersects(screen.visibleFrame) {
+                window.setFrameOrigin(WindowPositioner.topBiasedOrigin(for: window.frame.size, on: screen))
             }
-            if let screen = WindowPositioner.targetScreen, !win.frame.intersects(screen.visibleFrame) {
-                let targetFrame = targetFrameFor(win, tab: activeTab, screen: screen)
-                win.setFrame(targetFrame, display: true)
-            }
-            WindowAnimator.activateExisting(win)
+            WindowAnimator.activateExisting(window)
             return
         }
 
-        activeTab = targetTab
-        tabModel.activeTab = targetTab
+        navigation.searchText = ""
+        navigation.select(tab ?? .overview)
 
-        let initialContentRect = NSRect(x: 0, y: 0, width: SettingsTab.contentWidth, height: targetTab.contentHeight)
-
-        let win = SettingsWindow(
-            contentRect: initialContentRect,
-            styleMask: [.titled, .closable, .miniaturizable],
-            backing: .buffered,
-            defer: false
-        )
-        win.title = targetTab.rawValue
-        if LiquidGlass.enabled {
-            win.styleMask.insert(.fullSizeContentView)
-            win.isOpaque = false
-            win.backgroundColor = .clear
-            win.titlebarAppearsTransparent = true
-        } else {
-            win.styleMask.remove(.fullSizeContentView)
-            win.isOpaque = true
-            win.backgroundColor = QuitXTheme.toolbarBackgroundNSColor
-            win.titlebarAppearsTransparent = true
-        }
-        appliedGlass = LiquidGlass.enabled
-        win.titlebarSeparatorStyle = .line
-        win.isMovableByWindowBackground = false
-        win.hidesOnDeactivate = false
-        win.isReleasedWhenClosed = false
-        win.animationBehavior = .documentWindow
-        win.delegate = self
-
-        let tb = NSToolbar(identifier: "QuitXSettingsToolbar")
-        tb.allowsUserCustomization = false
-        tb.autosavesConfiguration = false
-        tb.displayMode = .iconAndLabel
-        tb.delegate = self
-        tb.selectedItemIdentifier = targetTab.toolbarItemIdentifier
-        self.toolbar = tb
-        win.toolbar = tb
-        win.toolbarStyle = .preference
-
-        let container = SettingsContainerView(tabModel: tabModel)
+        let root = SettingsRootView(navigation: navigation)
             .environmentObject(ConfigStore.shared)
-
-        let hosting = NSHostingController(rootView: AnyView(container))
-        self.hostingController = hosting
-        win.contentViewController = hosting
-        self.window = win
-
-        WindowActivationCoordinator.update()
+        let hosting = NSHostingController(rootView: root)
+        hosting.sizingOptions = []
+        let window = NSWindow(contentViewController: hosting)
+        window.title = "QuitX Settings"
+        window.styleMask = [.titled, .closable, .miniaturizable, .fullSizeContentView]
+        window.titlebarAppearsTransparent = true
+        window.titlebarSeparatorStyle = .none
+        window.titleVisibility = .hidden
+        window.setContentSize(SettingsTab.windowSize)
+        window.minSize = window.frame.size
+        window.maxSize = window.frame.size
+        window.collectionBehavior = [.fullScreenNone]
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.hidesOnDeactivate = false
+        window.isReleasedWhenClosed = false
+        window.isMovableByWindowBackground = false
+        window.tabbingMode = .disallowed
+        window.animationBehavior = .none
+        window.standardWindowButton(.zoomButton)?.isEnabled = false
+        window.delegate = self
 
         let targetFrame: NSRect
         if let screen = WindowPositioner.targetScreen {
-            targetFrame = targetFrameFor(win, tab: targetTab, screen: screen)
+            targetFrame = WindowPositioner.topBiasedFrame(for: window.frame.size, on: screen)
         } else {
-            win.center()
-            targetFrame = win.frame
+            window.center()
+            targetFrame = window.frame
         }
-        WindowAnimator.present(win, targetFrame: targetFrame)
 
-        if LiquidGlass.enabled {
-            let inset = win.frame.height - win.contentRect(forFrameRect: win.frame).height
-            if inset > 0 {
-                tabModel.glassTopInset = inset
-            }
-        }
+        self.window = window
+        WindowActivationCoordinator.update()
+        WindowAnimator.present(window, targetFrame: targetFrame)
     }
 
-    private func targetHeight(for win: NSWindow, tab: SettingsTab) -> CGFloat {
-        let chromeHeight = win.frame.height - win.contentLayoutRect.height
-        let effectiveChrome = chromeHeight > 0 ? chromeHeight : 88
-        return tab.contentHeight + effectiveChrome
+    func switchToTab(_ tab: SettingsTab) {
+        if let window { dismissTooltips(for: window) }
+        navigation.select(tab)
     }
 
-    private func targetFrameFor(_ win: NSWindow, tab: SettingsTab, screen: NSScreen) -> NSRect {
-        let height = targetHeight(for: win, tab: tab)
-        let size = NSSize(width: SettingsTab.contentWidth, height: height)
-        return WindowPositioner.topBiasedFrame(for: size, on: screen)
+    func close() {
+        window?.close()
     }
 
     func windowWillClose(_ notification: Notification) {
+        HelpPopoverState.closeAll()
         window = nil
-        hostingController = nil
-        toolbar = nil
         WindowActivationCoordinator.update()
     }
 
     private func dismissTooltips(for win: NSWindow) {
         HelpPopoverState.closeAll()
         NotificationCenter.default.post(name: QuitXConstants.Notifications.dismissSettingsTooltips, object: nil)
-        for child in win.childWindows ?? [] {
-            if "\(type(of: child))".contains("Popover") || child.className.contains("Popover") {
-                child.orderOut(nil)
-                win.removeChildWindow(child)
-            }
+        for child in win.childWindows ?? [] where "\(type(of: child))".contains("Popover") || child.className.contains("Popover") {
+            child.orderOut(nil)
+            win.removeChildWindow(child)
         }
-        for w in NSApp.windows where w.parent === win {
-            if "\(type(of: w))".contains("Popover") || w.className.contains("Popover") {
-                w.orderOut(nil)
-                win.removeChildWindow(w)
-            }
-        }
-    }
-
-    func switchToTab(_ tab: SettingsTab) {
-        guard let win = window else { return }
-        dismissTooltips(for: win)
-        if activeTab == tab { return }
-        activeTab = tab
-
-        toolbar?.selectedItemIdentifier = tab.toolbarItemIdentifier
-        win.title = tab.rawValue
-
-        var transaction = Transaction()
-        transaction.disablesAnimations = true
-        withTransaction(transaction) {
-            tabModel.activeTab = tab
-        }
-
-        let currentFrame = win.frame
-        let height = targetHeight(for: win, tab: tab)
-        let newY = currentFrame.maxY - height
-        let newFrame = NSRect(x: currentFrame.origin.x, y: newY, width: SettingsTab.contentWidth, height: height)
-
-        win.setFrame(newFrame, display: true, animate: false)
-    }
-
-    nonisolated func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        SettingsTab.allCases.map { $0.toolbarItemIdentifier }
-    }
-
-    nonisolated func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        toolbarDefaultItemIdentifiers(toolbar)
-    }
-
-    nonisolated func toolbarSelectableItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        toolbarDefaultItemIdentifiers(toolbar)
-    }
-
-    @objc func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
-        guard let tab = SettingsTab(rawValue: itemIdentifier.rawValue) else { return nil }
-
-        let item = NSToolbarItem(itemIdentifier: itemIdentifier)
-        item.label = tab.rawValue
-        item.paletteLabel = tab.rawValue
-        item.image = tab.toolbarImage
-        item.target = self
-        item.action = #selector(toolbarItemClicked(_:))
-        return item
-    }
-
-    @objc private func toolbarItemClicked(_ sender: NSToolbarItem) {
-        guard let tab = SettingsTab(rawValue: sender.itemIdentifier.rawValue) else { return }
-        if let win = window {
-            dismissTooltips(for: win)
-        }
-        switchToTab(tab)
     }
 }

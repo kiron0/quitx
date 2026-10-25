@@ -203,6 +203,7 @@ struct GeneralTabView: View {
                     }
                     .labelsHidden()
                     .frame(width: 150, alignment: .leading)
+                    .settingsMenu()
                 }
                 .disabled(!configStore.config.availableMenuBarStatsEnabled)
                 .opacity(configStore.config.availableMenuBarStatsEnabled ? 1.0 : 0.42)
@@ -217,14 +218,12 @@ struct GeneralTabView: View {
                             withAnimation(.easeInOut(duration: 0.25)) {
                                 configStore.config.liquidGlassEnabled = false
                             }
-                            SettingsWindowController.shared.applyWindowChrome()
                             configStore.save()
                         }
                         appearanceRadio("Liquid Glass", selected: configStore.config.liquidGlassEnabled) {
                             withAnimation(.easeInOut(duration: 0.25)) {
                                 configStore.config.liquidGlassEnabled = true
                             }
-                            SettingsWindowController.shared.applyWindowChrome()
                             configStore.save()
                         }
                     }
@@ -245,6 +244,7 @@ struct GeneralTabView: View {
                 }
                 .frame(width: 175, alignment: .leading)
                 .labelsHidden()
+                .settingsMenu()
             } help: {
                 HelpPopoverButton(text: "Line up the suspects: alphabetical roll call, sizzling CPU hogs roasting your lap, or greedy memory munchers. 📊🧭")
             }
@@ -259,26 +259,27 @@ struct GeneralTabView: View {
                 }
                 .frame(width: 175, alignment: .leading)
                 .labelsHidden()
+                .settingsMenu()
             } help: {
                 HelpPopoverButton(text: "Choose your default vibe: polite 'please quit' or ruthless force quit. Pro tip: hold ⌥ (Option) anytime to swap modes on the fly! ⚡️")
             }
 
             row(label: "Reset:") {
-                Button("Reset all") {
+                Button {
                     presentationState.showResetConfirmation = true
+                } label: {
+                    Label("Reset All Settings", systemImage: "arrow.counterclockwise")
                 }
                 .font(.system(size: 11.5))
+                .buttonStyle(.bordered)
+                .controlSize(.small)
             } help: {
                 HelpPopoverButton(text: "The nuclear reset button. Restores all preferences, shortcuts, and launch settings back to factory-fresh glory. Asks first! 🧼💥")
             }
 
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 14)
-        .padding(.bottom, SettingsTab.bottomPadding)
-        .frame(width: SettingsTab.contentWidth, height: SettingsTab.general.contentHeight, alignment: .topLeading)
-        .background(QuitXTheme.paneBackground)
+        .frame(width: SettingsTab.contentWidth, alignment: .topLeading)
         .alert("Reset all settings?", isPresented: $presentationState.showResetConfirmation) {
             Button("Cancel", role: .cancel) {}
             Button("Reset All", role: .destructive) {

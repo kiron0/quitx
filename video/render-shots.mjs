@@ -1,5 +1,5 @@
 import { createRequire } from 'node:module';
-import { mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -20,8 +20,19 @@ const site = resolve(root, 'site/assets/shots');
 mkdirSync(readme, { recursive: true });
 mkdirSync(site, { recursive: true });
 
-const scenes = ['hero', 'force', 'confirm', 'background', 'exclude', 'stats', 'health', 'sleep', 'theme', 'sounds', 'updates', 'settings', 'ports', 'portsSettings'];
-const browser = await chromium.launch();
+const scenes = ['hero', 'force', 'confirm', 'background', 'exclude', 'stats', 'health', 'sleep', 'theme', 'sounds', 'updates', 'ports', 'portsSettings'];
+const readmeOnly = new Set(['portsSettings']);
+let browser;
+try {
+  browser = await chromium.launch();
+} catch (error) {
+  const systemBrowser = [
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    '/Applications/Chromium.app/Contents/MacOS/Chromium',
+  ].find(existsSync);
+  if (!systemBrowser) throw error;
+  browser = await chromium.launch({ executablePath: systemBrowser });
+}
 
 async function open(hash) {
   const tab = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 });
@@ -35,6 +46,7 @@ for (const id of scenes) {
   let tab = await open(id);
   await tab.screenshot({ path: resolve(readme, `${id}.jpg`), type: 'jpeg', quality: 86 });
   await tab.close();
+  if (readmeOnly.has(id)) continue;
 
   tab = await open(`${id}-bare`);
   const ui = await tab.evaluate(() => window.UI_RECT);

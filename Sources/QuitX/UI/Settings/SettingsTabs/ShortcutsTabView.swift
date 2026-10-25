@@ -61,6 +61,11 @@ final class ShortcutsViewState: ObservableObject {
         case "activate": slot = .activateMenu
         case "quit": slot = .quitAll
         case "force": slot = .forceQuitAll
+        case "settings": slot = .openSettings
+        case "refresh": slot = .refreshApps
+        case "help": slot = .openHelp
+        case "changelog": slot = .openChangelog
+        case "uninstaller": slot = .openUninstaller
         default: slot = nil
         }
         if let slot {
@@ -74,33 +79,112 @@ struct ShortcutsTabView: View {
     @StateObject private var viewState = ShortcutsViewState()
 
     var body: some View {
-        VStack(spacing: 0) {
-            VStack(spacing: 11) {
+        VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 7) {
+                SettingsSectionHeader(title: "Menu Access", symbol: "command.square")
+
                 shortcutRow(
                     id: "activate",
-                    title: "Activate menu",
+                    symbol: "menubar.rectangle",
+                    title: "Open QuitX",
+                    detail: "Bring the menu forward from anywhere.",
                     isEnabled: $sm.activateMenuEnabled,
                     keys: $sm.activateMenuKeys,
-                    help: "Summons QuitX anywhere on your desktop with zero mouse clicks. Instant command central! ⚡️🛸"
-                )
-                shortcutRow(
-                    id: "quit",
-                    title: "Quit all apps",
-                    isEnabled: $sm.quitAllEnabled,
-                    keys: $sm.quitAllKeys,
-                    help: "The tidy-desk magic wand! Politely dismisses every open app without collateral damage. 🧹🪄"
-                )
-                shortcutRow(
-                    id: "force",
-                    title: "Force quit all",
-                    isEnabled: $sm.forceQuitAllEnabled,
-                    keys: $sm.forceQuitAllKeys,
-                    help: "The nuclear option! Mercilessly terminates stubborn frozen apps when they ignore gentle requests. 💥🚨"
+                    help: "Opens the QuitX menu without reaching for the menu bar."
                 )
             }
-            .padding(.horizontal, 24)
 
-            Spacer(minLength: 12)
+            VStack(alignment: .leading, spacing: 7) {
+                SettingsSectionHeader(title: "App Actions", symbol: "power")
+
+                shortcutRow(
+                    id: "quit",
+                    symbol: "power",
+                    title: "Quit Selected Apps",
+                    detail: "Run the normal Quit action immediately.",
+                    isEnabled: $sm.quitAllEnabled,
+                    keys: $sm.quitAllKeys,
+                    help: "Quits the apps selected by QuitX using the normal macOS quit request."
+                )
+
+                Divider()
+                    .opacity(0.35)
+                    .padding(.leading, 42)
+
+                shortcutRow(
+                    id: "force",
+                    symbol: "exclamationmark.octagon",
+                    title: "Force Quit Selected Apps",
+                    detail: "Stop unresponsive apps without waiting.",
+                    isEnabled: $sm.forceQuitAllEnabled,
+                    keys: $sm.forceQuitAllKeys,
+                    help: "Force quits the apps selected by QuitX. Use this when normal Quit cannot close an app."
+                )
+            }
+
+            VStack(alignment: .leading, spacing: 7) {
+                SettingsSectionHeader(title: "Navigation", symbol: "arrow.triangle.turn.up.right.diamond")
+
+                shortcutRow(
+                    id: "settings",
+                    symbol: "gearshape",
+                    title: "Open Settings",
+                    detail: "Jump straight to QuitX settings.",
+                    isEnabled: $sm.openSettingsEnabled,
+                    keys: $sm.openSettingsKeys,
+                    help: "Opens the QuitX Settings window from any app."
+                )
+
+                shortcutDivider
+
+                shortcutRow(
+                    id: "refresh",
+                    symbol: "arrow.clockwise",
+                    title: "Refresh App List",
+                    detail: "Rescan running apps immediately.",
+                    isEnabled: $sm.refreshAppsEnabled,
+                    keys: $sm.refreshAppsKeys,
+                    help: "Refreshes QuitX's running app list without opening the menu."
+                )
+            }
+
+            VStack(alignment: .leading, spacing: 7) {
+                SettingsSectionHeader(title: "QuitX Tools", symbol: "square.grid.2x2")
+
+                shortcutRow(
+                    id: "help",
+                    symbol: "questionmark.circle",
+                    title: "Open Help",
+                    detail: "Open guides and feature explanations.",
+                    isEnabled: $sm.openHelpEnabled,
+                    keys: $sm.openHelpKeys,
+                    help: "Opens QuitX Help from anywhere."
+                )
+
+                shortcutDivider
+
+                shortcutRow(
+                    id: "changelog",
+                    symbol: "sparkles",
+                    title: "Open What's New",
+                    detail: "See the latest improvements and fixes.",
+                    isEnabled: $sm.openChangelogEnabled,
+                    keys: $sm.openChangelogKeys,
+                    help: "Opens the QuitX changelog."
+                )
+
+                shortcutDivider
+
+                shortcutRow(
+                    id: "uninstaller",
+                    symbol: "trash.slash",
+                    title: "Open Uninstall Apps",
+                    detail: "Choose an app and remove its leftovers.",
+                    isEnabled: $sm.openUninstallerEnabled,
+                    keys: $sm.openUninstallerKeys,
+                    help: "Opens the app uninstaller picker."
+                )
+            }
 
             if let error = sm.shortcutError ?? sm.registrationError {
                 HStack(spacing: 12) {
@@ -134,46 +218,15 @@ struct ShortcutsTabView: View {
                     RoundedRectangle(cornerRadius: 10)
                         .stroke(Color.red.opacity(0.2), lineWidth: 0.5)
                 )
-                .padding(.horizontal, 24)
             } else {
-                HStack(spacing: 12) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(QuitXTheme.accent.opacity(0.12))
-                            .frame(width: 32, height: 32)
-
-                        Text("⌥")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(QuitXTheme.accent)
-                    }
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Option Key Pro-Tip")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(Color.primary)
-
-                        Text("Hold down Option (⌥) in the menu bar to toggle between Quit and Force Quit.")
-                            .font(.system(size: 11))
-                            .foregroundStyle(Color.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    Spacer(minLength: 0)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 9)
-                .background(QuitXTheme.cardBackground, in: RoundedRectangle(cornerRadius: 10))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
+                SettingsInlineNote(
+                    symbol: "option",
+                    title: "Hold Option for a one-time mode switch",
+                    detail: "In the QuitX menu, ⌥ temporarily switches between Quit and Force Quit."
                 )
-                .padding(.horizontal, 24)
             }
         }
-        .padding(.top, 16)
-        .padding(.bottom, SettingsTab.bottomPadding)
-        .frame(width: SettingsTab.contentWidth, height: 221, alignment: .topLeading)
-        .background(QuitXTheme.paneBackground)
+        .frame(width: SettingsTab.contentWidth, alignment: .topLeading)
         .onAppear {
             viewState.startMonitor(sm: sm)
         }
@@ -182,28 +235,64 @@ struct ShortcutsTabView: View {
         }
     }
 
-    private func shortcutRow(id: String, title: String, isEnabled: Binding<Bool>, keys: Binding<[String]>, help: String) -> some View {
+    private var shortcutDivider: some View {
+        Divider()
+            .opacity(0.35)
+            .padding(.leading, 42)
+    }
+
+    private func shortcutRow(
+        id: String,
+        symbol: String,
+        title: String,
+        detail: String,
+        isEnabled: Binding<Bool>,
+        keys: Binding<[String]>,
+        help: String
+    ) -> some View {
         let active = isEnabled.wrappedValue
         let isRecording = (viewState.recordingRow == id)
         let keyList = keys.wrappedValue
 
-        return HStack(spacing: 8) {
+        return HStack(spacing: 10) {
             Button {
-                isEnabled.wrappedValue.toggle()
-            } label: {
-                HStack(spacing: 8) {
-                    QuitXSelectionCheckbox(isSelected: active)
-                    Text(title)
-                        .font(.system(size: 12.5, weight: .medium))
-                        .foregroundStyle(active ? Color.primary : Color.secondary)
+                withAnimation(.easeInOut(duration: 0.16)) {
+                    isEnabled.wrappedValue.toggle()
                 }
-                .contentShape(Rectangle())
+            } label: {
+                SettingsSwitchIndicator(isOn: active)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Enable \(title)")
+            .accessibilityValue(active ? "On" : "Off")
 
-            HelpPopoverButton(text: help)
+            ZStack {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(active ? QuitXTheme.accent.opacity(0.11) : Color.primary.opacity(0.05))
+                    .frame(width: 28, height: 28)
 
-            Spacer()
+                Image(systemName: symbol)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(active ? QuitXTheme.accent : Color.secondary)
+                    .accessibilityHidden(true)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 5) {
+                    Text(title)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(active ? Color.primary : Color.secondary)
+
+                    HelpPopoverButton(text: help)
+                }
+
+                Text(detail)
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(Color.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 8)
 
             if isRecording {
                 Button {
@@ -303,6 +392,8 @@ struct ShortcutsTabView: View {
                 }
             }
         }
-        .frame(height: 28)
+        .padding(.leading, 33)
+        .padding(.vertical, 3)
+        .frame(minHeight: 40)
     }
 }

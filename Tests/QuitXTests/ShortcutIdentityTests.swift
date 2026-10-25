@@ -50,7 +50,23 @@ struct ShortcutIdentityTests {
         #expect(sm.quitAllKeys == ShortcutManager.defaultQuitAllKeys)
         #expect(sm.forceQuitAllEnabled == ShortcutManager.defaultForceQuitAllEnabled)
         #expect(sm.forceQuitAllKeys == ShortcutManager.defaultForceQuitAllKeys)
+        #expect(sm.openSettingsEnabled == false)
+        #expect(sm.openSettingsKeys.isEmpty)
+        #expect(sm.refreshAppsEnabled == false)
+        #expect(sm.refreshAppsKeys.isEmpty)
+        #expect(sm.openHelpEnabled == false)
+        #expect(sm.openHelpKeys.isEmpty)
+        #expect(sm.openChangelogEnabled == false)
+        #expect(sm.openChangelogKeys.isEmpty)
+        #expect(sm.openUninstallerEnabled == false)
+        #expect(sm.openUninstallerKeys.isEmpty)
         #expect(sm.shortcutError == nil)
+    }
+
+    @Test("Every Shortcut Slot Has A Unique Hot Key Identity")
+    func testShortcutHotKeyIdentitiesAreUnique() {
+        let ids = ShortcutManager.Slot.allCases.map(\.hotKeyId)
+        #expect(Set(ids).count == ids.count)
     }
 
     @Test("Background Group App IDs Stay Stable Across Refreshes")

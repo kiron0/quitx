@@ -35,6 +35,16 @@ enum QuitXConstants {
         static let quitAllKeys = "sc_quit_keys"
         static let forceQuitAllEnabled = "sc_force_enabled"
         static let forceQuitAllKeys = "sc_force_keys"
+        static let openSettingsEnabled = "sc_settings_enabled"
+        static let openSettingsKeys = "sc_settings_keys"
+        static let refreshAppsEnabled = "sc_refresh_enabled"
+        static let refreshAppsKeys = "sc_refresh_keys"
+        static let openHelpEnabled = "sc_help_enabled"
+        static let openHelpKeys = "sc_help_keys"
+        static let openChangelogEnabled = "sc_changelog_enabled"
+        static let openChangelogKeys = "sc_changelog_keys"
+        static let openUninstallerEnabled = "sc_uninstaller_enabled"
+        static let openUninstallerKeys = "sc_uninstaller_keys"
     }
 
     enum HotKeys {
@@ -42,6 +52,11 @@ enum QuitXConstants {
         static let activateMenuId: UInt32 = 1
         static let quitAllId: UInt32 = 2
         static let forceQuitAllId: UInt32 = 3
+        static let openSettingsId: UInt32 = 4
+        static let refreshAppsId: UInt32 = 5
+        static let openHelpId: UInt32 = 6
+        static let openChangelogId: UInt32 = 7
+        static let openUninstallerId: UInt32 = 8
     }
 
     enum SystemBundleIds {

@@ -5,13 +5,15 @@ extension ChangelogProvider {
         ReleaseChangelog("1.2.1", "Ports tab, faster updates & clearer labels", [
             ("New Features", [
                 "**Ports Tab**: Turn on port killing in Settings ▸ Ports and switch between Apps and Ports above the main button. See every listening port with its app, folder and Docker container, and free it in one click.",
-                "**Always Up to Date**: The Ports list refreshes on its own while it's open, every 2 to 10 seconds, with live CPU and memory.",
+                "**Always Up to Date**: The Ports list refreshes on its own while it's open, every 1 to 10 seconds, with live CPU and memory.",
                 "**Smart Kill**: Kill escalates only when a listener won't let go, stops dev servers with their child processes, Homebrew services through brew services, and Docker ports by stopping the container. Hold ⌥ to force kill.",
                 "**Row Tools**: Details, process tree trace, interrupt, exclude, copy port, PID or command, open Terminal or the browser.",
                 "**Exclude Ports**: Settings ▸ Exclude gets an Apps / Ports switch. Pick ports from the ones listening now or type them, with ranges like 8000-8010.",
                 "**Light on Your Mac**: Ports are read straight from the kernel in a few milliseconds instead of running lsof, so scanning barely uses any CPU.",
                 "**Quieter in the Background**: Quit When Last Window Closes and Auto Quit no longer ask macOS about every running app every second, so QuitX stays near 0% CPU when idle.",
-                "**Listening Port Count**: Optionally show how many ports are listening in the menu bar stats, next to CPU and memory."
+                "**Listening Port Count**: Optionally show how many ports are listening in the menu bar stats, next to CPU and memory.",
+                "**New Settings**: Settings now has a sidebar like Help and opens on an Overview of every feature, each with its current state. Click a card to jump straight to it, or search settings by any word.",
+                "**More Apps**: Meet Marquee, a free, open-source menu bar app for screenshots, recordings and clipboard history, under More Apps in Settings."
             ]),
             ("Improvements", [
                 "**Remembers Your Tab**: The menu opens on the tab you used last.",

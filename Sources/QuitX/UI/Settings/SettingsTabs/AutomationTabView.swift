@@ -169,6 +169,8 @@ struct AutomationTabView: View {
                             AccessibilityPermission.openSystemSettings()
                         }
                         .font(.system(size: 11.5))
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
                         .help("Disables this automation and opens macOS Accessibility settings. Turn off QuitX there to remove the system permission.")
                     }
                 } else if accessibilityPermission.needsRepair {
@@ -181,6 +183,9 @@ struct AutomationTabView: View {
                             accessibilityPermission.repair()
                         }
                         .font(.system(size: 11.5))
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                        .tint(QuitXTheme.accent)
                         .help("Clears the outdated QuitX entry in macOS Accessibility settings and asks again. Then turn QuitX on in the list.")
                     }
                 } else {
@@ -188,6 +193,9 @@ struct AutomationTabView: View {
                         accessibilityPermission.requestAccess()
                     }
                     .font(.system(size: 11.5))
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                    .tint(QuitXTheme.accent)
                 }
             }
 
@@ -287,6 +295,7 @@ struct AutomationTabView: View {
                     }
                     .frame(width: 90)
                     .labelsHidden()
+                    .settingsMenu()
                 }
                 .disabled(!isAutoQuitEnabled)
                 .opacity(isAutoQuitEnabled ? 1.0 : 0.42)
@@ -294,11 +303,7 @@ struct AutomationTabView: View {
 
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 14)
-        .padding(.bottom, SettingsTab.bottomPadding)
-        .frame(width: SettingsTab.contentWidth, height: SettingsTab.automation.contentHeight, alignment: .topLeading)
-        .background(QuitXTheme.paneBackground)
+        .frame(width: SettingsTab.contentWidth, alignment: .topLeading)
         .onAppear {
             state.syncFromMinutes(configStore.config.quitInactiveAfterMinutes)
             lastWindowQuitService.refreshAccessibilityTrust()
@@ -406,6 +411,7 @@ struct AutomationTabView: View {
             }
             .frame(width: 58)
             .labelsHidden()
+            .settingsMenu()
 
             Text(":")
                 .font(.system(size: 11, weight: .medium))
@@ -418,6 +424,7 @@ struct AutomationTabView: View {
             }
             .frame(width: 62)
             .labelsHidden()
+            .settingsMenu()
 
             if !configStore.config.sleepLockUse24Hour {
                 Picker("", selection: meridiemBinding(start: start)) {
@@ -426,6 +433,7 @@ struct AutomationTabView: View {
                 }
                 .frame(width: 58)
                 .labelsHidden()
+                .settingsMenu()
             }
         }
     }

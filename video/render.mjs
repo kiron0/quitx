@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -21,7 +21,17 @@ const stills = stillsArg >= 0 ? args[stillsArg + 1].split(',').map(Number) : nul
 const out = resolve(args.find(a => a.endsWith('.mp4')) ?? resolve(here, '../site/assets/demo.mp4'));
 const fps = 30;
 
-const browser = await playwright.chromium.launch();
+let browser;
+try {
+  browser = await playwright.chromium.launch();
+} catch (error) {
+  const systemBrowser = [
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    '/Applications/Chromium.app/Contents/MacOS/Chromium',
+  ].find(existsSync);
+  if (!systemBrowser) throw error;
+  browser = await playwright.chromium.launch({ executablePath: systemBrowser });
+}
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 4 / 3 });
 await page.goto('file://' + resolve(here, 'demo.html'));
 await page.evaluate(() => document.fonts.ready);

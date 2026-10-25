@@ -3,13 +3,12 @@ import SwiftUI
 struct PortsTabView: View {
     @EnvironmentObject private var configStore: ConfigStore
 
-    static let contentHeight: CGFloat = 340
 
     private var enabled: Bool { configStore.config.portsEnabled }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            row(label: "Ports:") {
+            row(label: "Port Killing:") {
                 toggle("Enable port killing", isOn: Binding(
                     get: { configStore.config.portsEnabled },
                     set: { value in
@@ -23,9 +22,6 @@ struct PortsTabView: View {
                 HelpPopoverButton(text: "Adds a Ports tab to the menu. It lists every process listening on a TCP port (and UDP if you want), with its app, folder and Docker container, and lets you free the port in one click. The list refreshes on its own while it's open. 🔌")
             }
 
-            Divider()
-                .padding(.vertical, 4)
-
             Group {
                 row(label: "Refresh:") {
                     Picker("", selection: binding(\.portsRefreshSeconds)) {
@@ -35,6 +31,7 @@ struct PortsTabView: View {
                     }
                     .frame(width: 175, alignment: .leading)
                     .labelsHidden()
+                    .settingsMenu()
                 } help: {
                     HelpPopoverButton(text: "How often the Ports tab rescans while it's open. CPU and memory update every 2 seconds in between.")
                 }
@@ -45,13 +42,13 @@ struct PortsTabView: View {
                     HelpPopoverButton(text: "Show UDP sockets next to TCP listeners. UDP adds system and local network services, so the list gets longer.")
                 }
 
-                row(label: "Menu bar:") {
+                row(label: "Menu Bar:") {
                     toggle("Show listening port count", isOn: binding(\.portsShowMenuBarCount))
                 } help: {
                     HelpPopoverButton(text: "Shows how many ports are listening next to the QuitX icon, kept current in the background.")
                 }
 
-                row(label: "Group by:") {
+                row(label: "Group By:") {
                     Picker("", selection: binding(\.portsGrouping)) {
                         ForEach(ListenerGrouping.allCases, id: \.self) { mode in
                             Text(mode.rawValue).tag(mode)
@@ -59,6 +56,7 @@ struct PortsTabView: View {
                     }
                     .frame(width: 175, alignment: .leading)
                     .labelsHidden()
+                    .settingsMenu()
                 } help: {
                     HelpPopoverButton(text: "Group listeners by project folder, Docker container, or the process tree that started them.")
                 }
@@ -78,6 +76,7 @@ struct PortsTabView: View {
                     }
                     .frame(width: 175, alignment: .leading)
                     .labelsHidden()
+                    .settingsMenu()
                 } help: {
                     HelpPopoverButton(text: "Sort by port number, process name, memory or CPU.")
                 }
@@ -89,6 +88,7 @@ struct PortsTabView: View {
                     }
                     .frame(width: 175, alignment: .leading)
                     .labelsHidden()
+                    .settingsMenu()
                 } help: {
                     HelpPopoverButton(text: "Kill asks the process to stop and escalates only if it won't. Force kill stops it at once. Hold ⌥ (Option) to force kill one time.")
                 }
@@ -113,6 +113,8 @@ struct PortsTabView: View {
                         Label("Manage Excluded Ports…", systemImage: "nosign")
                     }
                     .font(.system(size: 11.5))
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
                 } help: {
                     HelpPopoverButton(text: "Excluded ports live in the Exclude tab, next to excluded apps. They never show in the Ports tab and are never killed.")
                 }
@@ -122,11 +124,7 @@ struct PortsTabView: View {
 
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 14)
-        .padding(.bottom, SettingsTab.bottomPadding)
-        .frame(width: SettingsTab.contentWidth, height: Self.contentHeight, alignment: .topLeading)
-        .background(QuitXTheme.paneBackground)
+        .frame(width: SettingsTab.contentWidth, alignment: .topLeading)
     }
 
     private func binding<T>(_ keyPath: WritableKeyPath<QuitXConfig, T>) -> Binding<T> {

@@ -65,10 +65,15 @@ extension PortListViewModelTests {
             try await snapshot(MainPopoverView(), size: popover, name: "popover-ports", dark: dark)
             AppListViewModel.shared.selectTab(.apps)
             try await snapshot(MainPopoverView(), size: popover, name: "popover-apps", dark: dark)
-            try await snapshot(PortsTabView(), size: NSSize(width: SettingsTab.contentWidth, height: PortsTabView.contentHeight), name: "settings-ports", dark: dark)
+            try await snapshot(PortsTabView(), size: NSSize(width: SettingsTab.contentWidth, height: 520), name: "settings-ports", dark: dark)
             try await snapshot(ExcludePortPickerView(onClose: {}), size: NSSize(width: 500, height: 540), name: "exclude-ports", dark: dark)
             UserDefaults.standard.set(ExcludeSection.ports.rawValue, forKey: ExcludeSection.defaultsKey)
             try await snapshot(ExcludeTabView(), size: NSSize(width: SettingsTab.contentWidth, height: ExcludeTabView.contentHeight), name: "settings-exclude-ports", dark: dark)
+            let navigation = SettingsNavigationModel()
+            for tab in SettingsTab.allCases {
+                navigation.select(tab)
+                try await snapshot(SettingsRootView(navigation: navigation), size: SettingsTab.windowSize, name: "settings-window-\(tab.rawValue.lowercased())", dark: dark)
+            }
         }
         #expect(ports.hasLoadedOnce)
     }

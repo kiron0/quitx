@@ -46,14 +46,22 @@ enum QuitXTheme {
 struct SearchFieldGlassBackground: View {
     var isFocused: Bool = false
     var cornerRadius: CGFloat = 7
+    @ObservedObject private var configStore = ConfigStore.shared
+
+    private var usesLiquidGlass: Bool {
+        if #available(macOS 26.0, *) {
+            return configStore.config.liquidGlassEnabled
+        }
+        return false
+    }
 
     var body: some View {
         ZStack {
-            if LiquidGlass.enabled {
+            if usesLiquidGlass {
                 LiquidGlassFill(shape: RoundedRectangle(cornerRadius: cornerRadius))
                 Color.primary.opacity(0.04)
             } else {
-                Color.primary.opacity(0.06)
+                Color(NSColor.textBackgroundColor)
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
@@ -62,8 +70,8 @@ struct SearchFieldGlassBackground: View {
                 .strokeBorder(
                     isFocused
                         ? QuitXTheme.accent.opacity(0.65)
-                        : Color.primary.opacity(LiquidGlass.enabled ? 0.16 : 0.09),
-                    lineWidth: 0.8
+                        : Color.primary.opacity(usesLiquidGlass ? 0.16 : 0.11),
+                    lineWidth: usesLiquidGlass ? 0.8 : 0.6
                 )
         )
     }

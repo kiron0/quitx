@@ -169,15 +169,54 @@
     return `<div class="qx-note"><img src="${A}icon.png" alt=""><div style="flex:1;min-width:0"><div class="t"><span>${o.title}</span><small>${o.time || 'now'}</small></div><p>${o.body}</p></div></div>`;
   }
 
+  const sideIcons = Object.assign({
+    Overview: '<svg viewBox="0 0 20 20"><rect x="3" y="3" width="5.5" height="5.5" rx="1.2"/><rect x="11.5" y="3" width="5.5" height="5.5" rx="1.2"/><rect x="3" y="11.5" width="5.5" height="5.5" rx="1.2"/><rect x="11.5" y="11.5" width="5.5" height="5.5" rx="1.2"/></svg>',
+    Marquee: '<svg viewBox="0 0 512 512" class="mq"><rect x="16" y="16" width="480" height="480" rx="116" fill="#FFCF1A"/><g fill="none" stroke="#1D1D1F" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"><path d="M112 196V128a16 16 0 0 1 16-16h68"/><path d="M400 316v68a16 16 0 0 1-16 16h-68"/></g><rect x="166" y="166" width="124" height="124" rx="20" fill="none" stroke="#1D1D1F" stroke-width="26"/><rect x="222" y="222" width="124" height="124" rx="20" fill="#1D1D1F"/></svg>',
+  }, tabIcons);
+  const sideGroups = [['', ['Overview']], ['App', ['General', 'Shortcuts']], ['Quitting', ['Automation', 'Advanced', 'Exclude']], ['Developer', ['Ports']], ['QuitX', ['About']], ['More Apps', ['Marquee']]];
+  const summaries = {
+    General: 'Startup, sounds, updates, menu bar stats and how QuitX looks.',
+    Automation: 'Let QuitX quit apps on sleep, after their last window, or when idle.',
+    Advanced: 'Background apps, music protection, confirmations and extras.',
+    Exclude: 'Apps and ports QuitX never quits, manually or automatically.',
+    Ports: 'Find and free ports held by dev servers, databases and Docker.',
+    Shortcuts: 'Open QuitX or quit apps from anywhere with your own key combos.',
+    About: 'Version, updates and ways to get in touch.',
+  };
+
   function settings(o) {
-    const tabs = Object.keys(tabIcons).map(t => `<div class="tab${t === o.tab ? ' on' : ''}">${tabIcons[t]}${t}</div>`).join('');
-    return `<div class="qx-win qx-settings"><div class="bar"><span class="lights"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i></span><div class="title">${o.tab}</div><div class="tabs">${tabs}</div></div><div class="content">${o.content}</div></div>`;
+    const side = sideGroups.map(([g, tabs]) => `${g ? `<div class="sg">${g}</div>` : ''}${tabs.map(t => `<div class="si${t === o.tab ? ' on' : ''}">${sideIcons[t]}<span>${t}</span></div>`).join('')}`).join('');
+    return `<div class="qx-win qx-settings side"><div class="sb"><span class="lights"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#58565A"></i></span><div class="ss">${S.search}Search settings…</div><div class="sl">${side}</div></div><div class="dt"><div class="dh"><img src="${A}icon.png" alt=""><div><div class="h">${o.tab === 'Overview' ? 'Overview' : o.tab}</div><div class="sum">${summaries[o.tab] || ''}</div></div></div><div class="pane">${o.content}</div></div></div>`;
   }
 
   const cb = (t, on = true) => `<span class="cbl"><span class="qx-cb${on ? ' on' : ''}"></span>${t}</span>`;
   const radio = (t, on) => `<span class="radio${on ? ' on' : ''}"><i></i>${t}</span>`;
   const help = '<span class="help">?</span>';
-  const r = (label, inner, o = {}) => `<div class="r${o.hl ? ' hl' : ''}${o.dim ? ' dim' : ''}"${o.id ? ` id="${o.id}"` : ''}><span class="l">${label}</span>${inner}${o.help === false ? '' : help}</div>`;
+  const sectionSymbols = {
+    Startup: S.power,
+    Sounds: S.sparkles,
+    Updates: S.refresh,
+    'Menu Bar': S.stats || S.gauge,
+    Refresh: S.refresh,
+    Appearance: S.settings,
+    Sort: S.sliders,
+    Default: S.power,
+    Sleep: S.timer,
+    Windows: S.windows,
+    Health: S.gauge,
+    'Auto Quit': S.timer,
+    'Port Killing': S.network,
+    Discovery: S.network,
+    'Group By': S.trace,
+    Safety: S.help,
+    Selection: S.check,
+    Exclude: S.nosign,
+  };
+  const section = (label, dim) => {
+    const title = label.replace(/:$/, '');
+    return `<div class="sec${dim ? ' dim' : ''}"><span class="sec-icon">${sectionSymbols[title] || S.sliders}</span><b>${title}</b><i></i></div>`;
+  };
+  const r = (label, inner, o = {}) => `${label ? section(label, o.dim) : ''}<div class="r${o.hl ? ' hl' : ''}${o.dim ? ' dim' : ''}"${o.id ? ` id="${o.id}"` : ''}>${inner}${o.help === false ? '' : help}</div>`;
 
   function general(o = {}) {
     return [
@@ -210,36 +249,15 @@
     ].join('');
   }
 
-  function advanced(o = {}) {
-    return [
-      r('Background:', cb('View background apps', o.bg !== false), { hl: o.hl === 'bg' }),
-      r('', cb('Group background instances'), { hl: o.hl === 'bg' }),
-      r('Protection:', cb('Never quit music apps', o.music !== false), { hl: o.hl === 'exclude' }),
-      r('Behavior:', cb('Select apps by default')),
-      r('', cb('Disable quit tips', false)),
-      r('', cb('Confirm single app quit &amp; restart', o.confirm !== false), { hl: o.hl === 'confirm' }),
-      r('Extras:', cb('Include Finder Windows in list', false)),
-      r('', cb('Include Empty Trash in list', false)),
-    ].join('');
-  }
-
-  function exclude(o = {}) {
-    const list = o.apps || [{ n: 'Music', i: 'music' }, { n: 'Messages', i: 'messages' }, { n: 'Terminal', i: 'terminal' }];
-    const trash = '<svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></svg>';
-    const rows = list.map(a => `<div class="r2${a.hl ? ' new' : ''}"><span class="qx-cb"></span>${icon(a)}<span>${a.n}</span><span class="x">${trash}</span></div>`).join('');
-    return `<p class="note">Apps on this list stay out of manual and automatic Quit actions.</p><div class="qx-excl"><div class="sel"><span class="qx-cb"></span>Select All<em>${list.length} excluded</em></div>${rows}</div><div style="display:flex;justify-content:space-between;margin-top:12px"><span class="btn-sm">+&nbsp;&nbsp;Add Apps…</span><span class="btn-sm" style="opacity:.45">Remove</span></div>`;
-  }
-
   function portSettings(o = {}) {
     const on = o.enabled !== false;
     const d = { dim: !on };
     return [
-      r('Ports:', cb('Enable port killing', on), { hl: o.hl === 'enable' }),
-      '<hr class="sep">',
+      r('Port Killing:', cb('Enable port killing', on), { hl: o.hl === 'enable' }),
       r('Refresh:', '<span class="select">Every 3 seconds</span>', d),
       r('Discovery:', cb('Include UDP listeners', false), d),
-      r('Menu bar:', cb('Show listening port count', o.count !== false), { dim: !on, hl: o.hl === 'count' }),
-      r('Group by:', '<span class="select">None</span>', d),
+      r('Menu Bar:', cb('Show listening port count', o.count !== false), { dim: !on, hl: o.hl === 'count' }),
+      r('Group By:', '<span class="select">None</span>', d),
       r('Sort:', '<span class="select">Port (Low to High)</span>', d),
       r('Default:', '<span class="select">Kill (SIGTERM)</span>', d),
       r('Safety:', cb('Confirm before killing ports'), { dim: !on, hl: o.hl === 'safety' }),
@@ -248,5 +266,5 @@
     ].join('');
   }
 
-  window.QX = { S, APPS, BACKGROUND, PORTS, icon, popover, ports, confirm, menu, stats, rescue, note, settings, general, automation, advanced, exclude, portSettings };
+  window.QX = { S, APPS, BACKGROUND, PORTS, icon, popover, ports, confirm, menu, stats, rescue, note, settings, general, automation, portSettings };
 })();

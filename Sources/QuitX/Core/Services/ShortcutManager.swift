@@ -5,10 +5,41 @@ import Carbon
 final class ShortcutManager: ObservableObject {
     static let shared = ShortcutManager()
 
-    enum Slot {
+    enum Slot: CaseIterable {
         case activateMenu
         case quitAll
         case forceQuitAll
+        case openSettings
+        case refreshApps
+        case openHelp
+        case openChangelog
+        case openUninstaller
+
+        var title: String {
+            switch self {
+            case .activateMenu: return "Open QuitX"
+            case .quitAll: return "Quit selected apps"
+            case .forceQuitAll: return "Force quit selected apps"
+            case .openSettings: return "Open Settings"
+            case .refreshApps: return "Refresh app list"
+            case .openHelp: return "Open Help"
+            case .openChangelog: return "Open What's New"
+            case .openUninstaller: return "Open Uninstall Apps"
+            }
+        }
+
+        var hotKeyId: UInt32 {
+            switch self {
+            case .activateMenu: return QuitXConstants.HotKeys.activateMenuId
+            case .quitAll: return QuitXConstants.HotKeys.quitAllId
+            case .forceQuitAll: return QuitXConstants.HotKeys.forceQuitAllId
+            case .openSettings: return QuitXConstants.HotKeys.openSettingsId
+            case .refreshApps: return QuitXConstants.HotKeys.refreshAppsId
+            case .openHelp: return QuitXConstants.HotKeys.openHelpId
+            case .openChangelog: return QuitXConstants.HotKeys.openChangelogId
+            case .openUninstaller: return QuitXConstants.HotKeys.openUninstallerId
+            }
+        }
     }
 
     private var restartWorkItem: DispatchWorkItem?
@@ -43,6 +74,37 @@ final class ShortcutManager: ObservableObject {
         didSet { UserDefaults.standard.set(forceQuitAllKeys, forKey: QuitXConstants.UserDefaultsKeys.forceQuitAllKeys); scheduleRestartMonitoring() }
     }
 
+    @Published var openSettingsEnabled: Bool {
+        didSet { UserDefaults.standard.set(openSettingsEnabled, forKey: QuitXConstants.UserDefaultsKeys.openSettingsEnabled); scheduleRestartMonitoring() }
+    }
+    @Published var openSettingsKeys: [String] {
+        didSet { UserDefaults.standard.set(openSettingsKeys, forKey: QuitXConstants.UserDefaultsKeys.openSettingsKeys); scheduleRestartMonitoring() }
+    }
+    @Published var refreshAppsEnabled: Bool {
+        didSet { UserDefaults.standard.set(refreshAppsEnabled, forKey: QuitXConstants.UserDefaultsKeys.refreshAppsEnabled); scheduleRestartMonitoring() }
+    }
+    @Published var refreshAppsKeys: [String] {
+        didSet { UserDefaults.standard.set(refreshAppsKeys, forKey: QuitXConstants.UserDefaultsKeys.refreshAppsKeys); scheduleRestartMonitoring() }
+    }
+    @Published var openHelpEnabled: Bool {
+        didSet { UserDefaults.standard.set(openHelpEnabled, forKey: QuitXConstants.UserDefaultsKeys.openHelpEnabled); scheduleRestartMonitoring() }
+    }
+    @Published var openHelpKeys: [String] {
+        didSet { UserDefaults.standard.set(openHelpKeys, forKey: QuitXConstants.UserDefaultsKeys.openHelpKeys); scheduleRestartMonitoring() }
+    }
+    @Published var openChangelogEnabled: Bool {
+        didSet { UserDefaults.standard.set(openChangelogEnabled, forKey: QuitXConstants.UserDefaultsKeys.openChangelogEnabled); scheduleRestartMonitoring() }
+    }
+    @Published var openChangelogKeys: [String] {
+        didSet { UserDefaults.standard.set(openChangelogKeys, forKey: QuitXConstants.UserDefaultsKeys.openChangelogKeys); scheduleRestartMonitoring() }
+    }
+    @Published var openUninstallerEnabled: Bool {
+        didSet { UserDefaults.standard.set(openUninstallerEnabled, forKey: QuitXConstants.UserDefaultsKeys.openUninstallerEnabled); scheduleRestartMonitoring() }
+    }
+    @Published var openUninstallerKeys: [String] {
+        didSet { UserDefaults.standard.set(openUninstallerKeys, forKey: QuitXConstants.UserDefaultsKeys.openUninstallerKeys); scheduleRestartMonitoring() }
+    }
+
     @Published private(set) var shortcutError: String?
     @Published private(set) var registrationError: String?
 
@@ -59,6 +121,16 @@ final class ShortcutManager: ObservableObject {
 
         self.forceQuitAllEnabled = UserDefaults.standard.object(forKey: QuitXConstants.UserDefaultsKeys.forceQuitAllEnabled) as? Bool ?? Self.defaultForceQuitAllEnabled
         self.forceQuitAllKeys = UserDefaults.standard.stringArray(forKey: QuitXConstants.UserDefaultsKeys.forceQuitAllKeys) ?? Self.defaultForceQuitAllKeys
+        self.openSettingsEnabled = UserDefaults.standard.object(forKey: QuitXConstants.UserDefaultsKeys.openSettingsEnabled) as? Bool ?? false
+        self.openSettingsKeys = UserDefaults.standard.stringArray(forKey: QuitXConstants.UserDefaultsKeys.openSettingsKeys) ?? []
+        self.refreshAppsEnabled = UserDefaults.standard.object(forKey: QuitXConstants.UserDefaultsKeys.refreshAppsEnabled) as? Bool ?? false
+        self.refreshAppsKeys = UserDefaults.standard.stringArray(forKey: QuitXConstants.UserDefaultsKeys.refreshAppsKeys) ?? []
+        self.openHelpEnabled = UserDefaults.standard.object(forKey: QuitXConstants.UserDefaultsKeys.openHelpEnabled) as? Bool ?? false
+        self.openHelpKeys = UserDefaults.standard.stringArray(forKey: QuitXConstants.UserDefaultsKeys.openHelpKeys) ?? []
+        self.openChangelogEnabled = UserDefaults.standard.object(forKey: QuitXConstants.UserDefaultsKeys.openChangelogEnabled) as? Bool ?? false
+        self.openChangelogKeys = UserDefaults.standard.stringArray(forKey: QuitXConstants.UserDefaultsKeys.openChangelogKeys) ?? []
+        self.openUninstallerEnabled = UserDefaults.standard.object(forKey: QuitXConstants.UserDefaultsKeys.openUninstallerEnabled) as? Bool ?? false
+        self.openUninstallerKeys = UserDefaults.standard.stringArray(forKey: QuitXConstants.UserDefaultsKeys.openUninstallerKeys) ?? []
 
         installCarbonHandlerIfNeeded()
         restartMonitoring()
@@ -78,6 +150,16 @@ final class ShortcutManager: ObservableObject {
         quitAllKeys = Self.defaultQuitAllKeys
         forceQuitAllEnabled = Self.defaultForceQuitAllEnabled
         forceQuitAllKeys = Self.defaultForceQuitAllKeys
+        openSettingsEnabled = false
+        openSettingsKeys = []
+        refreshAppsEnabled = false
+        refreshAppsKeys = []
+        openHelpEnabled = false
+        openHelpKeys = []
+        openChangelogEnabled = false
+        openChangelogKeys = []
+        openUninstallerEnabled = false
+        openUninstallerKeys = []
         shortcutError = nil
     }
 
@@ -121,40 +203,19 @@ final class ShortcutManager: ObservableObject {
         registeredHotKeys.removeAll()
         registrationError = nil
 
-        guard activateMenuEnabled || quitAllEnabled || forceQuitAllEnabled else { return }
+        guard Slot.allCases.contains(where: isEnabled) else { return }
 
         var failures: [String] = []
 
-        if activateMenuEnabled, let (keyCode, modifiers) = Self.keysToCarbon(keys: activateMenuKeys) {
+        for slot in Slot.allCases where isEnabled(slot) {
+            guard let (keyCode, modifiers) = Self.keysToCarbon(keys: keys(for: slot)) else { continue }
             var ref: EventHotKeyRef?
-            let hotKeyID = EventHotKeyID(signature: QuitXConstants.HotKeys.signature, id: QuitXConstants.HotKeys.activateMenuId)
+            let hotKeyID = EventHotKeyID(signature: QuitXConstants.HotKeys.signature, id: slot.hotKeyId)
             let status = RegisterEventHotKey(keyCode, modifiers, hotKeyID, GetEventDispatcherTarget(), 0, &ref)
             if status == noErr, let ref = ref {
                 registeredHotKeys.append(ref)
             } else {
-                failures.append("Activate menu (OSStatus \(status))")
-            }
-        }
-
-        if quitAllEnabled, let (keyCode, modifiers) = Self.keysToCarbon(keys: quitAllKeys) {
-            var ref: EventHotKeyRef?
-            let hotKeyID = EventHotKeyID(signature: QuitXConstants.HotKeys.signature, id: QuitXConstants.HotKeys.quitAllId)
-            let status = RegisterEventHotKey(keyCode, modifiers, hotKeyID, GetEventDispatcherTarget(), 0, &ref)
-            if status == noErr, let ref = ref {
-                registeredHotKeys.append(ref)
-            } else {
-                failures.append("Quit all (OSStatus \(status))")
-            }
-        }
-
-        if forceQuitAllEnabled, let (keyCode, modifiers) = Self.keysToCarbon(keys: forceQuitAllKeys) {
-            var ref: EventHotKeyRef?
-            let hotKeyID = EventHotKeyID(signature: QuitXConstants.HotKeys.signature, id: QuitXConstants.HotKeys.forceQuitAllId)
-            let status = RegisterEventHotKey(keyCode, modifiers, hotKeyID, GetEventDispatcherTarget(), 0, &ref)
-            if status == noErr, let ref = ref {
-                registeredHotKeys.append(ref)
-            } else {
-                failures.append("Force quit all (OSStatus \(status))")
+                failures.append("\(slot.title) (OSStatus \(status))")
             }
         }
 
@@ -168,6 +229,11 @@ final class ShortcutManager: ObservableObject {
         case .activateMenu: return activateMenuKeys
         case .quitAll: return quitAllKeys
         case .forceQuitAll: return forceQuitAllKeys
+        case .openSettings: return openSettingsKeys
+        case .refreshApps: return refreshAppsKeys
+        case .openHelp: return openHelpKeys
+        case .openChangelog: return openChangelogKeys
+        case .openUninstaller: return openUninstallerKeys
         }
     }
 
@@ -176,12 +242,17 @@ final class ShortcutManager: ObservableObject {
         case .activateMenu: return activateMenuEnabled
         case .quitAll: return quitAllEnabled
         case .forceQuitAll: return forceQuitAllEnabled
+        case .openSettings: return openSettingsEnabled
+        case .refreshApps: return refreshAppsEnabled
+        case .openHelp: return openHelpEnabled
+        case .openChangelog: return openChangelogEnabled
+        case .openUninstaller: return openUninstallerEnabled
         }
     }
 
     func conflicts(keys: [String], excluding slot: Slot) -> Bool {
         guard !keys.isEmpty else { return false }
-        let others: [Slot] = [.activateMenu, .quitAll, .forceQuitAll].filter { $0 != slot }
+        let others = Slot.allCases.filter { $0 != slot }
         return others.contains { other in
             isEnabled(other) && self.keys(for: other) == keys
         }
@@ -195,6 +266,11 @@ final class ShortcutManager: ObservableObject {
             case .activateMenu: activateMenuKeys = newKeys
             case .quitAll: quitAllKeys = newKeys
             case .forceQuitAll: forceQuitAllKeys = newKeys
+            case .openSettings: openSettingsKeys = newKeys
+            case .refreshApps: refreshAppsKeys = newKeys
+            case .openHelp: openHelpKeys = newKeys
+            case .openChangelog: openChangelogKeys = newKeys
+            case .openUninstaller: openUninstallerKeys = newKeys
             }
             return true
         }
@@ -213,6 +289,21 @@ final class ShortcutManager: ObservableObject {
         case QuitXConstants.HotKeys.forceQuitAllId:
             guard forceQuitAllEnabled else { return }
             Task { await AppListViewModel.shared.quitAllFromShortcut(force: true) }
+        case QuitXConstants.HotKeys.openSettingsId:
+            guard openSettingsEnabled else { return }
+            SettingsWindowController.shared.show()
+        case QuitXConstants.HotKeys.refreshAppsId:
+            guard refreshAppsEnabled else { return }
+            Task { await AppListViewModel.shared.refresh(force: true) }
+        case QuitXConstants.HotKeys.openHelpId:
+            guard openHelpEnabled else { return }
+            HelpWindowController.shared.show()
+        case QuitXConstants.HotKeys.openChangelogId:
+            guard openChangelogEnabled else { return }
+            ChangelogWindowController.shared.show()
+        case QuitXConstants.HotKeys.openUninstallerId:
+            guard openUninstallerEnabled else { return }
+            UninstallWindowController.shared.showPicker()
         default:
             break
         }

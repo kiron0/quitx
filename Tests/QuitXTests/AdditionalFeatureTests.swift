@@ -163,72 +163,103 @@ struct ExcludeTabStateTests {
 
 @Suite("Settings Tab Tests")
 struct SettingsTabTests {
-    @Test("SettingsTab all cases")
+    @Test("SettingsTab all cases, overview first and Marquee last")
     func testSettingsTabCases() {
         let all = SettingsTab.allCases
-        #expect(all.count == 7)
-        #expect(all.contains(.general))
-        #expect(all.contains(.automation))
-        #expect(all.contains(.advanced))
-        #expect(all.contains(.exclude))
-        #expect(all.contains(.ports))
-        #expect(all.contains(.shortcuts))
-        #expect(all.contains(.about))
-    }
-
-    @Test("SettingsTab toolbar item identifiers")
-    func testSettingsTabToolbarItemIdentifier() {
-        #expect(SettingsTab.general.toolbarItemIdentifier.rawValue == "General")
-        #expect(SettingsTab.automation.toolbarItemIdentifier.rawValue == "Automation")
-        #expect(SettingsTab.advanced.toolbarItemIdentifier.rawValue == "Advanced")
-        #expect(SettingsTab.exclude.toolbarItemIdentifier.rawValue == "Exclude")
-        #expect(SettingsTab.shortcuts.toolbarItemIdentifier.rawValue == "Shortcuts")
-        #expect(SettingsTab.about.toolbarItemIdentifier.rawValue == "About")
-    }
-
-    @Test("SettingsTab icon names")
-    func testSettingsTabIconNames() {
-        #expect(SettingsTab.general.iconName == "preferences-general")
-        #expect(SettingsTab.automation.iconName == "preferences-automation")
-        #expect(SettingsTab.advanced.iconName == "preferences-advanced")
-        #expect(SettingsTab.exclude.iconName == "preferences-exclude")
-        #expect(SettingsTab.shortcuts.iconName == "preferences-shortcuts")
-        #expect(SettingsTab.about.iconName == "preferences-about")
-    }
-
-    @Test("SettingsTab fallback symbol names")
-    func testSettingsTabFallbackSymbols() {
-        #expect(SettingsTab.general.fallbackSymbolName == "gearshape")
-        #expect(SettingsTab.automation.fallbackSymbolName == "timer")
-        #expect(SettingsTab.advanced.fallbackSymbolName == "slider.horizontal.3")
-        #expect(SettingsTab.exclude.fallbackSymbolName == "nosign")
-        #expect(SettingsTab.shortcuts.fallbackSymbolName == "command")
-        #expect(SettingsTab.about.fallbackSymbolName == "bolt.fill")
-    }
-
-    @Test("SettingsTab content heights")
-    func testSettingsTabContentHeights() {
-        if #available(macOS 26.0, *) {
-            #expect(SettingsTab.general.contentHeight == 416)
-        } else {
-            #expect(SettingsTab.general.contentHeight == 386)
+        #expect(all.count == 9)
+        #expect(all.first == .overview)
+        #expect(all.last == .marquee)
+        for tab in [SettingsTab.general, .automation, .advanced, .exclude, .ports, .shortcuts, .about] {
+            #expect(all.contains(tab))
         }
-        let expectedAutomationHeight: CGFloat = 386
-        #expect(SettingsTab.automation.contentHeight == expectedAutomationHeight)
-        #expect(SettingsTab.advanced.contentHeight == 266)
-        #expect(SettingsTab.exclude.contentHeight == 336)
-        #expect(SettingsTab.ports.contentHeight == PortsTabView.contentHeight)
-        #expect(SettingsTab.shortcuts.contentHeight == 221)
-        #expect(SettingsTab.about.contentHeight == 186)
     }
 
-    @Test("SettingsTab toolbar images generated and template")
-    func testSettingsTabToolbarImages() {
+    @Test("Sidebar groups every tab once, in category order, ending with More Apps")
+    func testSettingsCategories() {
+        let groups = SettingsTab.byCategory
+        #expect(groups.first?.category == .start)
+        #expect(groups.first?.tabs == [.overview])
+        #expect(groups.last?.category == .moreApps)
+        #expect(groups.last?.tabs == [.marquee])
+        let flattened = groups.flatMap(\.tabs)
+        #expect(Set(flattened) == Set(SettingsTab.allCases))
+        #expect(flattened.count == SettingsTab.allCases.count)
+        #expect(SettingsTab.ports.category == .developer)
+        #expect(SettingsTab.exclude.category == .quitting)
+    }
+
+    @Test("Raw values stay stable for external show-settings requests")
+    func testSettingsTabRawValues() {
+        #expect(SettingsTab(rawValue: "General") == .general)
+        #expect(SettingsTab(rawValue: "Automation") == .automation)
+        #expect(SettingsTab(rawValue: "Advanced") == .advanced)
+        #expect(SettingsTab(rawValue: "Exclude") == .exclude)
+        #expect(SettingsTab(rawValue: "Ports") == .ports)
+        #expect(SettingsTab(rawValue: "Shortcuts") == .shortcuts)
+        #expect(SettingsTab(rawValue: "About") == .about)
+    }
+
+    @Test("Every tab has a symbol and a one-line summary")
+    func testSettingsTabMetadata() {
         for tab in SettingsTab.allCases {
-            let img = tab.toolbarImage
-            #expect(img != nil)
-            #expect(img?.isTemplate == true)
-            #expect(img?.size == NSSize(width: 19, height: 19))
+            #expect(!tab.symbol.isEmpty)
+            #expect(!tab.summary.isEmpty)
+            #expect(NSImage(systemSymbolName: tab.symbol, accessibilityDescription: nil) != nil)
+        }
+    }
+
+    @Test("Fixed window splits into sidebar and detail")
+    func testSettingsWindowLayout() {
+        #expect(SettingsTab.windowSize == NSSize(width: 860, height: 600))
+        #expect(SettingsTab.sidebarWidth + SettingsTab.detailWidth == SettingsTab.windowSize.width)
+        #expect(SettingsTab.contentWidth == SettingsTab.detailWidth - SettingsTab.detailHorizontalPadding * 2)
+        #expect(ExcludeTabView.contentHeight + 40 + 46 + 16 + 20 <= SettingsTab.windowSize.height)
+        #expect(SettingsTab.overview.headerTitle == "Overview")
+        #expect(SettingsTab.marquee.headerTitle == "More Apps")
+        #expect(SettingsTab.general.headerTitle == "General")
+    }
+
+    @Test("Search finds pages by feature words")
+    func testSettingsSearch() {
+        #expect(SettingsTab.general.matches("liquid glass"))
+        #expect(SettingsTab.automation.matches("sleep"))
+        #expect(SettingsTab.ports.matches("docker"))
+        #expect(SettingsTab.marquee.matches("clipboard"))
+        #expect(!SettingsTab.about.matches("docker"))
+        #expect(SettingsTab.allCases.allSatisfy { $0.matches("  ") })
+    }
+
+    @Test("Overview features cover every settings page and point at real pages")
+    @MainActor
+    func testSettingsFeatures() {
+        let pages = Set(SettingsFeature.allCases.map(\.tab))
+        for tab in SettingsTab.allCases where ![.overview, .about, .marquee].contains(tab) {
+            #expect(pages.contains(tab))
+        }
+        var config = QuitXConfig.default
+        config.portsEnabled = false
+        #expect(SettingsFeature.ports.status(config: config) == "Off")
+        config.portsEnabled = true
+        #expect(SettingsFeature.ports.status(config: config) == "On")
+        config.quitInactiveAfterMinutes = 30
+        #expect(SettingsFeature.autoQuit.status(config: config) == "30 min")
+        config.exclude = []
+        config.portsExcluded = []
+        #expect(SettingsFeature.exclude.status(config: config) == "Empty")
+        #expect(!SettingsFeature.isActive("Empty"))
+        #expect(SettingsFeature.isActive("Normal"))
+        for feature in SettingsFeature.allCases {
+            #expect(NSImage(systemSymbolName: feature.symbol, accessibilityDescription: nil) != nil)
+        }
+    }
+
+    @Test("Marquee promo links point at the GitHub project")
+    func testMarqueePromo() {
+        #expect(MarqueePromo.repositoryURL.absoluteString == "https://github.com/Treposting/marquee")
+        #expect(MarqueePromo.downloadURL.absoluteString.hasPrefix(MarqueePromo.repositoryURL.absoluteString))
+        #expect(MarqueePromo.features.count >= 6)
+        for feature in MarqueePromo.features {
+            #expect(NSImage(systemSymbolName: feature.symbol, accessibilityDescription: nil) != nil)
         }
     }
 }
