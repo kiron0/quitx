@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct SettingsSectionHeader: View {
@@ -219,6 +220,7 @@ struct SettingsChoiceOption<Value: Hashable>: Identifiable {
     let value: Value
     let title: String
     let symbol: String
+    var appBundleIdentifier: String? = nil
 
     var id: Value { value }
 }
@@ -238,10 +240,17 @@ struct SettingsChoiceTiles<Value: Hashable>: View {
                     selection = option.value
                 } label: {
                     VStack(spacing: 5) {
-                        Image(systemName: option.symbol)
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(selected ? QuitXTheme.accent : Color.secondary)
-                            .frame(height: 22)
+                        Group {
+                            if let bundleIdentifier = option.appBundleIdentifier,
+                               NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleIdentifier) != nil {
+                                AppIconView(bundleId: bundleIdentifier, size: 20, cornerRadius: 4)
+                            } else {
+                                Image(systemName: option.symbol)
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(selected ? QuitXTheme.accent : Color.secondary)
+                            }
+                        }
+                        .frame(height: 22)
 
                         Text(option.title)
                             .font(.system(size: 9.5, weight: selected ? .semibold : .medium))

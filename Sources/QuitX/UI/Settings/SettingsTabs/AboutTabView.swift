@@ -1,6 +1,10 @@
 import AppKit
 import SwiftUI
 
+private final class AboutTabPresentationState: ObservableObject {
+    @Published var hoveredResource: String?
+}
+
 private struct AboutHighlight: View {
     let symbol: String
     let title: String
@@ -25,38 +29,15 @@ private struct AboutHighlight: View {
     }
 }
 
-private struct AboutAction: View {
-    let symbol: String
-    let title: String
-    let detail: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                Image(systemName: symbol)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(QuitXTheme.accent)
-                    .frame(width: 24, height: 24)
-                    .background(QuitXTheme.accent.opacity(0.09), in: RoundedRectangle(cornerRadius: 6))
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(title).font(.system(size: 11.5, weight: .medium))
-                    Text(detail).font(.system(size: 9.5)).foregroundStyle(Color.secondary).lineLimit(1)
-                }
-                Spacer(minLength: 4)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 8, weight: .bold))
-                    .foregroundStyle(Color.secondary.opacity(0.75))
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityHint(detail)
-    }
-}
-
 struct AboutTabView: View {
     @ObservedObject private var updateChecker = UpdateChecker.shared
+    @StateObject private var presentationState = AboutTabPresentationState()
+
+    private static let resourceColumns = [
+        GridItem(.flexible(), spacing: 12, alignment: .top),
+        GridItem(.flexible(), spacing: 12, alignment: .top),
+        GridItem(.flexible(), spacing: 12, alignment: .top)
+    ]
 
     private var status: (symbol: String, text: String, color: Color) {
         switch updateChecker.checkState {
@@ -82,30 +63,45 @@ struct AboutTabView: View {
                 .padding(.leading, 33)
             }
 
-            panel(title: "Resources", symbol: "lifepreserver") {
-                HStack(alignment: .top, spacing: 28) {
-                    VStack(spacing: 10) {
-                        AboutAction(symbol: "questionmark.circle", title: "Help Center", detail: "Learn every QuitX feature") {
-                            HelpWindowController.shared.show()
-                        }
-                        Divider().opacity(0.3)
-                        AboutAction(symbol: "sparkles", title: "What's New", detail: "See recent features and fixes") {
-                            ChangelogWindowController.shared.show()
-                        }
+            VStack(alignment: .leading, spacing: 10) {
+                SettingsSectionHeader(title: "Resources", symbol: "lifepreserver")
+
+                LazyVGrid(columns: Self.resourceColumns, alignment: .leading, spacing: 12) {
+                    resourceCard(
+                        id: "help",
+                        symbol: "questionmark.circle.fill",
+                        tint: Color(red: 0.24, green: 0.62, blue: 0.96),
+                        title: "Help Center",
+                        detail: "Guides for every feature.",
+                        footer: "Open Help"
+                    ) {
+                        HelpWindowController.shared.show()
                     }
-                    VStack(spacing: 10) {
-                        AboutAction(symbol: "safari", title: "Website", detail: "Downloads, guides and details") {
-                            NSWorkspace.shared.open(QuitXConstants.websiteURL)
-                        }
-                        Divider().opacity(0.3)
-                        AboutAction(symbol: "ladybug", title: "Report an Issue", detail: "Share feedback or report a bug") {
-                            NSWorkspace.shared.open(QuitXConstants.issuesURL)
-                        }
+                    resourceCard(
+                        id: "changelog",
+                        symbol: "sparkles",
+                        tint: Color(red: 0.62, green: 0.45, blue: 0.96),
+                        title: "What's New",
+                        detail: "Recent features and fixes.",
+                        footer: "View Updates"
+                    ) {
+                        ChangelogWindowController.shared.show()
+                    }
+                    resourceCard(
+                        id: "issues",
+                        symbol: "ladybug.fill",
+                        tint: Color(red: 0.94, green: 0.38, blue: 0.36),
+                        title: "Report an Issue",
+                        detail: "Share feedback or a bug.",
+                        footer: "Open GitHub"
+                    ) {
+                        NSWorkspace.shared.open(QuitXConstants.issuesURL)
                     }
                 }
+                .padding(.leading, 33)
             }
 
-            Spacer(minLength: 16)
+            Spacer(minLength: 8)
 
             HStack(spacing: 7) {
                 Image(systemName: "heart.fill").foregroundStyle(QuitXTheme.accent)
@@ -161,15 +157,31 @@ struct AboutTabView: View {
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.primary.opacity(0.08), lineWidth: 0.5))
     }
 
-    private func panel<Content: View>(title: String, symbol: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label(title, systemImage: symbol)
-                .font(.system(size: 11.5, weight: .semibold))
-            content()
+    private func resourceCard(
+        id: String,
+        symbol: String,
+        tint: Color,
+        title: String,
+        detail: String,
+        footer: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            FeatureCard(
+                symbol: symbol,
+                tint: tint,
+                title: title,
+                detail: detail,
+                footer: footer,
+                isHovered: presentationState.hoveredResource == id
+            )
         }
-        .padding(13)
-        .frame(maxWidth: .infinity, minHeight: 104, alignment: .topLeading)
-        .background(QuitXTheme.cardBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.08), lineWidth: 0.5))
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(title). \(detail)")
+        .onHover { hovering in
+            presentationState.hoveredResource = hovering
+                ? id
+                : (presentationState.hoveredResource == id ? nil : presentationState.hoveredResource)
+        }
     }
 }

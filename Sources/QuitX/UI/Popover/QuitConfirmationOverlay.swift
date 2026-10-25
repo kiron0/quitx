@@ -75,7 +75,7 @@ struct QuitConfirmationOverlay: View {
 
     var body: some View {
         ZStack {
-            (style == .settings ? Color.primary.opacity(0.035) : Color.black.opacity(0.45))
+            (style == .settings ? Color.clear : Color.black.opacity(0.45))
                 .ignoresSafeArea()
                 .contentShape(Rectangle())
                 .onTapGesture {}
