@@ -1,3 +1,4 @@
+@import url("fonts.css");
 :root {
   --qx-gold: #FEBC33;
   --qx-gold-deep: #E89B00;
@@ -7,7 +8,7 @@
   --qx-red: #FF453A;
 }
 
-.qx-pop { position: relative; width: 270px; font-family: "Inter", -apple-system, system-ui, sans-serif; color: var(--qx-ink); -webkit-font-smoothing: antialiased; letter-spacing: -.003em; }
+.qx-pop { position: relative; width: 330px; font-family: "Inter", -apple-system, system-ui, sans-serif; color: var(--qx-ink); -webkit-font-smoothing: antialiased; letter-spacing: -.003em; }
 .qx-pop .body { position: relative; margin-top: 10px; border-radius: 12px; overflow: hidden; background: var(--qx-panel);
   box-shadow: 0 0 0 .5px rgba(255,255,255,.16), 0 0 0 1px rgba(0,0,0,.55), 0 22px 44px rgba(0,0,0,.5), 0 3px 10px rgba(0,0,0,.3); }
 .qx-pop .arrow, .qx-rescue .arrow { position: absolute; top: 0; width: 22px; height: 11px; margin-left: -11px; z-index: 2; }
@@ -32,7 +33,7 @@
 .qx-pop .row img, .qx-pop .row .gen { width: 18px; height: 18px; flex: none; }
 .qx-pop .row .name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .qx-pop .row .tag { font-size: 9.5px; font-weight: 600; color: var(--qx-sub); padding: 1px 5px; border-radius: 4px; background: rgba(255,255,255,.08); margin-left: 5px; }
-.qx-pop .row .use { width: 52px; text-align: right; font: 10.5px/1 "JetBrains Mono", ui-monospace, monospace; color: var(--qx-sub); }
+.qx-pop .row .use { width: 46px; text-align: right; font: 10.5px/1 "QX Mono", monospace; color: var(--qx-sub); }
 .qx-pop .row .use.hot { color: #FF9F0A; }
 .qx-pop .row .more { width: 16px; height: 16px; display: grid; place-items: center; color: var(--qx-sub); }
 .qx-pop .row .more.on { background: rgba(255,255,255,.14); border-radius: 4px; color: #fff; }
@@ -136,7 +137,7 @@
 .qx-pop .tabbar span { flex: 1; border-radius: 5px; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,.72); }
 .qx-pop .tabbar span.on { background: linear-gradient(var(--qx-gold), var(--qx-gold-deep)); color: rgba(0,0,0,.88); }
 .qx-pop .tabbar svg { width: 12px; height: 12px; }
-.qx-pop .prow .pnum { flex: none; padding: 2px 5px; border-radius: 4px; background: rgba(255,255,255,.08); font: 600 11px/1.2 "JetBrains Mono", ui-monospace, monospace; color: rgba(255,255,255,.92); }
+.qx-pop .prow .pnum { flex: none; padding: 2px 5px; border-radius: 4px; background: rgba(255,255,255,.08); font: 600 11px/1.2 "QX Mono", monospace; color: rgba(255,255,255,.92); }
 .qx-pop .prow .name { display: flex; align-items: center; }
 .qx-pop .prow .use { width: 50px; }
 .qx-pop .badge { flex: none; margin-left: 5px; padding: 1px 4px; border-radius: 3px; font-size: 9.5px; font-weight: 600; }
@@ -148,13 +149,13 @@
 .qx-trace .hd { height: 34px; display: flex; align-items: center; justify-content: center; position: relative; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.88); }
 .qx-trace .hd .lights { position: absolute; left: 12px; }
 .qx-trace .sum { display: flex; align-items: center; gap: 10px; padding: 6px 16px 12px; }
-.qx-trace .sum .pnum { padding: 3px 7px; border-radius: 5px; background: rgba(254,188,51,.14); color: var(--qx-gold); font: 600 13px/1.2 "JetBrains Mono", ui-monospace, monospace; }
+.qx-trace .sum .pnum { padding: 3px 7px; border-radius: 5px; background: rgba(254,188,51,.14); color: var(--qx-gold); font: 600 13px/1.2 "QX Mono", monospace; }
 .qx-trace .sum b { font-size: 14px; }
 .qx-trace .sum small { display: block; font-size: 11.5px; color: var(--qx-sub); margin-top: 2px; }
 .qx-trace .tree { margin: 0 14px; border-radius: 8px; background: rgba(255,255,255,.035); box-shadow: inset 0 0 0 .5px rgba(255,255,255,.09); padding: 6px 0; }
 .qx-trace .node { height: 28px; display: flex; align-items: center; gap: 8px; padding: 0 12px; font-size: 12.5px; }
 .qx-trace .node svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.4; color: var(--qx-sub); }
-.qx-trace .node em { margin-left: auto; font-style: normal; font: 11px/1 "JetBrains Mono", ui-monospace, monospace; color: var(--qx-sub); }
+.qx-trace .node em { margin-left: auto; font-style: normal; font: 11px/1 "QX Mono", monospace; color: var(--qx-sub); }
 .qx-trace .node.target { background: rgba(254,188,51,.1); box-shadow: inset 2px 0 0 var(--qx-gold); }
 .qx-trace .node .muted { color: var(--qx-sub); }
 .qx-trace .btns { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 14px 0; }
@@ -189,3 +190,40 @@
 .qx-settings.side .dt .r { height: 26px; padding-left: 31px; }
 .qx-settings .r.hl::before { content: ""; position: absolute; left: -8px; right: -8px; top: -2px; bottom: -2px; border-radius: 8px; background: rgba(254, 188, 51, .1); box-shadow: inset 0 0 0 1px rgba(254, 188, 51, .35); }
 .qx-settings.side .dt .small { width: 92px; }
+
+.qx-settings.side { height: 474px; }
+.qx-settings.side .dt { overflow: hidden; position: relative; }
+.qx-settings.side .dt .dh { display: block; margin-bottom: 12px; }
+.qx-settings.side .dt .r { height: auto; min-height: 26px; padding-left: 31px; padding-top: 3px; padding-bottom: 3px; }
+.qx-settings.side .dt .r.dim > :not(.help) { opacity: .42; }
+.qx-settings.side .dt .sec { margin: 14px 0 2px; }
+.qx-settings.side .dt .sec .sec-icon svg { width: 12px; height: 12px; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.qx-settings .cbl { gap: 9px; }
+.qx-sw { width: 26px; height: 15px; border-radius: 8px; background: rgba(255,255,255,.14); position: relative; flex: none; display: inline-block; }
+.qx-sw::after { content: ""; position: absolute; left: 2px; top: 2px; width: 11px; height: 11px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+.qx-sw.on { background: linear-gradient(var(--qx-gold), var(--qx-gold-deep)); }
+.qx-sw.on::after { left: 13px; }
+.qx-settings .tiles { display: inline-flex; gap: 6px; }
+.qx-settings .tile { min-width: 62px; padding: 4px 6px 5px; border-radius: 7px; display: flex; flex-direction: column; align-items: center; gap: 3px; background: rgba(255,255,255,.04); box-shadow: inset 0 0 0 .5px rgba(255,255,255,.08); color: rgba(235,235,245,.6); font-size: 9.5px; }
+.qx-settings .tile svg { width: 100%; height: 22px; padding: 4px 0; box-sizing: border-box; border-radius: 5px; background: rgba(255,255,255,.05); fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.qx-settings .tile b { font-weight: 500; white-space: nowrap; }
+.qx-settings .tile.on { color: var(--qx-gold); box-shadow: inset 0 0 0 1.4px var(--qx-gold); background: rgba(254,188,51,.08); }
+.qx-settings .tile.on b { color: #fff; font-weight: 600; }
+.qx-settings .tile.on svg { background: linear-gradient(135deg, rgba(254,188,51,.22), rgba(254,188,51,.06)); }
+.qx-settings .tiles.sm .tile { width: auto; min-width: 46px; padding: 4px 7px 5px; }
+.qx-settings .tiles.sm .tile svg { height: 16px; padding: 1px 0; background: none; }
+.qx-settings .tiles.sm .tile.on svg { background: none; }
+.qx-settings .tstep { display: inline-flex; align-items: center; gap: 8px; height: 21px; padding: 0 7px 0 9px; border-radius: 6px; background: rgba(255,255,255,.07); box-shadow: inset 0 0 0 .5px rgba(255,255,255,.08); font-size: 11.5px; margin-right: 4px; }
+.qx-settings .tstep i { width: 5px; height: 9px; position: relative; }
+.qx-settings .tstep i::before, .qx-settings .tstep i::after { content: ""; position: absolute; left: 0; width: 3.5px; height: 3.5px; border-left: 1.2px solid rgba(255,255,255,.7); border-top: 1.2px solid rgba(255,255,255,.7); }
+.qx-settings .tstep i::before { top: 0; transform: rotate(45deg); }
+.qx-settings .tstep i::after { bottom: 0; transform: rotate(225deg); }
+.qx-settings .colon { margin: 0 4px 0 0; font-size: 12px; }
+.qx-settings .num { font-size: 12px; }
+
+.qx-settings.side .dt { display: flex; flex-direction: column; }
+.qx-settings.side .dt .pv { flex: 1; min-height: 0; overflow: hidden; margin: 0 -10px; padding: 0 10px; }
+.qx-settings .sub.time { gap: 6px; }
+.qx-settings .sub.time .small { margin-right: 10px; }
+.qx-settings .sub.time .tstep { margin-right: 0; }
+.qx-settings .sub.time .colon { margin: 0; }

@@ -77,4 +77,48 @@ extension PortListViewModelTests {
         }
         #expect(ports.hasLoadedOnce)
     }
+
+    @Test("Render full settings pages and the app list for marketing mockups")
+    func renderPages() async throws {
+        guard Self.snapshotDirectory != nil else { return }
+        _ = NSApplication.shared
+        let store = ConfigStore.shared
+        let saved = store.config
+        let savedApps = AppListViewModel.shared.apps
+        defer {
+            store.config = saved
+            AppListViewModel.shared.apps = savedApps
+        }
+        store.config.liquidGlassEnabled = false
+        store.config.portsEnabled = false
+        store.config.showMenuBarStats = true
+        store.config.menuBarShowCpu = true
+        store.config.menuBarShowMemory = true
+        store.config.quitOnSleep = true
+        store.config.hogAlertEnabled = true
+        AppListViewModel.shared.apps = [
+            AppInfo(name: "Calendar", bundleId: "com.apple.iCal", pid: 9101, windowCount: 1, memoryBytes: 120_000_000, cpuUsage: 1),
+            AppInfo(name: "Maps", bundleId: "com.apple.Maps", pid: 9102, windowCount: 1, memoryBytes: 210_000_000, cpuUsage: 2),
+            AppInfo(name: "Messages", bundleId: "com.apple.MobileSMS", pid: 9103, windowCount: 1, memoryBytes: 140_000_000, cpuUsage: 1),
+            AppInfo(name: "Music", bundleId: "com.apple.Music", pid: 9104, windowCount: 1, memoryBytes: 180_000_000, cpuUsage: 2),
+            AppInfo(name: "Notes", bundleId: "com.apple.Notes", pid: 9105, windowCount: 1, memoryBytes: 90_000_000, cpuUsage: 0),
+            AppInfo(name: "Safari", bundleId: "com.apple.Safari", pid: 9106, windowCount: 2, memoryBytes: 640_000_000, cpuUsage: 6),
+        ]
+        let pages: [(String, AnyView)] = [
+            ("general", AnyView(GeneralTabView())),
+            ("automation", AnyView(AutomationTabView())),
+            ("advanced", AnyView(AdvancedTabView())),
+            ("shortcuts", AnyView(ShortcutsTabView())),
+            ("about", AnyView(AboutTabView())),
+        ]
+        for dark in [true, false] {
+            try await snapshot(MainPopoverView(), size: NSSize(width: StatusItemController.popoverWidth, height: 340), name: "popover-apps-list", dark: dark)
+            for (name, view) in pages {
+                try await snapshot(VStack(spacing: 0) { view; Spacer(minLength: 0) }.padding(20).background(Color(NSColor.windowBackgroundColor)), size: NSSize(width: SettingsTab.contentWidth + 40, height: 1300), name: "page-\(name)", dark: dark)
+            }
+        }
+        store.config.portsEnabled = true
+        try await snapshot(VStack(spacing: 0) { PortsTabView(); Spacer(minLength: 0) }.padding(20).background(Color(NSColor.windowBackgroundColor)), size: NSSize(width: SettingsTab.contentWidth + 40, height: 1300), name: "page-ports", dark: true)
+        #expect(!AppListViewModel.shared.apps.isEmpty)
+    }
 }

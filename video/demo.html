@@ -76,7 +76,7 @@
   .card h1 { position: relative; margin: 26px 0 10px; font-family: "Inter Display", "Inter"; font-size: 76px; letter-spacing: -.04em; font-weight: 700; color: #fff; }
   .card p { position: relative; margin: 0; font-size: 22px; color: var(--muted); }
   .card .pill { position: relative; display: inline-flex; margin-top: 30px; padding: 14px 24px; border-radius: 14px; background: linear-gradient(var(--gold), var(--gold-deep)); color: rgba(0,0,0,.88); font-weight: 700; font-size: 18px; }
-  .card .url { position: relative; margin-top: 16px; font: 500 16px/1 "JetBrains Mono", monospace; color: rgba(255,255,255,.55); }
+  .card .url { position: relative; margin-top: 16px; font: 500 16px/1 "QX Mono", monospace; color: rgba(255,255,255,.55); }
   #fade { inset: 0; z-index: 70; background: #000; pointer-events: none; }
 </style>
 </head>
@@ -85,7 +85,7 @@
 <div id="stage">
   <div id="cam">
     <div id="wall" class="abs"></div>
-    <div id="doc1" class="abs qx-win doc" style="left:180px;top:190px"><div class="bar"><i style="background:#FF5F57" id="close1"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i><span>Launch notes.txt</span></div><div class="txt"><h4>Launch checklist</h4>Ship 1.1.9 with in-app updates from GitHub.<br>Record the demo video and refresh the site.<br>Tell everyone the red dot means good news.</div></div>
+    <div id="doc1" class="abs qx-win doc" style="left:180px;top:190px"><div class="bar"><i style="background:#FF5F57" id="close1"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i><span>Launch notes.txt</span></div><div class="txt"><h4>Launch checklist</h4>Ship 1.2.1 with in-app updates from GitHub.<br>Record the demo video and refresh the site.<br>Tell everyone the red dot means good news.</div></div>
     <div id="doc2" class="abs qx-win doc" style="left:300px;top:250px;width:520px;height:330px"><div class="bar"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i><span>Untitled</span></div><div class="txt"><h4>Ideas</h4>Quit everything at midnight.<br>Keep the music playing.</div></div>
     <div id="menubar" class="abs">
       <b id="front">Finder</b><span>File</span><span>Edit</span><span>View</span><span>Window</span><span>Help</span>
@@ -190,7 +190,7 @@ let L = { qx: [0, 0] };
 function anchorInfo(zoom) {
   const qr = $('qx').getBoundingClientRect();
   const cx = qr.left + qr.width / 2;
-  const left = Math.min(cx - 135 * zoom, 1440 - 270 * zoom - 8);
+  const left = Math.min(cx - 165 * zoom, 1440 - 330 * zoom - 8);
   return { left, arrowX: (cx - left) / zoom, top: qr.bottom + 1 };
 }
 
@@ -278,18 +278,20 @@ function renderMenus(t) {
   const m = $('menu'), m2 = $('menu2');
   m.innerHTML = ''; m2.innerHTML = ''; show(m, 0); show(m2, 0);
   if (between(t, T.bGear, T.bPick + .25)) {
-    m.innerHTML = QX.menu([{ t: 'Refresh Apps', icon: 'refresh', k: '⌘R' }, { t: 'View Background Apps', icon: 'eye', k: '⌘B', on: t >= T.bPick - .45, id: 'mBg' }, { t: 'Reopen Recently Quit', icon: 'undo', chev: true }, '-', { t: 'Settings', icon: 'settings', k: '⌘,' }, { t: 'Help', icon: 'help', k: '⌘?' }, { t: 'Quit', icon: 'quit', k: '⌘Q' }]);
+    m.innerHTML = QX.menu([{ t: 'Refresh Apps', icon: 'refresh', k: '⌘R' }, { t: 'View Background Apps', icon: 'eye', k: '⌘B', on: t >= T.bPick - .45, id: 'mBg' }, { t: 'Reopen Recently Quit', icon: 'undo', chev: true }, { t: 'Uninstall Apps', icon: 'trash' }, '-', { t: 'Settings', icon: 'settings', k: '⌘,' }, { t: 'Help', icon: 'help', k: '⌘?' }, { t: "What's New", icon: 'sparkles', k: '⌘N' }, { t: 'Check for Updates', icon: 'refresh', k: '⌘U' }, { t: 'About QuitX', icon: 'info', k: '⌘I' }, '-', { t: 'Quit QuitX', icon: 'quit', k: '⌘Q' }]);
     const g = document.querySelector('#pop [data-role="gear"]');
     if (g) {
       const r = g.getBoundingClientRect();
       m.style.zoom = 1.4;
       m.style.left = Math.min(r.left - 8, 1430 - 236 * 1.4) / 1.4 + 'px';
       m.style.top = (r.bottom + 4) / 1.4 + 'px';
+      const mh = m.getBoundingClientRect().height;
+      if (r.bottom + 4 + mh > 892) m.style.top = (r.top - 4 - mh) / 1.4 + 'px';
     }
     show(m, win(t, T.bGear, T.bPick + .25, .12));
   }
   if (between(t, T.eMore, T.ePick + .25)) {
-    m2.innerHTML = QX.menu([{ t: 'Quit', icon: 'quit', k: '⌘Q' }, { t: 'Force Quit', icon: 'boltLine', k: '⌥⌘Q' }, { t: 'Restart', icon: 'restart', k: '⌘R' }, { t: 'Quit In', icon: 'timer', chev: true }, { t: 'Quit Other Apps', icon: 'others' }, '-', { t: 'Add to Exclude List', icon: 'nosign', k: '⌘E', on: t >= T.ePick - .45, id: 'mEx' }, { t: 'Reveal in Finder', icon: 'finder', k: '⌘F' }]);
+    m2.innerHTML = QX.menu([{ t: 'Quit', icon: 'quit', k: '⌘Q' }, { t: 'Force Quit', icon: 'boltLine', k: '⌥⌘Q' }, { t: 'Restart', icon: 'restart', k: '⌘R' }, { t: 'Auto-quit', icon: 'timer', chev: true }, { t: 'Quit In', icon: 'alarm', chev: true }, { t: 'Quit Other Apps', icon: 'others' }, '-', { t: 'Add to Exclude List', icon: 'nosign', k: '⌘E', on: t >= T.ePick - .45, id: 'mEx' }, { t: 'Reveal in Finder', icon: 'finder', k: '⌘F' }, '-', { t: 'Uninstall', icon: 'trash' }]);
     const r = document.querySelector('#pop [data-app="Music"] .more');
     if (r) {
       const rr = r.getBoundingClientRect();
@@ -300,7 +302,7 @@ function renderMenus(t) {
     show(m2, win(t, T.eMore, T.ePick + .25, .12));
   }
   if (between(t, T.uMenu, T.uClick + .25)) {
-    m.innerHTML = QX.menu([{ t: 'Update to v1.1.9…', dot: true, on: t >= T.uClick - .45, id: 'mUp' }, '-', { t: 'Settings', icon: 'settings', k: '⌘,' }, { t: 'Help', icon: 'help', k: '⌘?' }, { t: "What's New", icon: 'sparkles', k: '⌘N' }, { t: 'Check for Updates', icon: 'refresh', k: '⌘U' }, { t: 'About', icon: 'info', k: '⌘I' }, '-', { t: 'Quit', icon: 'quit', k: '⌘Q' }]);
+    m.innerHTML = QX.menu([{ t: 'Update to v1.2.1…', dot: true, on: t >= T.uClick - .45, id: 'mUp' }, '-', { t: 'Uninstall Apps', icon: 'trash' }, '-', { t: 'Settings', icon: 'settings', k: '⌘,' }, { t: 'Help', icon: 'help', k: '⌘?' }, { t: "What's New", icon: 'sparkles', k: '⌘N' }, { t: 'Check for Updates', icon: 'refresh', k: '⌘U' }, { t: 'About QuitX', icon: 'info', k: '⌘I' }, '-', { t: 'Quit QuitX', icon: 'quit', k: '⌘Q' }]);
     const qr = $('qx').getBoundingClientRect();
     m.style.zoom = 1.15;
     m.style.left = Math.min(qr.left - 4, 1430 - 236 * 1.15) / 1.15 + 'px';
@@ -393,7 +395,7 @@ function buildCursor() {
   measure('eMore', T.eMore - .1, '#pop [data-app="Music"] .more');
   measure('eItem', T.ePick - .1, '#mEx', .3);
   measure('rBtn', T.rIn + 1, '#rescue .btns span');
-  measure('slTog', T.slToggle - .1, '#settingsWin #r-sleep .qx-cb');
+  measure('slTog', T.slToggle - .1, '#settingsWin #r-sleep .qx-sw');
   measure('close1', T.lwClose - .1, '#close1');
   measure('uItem', T.uClick - .1, '#mUp', .3);
   measure('uBtn', T.uRestart - .1, '#updb2');
@@ -464,7 +466,7 @@ function render(t, measuring = false) {
   const dl = prog(t, T.uDl0, T.uDl1, x => 1 - Math.pow(1 - x, 1.6));
   const downloading = t < T.uDl1;
   const ready = t >= T.uReady;
-  $('updh').textContent = ready ? 'Ready to Install v1.1.9' : (downloading ? 'Downloading v1.1.9...' : 'Verifying Update...');
+  $('updh').textContent = ready ? 'Ready to Install v1.2.1' : (downloading ? 'Downloading v1.2.1...' : 'Verifying Update...');
   $('updt1').textContent = ready ? 'The latest version has been downloaded and verified.' : (downloading ? '' : 'Extracting and verifying package contents...');
   $('updt2').innerHTML = ready ? 'QuitX will restart to finish installing the update.' : (downloading ? `<span>${(dl * 4.6).toFixed(1)} MB of 4.6 MB</span><span>${dl < 1 ? (2.1 + Math.sin(t * 7) * .3).toFixed(1) + ' MB/s' : ''}</span>` : '');
   $('updbarwrap').style.display = ready ? 'none' : 'block';

@@ -32,6 +32,8 @@
     timer: '<svg viewBox="0 0 16 16"><circle cx="8" cy="9" r="5.3"/><path d="M8 6.2V9l2 1.3M6.2 1.8h3.6"/></svg>',
     windows: '<svg viewBox="0 0 16 16"><rect x="1.5" y="4" width="10" height="9" rx="1.4"/><path d="M4.5 4V3a1 1 0 0 1 1-1H14a1 1 0 0 1 .5.9V10a1 1 0 0 1-1 1h-2"/></svg>',
     chev: '<svg viewBox="0 0 16 16"><path d="M6 3.5L10.5 8 6 12.5"/></svg>',
+    trash: '<svg viewBox="0 0 16 16"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></svg>',
+    alarm: '<svg viewBox="0 0 16 16"><circle cx="8" cy="9" r="5"/><path d="M8 6.5V9l1.6 1M2.5 4l2-1.8M13.5 4l-2-1.8"/></svg>',
     network: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.2"/><path d="M1.8 8h12.4M8 1.8c1.8 1.9 2.6 3.9 2.6 6.2S9.8 12.3 8 14.2M8 1.8C6.2 3.7 5.4 5.7 5.4 8s.8 4.3 2.6 6.2"/></svg>',
     grid: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2.2" y="2.2" width="4.6" height="4.6" rx="1"/><rect x="9.2" y="2.2" width="4.6" height="4.6" rx="1"/><rect x="2.2" y="9.2" width="4.6" height="4.6" rx="1"/><rect x="9.2" y="9.2" width="4.6" height="4.6" rx="1"/></svg>',
     sliders: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 4h7M12 4h2M2 8h2M7 8h7M2 12h5M10 12h4"/><circle cx="10.5" cy="4" r="1.5"/><circle cx="5.5" cy="8" r="1.5"/><circle cx="8.5" cy="12" r="1.5"/></svg>',
@@ -51,26 +53,26 @@
   };
 
   const APPS = [
-    { n: 'Books', i: 'books', u: '0%' },
-    { n: 'Calendar', i: 'calendar', u: '1%' },
-    { n: 'Discord', i: 'discord', u: '5%' },
-    { n: 'Google Chrome', i: 'chrome', u: '14%' },
-    { n: 'Maps', i: 'maps', u: '2%' },
-    { n: 'Messages', i: 'messages', u: '1%' },
-    { n: 'Music', i: 'music', u: '2%' },
-    { n: 'Notes', i: 'notes', u: '0%' },
-    { n: 'Photos', i: 'photos', u: '1%' },
-    { n: 'Podcasts', i: 'podcasts', u: '1%' },
-    { n: 'Reminders', i: 'reminders', u: '0%' },
-    { n: 'Safari', i: 'safari', u: '6%' },
-    { n: 'Telegram', i: 'telegram', u: '2%' },
-    { n: 'Terminal', i: 'terminal', u: '0%' },
-    { n: 'Visual Studio Code', i: 'vscode', u: '8%' },
+    { n: 'Books', i: 'books', u: '0.0%' },
+    { n: 'Calendar', i: 'calendar', u: '1.0%' },
+    { n: 'Discord', i: 'discord', u: '5.0%' },
+    { n: 'Google Chrome', i: 'chrome', u: '14.0%' },
+    { n: 'Maps', i: 'maps', u: '2.0%' },
+    { n: 'Messages', i: 'messages', u: '1.0%' },
+    { n: 'Music', i: 'music', u: '2.0%' },
+    { n: 'Notes', i: 'notes', u: '0.0%' },
+    { n: 'Photos', i: 'photos', u: '1.0%' },
+    { n: 'Podcasts', i: 'podcasts', u: '1.0%' },
+    { n: 'Reminders', i: 'reminders', u: '0.0%' },
+    { n: 'Safari', i: 'safari', u: '6.0%' },
+    { n: 'Telegram', i: 'telegram', u: '2.0%' },
+    { n: 'Terminal', i: 'terminal', u: '0.0%' },
+    { n: 'Visual Studio Code', i: 'vscode', u: '8.0%' },
   ];
   const BACKGROUND = [
-    { n: 'Docker Desktop', u: '3%', bg: true },
-    { n: 'Dropbox', u: '1%', bg: true },
-    { n: 'Google Drive', u: '0%', bg: true },
+    { n: 'Docker Desktop', u: '3.0%', bg: true },
+    { n: 'Dropbox', u: '1.0%', bg: true },
+    { n: 'Google Drive', u: '0.0%', bg: true },
   ];
 
   const generic = '<svg class="gen" viewBox="0 0 18 18"><rect x="1" y="1" width="16" height="16" rx="4" fill="#4A494E"/><rect x="1" y="1" width="16" height="16" rx="4" fill="url(#qxg)" opacity=".5"/><path d="M5.5 6.5h7M5.5 9h7M5.5 11.5h4.5" stroke="#C9C8CE" stroke-width="1.3" stroke-linecap="round"/><defs><linearGradient id="qxg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".25"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs></svg>';
@@ -94,7 +96,7 @@
   }
 
   function popover(o = {}) {
-    o = Object.assign({ selected: 'all', unselected: [], apps: APPS, arrowX: 135, footer: 'Quit one, some, or all apps' }, o);
+    o = Object.assign({ selected: 'all', unselected: [], apps: APPS, arrowX: 165, footer: 'Quit one, some, or all apps' }, o);
     const list = o.apps.map(a => row(a, o)).join('');
     const count = o.selected === 'all' ? o.apps.length - o.unselected.length : o.selected.length;
     const isAll = o.selected === 'all' && o.unselected.length === 0;
@@ -102,7 +104,7 @@
     const off = o.buttonOff || count === 0;
     const btn = `<div class="quit${off ? ' off' : ''}${o.press ? ' press' : ''}" data-role="quit">${o.force && !off ? S.bolt : ''}${title}</div>`;
     const headCb = isAll ? 'on' : (count > 0 ? 'part' : '');
-    return `<div class="qx-pop${o.glass ? ' glass' : ''}${o.tabs ? ' wide' : ''}">${arrow(o.arrowX, o.glass)}<div class="body"><div style="height:5px"></div>${o.tabs ? tabbar('apps') : ''}${btn}<div class="search"><span class="qx-cb ${headCb}"></span><div class="field">${S.search}Search</div></div><div class="list">${list}</div><div class="foot"><span>${o.footer}</span><span class="gear${o.gearOn ? ' on' : ''}" data-role="gear">${S.gear}</span></div>${o.overlay || ''}${o.toast ? `<div class="qx-toast">${S.check}${o.toast}</div>` : ''}</div></div>`;
+    return `<div class="qx-pop${o.glass ? ' glass' : ''}${o.tabs ? ' wide' : ''}">${arrow(o.arrowX, o.glass)}<div class="body"><div style="height:5px"></div>${o.tabs ? tabbar('apps') : ''}${btn}<div class="search"><span class="qx-cb ${headCb}"></span><div class="field">${S.search}Search</div></div><div class="list">${list}</div><div class="foot"><span>${o.footer}</span><span class="gear${o.gearOn ? ' on' : ''}" data-role="gear">${S.sliders}</span></div>${o.overlay || ''}${o.toast ? `<div class="qx-toast">${S.check}${o.toast}</div>` : ''}</div></div>`;
   }
 
   function tabbar(active) {
@@ -186,30 +188,54 @@
 
   function settings(o) {
     const side = sideGroups.map(([g, tabs]) => `${g ? `<div class="sg">${g}</div>` : ''}${tabs.map(t => `<div class="si${t === o.tab ? ' on' : ''}">${sideIcons[t]}<span>${t}</span></div>`).join('')}`).join('');
-    return `<div class="qx-win qx-settings side"><div class="sb"><span class="lights"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#58565A"></i></span><div class="ss">${S.search}Search settings…</div><div class="sl">${side}</div></div><div class="dt"><div class="dh"><img src="${A}icon.png" alt=""><div><div class="h">${o.tab === 'Overview' ? 'Overview' : o.tab}</div><div class="sum">${summaries[o.tab] || ''}</div></div></div><div class="pane">${o.content}</div></div></div>`;
+    return `<div class="qx-win qx-settings side"><div class="sb"><span class="lights"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#58565A"></i></span><div class="ss">${S.search}Search settings…</div><div class="sl">${side}</div></div><div class="dt"><div class="dh"><div class="h">${o.tab}</div><div class="sum">${summaries[o.tab] || ''}</div></div><div class="pv"><div class="pane"${o.scroll ? ` style="transform:translateY(-${o.scroll}px)"` : ''}>${o.content}</div></div></div></div>`;
   }
 
-  const cb = (t, on = true) => `<span class="cbl"><span class="qx-cb${on ? ' on' : ''}"></span>${t}</span>`;
-  const radio = (t, on) => `<span class="radio${on ? ' on' : ''}"><i></i>${t}</span>`;
+  const cb = (t, on = true) => `<span class="cbl"><span class="qx-sw${on ? ' on' : ''}"></span>${t}</span>`;
   const help = '<span class="help">?</span>';
+  const T = {
+    gauge: '<svg viewBox="0 0 16 16"><path d="M2.4 11.6a6 6 0 1 1 11.2 0"/><path d="M8 9l2.6-2.6"/></svg>',
+    text: '<svg viewBox="0 0 22 16"><text x="11" y="12.5" text-anchor="middle" font-size="12" font-family="Inter" font-weight="500" fill="currentColor" stroke="none">Aa</text></svg>',
+    abc: '<svg viewBox="0 0 26 16"><text x="13" y="12.5" text-anchor="middle" font-size="11.5" font-family="Inter" font-weight="500" fill="currentColor" stroke="none">Abc</text></svg>',
+    pct: '<svg viewBox="0 0 16 16"><path d="M12.5 3.5l-9 9"/><circle cx="4.5" cy="4.5" r="1.6"/><circle cx="11.5" cy="11.5" r="1.6"/></svg>',
+    mem: '<svg viewBox="0 0 16 16"><rect x="2" y="5" width="12" height="6" rx="1.2"/><path d="M4.5 11v1.8M7 11v1.8M9.5 11v1.8M12 11v1.8"/></svg>',
+    fast: '<svg viewBox="0 0 16 16"><path d="M9 1.5L3 9h4.5L7 14.5 13 7H8.5z"/></svg>',
+    slow: '<svg viewBox="0 0 16 16"><path d="M2.5 11h11M4 11c0-3 1.8-5 4-5s4 2 4 5"/><circle cx="13" cy="8" r="1.3"/></svg>',
+    clock: '<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.6"/><path d="M8 4.8V8l2 1.3"/></svg>',
+    clock12: '<svg viewBox="0 0 16 16"><path d="M13.4 7a5.6 5.6 0 1 1-4-4.4"/><path d="M8 4.8V8l2 1.3"/><circle cx="12.4" cy="3.6" r="1.3" fill="currentColor"/></svg>',
+    square: '<svg viewBox="0 0 16 16"><rect x="3" y="4" width="10" height="8" rx="1.6" fill="currentColor"/></svg>',
+    drop: '<svg viewBox="0 0 16 16"><path d="M8 2.2c2.4 3 3.8 5.1 3.8 7a3.8 3.8 0 0 1-7.6 0c0-1.9 1.4-4 3.8-7z" fill="currentColor"/></svg>',
+    down: '<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.6"/><path d="M6 6l4 4M10 6.6V10H6.6"/></svg>',
+    up: '<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.6"/><path d="M6 10l4-4M6.6 6H10v3.4"/></svg>',
+    arrowUp: '<svg viewBox="0 0 16 16"><path d="M8 13V3M4 7l4-4 4 4"/></svg>',
+    arrowDown: '<svg viewBox="0 0 16 16"><path d="M8 3v10M4 9l4 4 4-4"/></svg>',
+    list: '<svg viewBox="0 0 16 16"><path d="M6 4h7.5M6 8h7.5M6 12h7.5"/><circle cx="3" cy="4" r=".6" fill="currentColor"/><circle cx="3" cy="8" r=".6" fill="currentColor"/><circle cx="3" cy="12" r=".6" fill="currentColor"/></svg>',
+    folder: '<svg viewBox="0 0 16 16"><path d="M2 4.5A1.5 1.5 0 0 1 3.5 3H6l1.5 1.5h5A1.5 1.5 0 0 1 14 6v5.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 11.5z"/></svg>',
+    docker: '<svg viewBox="0 0 16 16"><path d="M1.8 8.5h11.4c.6 0 1-.6 1.6-.8-.3 2.9-2.6 5-6.3 5-3.2 0-5.6-1.6-6.7-4.2z"/><path d="M3.5 8.5V6.5h2v2M5.5 8.5V6.5h2v2M7.5 8.5V6.5h2v2M5.5 6.5v-2h2v2"/></svg>',
+    branch: '<svg viewBox="0 0 16 16"><path d="M4 2.5v3.2c0 1.6 1.4 2.8 4 3.3 2.6-.5 4-1.7 4-3.3V2.5M8 9v4.5"/></svg>',
+  };
+  const tiles = (items, o = {}) => `<span class="tiles${o.small ? ' sm' : ''}"${o.id ? ` id="${o.id}"` : ''}>${items.map(x => `<span class="tile${x.on ? ' on' : ''}">${x.i}<b>${x.t}</b></span>`).join('')}</span>`;
+  const sub = (label, inner, cls = '') => `<span class="sub${cls ? ' ' + cls : ''}"><span class="small">${label}</span>${inner}</span>`;
+  const tstep = v => `<span class="tstep">${v}<i></i></span>`;
   const sectionSymbols = {
     Startup: S.power,
-    Sounds: S.sparkles,
+    Sounds: '<svg viewBox="0 0 16 16"><path d="M3 6.2h2.4L8.5 3.5v9L5.4 9.8H3z"/><path d="M10.6 6a2.6 2.6 0 0 1 0 4M12.4 4.4a5 5 0 0 1 0 7.2"/></svg>',
     Updates: S.refresh,
-    'Menu Bar': S.stats || S.gauge,
+    'Menu Bar': '<svg viewBox="0 0 16 16"><rect x="2" y="3.5" width="12" height="9" rx="1.8"/><path d="M2 6.3h12"/></svg>',
     Refresh: S.refresh,
-    Appearance: S.settings,
-    Sort: S.sliders,
-    Default: S.power,
-    Sleep: S.timer,
-    Windows: S.windows,
-    Health: S.gauge,
-    'Auto Quit': S.timer,
+    Appearance: '<svg viewBox="0 0 16 16"><path d="M8 2.2a5.8 5.8 0 1 0 0 11.6c1 0 1.2-.8.8-1.5-.5-.9 0-1.9 1.1-1.9h1.6a2.3 2.3 0 0 0 2.3-2.3C13.8 4.6 11.2 2.2 8 2.2z"/><circle cx="5.2" cy="7" r=".8"/><circle cx="7.6" cy="4.9" r=".8"/><circle cx="10.4" cy="5.6" r=".8"/></svg>',
+    Sort: '<svg viewBox="0 0 16 16"><path d="M5 13V3M2.5 5.5L5 3l2.5 2.5M11 3v10M8.5 10.5L11 13l2.5-2.5"/></svg>',
+    Default: '<svg viewBox="0 0 16 16"><path d="M8 4.2a3.8 3.8 0 0 0-2.6 6.6M8 2a6 6 0 0 0-4.3 10.2M8 6.4a1.6 1.6 0 0 0-1.6 1.6v1.2l3.4 4.6"/></svg>',
+    Reset: '<svg viewBox="0 0 16 16"><path d="M3.2 6.2A5 5 0 1 1 3 9.5M3 3v3.4h3.4"/></svg>',
+    Sleep: '<svg viewBox="0 0 16 16"><path d="M10.5 10.8A5.2 5.2 0 0 1 5.2 3.4a5.2 5.2 0 1 0 7.2 6.8 5 5 0 0 1-1.9.6z"/><path d="M10 2.5h2l-2 2.2h2"/></svg>',
+    Windows: '<svg viewBox="0 0 16 16"><rect x="2" y="3.5" width="12" height="9" rx="1.8"/><path d="M4.5 5.6h.1M6.3 5.6h.1"/></svg>',
+    Health: '<svg viewBox="0 0 16 16"><rect x="3" y="2.5" width="10" height="11" rx="1.8"/><path d="M5.5 5.5h2M5.5 8h5M5.5 10.5h5"/></svg>',
+    'Auto Quit': '<svg viewBox="0 0 16 16"><path d="M4.5 2.5h7M4.5 13.5h7M5.5 2.5c0 3 5 3 5 5.5s-5 2.5-5 5.5M10.5 2.5c0 3-5 3-5 5.5s5 2.5 5 5.5"/></svg>',
     'Port Killing': S.network,
-    Discovery: S.network,
-    'Group By': S.trace,
-    Safety: S.help,
-    Selection: S.check,
+    Discovery: '<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="1.4"/><path d="M5.2 5.2a4 4 0 0 0 0 5.6M10.8 5.2a4 4 0 0 1 0 5.6M3.4 3.4a6.5 6.5 0 0 0 0 9.2M12.6 3.4a6.5 6.5 0 0 1 0 9.2"/></svg>',
+    'Group By': '<svg viewBox="0 0 16 16"><path d="M8 2.5l5.5 3L8 8.5l-5.5-3z"/><path d="M2.5 8.2L8 11.2l5.5-3M2.5 10.8L8 13.8l5.5-3"/></svg>',
+    Safety: '<svg viewBox="0 0 16 16"><path d="M8 1.8l5 2v4c0 3-2.2 5.3-5 6.4-2.8-1.1-5-3.4-5-6.4v-4z"/><path d="M5.8 8.2l1.6 1.6 3-3.2"/></svg>',
+    Selection: '<svg viewBox="0 0 16 16"><circle cx="4" cy="5" r="1.4"/><circle cx="4" cy="11" r="1.4"/><path d="M7.5 5h6M7.5 11h6"/></svg>',
     Exclude: S.nosign,
   };
   const section = (label, dim) => {
@@ -219,32 +245,35 @@
   const r = (label, inner, o = {}) => `${label ? section(label, o.dim) : ''}<div class="r${o.hl ? ' hl' : ''}${o.dim ? ' dim' : ''}"${o.id ? ` id="${o.id}"` : ''}>${inner}${o.help === false ? '' : help}</div>`;
 
   function general(o = {}) {
+    const st = o.stats !== false;
     return [
       r('Startup:', cb('Open QuitX at login')),
       r('Sounds:', cb('Play cool sounds', o.sounds !== false), { hl: o.hl === 'sounds', id: 'r-sounds' }),
       r('Updates:', cb('Check for updates automatically'), { hl: o.hl === 'updates' }),
       r('', cb('Download and prepare updates automatically'), { hl: o.hl === 'updates' }),
-      r('Menu Bar:', cb('Show stats in menu bar', o.stats !== false), { hl: o.hl === 'stats', id: 'r-stats' }),
-      r('', `<span class="sub">${cb('CPU', o.stats !== false)}${cb('Memory', o.stats !== false)}${cb('GPU', o.stats !== false)}${cb('Battery', o.stats !== false)}</span>`, { hl: o.hl === 'stats', help: false }),
-      r('Refresh:', '<span class="select">Every second</span>', { hl: o.hl === 'stats' || o.hl === 'refresh' }),
-      r('Appearance:', `<span class="sub" id="appearance">${radio('Classic', o.glass === false)}${radio('Liquid Glass', o.glass !== false)}</span>`, { hl: o.hl === 'theme' }),
-      r('Sort:', '<span class="select">A-Z Alphabetical</span>'),
-      r('Default:', `<span class="select" id="default-mode">${o.force ? 'Force quit' : 'Normal quit'}</span>`, { hl: o.hl === 'default' }),
+      r('Menu Bar:', cb('Show stats in menu bar', st), { hl: o.hl === 'stats', id: 'r-stats' }),
+      r('', `<span class="sub">${cb('CPU', st)}${cb('Memory', st)}${cb('GPU', st)}${cb('Battery', st)}</span>`, { hl: o.hl === 'stats', dim: !st }),
+      r('', sub('Style format', tiles([{ t: 'Icon', i: T.gauge, on: true }, { t: 'Text', i: T.text }])), { help: false, dim: !st }),
+      r('', sub('Refresh', tiles([{ t: '1 sec', i: T.fast, on: true }, { t: '2 sec', i: T.gauge }, { t: '3 sec', i: T.gauge }, { t: '5 sec', i: T.gauge }, { t: '10 sec', i: T.slow }], { small: true })), { hl: o.hl === 'stats' || o.hl === 'refresh', dim: !st }),
+      r('Appearance:', tiles([{ t: 'Classic', i: T.square, on: o.glass === false }, { t: 'Liquid Glass', i: T.drop, on: o.glass !== false }], { id: 'appearance' }), { hl: o.hl === 'theme' }),
+      r('Sort:', tiles([{ t: 'CPU High', i: T.down }, { t: 'CPU Low', i: T.up }, { t: 'Memory High', i: T.down }, { t: 'Memory Low', i: T.up }, { t: 'A–Z', i: T.abc, on: true }, { t: 'Z–A', i: T.abc }], { small: true })),
+      r('Default:', tiles([{ t: 'Normal Quit', i: S.power, on: !o.force }, { t: 'Force Quit', i: T.fast, on: !!o.force }], { id: 'default-mode' }), { hl: o.hl === 'default' }),
     ].join('');
   }
 
   function automation(o = {}) {
     const sleep = o.sleep !== false;
+    const step = '<span class="stepper"></span>';
     return [
       r('Sleep:', cb('Quit apps when Mac sleeps', sleep), { hl: o.hl === 'sleep', id: 'r-sleep' }),
-      r('', `<span class="sub"><span class="small">Time format</span>${radio('24-hour', false)}${radio('12-hour', true)}</span>`, { dim: !sleep, help: false, hl: o.hl === 'sleep' }),
-      r('', `<span class="sub"><span class="small">From:</span><span class="select">12</span>:<span class="select">00</span><span class="select">AM</span></span>`, { dim: !sleep, help: false, hl: o.hl === 'sleep' }),
-      r('', `<span class="sub"><span class="small">To:</span><span class="select">6</span>:<span class="select">00</span><span class="select">AM</span></span>`, { dim: !sleep, help: false, hl: o.hl === 'sleep' }),
+      r('', sub('Time format', tiles([{ t: '24-hour', i: T.clock }, { t: '12-hour', i: T.clock12, on: true }])), { dim: !sleep, help: false, hl: o.hl === 'sleep' }),
+      r('', sub('From:', `${tstep('12')}<span class="colon">:</span>${tstep('00')}${tstep('AM')}`, 'time'), { dim: !sleep, help: false, hl: o.hl === 'sleep' }),
+      r('', sub('To:', `${tstep('6')}<span class="colon">:</span>${tstep('00')}${tstep('AM')}`, 'time'), { dim: !sleep, help: false, hl: o.hl === 'sleep' }),
       r('Windows:', cb('Quit app when its last window closes', o.lastWindow !== false)),
       r('Health:', cb('Warn &amp; rescue CPU hogs', o.hog !== false), { hl: o.hl === 'health', id: 'r-health' }),
-      r('', `<span class="sub" style="gap:6px"><span style="font-size:12px">CPU over</span><span style="font-size:12px">80</span><span class="stepper"></span><span style="font-size:12px">%</span></span>`, { help: false, hl: o.hl === 'health' }),
+      r('', `<span class="sub" style="gap:7px"><span class="small" style="width:auto">CPU over</span><span class="num">80</span>${step}<span class="num">%</span></span>`, { help: false, hl: o.hl === 'health' }),
       r('', cb('Rescue on memory pressure', o.mem !== false), { hl: o.hl === 'health' }),
-      r('', `<span class="sub" style="gap:6px"><span style="font-size:12px">Memory over</span><span style="font-size:12px">12</span><span class="stepper"></span><span style="font-size:12px">GB of 16</span></span>`, { help: false, hl: o.hl === 'health' }),
+      r('', `<span class="sub" style="gap:7px"><span class="small" style="width:auto">Memory over</span><span class="num">12</span>${step}<span class="num">GB of 16</span></span>`, { help: false, hl: o.hl === 'health' }),
       r('Auto Quit:', cb('Quit inactive apps after', false)),
     ].join('');
   }
@@ -254,12 +283,12 @@
     const d = { dim: !on };
     return [
       r('Port Killing:', cb('Enable port killing', on), { hl: o.hl === 'enable' }),
-      r('Refresh:', '<span class="select">Every 3 seconds</span>', d),
+      r('Refresh:', tiles([{ t: '1 sec', i: T.fast }, { t: '2 sec', i: T.gauge }, { t: '3 sec', i: T.gauge, on: true }, { t: '5 sec', i: T.gauge }, { t: '10 sec', i: T.slow }], { small: true }), d),
       r('Discovery:', cb('Include UDP listeners', false), d),
       r('Menu Bar:', cb('Show listening port count', o.count !== false), { dim: !on, hl: o.hl === 'count' }),
-      r('Group By:', '<span class="select">None</span>', d),
-      r('Sort:', '<span class="select">Port (Low to High)</span>', d),
-      r('Default:', '<span class="select">Kill (SIGTERM)</span>', d),
+      r('Group By:', tiles([{ t: 'None', i: T.list, on: true }, { t: 'Project', i: T.folder }, { t: 'Docker', i: T.docker }, { t: 'Process', i: T.branch }], { small: true }), d),
+      r('Sort:', tiles([{ t: 'Port Low', i: T.arrowUp, on: true }, { t: 'Port High', i: T.arrowDown }, { t: 'Name', i: T.abc }, { t: 'Memory', i: T.mem }, { t: 'CPU', i: S.cpu }], { small: true }), d),
+      r('Default:', tiles([{ t: 'Kill', i: S.power, on: true }, { t: 'Force Kill', i: T.fast }], { small: true }), d),
       r('Safety:', cb('Confirm before killing ports'), { dim: !on, hl: o.hl === 'safety' }),
       r('Selection:', cb('Select all ports by default', false), d),
       r('Exclude:', `<span class="btn-sm">${S.nosign.replace('<svg', '<svg style="width:13px;height:13px;margin-right:7px;fill:none;stroke:currentColor;stroke-width:1.5"')}Manage Excluded Ports…</span>`, d),
