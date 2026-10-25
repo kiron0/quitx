@@ -41,7 +41,7 @@ struct ExcludeTabView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             if configStore.config.portsEnabled {
                 QuitXSegmentedControl(
                     segments: [
@@ -53,33 +53,19 @@ struct ExcludeTabView: View {
                 .frame(maxWidth: .infinity)
             }
 
-            SettingsSectionHeader(
-                title: section == .apps ? "Excluded Apps" : "Excluded Ports",
-                symbol: section == .apps ? "nosign" : "network"
-            )
-
-            HStack(spacing: 10) {
-                Image(systemName: "checkmark.shield")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(QuitXTheme.accent)
-                    .frame(width: 28, height: 28)
-                    .background(QuitXTheme.accent.opacity(0.1), in: RoundedRectangle(cornerRadius: 7))
-
+            HStack(alignment: .center) {
                 Text(section == .apps
-                     ? "Protected from manual shortcuts, Quit All and every automation."
-                     : "Hidden from Ports and protected from every kill action.")
-                    .font(.system(size: 11.5, weight: .medium))
+                     ? "Apps on this list stay out of manual and automatic Quit actions."
+                     : "Ports on this list never show in the Ports tab and are never killed.")
+                    .font(.system(size: 12))
                     .foregroundStyle(Color.secondary)
 
-                Spacer(minLength: 0)
+                Spacer()
 
                 HelpPopoverButton(text: section == .apps
-                    ? "Apps here are ignored by manual quits, shortcuts, Quit All and automation."
-                    : "Add listening ports or type numbers and ranges like 8000-8010. Excluded ports stay hidden and cannot be killed.")
+                    ? "VIP velvet rope immunity! Apps on this list get total immunity from all manual quits, hotkeys, and automated sweeps. 🎟️🛡️"
+                    : "Keep your database, proxy or anything else safe from Kill. Add ports from the ones listening now, or type numbers and ranges like 8000-8010. 🔌🛡️")
             }
-            .padding(9)
-            .background(QuitXTheme.accent.opacity(0.05), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-            .padding(.leading, 33)
 
             Group {
                 if section == .apps {
@@ -89,9 +75,9 @@ struct ExcludeTabView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(QuitXTheme.cardBackground, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+            .background(QuitXTheme.cardBackground, in: RoundedRectangle(cornerRadius: 7))
             .overlay(
-                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                RoundedRectangle(cornerRadius: 7)
                     .stroke(Color.primary.opacity(0.09), lineWidth: 0.5)
             )
 
@@ -237,9 +223,6 @@ struct ExcludeTabView: View {
             } label: {
                 Label("Add Apps…", systemImage: "plus")
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.small)
-            .tint(QuitXTheme.accent)
 
             Spacer()
 
@@ -253,8 +236,6 @@ struct ExcludeTabView: View {
                 )
             }
             .disabled(state.selectedIdentifiers.isEmpty)
-            .buttonStyle(.bordered)
-            .controlSize(.small)
         }
         .font(.system(size: 11.5))
     }
@@ -268,9 +249,6 @@ struct ExcludeTabView: View {
             } label: {
                 Label("Add Ports…", systemImage: "plus")
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.small)
-            .tint(QuitXTheme.accent)
 
             Spacer()
 
@@ -278,8 +256,6 @@ struct ExcludeTabView: View {
                 state.pendingPortRemoval = PortRemovalRequest(ports: selected, removesAll: selected.count == ports.count)
             }
             .disabled(selected.isEmpty)
-            .buttonStyle(.bordered)
-            .controlSize(.small)
         }
         .font(.system(size: 11.5))
     }
@@ -302,21 +278,18 @@ struct ExcludeTabView: View {
                     .font(.system(size: 11))
                     .foregroundStyle(Color.secondary)
             }
-            .padding(.horizontal, 10)
-            .frame(height: 34)
-            .background(isAll ? QuitXTheme.accent.opacity(0.08) : Color.primary.opacity(0.025))
+            .padding(.horizontal, 8)
+            .frame(height: 27)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
 
     private func emptyState(symbol: String, title: String, detail: String) -> some View {
-        VStack(spacing: 9) {
+        VStack(spacing: 8) {
             Image(systemName: symbol)
-                .font(.system(size: 22, weight: .medium))
+                .font(.system(size: 24))
                 .foregroundStyle(QuitXTheme.accent)
-                .frame(width: 50, height: 50)
-                .background(QuitXTheme.accent.opacity(0.09), in: RoundedRectangle(cornerRadius: 13))
             Text(title)
                 .font(.system(size: 12.5, weight: .medium))
                 .foregroundStyle(Color.primary)

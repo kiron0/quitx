@@ -24,14 +24,13 @@ struct PortsTabView: View {
 
             Group {
                 row(label: "Refresh:") {
-                    Picker("", selection: binding(\.portsRefreshSeconds)) {
-                        ForEach(QuitXConfig.portRefreshChoices, id: \.self) { seconds in
-                            Text(seconds == 1 ? "Every second" : "Every \(seconds) seconds").tag(seconds)
-                        }
-                    }
-                    .frame(width: 175, alignment: .leading)
-                    .labelsHidden()
-                    .settingsMenu()
+                    SettingsChoiceTiles(
+                        selection: binding(\.portsRefreshSeconds),
+                        options: QuitXConfig.portRefreshChoices.map {
+                            SettingsChoiceOption(value: $0, title: "\($0) sec", symbol: refreshSymbol($0))
+                        },
+                        width: 390
+                    )
                 } help: {
                     HelpPopoverButton(text: "How often the Ports tab rescans while it's open. CPU and memory update every 2 seconds in between.")
                 }
@@ -62,33 +61,29 @@ struct PortsTabView: View {
                 }
 
                 row(label: "Sort:") {
-                    Picker("", selection: Binding(
+                    SettingsChoiceTiles(selection: Binding(
                         get: { configStore.config.portsSortBy },
                         set: {
                             configStore.config.portsSortBy = $0
                             configStore.save()
                             PortListViewModel.shared.resort()
                         }
-                    )) {
-                        ForEach(PortSortBy.allCases, id: \.self) { option in
-                            Text(option.rawValue).tag(option)
-                        }
-                    }
-                    .frame(width: 175, alignment: .leading)
-                    .labelsHidden()
-                    .settingsMenu()
+                    ), options: [
+                        SettingsChoiceOption(value: .portAsc, title: "Port Low", symbol: "arrow.up"),
+                        SettingsChoiceOption(value: .portDesc, title: "Port High", symbol: "arrow.down"),
+                        SettingsChoiceOption(value: .name, title: "Name", symbol: "textformat.abc"),
+                        SettingsChoiceOption(value: .memoryDesc, title: "Memory", symbol: "memorychip"),
+                        SettingsChoiceOption(value: .cpuDesc, title: "CPU", symbol: "cpu")
+                    ])
                 } help: {
                     HelpPopoverButton(text: "Sort by port number, process name, memory or CPU.")
                 }
 
                 row(label: "Default:") {
-                    Picker("", selection: binding(\.portsForceKill)) {
-                        Text("Kill (SIGTERM)").tag(false)
-                        Text("Force kill (SIGKILL)").tag(true)
-                    }
-                    .frame(width: 175, alignment: .leading)
-                    .labelsHidden()
-                    .settingsMenu()
+                    SettingsChoiceTiles(selection: binding(\.portsForceKill), options: [
+                        SettingsChoiceOption(value: false, title: "Kill", symbol: "power"),
+                        SettingsChoiceOption(value: true, title: "Force Kill", symbol: "bolt.fill")
+                    ])
                 } help: {
                     HelpPopoverButton(text: "Kill asks the process to stop and escalates only if it won't. Force kill stops it at once. Hold ⌥ (Option) to force kill one time.")
                 }
@@ -135,5 +130,14 @@ struct PortsTabView: View {
                 configStore.save()
             }
         )
+    }
+
+    private func refreshSymbol(_ seconds: Int) -> String {
+        switch seconds {
+        case 1: return "hare"
+        case 2, 3: return "speedometer"
+        case 5: return "gauge.with.dots.needle.50percent"
+        default: return "tortoise"
+        }
     }
 }

@@ -226,6 +226,7 @@ struct ShortcutsTabView: View {
                 )
             }
         }
+        .padding(.top, 14)
         .frame(width: SettingsTab.contentWidth, alignment: .topLeading)
         .onAppear {
             viewState.startMonitor(sm: sm)

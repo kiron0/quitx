@@ -55,6 +55,48 @@ private struct AboutAction: View {
     }
 }
 
+private struct AboutDestination: View {
+    let symbol: String
+    let title: String
+    let detail: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: symbol)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(QuitXTheme.accent)
+                    .frame(width: 32, height: 32)
+                    .background(QuitXTheme.accent.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(size: 11.5, weight: .semibold))
+                    Text(detail)
+                        .font(.system(size: 9.5))
+                        .foregroundStyle(Color.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundStyle(Color.secondary)
+            }
+            .padding(10)
+            .frame(maxWidth: .infinity)
+            .background(QuitXTheme.cardBackground, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 struct AboutTabView: View {
     @ObservedObject private var updateChecker = UpdateChecker.shared
 
@@ -116,18 +158,38 @@ struct AboutTabView: View {
                 }
             }
 
+            VStack(alignment: .leading, spacing: 10) {
+                SettingsSectionHeader(title: "Explore QuitX", symbol: "square.grid.2x2")
+
+                HStack(spacing: 10) {
+                    AboutDestination(symbol: "command", title: "Shortcuts", detail: "Work without reaching for the menu") {
+                        SettingsWindowController.shared.show(tab: .shortcuts)
+                    }
+                    AboutDestination(symbol: "timer", title: "Automation", detail: "Quit on sleep, idle or last window") {
+                        SettingsWindowController.shared.show(tab: .automation)
+                    }
+                    AboutDestination(symbol: "nosign", title: "Protected Items", detail: "Manage excluded apps and ports") {
+                        SettingsWindowController.shared.show(tab: .exclude)
+                    }
+                }
+                .padding(.leading, 33)
+            }
+
             HStack(spacing: 7) {
                 Image(systemName: "heart.fill").foregroundStyle(QuitXTheme.accent)
-                Text("Designed and built by \(QuitXConstants.author)")
+                Text("Designed and built by")
+                Button(QuitXConstants.author) {
+                    NSWorkspace.shared.open(QuitXConstants.authorURL)
+                }
+                .buttonStyle(.link)
                 Text("•").foregroundStyle(Color.secondary.opacity(0.6))
                 Button("GitHub") { NSWorkspace.shared.open(QuitXConstants.repositoryURL) }
                 .buttonStyle(.link)
-                Spacer(minLength: 0)
-                Text(QuitXConstants.copyright).foregroundStyle(Color.secondary.opacity(0.8))
             }
             .font(.system(size: 10.5))
             .foregroundStyle(Color.secondary)
         }
+        .padding(.top, 14)
         .frame(width: SettingsTab.contentWidth, alignment: .topLeading)
     }
 

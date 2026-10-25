@@ -150,16 +150,8 @@ private struct SettingsToggle: View {
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Color.primary)
             }
-            .padding(.horizontal, 7)
             .frame(minHeight: 28)
-            .background(
-                isOn ? QuitXTheme.accent.opacity(0.08) : Color.primary.opacity(0.035),
-                in: Capsule()
-            )
-            .overlay(
-                Capsule().stroke(isOn ? QuitXTheme.accent.opacity(0.25) : Color.primary.opacity(0.06), lineWidth: 0.5)
-            )
-            .contentShape(Capsule())
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)
@@ -226,6 +218,59 @@ private struct SettingsRadio: View {
 
 func appearanceRadio(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
     SettingsRadio(title: title, selected: selected, action: action)
+}
+
+struct SettingsChoiceOption<Value: Hashable>: Identifiable {
+    let value: Value
+    let title: String
+    let symbol: String
+
+    var id: Value { value }
+}
+
+struct SettingsChoiceTiles<Value: Hashable>: View {
+    @Binding var selection: Value
+    let options: [SettingsChoiceOption<Value>]
+    var width: CGFloat = 500
+
+    private let columns = [GridItem(.adaptive(minimum: 72, maximum: 92), spacing: 7)]
+
+    var body: some View {
+        LazyVGrid(columns: columns, alignment: .leading, spacing: 7) {
+            ForEach(options) { option in
+                let selected = selection == option.value
+                Button {
+                    selection = option.value
+                } label: {
+                    VStack(spacing: 5) {
+                        Image(systemName: option.symbol)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(selected ? QuitXTheme.accent : Color.secondary)
+                            .frame(height: 22)
+
+                        Text(option.title)
+                            .font(.system(size: 9.5, weight: selected ? .semibold : .medium))
+                            .foregroundStyle(selected ? Color.primary : Color.secondary)
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+                    .background(
+                        selected ? QuitXTheme.accent.opacity(0.09) : Color.primary.opacity(0.025),
+                        in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .stroke(selected ? QuitXTheme.accent : Color.primary.opacity(0.08), lineWidth: selected ? 1.5 : 0.5)
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(option.title)
+                .accessibilityAddTraits(selected ? .isSelected : [])
+            }
+        }
+        .frame(width: width, alignment: .leading)
+    }
 }
 
 private struct SettingsMenuChrome: ViewModifier {

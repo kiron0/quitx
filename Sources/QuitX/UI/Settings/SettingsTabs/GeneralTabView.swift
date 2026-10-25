@@ -189,21 +189,16 @@ struct GeneralTabView: View {
                         .foregroundStyle(Color.primary)
                         .frame(width: 86, alignment: .leading)
 
-                    Picker("", selection: Binding(
+                    SettingsChoiceTiles(selection: Binding(
                         get: { configStore.config.menuBarRefreshSeconds },
                         set: {
                             configStore.config.menuBarRefreshSeconds = $0
                             configStore.save()
                             StatusItemController.shared?.startMenuBarStats()
                         }
-                    )) {
-                        ForEach(QuitXConfig.menuBarRefreshChoices, id: \.self) { seconds in
-                            Text(seconds == 1 ? "Every second" : "Every \(seconds) seconds").tag(seconds)
-                        }
-                    }
-                    .labelsHidden()
-                    .frame(width: 150, alignment: .leading)
-                    .settingsMenu()
+                    ), options: QuitXConfig.menuBarRefreshChoices.map {
+                        SettingsChoiceOption(value: $0, title: "\($0) sec", symbol: refreshSymbol($0))
+                    }, width: 390)
                 }
                 .disabled(!configStore.config.availableMenuBarStatsEnabled)
                 .opacity(configStore.config.availableMenuBarStatsEnabled ? 1.0 : 0.42)
@@ -234,32 +229,29 @@ struct GeneralTabView: View {
             }
 
             row(label: "Sort:") {
-                Picker("", selection: Binding(
+                SettingsChoiceTiles(selection: Binding(
                     get: { configStore.config.sortBy },
                     set: { configStore.config.sortBy = $0; configStore.save() }
-                )) {
-                    ForEach(QuitXConfig.SortBy.allCases, id: \.self) { sortOpt in
-                        Text(sortOpt.rawValue).tag(sortOpt)
-                    }
-                }
-                .frame(width: 175, alignment: .leading)
-                .labelsHidden()
-                .settingsMenu()
+                ), options: [
+                    SettingsChoiceOption(value: .cpuDesc, title: "CPU High", symbol: "arrow.down.right.circle"),
+                    SettingsChoiceOption(value: .cpuAsc, title: "CPU Low", symbol: "arrow.up.right.circle"),
+                    SettingsChoiceOption(value: .memoryDesc, title: "Memory High", symbol: "arrow.down.right.circle"),
+                    SettingsChoiceOption(value: .memoryAsc, title: "Memory Low", symbol: "arrow.up.right.circle"),
+                    SettingsChoiceOption(value: .name, title: "A–Z", symbol: "textformat.abc"),
+                    SettingsChoiceOption(value: .nameDesc, title: "Z–A", symbol: "textformat.abc")
+                ])
             } help: {
                 HelpPopoverButton(text: "Line up the suspects: alphabetical roll call, sizzling CPU hogs roasting your lap, or greedy memory munchers. 📊🧭")
             }
 
             row(label: "Default:") {
-                Picker("", selection: Binding(
-                    get: { configStore.config.force == .force ? "Force quit" : "Normal quit" },
-                    set: { configStore.config.force = ($0 == "Force quit" ? .force : .normal); configStore.save() }
-                )) {
-                    Text("Normal quit").tag("Normal quit")
-                    Text("Force quit").tag("Force quit")
-                }
-                .frame(width: 175, alignment: .leading)
-                .labelsHidden()
-                .settingsMenu()
+                SettingsChoiceTiles(selection: Binding(
+                    get: { configStore.config.force },
+                    set: { configStore.config.force = $0; configStore.save() }
+                ), options: [
+                    SettingsChoiceOption(value: .normal, title: "Normal Quit", symbol: "power"),
+                    SettingsChoiceOption(value: .force, title: "Force Quit", symbol: "bolt.fill")
+                ])
             } help: {
                 HelpPopoverButton(text: "Choose your default vibe: polite 'please quit' or ruthless force quit. Pro tip: hold ⌥ (Option) anytime to swap modes on the fly! ⚡️")
             }
@@ -280,13 +272,36 @@ struct GeneralTabView: View {
             Spacer(minLength: 0)
         }
         .frame(width: SettingsTab.contentWidth, alignment: .topLeading)
-        .alert("Reset all settings?", isPresented: $presentationState.showResetConfirmation) {
-            Button("Cancel", role: .cancel) {}
-            Button("Reset All", role: .destructive) {
-                SettingsResetService.shared.resetAllSettings()
+        .overlay(alignment: .bottom) {
+            if presentationState.showResetConfirmation {
+                QuitConfirmationOverlay(
+                    title: "Reset all settings?",
+                    subtitle: "Preferences, shortcuts and launch-at-login return to defaults. This cannot be undone.",
+                    confirmTitle: "Reset All",
+                    systemImage: "arrow.counterclockwise",
+                    isForced: true,
+                    cardWidth: 290,
+                    onConfirm: {
+                        SettingsResetService.shared.resetAllSettings()
+                        presentationState.showResetConfirmation = false
+                    },
+                    onCancel: {
+                        presentationState.showResetConfirmation = false
+                    }
+                )
+                .frame(height: 500)
+                .transition(.opacity.combined(with: .scale(scale: 0.96)))
             }
-        } message: {
-            Text("This restores preferences, shortcuts, and launch-at-login to their defaults. It cannot be undone.")
+        }
+        .animation(.easeInOut(duration: 0.18), value: presentationState.showResetConfirmation)
+    }
+
+    private func refreshSymbol(_ seconds: Int) -> String {
+        switch seconds {
+        case 1: return "hare"
+        case 2, 3: return "speedometer"
+        case 5: return "gauge.with.dots.needle.50percent"
+        default: return "tortoise"
         }
     }
 }

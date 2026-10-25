@@ -71,6 +71,7 @@ enum QuitXConstants {
     static let supportEmail = "hello@kiron.dev"
     static let githubRepository = "kiron0/quitx"
     static let websiteURL = URL(string: "https://quitx.kiron.dev")!
+    static let authorURL = URL(string: "https://kiron.dev")!
     static let repositoryURL = URL(string: "https://github.com/\(githubRepository)")!
     static let issuesURL = URL(string: "https://github.com/\(githubRepository)/issues/new")!
     static let releasesURL = URL(string: "https://github.com/\(githubRepository)/releases")!
