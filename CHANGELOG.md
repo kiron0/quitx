@@ -6,36 +6,36 @@ All notable changes to QuitX macOS App will be documented in this file.
 
 ### Added
 
+- **Settings Redesign**: Fixed 860×600 window with a Help-style sidebar and search (`SettingsRootView`, `SettingsNavigationModel`). It opens on **Overview**, featuring a status card per feature (`SettingsFeature`) showing current state (On, Off, Normal, item counts) that navigates to the page when clicked. Pages are grouped into App (General, Shortcuts), Quitting (Automation, Advanced, Exclude), Developer (Ports), and QuitX (About).
+- **More Apps ▸ Marquee**: Integrated Marquee promo banner in Settings Overview and a dedicated page (`MarqueePromoView`) detailing Marquee's features, links, and releases.
 - **Marquee Protection**: `io.github.treposting.marquee` is now protected from "Quit when last window closes", keeping the Marquee menu bar helper running when its window is dismissed.
 
 ### Changed
 
-- **Settings Redesign Polish**: Redesigned About tab with resource links (Help Center, What's New, Report an Issue), custom outline icons, and app bundle icons in settings.
+- **Settings Redesign Polish**: Redesigned About tab with resource links (Help Center, What's New, Report an Issue), custom outline Docker/system icons, and app bundle icons in settings.
+- **Search Fields**: Search fields in Classic appearance use the same text background as the menu's search field.
+- **Live Port Count & Menu Bar Stats**: The listening port count in the menu bar now follows your Ports refresh setting (even at 1s) instead of updating every 15 seconds. Repeat scans reuse previous metadata when listeners are unchanged, saving CPU wakeups.
 - **Confirmation Overlay**: Updated styling for quit and kill action confirmation dialogs to match the macOS dark surface aesthetic.
 - **Performance Optimizations**: Streamlined background refresh loops for menu bar stats and port scanning to reduce CPU wakeups when idle.
-- **Updated Demo & Marketing Assets**: Refreshed demo video and screenshots showcasing the Ports tab, Menu Bar Stats detail panel, and new Settings dashboard.
-
+- **Updated Demo & Marketing Assets**: Refreshed demo video and marketing screenshots showcasing the Ports tab, Menu Bar Stats detail panel, and new Settings dashboard.
 
 ## 1.2.1
 
 ### Added
 
 - Ports tab: **Settings ▸ Ports ▸ Enable port killing** adds an Apps / Ports switch above the main button in the menu. Every option in the tab stays disabled until it's enabled, and the switch disappears when it's off. The last tab used is remembered (`PopoverTab`, `QuitXPopoverTab` in `UserDefaults`).
-- The Ports list (`PortListViewModel`, `PortService`, `DockerService`) shows TCP listeners (UDP optional) with app, command, folder, Docker container, exposure, memory and CPU, and refreshes on its own every 1, 2, 3, 5 or 10 seconds while open.
+- The Ports list (`PortListViewModel`, `PortService`, `DockerService`) shows TCP listeners (UDP optional) with app, command, folder, Docker container, exposure, memory and CPU, refreshes on its own every 2, 3, 5 or 10 seconds while open, and updates CPU and memory every 2 seconds.
 - The main button follows the tab: Quit / Force Quit for apps, Kill / Force Kill for ports, with the same confirmation card. Hold ⌥ or set **Default: Force kill** for SIGKILL.
 - Kill escalates SIGTERM to SIGKILL only when needed, verifies the port was released, kills dev-server process trees, stops Homebrew services with `brew services` and Docker ports by stopping the container (10 s grace). Process identity is rechecked before every signal; macOS services and apps with windows are protected.
 - Row menu: Details, Trace Process Tree, Interrupt (SIGINT), exclude, copy port / PID / command, Open Terminal Here, Open in Browser.
 - Settings ▸ Ports: refresh interval, UDP, listening port count in the menu bar stats item (next to CPU, memory, GPU and battery; click it to open the Ports tab), grouping (project, Docker, process), sort, default signal, confirmation, select-all default, and a shortcut to the excluded ports. **Add Ports…** in Settings ▸ Exclude ▸ Ports opens a window (`ExcludePortPickerView`) to pick listening ports or type ports and ranges with validation (`PortEntryParser`).
-- Settings redesign: a fixed 860×600 window with a Help-style sidebar and search (`SettingsRootView`, `SettingsNavigationModel`). It opens on **Overview**, a card per feature (`SettingsFeature`) showing its current state (On, Off, Normal, item counts) that jumps to the page when clicked. Pages are grouped into App (General, Shortcuts), Quitting (Automation, Advanced, Exclude), Developer (Ports) and QuitX (About). Each page is a plain scrolling list with section titles instead of the old right-aligned labels in gray boxes; only Exclude keeps its framed list. The preference toolbar, per-tab window resizing and the unused `preferences-general` / `preferences-shortcuts` toolbar icons are gone.
-- More Apps ▸ **Marquee** in Settings (`MarqueePromoView`): Marquee's icon, tagline, features and links to its GitHub project, latest release and website. The Overview ends with a Marquee banner.
-- Search fields in Classic appearance use the same text background as the menu's search field.
 - Gear menu on the Ports tab: Refresh Ports, Export Port Diagnostics (secrets redacted), Copy Recent Listener History, Port Settings.
-- Faster port discovery: `SocketScanner` reads listening sockets and working directories from the kernel (libproc) in a few milliseconds instead of spawning `lsof` (about 320 ms); `ps` only covers listeners and their parents, and `docker ps` runs only when a container runtime owns a port. Background scans for the menu bar count follow the Ports refresh interval. When the listeners haven't changed, a scan reuses the previous metadata (for up to 10 s) and only refreshes memory, so even a 1-second interval costs a few milliseconds.
+- Faster port discovery: `SocketScanner` reads listening sockets and working directories from the kernel (libproc) in a few milliseconds instead of spawning `lsof` (about 320 ms); `ps` only covers listeners and their parents, and `docker ps` runs only when a container runtime owns a port. Background scans for the menu bar count run every 15 s.
 - Excluded ports are managed in Settings ▸ Exclude, which shows Apps / Ports tabs when port killing is on (remembered between visits). Each excluded port shows the app listening on it, with select, remove and Add Ports….
 - Less CPU when idle: Quit When Last Window Closes no longer rebuilds its app list every second. It used to query LaunchServices once per running app per second (`NSRunningApplication.isTerminated` and friends) and compare every app with every other app; it now keeps an index that is rebuilt only when apps launch or quit (or at most once a minute), and checks liveness with `kill(pid, 0)`. The app list and Auto Quit skip the same LaunchServices round trips.
 - Fixed: switching between the Apps and Ports tabs could freeze and crash QuitX (an endless layout pass caused by a per-frame loading animation and resizing the menu during layout).
 - Fixed: the Ports view model no longer reads a main-actor singleton in a default argument (Swift 6 warning).
-- Settings ▸ General ▸ Menu Bar: **Refresh** picks how often menu bar stats update (every 1, 2, 3, 5 or 10 seconds, `menuBarRefreshSeconds`). The stats window (click a stat) uses the same interval and feeds the menu bar while it's open, so both show identical numbers.
+- Settings ▸ General ▸ Menu Bar: **Refresh** picks how often menu bar stats update (every 1, 2, 3, 5 or 10 seconds, `menuBarRefreshSeconds`).
 - Removed **Save power on battery**. It slowed menu bar stats (now the Refresh setting), slowed live checks, and silently halved Auto Quit timeouts on battery, which made timers unpredictable. QuitX now follows macOS Low Power Mode instead: menu bar stats wait at least 5 s and CPU hog checks 10 s while it's on. Auto Quit always uses the timeout you set.
 - Removed the Docker stop timeout setting; Docker containers get a fixed 10 s to stop before Docker kills them.
 - Website: live total download count from GitHub Releases in the hero, refreshed every 5 minutes.

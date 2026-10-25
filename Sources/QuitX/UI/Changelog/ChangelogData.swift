@@ -2,13 +2,16 @@ import Foundation
 
 extension ChangelogProvider {
     static let appReleases: [ReleaseChangelog] = [
-        ReleaseChangelog("1.2.2", "Settings redesign polish & Marquee window protection", [
+        ReleaseChangelog("1.2.2", "Settings redesign, Marquee integration & optimizations", [
             ("New Features", [
+                "**Settings Redesign**: Settings now features a fixed 860×600 window with a Help-style sidebar, instant search, and an Overview dashboard showing each feature's status.",
+                "**More Apps ▸ Marquee**: Explore Marquee, a menu bar companion app for screenshots and clipboard history, right from Settings.",
                 "**Marquee Window Protection**: Added `io.github.treposting.marquee` to protected apps, keeping Marquee active in the menu bar when closing its last window."
             ]),
             ("Improvements", [
                 "**Settings Polish**: Redesigned About tab resource cards with quick links to Help, Updates, and GitHub issues, and added custom outline icons.",
-                "**Menu Bar & Port Performance**: Optimized background refresh loops for menu bar stats and port scanners to minimize CPU wakeups.",
+                "**Live Port Count**: Menu bar listening port count now follows your Ports refresh setting (down to 1s) and caches metadata when listeners haven't changed.",
+                "**Performance Optimizations**: Optimized background refresh loops for menu bar stats and port scanners to minimize CPU wakeups.",
                 "**Refined Confirmations**: Consistent dark surface styling for quit and kill action confirmation overlays."
             ])
         ]),
@@ -22,15 +25,12 @@ extension ChangelogProvider {
                 "**Exclude Ports**: Settings ▸ Exclude gets an Apps / Ports switch. Pick ports from the ones listening now or type them, with ranges like 8000-8010.",
                 "**Light on Your Mac**: Ports are read straight from the kernel in a few milliseconds instead of running lsof, so scanning barely uses any CPU.",
                 "**Quieter in the Background**: Quit When Last Window Closes and Auto Quit no longer ask macOS about every running app every second, so QuitX stays near 0% CPU when idle.",
-                "**Listening Port Count**: Optionally show how many ports are listening in the menu bar stats, next to CPU and memory.",
-                "**New Settings**: Settings now has a sidebar like Help and opens on an Overview of every feature, each with its current state. Click a card to jump straight to it, or search settings by any word.",
-                "**More Apps**: Meet Marquee, a free, open-source menu bar app for screenshots, recordings and clipboard history, under More Apps in Settings."
+                "**Listening Port Count**: Optionally show how many ports are listening in the menu bar stats, next to CPU and memory."
             ]),
             ("Improvements", [
                 "**Remembers Your Tab**: The menu opens on the tab you used last.",
                 "**Menu Bar Refresh**: Choose how often menu bar stats update, from every second to every 10 seconds. QuitX also slows down by itself in Low Power Mode, so Save power on battery is gone.",
                 "**Matching Stats**: The stats window you open from the menu bar now updates at the same pace as the menu bar and shows the exact same CPU and memory numbers.",
-                "**Live Port Count**: The listening port count in the menu bar now follows your Ports refresh setting, even at every second, instead of updating every 15 seconds. Repeat scans reuse what QuitX already knows, so it stays light.",
                 "**Wider Menu and Settings**: More room for app and port names.",
                 "**Faster Update Install**: Preparing a downloaded update no longer re-verifies the whole disk image, and new releases use a faster disk image format.",
                 "**Clear Menu Item Labels**: About and Quit menu items in the menu bar right-click menu, popover gear menu, and Help view are now explicitly labeled **About QuitX** and **Quit QuitX**."
