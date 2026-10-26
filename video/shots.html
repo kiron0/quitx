@@ -1,188 +1,38 @@
 <!doctype html>
-<html lang="en">
+<html class="pg-shots m-0 overflow-hidden w-[1440px] h-[900px] bg-[#0B0A09]" lang="en">
   <head>
     <meta charset="utf-8" />
     <title>QuitX product shots</title>
-    <link rel="stylesheet" href="kit.css" />
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="fonts.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
     <style type="text/tailwindcss">
       @theme {
         --color-gold: #febc33;
         --color-ink: #f5f2ec;
         --color-muted: rgba(245, 242, 236, 0.62);
       }
-      * {
-        @apply box-border;
-      }
-      html,
-      body {
-        @apply m-0;
-        @apply w-[1440px];
-        @apply h-[900px];
-        @apply overflow-hidden;
-        @apply bg-[#0B0A09];
-      }
-      body {
-        font-family: "Inter", system-ui, sans-serif;
-        color: var(--color-ink);
-        -webkit-font-smoothing: antialiased;
-        @apply leading-[normal];
-      }
-      .wall {
-        background:
-          radial-gradient(
-            60% 75% at 82% 8%,
-            rgba(254, 188, 51, 0.55),
-            transparent 62%
-          ),
-          radial-gradient(
-            55% 65% at 100% 100%,
-            rgba(214, 92, 26, 0.55),
-            transparent 60%
-          ),
-          radial-gradient(
-            70% 80% at 0% 100%,
-            rgba(70, 38, 14, 0.9),
-            transparent 65%
-          ),
-          linear-gradient(160deg, #1a1511 0%, #120f0c 45%, #24160c 100%);
-      }
-      .menubar {
-        @apply absolute;
-        @apply left-0;
-        @apply right-0;
-        @apply top-0;
-        @apply h-[28px];
-        z-index: 5;
-        @apply flex;
-        @apply items-center;
-        @apply gap-[20px];
-        padding: 0 18px;
-        @apply bg-[rgba(18,_14,_10,_.38)];
-        backdrop-filter: blur(30px) saturate(1.4);
-        @apply text-[13px];
-        @apply font-medium;
-        @apply text-[rgba(255,255,255,.92)];
-      }
-      .menubar b {
-        @apply font-bold;
-      }
-      .menubar .right {
-        @apply ml-auto;
-        @apply flex;
-        @apply items-center;
-        @apply gap-[14px];
-      }
-      .menubar svg {
-        @apply block;
-      }
-      .qx {
-        @apply relative;
-        @apply w-[28px];
-        @apply h-[22px];
-        @apply rounded-[5px];
-        @apply grid;
-        @apply place-items-center;
-      }
-      .qx.active,
-      .qx-stats.active {
-        @apply bg-[rgba(255,255,255,.22)];
-      }
-      .qx img {
-        @apply w-[17px];
-        @apply h-[17px];
-        filter: invert(1);
-      }
-      .qx .dot {
-        @apply absolute;
-        @apply right-[2px];
-        @apply top-[1px];
-        @apply w-[7px];
-        @apply h-[7px];
-        @apply rounded-full;
-        @apply bg-[#FF453A];
-        box-shadow: 0 0 0 1px rgba(20, 14, 10, 0.6);
-      }
-      .copy {
-        transform: translateY(-50%);
-        z-index: 3;
-      }
-      .eyebrow {
-        font: 600 13px/1 "Inter";
-      }
-      .eyebrow img {
-        @apply w-[26px];
-        @apply h-[26px];
-      }
-      h1 {
-        margin: 22px 0 18px;
-        font-family: "Inter Display", "Inter", sans-serif;
-        line-height: 1.03;
-      }
-      h1 span {
-        @apply text-[var(--color-gold)];
-      }
-      .copy p {
-        @apply m-0;
-        @apply text-[19px];
-        line-height: 1.55;
-        @apply text-[var(--color-muted)];
-      }
-      .chip {
-        padding: 9px 14px;
-        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-      }
-      .chip kbd {
-        font: 600 12px/1 "Inter";
-        padding: 4px 7px;
-        @apply rounded-[6px];
-        @apply bg-[rgba(255,255,255,.12)];
-      }
-      .ui {
-        @apply absolute;
-        z-index: 4;
-      }
-      .z {
-        zoom: 1.6;
-      }
-      .z14 {
-        zoom: 1.4;
-      }
-      .label {
-        font: 600 13px/1 "Inter";
-      }
-      .keycap {
-        @apply inline-grid;
-        @apply place-items-center;
-        @apply min-w-[60px];
-        @apply h-[60px];
-        padding: 0 16px;
-        @apply rounded-[14px];
-        font: 600 26px/1 "Inter";
-        @apply text-[#fff];
-        background: linear-gradient(#3a383b, #2a292b);
-        box-shadow:
-          inset 0 1px 0 rgba(255, 255, 255, 0.12),
-          0 3px 0 #151415,
-          0 10px 22px rgba(0, 0, 0, 0.35);
-      }
-      .wave i {
-        @apply w-[6px];
-        @apply rounded-[3px];
-        background: linear-gradient(#ffd271, #e89b00);
+      @layer base {
+        :root {
+          --qx-gold: #FEBC33;
+          --qx-gold-deep: #E89B00;
+          --qx-ink: rgba(255, 255, 255, .9);
+          --qx-sub: rgba(235, 235, 245, .56);
+          --qx-panel: #2B2A2D;
+          --qx-red: #FF453A;
+        }
       }
     </style>
   </head>
-  <body>
+  <body class="m-0 overflow-hidden w-[1440px] h-[900px] bg-[#0B0A09] font-['Inter',system-ui,sans-serif] text-[var(--color-ink)] antialiased leading-[normal]">
     <script src="kit.js"></script>
     <div id="root"></div>
     <script>
       const A = "../site/assets/";
       const S = QX.S;
       const mb = (o = {}) =>
-        `<div class="menubar"><b>Finder</b><span>File</span><span>Edit</span><span>View</span><span>Go</span><span>Window</span><span>Help</span><div class="right">${o.stats ? `<span id="statsItem">${QX.stats(o.stats)}</span>` : ""}<div class="qx" id="qx"><img src="${A}status-icon.png" alt="">${o.dot ? '<span class="dot"></span>' : ""}</div>${o.stats ? "" : '<svg width="24" height="12" viewBox="0 0 22 12">' + S.batt.replace(/<\/?svg[^>]*>/g, "") + "</svg>"}<svg width="17" height="13" viewBox="0 0 18 14"><path d="M9 12.6l2.2-2.4a3.2 3.2 0 0 0-4.4 0zM4.6 8.1a6.2 6.2 0 0 1 8.8 0l1.4-1.5a8.3 8.3 0 0 0-11.6 0zM1.6 4.9a10.6 10.6 0 0 1 14.8 0L17.8 3.4A12.7 12.7 0 0 0 .2 3.4z" fill="#fff"/></svg><span>Fri Oct 23&nbsp;&nbsp;9:41 AM</span></div></div>`;
+        `<div class="menubar py-0 px-[18px] gap-[20px] absolute left-0 right-0 top-0 h-[28px] z-[5] flex items-center bg-[rgba(18,14,10,.38)] [backdrop-filter:blur(30px)_saturate(1.4)] text-[13px] font-[var(--font-weight-medium)] text-[rgba(255,255,255,.92)]"><b class="font-bold">Finder</b><span>File</span><span>Edit</span><span>View</span><span>Go</span><span>Window</span><span>Help</span><div class="right ml-auto gap-[14px] flex items-center">${o.stats ? `<span id="statsItem">${QX.stats(o.stats)}</span>` : ""}<div class="qx place-items-center relative w-[28px] h-[22px] rounded-[5px] grid [&.active]:bg-[rgba(255,255,255,.22)]" id="qx"><img class="w-[17px] h-[17px] [filter:invert(1)]" src="${A}status-icon.png" alt="">${o.dot ? '<span class="dot absolute right-[2px] top-[1px] w-[7px] h-[7px] rounded-full bg-[#FF453A] shadow-[0_0_0_1px_rgba(20,14,10,0.6)]"></span>' : ""}</div>${o.stats ? "" : '<svg class="block" width="24" height="12" viewBox="0 0 22 12">' + S.batt.replace(/<\/?svg[^>]*>/g, "") + "</svg>"}<svg class="block" width="17" height="13" viewBox="0 0 18 14"><path d="M9 12.6l2.2-2.4a3.2 3.2 0 0 0-4.4 0zM4.6 8.1a6.2 6.2 0 0 1 8.8 0l1.4-1.5a8.3 8.3 0 0 0-11.6 0zM1.6 4.9a10.6 10.6 0 0 1 14.8 0L17.8 3.4A12.7 12.7 0 0 0 .2 3.4z" fill="#fff"/></svg><span>Fri Oct 23&nbsp;&nbsp;9:41 AM</span></div></div>`;
       const copy = (eyebrow, h, p, chips = []) =>
-        `<div class="copy absolute left-[104px] top-[50%] w-[560px]"><div class="eyebrow inline-flex items-center gap-[10px] tracking-[.08em] uppercase text-[var(--color-gold)]"><img src="${A}icon.png" alt="">${eyebrow}</div><h1 class="font-bold text-[58px] tracking-[-.035em]">${h}</h1><p>${p}</p>${chips.length ? `<div class="chips flex gap-[10px] mt-[30px] flex-wrap">${chips.map((c) => `<span class="chip inline-flex items-center gap-[8px] rounded-[999px] bg-[rgba(255,255,255,.07)] text-[14px] font-medium text-[rgba(255,255,255,.85)]">${c}</span>`).join("")}</div>` : ""}</div>`;
+        `<div class="copy absolute top-[50%] left-[104px] w-[560px] [transform:translateY(-50%)] z-[3]"><div class="eyebrow gap-[10px] inline-flex items-center tracking-[.08em] text-[var(--color-gold)] uppercase font-semibold text-[13px] leading-[1] font-['Inter']"><img class="w-[26px] h-[26px]" src="${A}icon.png" alt="">${eyebrow}</div><h1 class="mx-0 mt-[22px] mb-[18px] text-[58px] font-bold tracking-[-.035em] font-['Inter_Display','Inter',sans-serif] leading-[1.03]">${h}</h1><p class="m-0 text-[19px] leading-[1.55] text-[var(--color-muted)]">${p}</p>${chips.length ? `<div class="chips mt-[30px] gap-[10px] flex flex-wrap">${chips.map((c) => `<span class="chip py-[9px] px-[14px] gap-[8px] inline-flex items-center rounded-[999px] bg-[rgba(255,255,255,.07)] text-[14px] font-[var(--font-weight-medium)] text-[rgba(255,255,255,.85)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]">${c}</span>`).join("")}</div>` : ""}</div>`;
       const most = QX.APPS.filter(
         (a) => !["Reminders", "Podcasts", "Books"].includes(a.n),
       );
@@ -192,7 +42,7 @@
           mb: {},
           copy: copy(
             "QuitX for macOS",
-            "Quit everything.<br><span>Keep what matters.</span>",
+            "Quit everything.<br><span class='text-[var(--color-gold)]'>Keep what matters.</span>",
             "Every running app in one menu bar list, grouped with its windows and helpers. Quit one, some, or all of them in a click.",
             [
               "Free &amp; open source",
@@ -208,9 +58,9 @@
           mb: {},
           copy: copy(
             "Normal quit or force quit",
-            "Stuck app?<br><span>Hold Option.</span>",
+            "Stuck app?<br><span class='text-[var(--color-gold)]'>Hold Option.</span>",
             "Quit asks apps nicely, so they can save your work. Hold ⌥ and every button turns into Force Quit. Or make Force Quit the default in Settings.",
-            ["<kbd>⌥</kbd> Force quit on demand", "Default: Normal or Force"],
+            ["<kbd class='py-[4px] px-[7px] font-semibold text-[12px] leading-[1] font-[&#39;Inter&#39;] rounded-[6px] bg-[rgba(255,255,255,.12)]'>⌥</kbd> Force quit on demand", "Default: Normal or Force"],
           ),
           ui: [
             {
@@ -224,7 +74,7 @@
           mb: {},
           copy: copy(
             "Confirm before quit",
-            "One click.<br><span>No accidents.</span>",
+            "One click.<br><span class='text-[var(--color-gold)]'>No accidents.</span>",
             "A quick confirmation before Quit All, and optionally before single quits and restarts. Escape cancels, Return confirms.",
             ["Quit All confirmation", "Single-app confirmation"],
           ),
@@ -243,7 +93,7 @@
           mb: {},
           copy: copy(
             "Background apps",
-            "See what’s<br><span>hiding.</span>",
+            "See what’s<br><span class='text-[var(--color-gold)]'>hiding.</span>",
             "Show helpers and agents that never appear in the Dock, grouped so 40 identical processes take one row. Toggle with ⌘B.",
             ["View Background Apps", "Grouped instances"],
           ),
@@ -293,7 +143,7 @@
           mb: {},
           copy: copy(
             "Exclude apps",
-            "Some apps<br><span>never quit.</span>",
+            "Some apps<br><span class='text-[var(--color-gold)]'>never quit.</span>",
             "Add an app from its ••• menu and it stays out of every manual and automatic quit. Music apps can be protected with one switch.",
             ["Add to Exclude List", "Never quit music apps"],
           ),
@@ -326,7 +176,7 @@
           mb: { stats: { cpu: "12%", mem: "9.4 GB", gpu: "8%", bat: "82%" } },
           copy: copy(
             "Menu bar stats",
-            "Your Mac’s vitals,<br><span>always in view.</span>",
+            "Your Mac’s vitals,<br><span class='text-[var(--color-gold)]'>always in view.</span>",
             "Live CPU, memory, GPU and battery right in the menu bar. Show any mix, as icons or text, and click a stat for a detailed view.",
             ["CPU", "Memory", "GPU", "Battery"],
           ),
@@ -354,7 +204,7 @@
           mb: {},
           copy: copy(
             "Health alerts",
-            "Too hot?<br><span>You get a heads-up.</span>",
+            "Too hot?<br><span class='text-[var(--color-gold)]'>You get a heads-up.</span>",
             "When CPU or memory stays over your limit, QuitX warns you and offers to quit inactive apps. Never the app you’re using, never without asking.",
             ["CPU over 80%", "Memory pressure"],
           ),
@@ -379,7 +229,7 @@
           mb: {},
           copy: copy(
             "Quit on sleep",
-            "Wake up to<br><span>a clean slate.</span>",
+            "Wake up to<br><span class='text-[var(--color-gold)]'>a clean slate.</span>",
             "Quit open apps when your Mac goes to sleep, only between the hours you choose. Daytime naps leave everything as it was.",
             ["12 AM to 6 AM by default", "12 or 24-hour clock"],
           ),
@@ -399,7 +249,7 @@
           mb: {},
           copy: copy(
             "Classic or Liquid Glass",
-            "Your Mac,<br><span>your look.</span>",
+            "Your Mac,<br><span class='text-[var(--color-gold)]'>your look.</span>",
             "Pick the solid classic look or translucent Liquid Glass on macOS 26. Every window and menu follows along.",
             ["Classic", "Liquid Glass"],
           ),
@@ -428,7 +278,7 @@
           mb: {},
           copy: copy(
             "Sounds",
-            "Pew pew.<br><span>Gone.</span>",
+            "Pew pew.<br><span class='text-[var(--color-gold)]'>Gone.</span>",
             "A short arcade laser plays every time you vaporize an app. Love it or switch it off in Settings.",
             ["Play cool sounds", "On by default"],
           ),
@@ -445,7 +295,7 @@
             {
               x: 950,
               y: 650,
-              html: `<div class="wave flex items-center gap-[5px] h-[80px]">${[18, 34, 56, 74, 48, 66, 40, 58, 30, 46, 24, 36, 16, 26, 12].map((h) => `<i style="height:${h}px"></i>`).join("")}</div>`,
+              html: `<div class="wave gap-[5px] flex items-center h-[80px]">${[18, 34, 56, 74, 48, 66, 40, 58, 30, 46, 24, 36, 16, 26, 12].map((h) => `<i class="w-[6px] rounded-[3px] bg-[linear-gradient(#ffd271,#e89b00)]" style="height:${h}px"></i>`).join("")}</div>`,
             },
           ],
         }),
@@ -453,7 +303,7 @@
           mb: { dot: true },
           copy: copy(
             "In-app updates",
-            "Updates itself,<br><span>straight from GitHub.</span>",
+            "Updates itself,<br><span class='text-[var(--color-gold)]'>straight from GitHub.</span>",
             "A red dot tells you a new version shipped. QuitX downloads it from GitHub Releases, checks the checksum and code signature, then swaps itself in place.",
             ["No update server", "Signature verified", "Settings carry over"],
           ),
@@ -479,7 +329,7 @@
             {
               x: 770,
               y: 300,
-              html: `<div class="qx-win" style="width:412px;padding:0 22px 18px;background:#2A292C"><div style="height:34px;display:flex;align-items:center;justify-content:center;position:relative;font-size:13px;font-weight:600;color:rgba(255,255,255,.88)"><span class="lights" style="position:absolute;left:-8px"><i style="background:#FF5F57"></i><i style="background:#58565A"></i><i style="background:#58565A"></i></span>Update</div><div style="display:flex;align-items:flex-start;gap:16px;margin-top:10px"><div style="position:relative;flex:none"><img src="${A}icon.png" style="width:64px;height:64px;display:block" alt=""><span style="position:absolute;right:3px;bottom:3px;width:22px;height:22px;border-radius:50%;background:#30D158;display:grid;place-items:center;box-shadow:0 0 0 2px #2A292C"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M2.4 6.3l2.3 2.3L9.8 3.4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div><div><div style="margin:2px 0 6px;font-size:15px;font-weight:700">Ready to Install v1.2.1</div><div style="font-size:12.5px;color:rgba(255,255,255,.8);line-height:1.45">The latest version has been downloaded and verified.</div><div style="font-size:12px;color:rgba(255,255,255,.52);margin-top:4px">QuitX will restart to finish installing the update.</div></div></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px"><span style="height:30px;padding:0 15px;border-radius:7px;display:inline-flex;align-items:center;font-size:13px;font-weight:500;background:rgba(255,255,255,.1)">Later</span><span style="height:30px;padding:0 15px;border-radius:7px;display:inline-flex;align-items:center;font-size:13px;font-weight:600;background:#FEBC33;color:rgba(0,0,0,.88)">Restart &amp; Update</span></div></div>`,
+              html: `<div class="qx-win overflow-hidden rounded-[12px] bg-[#262527] text-[#EDEBE7] font-['Inter',-apple-system,system-ui,sans-serif] shadow-[0_0_0_.5px_rgba(255,255,255,.14),0_0_0_1px_rgba(0,0,0,.6),0_36px_72px_rgba(0,0,0,.5),0_6px_18px_rgba(0,0,0,.3)]" style="width:412px;padding:0 22px 18px;background:#2A292C"><div style="height:34px;display:flex;align-items:center;justify-content:center;position:relative;font-size:13px;font-weight:600;color:rgba(255,255,255,.88)"><span class="lights gap-[8px] flex" style="position:absolute;left:-8px"><i class="w-[12px] h-[12px] rounded-[50%] block shadow-[inset_0_0_0_.5px_rgba(0,0,0,.25)]" style="background:#FF5F57"></i><i class="w-[12px] h-[12px] rounded-[50%] block shadow-[inset_0_0_0_.5px_rgba(0,0,0,.25)]" style="background:#58565A"></i><i class="w-[12px] h-[12px] rounded-[50%] block shadow-[inset_0_0_0_.5px_rgba(0,0,0,.25)]" style="background:#58565A"></i></span>Update</div><div style="display:flex;align-items:flex-start;gap:16px;margin-top:10px"><div style="position:relative;flex:none"><img src="${A}icon.png" style="width:64px;height:64px;display:block" alt=""><span style="position:absolute;right:3px;bottom:3px;width:22px;height:22px;border-radius:50%;background:#30D158;display:grid;place-items:center;box-shadow:0 0 0 2px #2A292C"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M2.4 6.3l2.3 2.3L9.8 3.4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div><div><div style="margin:2px 0 6px;font-size:15px;font-weight:700">Ready to Install v1.2.1</div><div style="font-size:12.5px;color:rgba(255,255,255,.8);line-height:1.45">The latest version has been downloaded and verified.</div><div style="font-size:12px;color:rgba(255,255,255,.52);margin-top:4px">QuitX will restart to finish installing the update.</div></div></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px"><span style="height:30px;padding:0 15px;border-radius:7px;display:inline-flex;align-items:center;font-size:13px;font-weight:500;background:rgba(255,255,255,.1)">Later</span><span style="height:30px;padding:0 15px;border-radius:7px;display:inline-flex;align-items:center;font-size:13px;font-weight:600;background:#FEBC33;color:rgba(0,0,0,.88)">Restart &amp; Update</span></div></div>`,
             },
           ],
         }),
@@ -487,7 +337,7 @@
           mb: { stats: { ports: 6, cpu: "12%", mem: "9.4 GB" } },
           copy: copy(
             "Port killing",
-            "Port in use?<br><span>Free it in a click.</span>",
+            "Port in use?<br><span class='text-[var(--color-gold)]'>Free it in a click.</span>",
             "Turn on Ports in Settings and every listening port shows up next to your apps: dev servers, databases and Docker containers. Kill one, some, or all, with the process tree behind it.",
             ["Live refresh", "Docker aware", "SIGTERM, then SIGKILL"],
           ),
@@ -505,7 +355,7 @@
           mb: { stats: { ports: 6, cpu: "12%", mem: "9.4 GB" } },
           copy: copy(
             "Ports settings",
-            "Off until<br><span>you want it.</span>",
+            "Off until<br><span class='text-[var(--color-gold)]'>you want it.</span>",
             "Port killing stays off until you switch it on. Then pick how often the list refreshes, show the port count in the menu bar, and exclude ports that must never be touched.",
             ["Off by default", "Exclude ports", "Confirm before kill"],
           ),
@@ -527,115 +377,132 @@
       const hash = (location.hash || "#hero").slice(1);
       const bare = hash.endsWith("-bare");
       const id = hash.replace("-bare", "");
-      const sc = SCENES[id]();
-      const root = document.getElementById("root");
-      root.innerHTML = `<div class="wall absolute inset-0"></div>${mb(sc.mb)}${bare ? "" : sc.copy}`;
-      const qx = document.getElementById("qx");
-      const qr = qx.getBoundingClientRect();
-      const cx = qr.left + qr.width / 2;
-      for (const u of sc.ui) {
-        const el = document.createElement("div");
-        el.className = "ui";
-        el.innerHTML = u.html;
-        if (u.zoom) el.style.zoom = u.zoom;
-        root.appendChild(el);
-        const z = u.zoom || 1;
-        if (u.anchor === "qx" && !u.menu) {
-          qx.classList.add("active");
-          const pw = u.w || 330;
-          const left = Math.min(cx - (pw / 2) * z, 1440 - pw * z - 8);
-          const arrow = el.querySelector(".arrow");
-          if (arrow) arrow.style.left = (cx - left) / z + "px";
-          el.style.left = left / z + "px";
-          el.style.top = (qr.bottom + 1) / z + "px";
-        } else if (u.anchor === "qx" && u.menu) {
-          qx.classList.add("active");
-          el.style.left = Math.min(qr.left - 4, 1440 - 250 * z - 10) / z + "px";
-          el.style.top = (qr.bottom + 4) / z + "px";
-        } else if (u.below === "gear") {
-          const g = document
-            .querySelector('[data-role="gear"]')
-            .getBoundingClientRect();
-          el.style.left = (g.left - 8) / z + "px";
-          el.style.top = (g.bottom + 4) / z + "px";
-          const mh = el.getBoundingClientRect().height;
-          if (g.bottom + 4 + mh > 892)
-            el.style.top = (g.top - 4 - mh) / z + "px";
-          if (g.left - 8 + 236 * z > 1430)
-            el.style.left = (1430 - 236 * z) / z + "px";
-        } else if (u.besidePort) {
-          const rr = document
-            .querySelector(`[data-port="${u.besidePort}"] .more`)
-            .getBoundingClientRect();
-          el.querySelector(".qx-menu").style.width = (u.w || 236) + "px";
-          const w = (u.w || 236) * z;
-          el.style.left = (rr.left - w - 6) / z + "px";
-          el.style.top = (rr.top - 4) / z + "px";
-        } else if (u.beside) {
-          const rr = document
-            .querySelector(`[data-app="${u.beside}"] .more`)
-            .getBoundingClientRect();
-          const w = 236 * z;
-          let left = rr.left - w - 6;
-          el.style.left = left / z + "px";
-          el.style.top = (rr.top - 4) / z + "px";
-        } else {
-          el.style.left = u.x / z + "px";
-          el.style.top = u.y / z + "px";
+      const twSettle = async () => {
+        let last = "";
+        for (let i = 0; i < 120; i++) {
+          await new Promise((r) => requestAnimationFrame(r));
+          const now = [...document.querySelectorAll("style:not([type])")]
+            .map((s) => s.textContent.length)
+            .join();
+          if (i > 1 && now === last) return;
+          last = now;
         }
-        if (u.label && !bare) {
-          const r = el.getBoundingClientRect();
-          root.insertAdjacentHTML(
-            "beforeend",
-            `<div class="label absolute tracking-[.08em] uppercase text-[rgba(255,255,255,.75)]" style="left:${r.left}px;top:${r.top - 26}px">${u.label}</div>`,
-          );
-        }
-      }
-      if (sc.ring)
-        document
-          .getElementById(sc.ring)
-          .firstElementChild.classList.add("active");
-      const FOCUS = {
-        force: ['[data-role="quit"]', '[data-app="Maps"]'],
-        confirm: [".qx-confirm"],
-        background: ['[data-app="Docker Desktop"]', ".qx-menu"],
-        exclude: [".qx-menu", '[data-app="Music"] .pw'],
-        hero: ['[data-role="quit"]', '[data-app="Messages"]'],
-        ports: [".qx-pop"],
       };
-      window.FOCUS_RECT = (() => {
-        const sels = FOCUS[id];
-        if (!sels) return null;
-        let x0 = 1e9,
-          y0 = 1e9,
-          x1 = -1e9,
-          y1 = -1e9;
-        sels.forEach((sel) =>
-          document.querySelectorAll(sel).forEach((el) => {
+      const build = () => {
+        const sc = SCENES[id]();
+        const root = document.getElementById("root");
+        root.innerHTML = `<div class="wall inset-0 absolute bg-[radial-gradient(60%_75%_at_82%_8%,rgba(254,188,51,0.55),transparent_62%),radial-gradient(55%_65%_at_100%_100%,rgba(214,92,26,0.55),transparent_60%),radial-gradient(70%_80%_at_0%_100%,rgba(70,38,14,0.9),transparent_65%),linear-gradient(160deg,#1a1511_0%,#120f0c_45%,#24160c_100%)]"></div>${mb(sc.mb)}${bare ? "" : sc.copy}`;
+        const qx = document.getElementById("qx");
+        const qr = qx.getBoundingClientRect();
+        const cx = qr.left + qr.width / 2;
+        for (const u of sc.ui) {
+          const el = document.createElement("div");
+          el.className = "ui absolute z-[4]";
+          el.innerHTML = u.html;
+          if (u.zoom) el.style.zoom = u.zoom;
+          root.appendChild(el);
+          const z = u.zoom || 1;
+          if (u.anchor === "qx" && !u.menu) {
+            qx.classList.add("active");
+            const pw = u.w || 330;
+            const left = Math.min(cx - (pw / 2) * z, 1440 - pw * z - 8);
+            const arrow = el.querySelector(".arrow");
+            if (arrow) arrow.style.left = (cx - left) / z + "px";
+            el.style.left = left / z + "px";
+            el.style.top = (qr.bottom + 1) / z + "px";
+          } else if (u.anchor === "qx" && u.menu) {
+            qx.classList.add("active");
+            el.style.left = Math.min(qr.left - 4, 1440 - 250 * z - 10) / z + "px";
+            el.style.top = (qr.bottom + 4) / z + "px";
+          } else if (u.below === "gear") {
+            const g = document
+              .querySelector('[data-role="gear"]')
+              .getBoundingClientRect();
+            el.style.left = (g.left - 8) / z + "px";
+            el.style.top = (g.bottom + 4) / z + "px";
+            const mh = el.getBoundingClientRect().height;
+            if (g.bottom + 4 + mh > 892)
+              el.style.top = (g.top - 4 - mh) / z + "px";
+            if (g.left - 8 + 236 * z > 1430)
+              el.style.left = (1430 - 236 * z) / z + "px";
+          } else if (u.besidePort) {
+            const rr = document
+              .querySelector(`[data-port="${u.besidePort}"] .more`)
+              .getBoundingClientRect();
+            el.querySelector(".qx-menu").style.width = (u.w || 236) + "px";
+            const w = (u.w || 236) * z;
+            el.style.left = (rr.left - w - 6) / z + "px";
+            el.style.top = (rr.top - 4) / z + "px";
+          } else if (u.beside) {
+            const rr = document
+              .querySelector(`[data-app="${u.beside}"] .more`)
+              .getBoundingClientRect();
+            const w = 236 * z;
+            let left = rr.left - w - 6;
+            el.style.left = left / z + "px";
+            el.style.top = (rr.top - 4) / z + "px";
+          } else {
+            el.style.left = u.x / z + "px";
+            el.style.top = u.y / z + "px";
+          }
+          if (u.label && !bare) {
+            const r = el.getBoundingClientRect();
+            root.insertAdjacentHTML(
+              "beforeend",
+              `<div class="label absolute tracking-[.08em] uppercase font-semibold text-[13px] leading-[1] font-['Inter'] text-[rgba(255,255,255,.75)]" style="left:${r.left}px;top:${r.top - 26}px">${u.label}</div>`,
+            );
+          }
+        }
+        if (sc.ring)
+          document
+            .getElementById(sc.ring)
+            .firstElementChild.classList.add("active");
+        const FOCUS = {
+          force: ['[data-role="quit"]', '[data-app="Maps"]'],
+          confirm: [".qx-confirm"],
+          background: ['[data-app="Docker Desktop"]', ".qx-menu"],
+          exclude: [".qx-menu", '[data-app="Music"] .pw'],
+          hero: ['[data-role="quit"]', '[data-app="Messages"]'],
+          ports: [".qx-pop"],
+        };
+        window.FOCUS_RECT = (() => {
+          const sels = FOCUS[id];
+          if (!sels) return null;
+          let x0 = 1e9,
+            y0 = 1e9,
+            x1 = -1e9,
+            y1 = -1e9;
+          sels.forEach((sel) =>
+            document.querySelectorAll(sel).forEach((el) => {
+              const r = el.getBoundingClientRect();
+              x0 = Math.min(x0, r.left);
+              y0 = Math.min(y0, r.top);
+              x1 = Math.max(x1, r.right);
+              y1 = Math.max(y1, r.bottom);
+            }),
+          );
+          return { x0, y0, x1, y1 };
+        })();
+        window.UI_RECT = (() => {
+          let x0 = 1e9,
+            y0 = 1e9,
+            x1 = -1e9,
+            y1 = -1e9;
+          document.querySelectorAll(".ui").forEach((el) => {
             const r = el.getBoundingClientRect();
             x0 = Math.min(x0, r.left);
             y0 = Math.min(y0, r.top);
             x1 = Math.max(x1, r.right);
             y1 = Math.max(y1, r.bottom);
-          }),
-        );
-        return { x0, y0, x1, y1 };
-      })();
-      window.UI_RECT = (() => {
-        let x0 = 1e9,
-          y0 = 1e9,
-          x1 = -1e9,
-          y1 = -1e9;
-        document.querySelectorAll(".ui").forEach((el) => {
-          const r = el.getBoundingClientRect();
-          x0 = Math.min(x0, r.left);
-          y0 = Math.min(y0, r.top);
-          x1 = Math.max(x1, r.right);
-          y1 = Math.max(y1, r.bottom);
-        });
-        return { x0, y0, x1, y1 };
-      })();
-      window.SHOT_READY = true;
+          });
+          return { x0, y0, x1, y1 };
+        })();
+      };
+      build();
+      twSettle().then(() => {
+        build();
+        window.SHOT_READY = true;
+      });
     </script>
   </body>
 </html>

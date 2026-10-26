@@ -1,455 +1,66 @@
 <!doctype html>
-<html lang="en">
+<html class="pg-install m-0 overflow-hidden w-[1200px] h-[750px] bg-[#0B0A09]" lang="en">
   <head>
     <meta charset="utf-8" />
     <title>QuitX install steps</title>
-    <link rel="stylesheet" href="kit.css" />
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="fonts.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
     <style type="text/tailwindcss">
       @theme {
         --color-gold: #febc33;
         --color-blue: #0a63d8;
         --color-ink: #f5f2ec;
       }
-      * {
-        @apply box-border;
-      }
-      html,
-      body {
-        @apply m-0;
-        @apply w-[1200px];
-        @apply h-[750px];
-        @apply overflow-hidden;
-        @apply bg-[#0B0A09];
-      }
-      body {
-        font-family:
-          "Inter",
-          -apple-system,
-          system-ui,
-          sans-serif;
-        color: var(--color-ink);
-        -webkit-font-smoothing: antialiased;
-        @apply leading-[normal];
-      }
-      .wall {
-        @apply absolute;
-        @apply inset-0;
-        background:
-          radial-gradient(
-            60% 75% at 82% 8%,
-            rgba(254, 188, 51, 0.5),
-            transparent 62%
-          ),
-          radial-gradient(
-            55% 65% at 100% 100%,
-            rgba(214, 92, 26, 0.5),
-            transparent 60%
-          ),
-          radial-gradient(
-            70% 80% at 0% 100%,
-            rgba(70, 38, 14, 0.9),
-            transparent 65%
-          ),
-          linear-gradient(160deg, #1a1511 0%, #120f0c 45%, #24160c 100%);
-      }
-      .menubar {
-        @apply absolute;
-        @apply left-0;
-        @apply right-0;
-        @apply top-0;
-        @apply h-[26px];
-        z-index: 5;
-        @apply flex;
-        @apply items-center;
-        @apply gap-[18px];
-        padding: 0 16px;
-        @apply bg-[rgba(18,_14,_10,_.38)];
-        backdrop-filter: blur(30px);
-        @apply text-[12.5px];
-        @apply font-medium;
-        @apply text-[rgba(255,255,255,.92)];
-      }
-      .menubar b {
-        @apply font-bold;
-      }
-      .menubar .right {
-        @apply ml-auto;
-        @apply flex;
-        @apply items-center;
-        @apply gap-[14px];
-      }
-      .qx {
-        @apply relative;
-        @apply w-[26px];
-        @apply h-[20px];
-        @apply rounded-[5px];
-        @apply grid;
-        @apply place-items-center;
-      }
-      .qx.active {
-        @apply bg-[rgba(255,255,255,.22)];
-      }
-      .qx img {
-        @apply w-[16px];
-        @apply h-[16px];
-        filter: invert(1);
-      }
-      .win {
-        @apply absolute;
-        @apply rounded-[12px];
-        @apply overflow-hidden;
-        @apply bg-[#262527];
-        @apply text-[#ECEAE6];
-        box-shadow:
-          0 0 0 0.5px rgba(255, 255, 255, 0.14),
-          0 0 0 1px rgba(0, 0, 0, 0.6),
-          0 36px 72px rgba(0, 0, 0, 0.5),
-          0 6px 18px rgba(0, 0, 0, 0.3);
-      }
-      .lights {
-        @apply flex;
-        @apply gap-[8px];
-      }
-      .lights i {
-        @apply w-[12px];
-        @apply h-[12px];
-        @apply rounded-full;
-        @apply block;
-        box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.25);
-      }
-      .tb {
-        @apply h-[44px];
-        @apply flex;
-        @apply items-center;
-        padding: 0 16px;
-        @apply bg-[#2D2C2F];
-        border-bottom: 1px solid rgba(0, 0, 0, 0.45);
-        @apply relative;
-      }
-      .tb .t {
-        @apply absolute;
-        @apply left-0;
-        @apply right-0;
-        @apply text-center;
-        @apply text-[13px];
-        @apply font-semibold;
-        @apply text-[rgba(255,255,255,.85)];
-        @apply pointer-events-none;
-      }
-      .finder .body {
-        @apply relative;
-        @apply h-[376px];
-        background: radial-gradient(80% 90% at 50% 40%, #34312e, #232120);
-      }
-      .item {
-        @apply absolute;
-        @apply top-[108px];
-        @apply w-[160px];
-        @apply text-center;
-        @apply text-[14px];
-        @apply font-medium;
-      }
-      .item img,
-      .item svg {
-        @apply w-[128px];
-        @apply h-[128px];
-        @apply block;
-        margin: 0 auto 10px;
-        filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.45));
-      }
-      .ghost {
-        opacity: 0.55;
-        filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.4));
-      }
-      .alert {
-        @apply absolute;
-        @apply w-[272px];
-        padding: 20px 18px 16px;
-        @apply rounded-[14px];
-        @apply text-center;
-        @apply text-[#fff];
-        @apply bg-[rgba(44,_41,_40,_.92)];
-        backdrop-filter: blur(30px) saturate(1.5);
-        box-shadow:
-          0 0 0 0.5px rgba(255, 255, 255, 0.18),
-          0 0 0 1px rgba(0, 0, 0, 0.5),
-          0 30px 70px rgba(0, 0, 0, 0.55);
-      }
-      .alert .ic {
-        @apply relative;
-        @apply w-[64px];
-        @apply h-[64px];
-        margin: 0 auto 12px;
-      }
-      .alert .ic img {
-        @apply w-[64px];
-        @apply h-[64px];
-      }
-      .alert .ic .warn {
-        @apply absolute;
-        @apply right-[-6px];
-        @apply bottom-[-4px];
-        @apply w-[30px];
-        @apply h-[30px];
-      }
-      .alert h4 {
-        margin: 0 0 6px;
-        font-size: 13.5px;
-        @apply font-bold;
-        line-height: 1.3;
-      }
-      .alert p {
-        margin: 0 0 16px;
-        font-size: 11.5px;
-        line-height: 1.4;
-        color: rgba(255, 255, 255, 0.82);
-      }
-      .alert .btn {
-        @apply h-[28px];
-        @apply rounded-[7px];
-        @apply grid;
-        @apply place-items-center;
-        @apply text-[13px];
-        @apply font-medium;
-        @apply bg-[rgba(255,255,255,.14)];
-        @apply mt-[8px];
-      }
-      .alert .btn.primary {
-        @apply bg-[var(--color-blue)];
-        @apply text-[#fff];
-      }
-      .alert .help {
-        @apply absolute;
-        @apply left-[14px];
-        @apply bottom-[16px];
-        @apply w-[20px];
-        @apply h-[20px];
-        @apply rounded-full;
-        @apply grid;
-        @apply place-items-center;
-        @apply text-[12px];
-        @apply font-semibold;
-        @apply bg-[rgba(255,255,255,.12)];
-      }
-      .settings .side {
-        @apply w-[240px];
-        @apply bg-[rgba(40,_38,_38,_.96)];
-        border-right: 1px solid rgba(0, 0, 0, 0.4);
-        padding: 14px 10px;
-      }
-      .settings .side .lights {
-        margin: 2px 6px 18px;
-      }
-      .search {
-        padding: 0 9px;
-      }
-      .si {
-        padding: 0 8px;
-      }
-      .si i {
-        @apply w-[20px];
-        @apply h-[20px];
-        @apply rounded-[5px];
-        @apply grid;
-        @apply place-items-center;
-        @apply flex-none;
-      }
-      .si i svg {
-        @apply w-[13px];
-        @apply h-[13px];
-        fill: none;
-        stroke: #fff;
-        stroke-width: 1.8;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-      }
-      .si.on {
-        @apply bg-[var(--color-blue)];
-      }
-      .settings .pane {
-        @apply flex-1;
-        @apply bg-[#1F1E20];
-        @apply flex;
-        @apply flex-col;
-      }
-      .pane .ph {
-        @apply h-[52px];
-        @apply flex;
-        @apply items-center;
-        @apply gap-[14px];
-        padding: 0 22px;
-        @apply text-[15px];
-        @apply font-bold;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      }
-      .pane .ph span {
-        @apply text-[rgba(255,255,255,.4)];
-        @apply text-[18px];
-        @apply font-normal;
-      }
-      .pane .pc {
-        padding: 18px 28px;
-        overflow: hidden;
-      }
-      .grp {
-        @apply mb-[18px];
-      }
-      .grp h5 {
-        margin: 0 0 8px 4px;
-        font-size: 13px;
-        @apply font-bold;
-        @apply text-[rgba(255,255,255,.88)];
-      }
-      .box {
-        @apply rounded-[10px];
-        @apply bg-[rgba(255,255,255,.05)];
-        box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.08);
-      }
-      .rw {
-        @apply min-h-[42px];
-        @apply flex;
-        @apply items-center;
-        @apply gap-[12px];
-        padding: 8px 14px;
-        @apply text-[13px];
-        border-top: 1px solid rgba(255, 255, 255, 0.06);
-      }
-      .rw:first-child {
-        border-top: 0;
-      }
-      .rw .r {
-        @apply ml-auto;
-        @apply text-[rgba(255,255,255,.55)];
-        @apply flex;
-        @apply items-center;
-        @apply gap-[6px];
-      }
-      .pill {
-        @apply h-[24px];
-        padding: 0 12px;
-        @apply rounded-[6px];
-        @apply inline-flex;
-        @apply items-center;
-        @apply text-[12.5px];
-        @apply font-medium;
-        @apply bg-[rgba(255,255,255,.14)];
-        @apply text-[#fff];
-      }
-      .rw .muted {
-        @apply text-[rgba(255,255,255,.55)];
-      }
-      .chev {
-        @apply w-[8px];
-        @apply h-[8px];
-        border-right: 1.6px solid rgba(255, 255, 255, 0.4);
-        border-bottom: 1.6px solid rgba(255, 255, 255, 0.4);
-        transform: rotate(-45deg);
-      }
-      .ring {
-        box-shadow:
-          0 0 0 3px var(--color-gold),
-          0 0 0 9px rgba(254, 188, 51, 0.22),
-          0 0 34px rgba(254, 188, 51, 0.45);
-        z-index: 8;
-      }
-      .badge {
-        @apply absolute;
-        z-index: 9;
-        @apply flex;
-        @apply items-center;
-        @apply gap-[10px];
-        padding: 8px 14px 8px 8px;
-        @apply rounded-[999px];
-        @apply bg-[rgba(14,12,10,.86)];
-        box-shadow:
-          inset 0 0 0 1px rgba(255, 255, 255, 0.14),
-          0 12px 28px rgba(0, 0, 0, 0.4);
-        @apply text-[15px];
-        @apply font-semibold;
-        @apply text-[#fff];
-        @apply whitespace-nowrap;
-        backdrop-filter: blur(10px);
-      }
-      .badge b {
-        @apply w-[28px];
-        @apply h-[28px];
-        @apply rounded-full;
-        @apply grid;
-        @apply place-items-center;
-        @apply bg-[var(--color-gold)];
-        @apply text-[#1A1205];
-        @apply text-[14px];
-      }
-      .cursor {
-        z-index: 10;
-        filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.45));
-      }
-      .term .tb {
-        @apply bg-[#262422];
-      }
-      .term pre {
-        @apply m-0;
-        padding: 18px 20px;
-        font:
-          13.5px/1.75 "QX Mono",
-          monospace;
-        @apply text-[#E8E2D8];
-        white-space: pre-wrap;
-      }
-      .term .g {
-        @apply text-[#FEBC33];
-        @apply font-bold;
-      }
-      .term .d {
-        @apply text-[rgba(232,226,216,.5)];
-      }
-      .term .ok {
-        @apply text-[#30D158];
-      }
-      .term .p {
-        @apply text-[#8FD1FF];
+      @layer base {
+        :root {
+          --qx-gold: #FEBC33;
+          --qx-gold-deep: #E89B00;
+          --qx-ink: rgba(255, 255, 255, .9);
+          --qx-sub: rgba(235, 235, 245, .56);
+          --qx-panel: #2B2A2D;
+          --qx-red: #FF453A;
+        }
       }
     </style>
   </head>
-  <body>
+  <body class="m-0 overflow-hidden w-[1200px] h-[750px] bg-[#0B0A09] font-['Inter',-apple-system,system-ui,sans-serif] text-[var(--color-ink)] antialiased leading-[normal]">
     <script src="kit.js"></script>
     <div id="root"></div>
     <script>
       const A = "../site/assets/";
       const cursor = (x, y) =>
-        `<svg class="cursor absolute w-[22px] h-[30px]" style="left:${x}px;top:${y}px" viewBox="0 0 22 30"><path d="M2 2v22l6-6 4 9 4-2-4-8.5h8.5z" fill="#000" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
+        `<svg class="cursor absolute h-[30px] w-[22px] z-10 [filter:drop-shadow(0_2px_3px_rgba(0,0,0,0.45))]" style="left:${x}px;top:${y}px" viewBox="0 0 22 30"><path d="M2 2v22l6-6 4 9 4-2-4-8.5h8.5z" fill="#000" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
       const badge = (n, text, x, y) =>
-        `<div class="badge" style="left:${x}px;top:${y}px"><b>${n}</b>${text}</div>`;
+        `<div class="badge py-[8px] pr-[14px] pl-[8px] gap-[10px] absolute z-[9] flex items-center rounded-[999px] bg-[rgba(14,12,10,.86)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14),0_12px_28px_rgba(0,0,0,0.4)] text-[15px] font-semibold text-white whitespace-nowrap [backdrop-filter:blur(10px)]" style="left:${x}px;top:${y}px"><b class="place-items-center w-[28px] h-[28px] rounded-full grid bg-[var(--color-gold)] text-[#1A1205] text-[14px]">${n}</b>${text}</div>`;
       const menubar = (active) =>
-        `<div class="menubar"><b>Finder</b><span>File</span><span>Edit</span><span>View</span><span>Go</span><span>Window</span><span>Help</span><div class="right"><div class="qx${active ? " active" : ""}" id="qx"><img src="${A}status-icon.png" alt=""></div><svg width="22" height="11" viewBox="0 0 22 12"><rect x="1" y="1.5" width="17" height="9" rx="2.6" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="1.1"/><rect x="2.8" y="3.3" width="11.4" height="5.4" rx="1.3" fill="#fff"/></svg><span>Fri Oct 23&nbsp;&nbsp;9:41 AM</span></div></div>`;
-      const folder = `<svg viewBox="0 0 128 128"><defs><linearGradient id="fb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6EC1FF"/><stop offset="1" stop-color="#2F8CF0"/></linearGradient><linearGradient id="ff" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8FD0FF"/><stop offset="1" stop-color="#4AA3F7"/></linearGradient></defs><path d="M10 30a8 8 0 0 1 8-8h30l9 9h53a8 8 0 0 1 8 8v8H10z" fill="url(#fb)"/><rect x="10" y="40" width="108" height="72" rx="8" fill="url(#ff)"/><g fill="none" stroke="#1E6FD0" stroke-width="5" stroke-linecap="round" opacity=".55"><path d="M48 92l16-30 16 30M53 82h22"/></g></svg>`;
-      const alertWarn = `<svg class="warn" viewBox="0 0 30 30"><path d="M15 3l13 23H2z" fill="#FFD60A" stroke="#2C2928" stroke-width="2" stroke-linejoin="round"/><path d="M15 11v8" stroke="#1A1205" stroke-width="2.6" stroke-linecap="round"/><circle cx="15" cy="22.5" r="1.6" fill="#1A1205"/></svg>`;
+        `<div class="menubar py-0 px-[16px] gap-[18px] absolute left-0 right-0 top-0 h-[26px] z-[5] flex items-center bg-[rgba(18,14,10,.38)] [backdrop-filter:blur(30px)] text-[12.5px] font-[var(--font-weight-medium)] text-[rgba(255,255,255,.92)]"><b class="font-bold">Finder</b><span>File</span><span>Edit</span><span>View</span><span>Go</span><span>Window</span><span>Help</span><div class="right ml-auto gap-[14px] flex items-center"><div class="qx${active ? " active" : ""} place-items-center relative w-[26px] h-[20px] rounded-[5px] grid [&.active]:bg-[rgba(255,255,255,.22)]" id="qx"><img class="w-[16px] h-[16px] [filter:invert(1)]" src="${A}status-icon.png" alt=""></div><svg width="22" height="11" viewBox="0 0 22 12"><rect x="1" y="1.5" width="17" height="9" rx="2.6" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="1.1"/><rect x="2.8" y="3.3" width="11.4" height="5.4" rx="1.3" fill="#fff"/></svg><span>Fri Oct 23&nbsp;&nbsp;9:41 AM</span></div></div>`;
+      const folder = `<svg class="mx-auto mt-0 mb-[10px] w-[128px] h-[128px] block [filter:drop-shadow(0_10px_18px_rgba(0,0,0,0.45))]" viewBox="0 0 128 128"><defs><linearGradient id="fb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6EC1FF"/><stop offset="1" stop-color="#2F8CF0"/></linearGradient><linearGradient id="ff" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8FD0FF"/><stop offset="1" stop-color="#4AA3F7"/></linearGradient></defs><path d="M10 30a8 8 0 0 1 8-8h30l9 9h53a8 8 0 0 1 8 8v8H10z" fill="url(#fb)"/><rect x="10" y="40" width="108" height="72" rx="8" fill="url(#ff)"/><g fill="none" stroke="#1E6FD0" stroke-width="5" stroke-linecap="round" opacity=".55"><path d="M48 92l16-30 16 30M53 82h22"/></g></svg>`;
+      const alertWarn = `<svg class="warn absolute right-[-6px] bottom-[-4px] w-[30px] h-[30px]" viewBox="0 0 30 30"><path d="M15 3l13 23H2z" fill="#FFD60A" stroke="#2C2928" stroke-width="2" stroke-linejoin="round"/><path d="M15 11v8" stroke="#1A1205" stroke-width="2.6" stroke-linecap="round"/><circle cx="15" cy="22.5" r="1.6" fill="#1A1205"/></svg>`;
       const sideItem = (label, color, path, on) =>
-        `<div class="si${on ? " on" : ""} flex items-center gap-[9px] h-[30px] rounded-[7px] text-[13px] text-[rgba(255,255,255,.88)]"><i style="background:${color}"><svg viewBox="0 0 16 16">${path}</svg></i>${label}</div>`;
+        `<div class="si${on ? " on" : ""} py-0 px-[8px] gap-[9px] h-[30px] flex items-center rounded-[7px] text-[13px] text-[rgba(255,255,255,.88)] [&.on]:bg-[var(--color-blue)]"><i class="place-items-center w-[20px] h-[20px] rounded-[5px] grid flex-none" style="background:${color}"><svg class="w-[13px] h-[13px] fill-none [stroke:#fff] stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16">${path}</svg></i>${label}</div>`;
 
       const SCENES = {
-        dmg: () => `<div class="wall"></div>${menubar()}
-      <div class="win finder left-[250px] top-[165px] w-[700px] h-[420px]"><div class="tb"><span class="lights"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i></span><div class="t">QuitX</div></div>
-        <div class="body">
-          <div class="item" style="left:80px"><img src="${A}icon.png" alt="">QuitX</div>
-          <svg class="arrowpath absolute left-[248px] top-[140px]" width="200" height="80" viewBox="0 0 200 80"><path d="M10 50 C 70 0, 130 0, 185 45" fill="none" stroke="rgba(254,188,51,.9)" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 12"/><path d="M172 30l16 17-22 4" fill="none" stroke="rgba(254,188,51,.9)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <div class="item" style="left:460px">${folder}Applications</div>
-          <img class="ghost absolute w-[96px] h-[96px]" src="${A}icon.png" style="left:420px;top:96px" alt="">
+        dmg: () => `<div class="wall inset-0 absolute bg-[radial-gradient(60%_75%_at_82%_8%,rgba(254,188,51,0.5),transparent_62%),radial-gradient(55%_65%_at_100%_100%,rgba(214,92,26,0.5),transparent_60%),radial-gradient(70%_80%_at_0%_100%,rgba(70,38,14,0.9),transparent_65%),linear-gradient(160deg,#1a1511_0%,#120f0c_45%,#24160c_100%)]"></div>${menubar()}
+      <div class="win finder overflow-hidden top-[165px] left-[250px] h-[420px] w-[700px] absolute rounded-[12px] bg-[#262527] text-[#ECEAE6] shadow-[0_0_0_0.5px_rgba(255,255,255,0.14),0_0_0_1px_rgba(0,0,0,0.6),0_36px_72px_rgba(0,0,0,0.5),0_6px_18px_rgba(0,0,0,0.3)]"><div class="tb py-0 px-[16px] [border-bottom:1px_solid_rgba(0,0,0,0.45)] h-[44px] flex items-center bg-[#2D2C2F] relative"><span class="lights gap-[8px] flex"><i class="w-[12px] h-[12px] rounded-full block shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.25)]" style="background:#FF5F57"></i><i class="w-[12px] h-[12px] rounded-full block shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.25)]" style="background:#FEBC2E"></i><i class="w-[12px] h-[12px] rounded-full block shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.25)]" style="background:#28C840"></i></span><div class="t absolute left-0 right-0 text-center text-[13px] font-semibold text-[rgba(255,255,255,.85)] pointer-events-none">QuitX</div></div>
+        <div class="body relative h-[376px] bg-[radial-gradient(80%_90%_at_50%_40%,#34312e,#232120)]">
+          <div class="item absolute top-[108px] w-[160px] text-center text-[14px] font-[var(--font-weight-medium)]" style="left:80px"><img class="mx-auto mt-0 mb-[10px] w-[128px] h-[128px] block [filter:drop-shadow(0_10px_18px_rgba(0,0,0,0.45))]" src="${A}icon.png" alt="">QuitX</div>
+          <svg class="arrowpath absolute top-[140px] left-[248px]" width="200" height="80" viewBox="0 0 200 80"><path d="M10 50 C 70 0, 130 0, 185 45" fill="none" stroke="rgba(254,188,51,.9)" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 12"/><path d="M172 30l16 17-22 4" fill="none" stroke="rgba(254,188,51,.9)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div class="item absolute top-[108px] w-[160px] text-center text-[14px] font-[var(--font-weight-medium)]" style="left:460px">${folder}Applications</div>
+          <img class="ghost absolute h-[96px] w-[96px] opacity-[0.55] [filter:drop-shadow(0_10px_14px_rgba(0,0,0,0.4))]" src="${A}icon.png" style="left:420px;top:96px" alt="">
         </div></div>
       ${cursor(500, 238)}${badge(1, "Drag QuitX into Applications", 418, 600)}`,
 
-        blocked: () => `<div class="wall"></div>${menubar()}
-      <div class="alert" id="al" style="zoom:1.45;left:217px;top:95px"><div class="ic"><img src="${A}icon.png" alt="">${alertWarn}</div>
-        <h4>“QuitX” Not Opened</h4>
-        <p>Apple could not verify “QuitX” is free of malware that may harm your Mac or compromise your privacy.</p>
-        <div class="btn primary" id="done">Done</div><div class="btn">Move to Trash</div><span class="help" style="display:none">?</span></div>
+        blocked: () => `<div class="wall inset-0 absolute bg-[radial-gradient(60%_75%_at_82%_8%,rgba(254,188,51,0.5),transparent_62%),radial-gradient(55%_65%_at_100%_100%,rgba(214,92,26,0.5),transparent_60%),radial-gradient(70%_80%_at_0%_100%,rgba(70,38,14,0.9),transparent_65%),linear-gradient(160deg,#1a1511_0%,#120f0c_45%,#24160c_100%)]"></div>${menubar()}
+      <div class="alert px-[18px] pt-[20px] pb-[16px] absolute w-[272px] rounded-[14px] text-center text-white bg-[rgba(44,41,40,.92)] [backdrop-filter:blur(30px)_saturate(1.5)] shadow-[0_0_0_0.5px_rgba(255,255,255,0.18),0_0_0_1px_rgba(0,0,0,0.5),0_30px_70px_rgba(0,0,0,0.55)]" id="al" style="zoom:1.45;left:217px;top:95px"><div class="ic mx-auto mt-0 mb-[12px] relative w-[64px] h-[64px]"><img class="w-[64px] h-[64px]" src="${A}icon.png" alt="">${alertWarn}</div>
+        <h4 class="mx-0 mt-0 mb-[6px] text-[13.5px] font-bold leading-[1.3]">“QuitX” Not Opened</h4>
+        <p class="mx-0 mt-0 mb-[16px] text-[11.5px] leading-[1.4] text-[rgba(255,255,255,0.82)]">Apple could not verify “QuitX” is free of malware that may harm your Mac or compromise your privacy.</p>
+        <div class="btn primary mt-[8px] place-items-center h-[28px] rounded-[7px] grid text-[13px] font-[var(--font-weight-medium)] bg-[var(--color-blue)] text-white" id="done">Done</div><div class="btn mt-[8px] place-items-center h-[28px] rounded-[7px] grid text-[13px] font-[var(--font-weight-medium)] bg-[rgba(255,255,255,.14)]">Move to Trash</div><span class="help place-items-center absolute left-[14px] bottom-[16px] w-[20px] h-[20px] rounded-full grid text-[12px] font-semibold bg-[rgba(255,255,255,.12)]" style="display:none">?</span></div>
       ${badge(2, "First launch: click Done, not Move to Trash", 380, 650)}`,
 
-        settings: () => `<div class="wall"></div>${menubar()}
-      <div class="win settings left-[120px] top-[46px] w-[960px] h-[590px] flex">
-        <div class="side"><span class="lights"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i></span>
-          <div class="search h-[28px] rounded-[7px] bg-[rgba(255,255,255,.08)] flex items-center gap-[6px] text-[rgba(255,255,255,.45)] text-[13px] mb-[12px]"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="5" cy="5" r="3.6"/><path d="M7.8 7.8l2.8 2.8"/></svg>Search</div>
+        settings: () => `<div class="wall inset-0 absolute bg-[radial-gradient(60%_75%_at_82%_8%,rgba(254,188,51,0.5),transparent_62%),radial-gradient(55%_65%_at_100%_100%,rgba(214,92,26,0.5),transparent_60%),radial-gradient(70%_80%_at_0%_100%,rgba(70,38,14,0.9),transparent_65%),linear-gradient(160deg,#1a1511_0%,#120f0c_45%,#24160c_100%)]"></div>${menubar()}
+      <div class="win settings overflow-hidden absolute rounded-[12px] bg-[#262527] text-[#ECEAE6] shadow-[0_0_0_0.5px_rgba(255,255,255,0.14),0_0_0_1px_rgba(0,0,0,0.6),0_36px_72px_rgba(0,0,0,0.5),0_6px_18px_rgba(0,0,0,0.3)] top-[46px] left-[120px] flex h-[590px] w-[960px]">
+        <div class="side py-[14px] px-[10px] [border-right:1px_solid_rgba(0,0,0,0.4)] w-[240px] bg-[rgba(40,38,38,.96)]"><span class="lights mx-[6px] mt-[2px] mb-[18px] gap-[8px] flex"><i class="w-[12px] h-[12px] rounded-full block shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.25)]" style="background:#FF5F57"></i><i class="w-[12px] h-[12px] rounded-full block shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.25)]" style="background:#FEBC2E"></i><i class="w-[12px] h-[12px] rounded-full block shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.25)]" style="background:#28C840"></i></span>
+          <div class="search py-0 px-[9px] mb-[12px] gap-[6px] flex h-[28px] items-center rounded-[7px] bg-[rgba(255,255,255,.08)] text-[13px] text-[rgba(255,255,255,.45)]"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="5" cy="5" r="3.6"/><path d="M7.8 7.8l2.8 2.8"/></svg>Search</div>
           ${sideItem("Wi-Fi", "#2F8CF0", '<path d="M2 6.5a8.5 8.5 0 0 1 12 0M4.3 8.8a5.3 5.3 0 0 1 7.4 0M8 12.2v.1"/>')}
           ${sideItem("Bluetooth", "#2F8CF0", '<path d="M5 5l6 6-3 2.5V2.5L11 5l-6 6"/>')}
           ${sideItem("Network", "#2F8CF0", '<circle cx="8" cy="8" r="5.5"/><path d="M2.5 8h11M8 2.5c2 2 2 9 0 11M8 2.5c-2 2-2 9 0 11"/>')}
@@ -465,40 +76,40 @@
           ${sideItem("Privacy &amp; Security", "#2F8CF0", '<path d="M8 2l5 2v4c0 3.2-2.3 5.4-5 6-2.7-.6-5-2.8-5-6V4z"/>', true)}
           ${sideItem("Touch ID &amp; Password", "#FF453A", '<circle cx="8" cy="8" r="5.5"/><path d="M5.5 8a2.5 2.5 0 0 1 5 0v1.5"/>')}
         </div>
-        <div class="pane"><div class="ph"><span>‹</span><span>›</span>Privacy &amp; Security</div>
-          <div class="pc">
-            <div class="grp"><div class="box">
-              <div class="rw">Location Services<span class="r">On<i class="chev"></i></span></div>
-              <div class="rw">Accessibility<span class="r"><i class="chev"></i></span></div>
-              <div class="rw">Full Disk Access<span class="r"><i class="chev"></i></span></div>
+        <div class="pane flex-1 bg-[#1F1E20] flex flex-col"><div class="ph py-0 px-[22px] gap-[14px] [border-bottom:1px_solid_rgba(255,255,255,0.06)] h-[52px] flex items-center text-[15px] font-bold"><span class="text-[rgba(255,255,255,.4)] text-[18px] font-[var(--font-weight-normal)]">‹</span><span class="text-[rgba(255,255,255,.4)] text-[18px] font-[var(--font-weight-normal)]">›</span>Privacy &amp; Security</div>
+          <div class="pc py-[18px] px-[28px] overflow-hidden">
+            <div class="grp mb-[18px]"><div class="box rounded-[10px] bg-[rgba(255,255,255,.05)] shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.08)]">
+              <div class="rw py-[8px] px-[14px] gap-[12px] [border-top:0] min-h-[42px] flex items-center text-[13px]">Location Services<span class="r ml-auto gap-[6px] text-[rgba(255,255,255,.55)] flex items-center">On<i class="chev [border-right:1.6px_solid_rgba(255,255,255,0.4)] [border-bottom:1.6px_solid_rgba(255,255,255,0.4)] w-[8px] h-[8px] [transform:rotate(-45deg)]"></i></span></div>
+              <div class="rw py-[8px] px-[14px] gap-[12px] [border-top:1px_solid_rgba(255,255,255,0.06)] min-h-[42px] flex items-center text-[13px]">Accessibility<span class="r ml-auto gap-[6px] text-[rgba(255,255,255,.55)] flex items-center"><i class="chev [border-right:1.6px_solid_rgba(255,255,255,0.4)] [border-bottom:1.6px_solid_rgba(255,255,255,0.4)] w-[8px] h-[8px] [transform:rotate(-45deg)]"></i></span></div>
+              <div class="rw py-[8px] px-[14px] gap-[12px] [border-top:1px_solid_rgba(255,255,255,0.06)] min-h-[42px] flex items-center text-[13px]">Full Disk Access<span class="r ml-auto gap-[6px] text-[rgba(255,255,255,.55)] flex items-center"><i class="chev [border-right:1.6px_solid_rgba(255,255,255,0.4)] [border-bottom:1.6px_solid_rgba(255,255,255,0.4)] w-[8px] h-[8px] [transform:rotate(-45deg)]"></i></span></div>
             </div></div>
-            <div class="grp"><h5>Security</h5><div class="box">
-              <div class="rw">Allow applications from<span class="r"><span class="pill" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.85)">App Store &amp; Known Developers&nbsp;⌄</span></span></div>
-              <div class="rw" style="min-height:58px"><span>“QuitX” was blocked to protect your Mac.</span><span class="r"><span class="pill" id="openAnyway">Open Anyway</span></span></div>
+            <div class="grp mb-[18px]"><h5 class="mt-0 mr-0 mb-[8px] ml-[4px] text-[13px] font-bold text-[rgba(255,255,255,.88)]">Security</h5><div class="box rounded-[10px] bg-[rgba(255,255,255,.05)] shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.08)]">
+              <div class="rw py-[8px] px-[14px] gap-[12px] [border-top:0] min-h-[42px] flex items-center text-[13px]">Allow applications from<span class="r ml-auto gap-[6px] text-[rgba(255,255,255,.55)] flex items-center"><span class="pill py-0 px-[12px] h-[24px] rounded-[6px] inline-flex items-center text-[12.5px] font-[var(--font-weight-medium)] bg-[rgba(255,255,255,.14)] text-white" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.85)">App Store &amp; Known Developers&nbsp;⌄</span></span></div>
+              <div class="rw py-[8px] px-[14px] gap-[12px] [border-top:1px_solid_rgba(255,255,255,0.06)] min-h-[42px] flex items-center text-[13px]" style="min-height:58px"><span>“QuitX” was blocked to protect your Mac.</span><span class="r ml-auto gap-[6px] text-[rgba(255,255,255,.55)] flex items-center"><span class="pill py-0 px-[12px] h-[24px] rounded-[6px] inline-flex items-center text-[12.5px] font-[var(--font-weight-medium)] bg-[rgba(255,255,255,.14)] text-white" id="openAnyway">Open Anyway</span></span></div>
             </div></div>
-            <div class="grp"><div class="box">
-              <div class="rw">FileVault<span class="r">On<i class="chev"></i></span></div>
-              <div class="rw">Lockdown Mode<span class="r">Off<i class="chev"></i></span></div>
+            <div class="grp mb-[18px]"><div class="box rounded-[10px] bg-[rgba(255,255,255,.05)] shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.08)]">
+              <div class="rw py-[8px] px-[14px] gap-[12px] [border-top:0] min-h-[42px] flex items-center text-[13px]">FileVault<span class="r ml-auto gap-[6px] text-[rgba(255,255,255,.55)] flex items-center">On<i class="chev [border-right:1.6px_solid_rgba(255,255,255,0.4)] [border-bottom:1.6px_solid_rgba(255,255,255,0.4)] w-[8px] h-[8px] [transform:rotate(-45deg)]"></i></span></div>
+              <div class="rw py-[8px] px-[14px] gap-[12px] [border-top:1px_solid_rgba(255,255,255,0.06)] min-h-[42px] flex items-center text-[13px]">Lockdown Mode<span class="r ml-auto gap-[6px] text-[rgba(255,255,255,.55)] flex items-center">Off<i class="chev [border-right:1.6px_solid_rgba(255,255,255,0.4)] [border-bottom:1.6px_solid_rgba(255,255,255,0.4)] w-[8px] h-[8px] [transform:rotate(-45deg)]"></i></span></div>
             </div></div>
           </div>
         </div>
       </div>
       ${badge(3, "System Settings › Privacy &amp; Security › Open Anyway", 340, 664)}`,
 
-        confirm: () => `<div class="wall"></div>${menubar()}
-      <div class="alert" style="zoom:1.45;left:217px;top:72px"><div class="ic"><img src="${A}icon.png" alt="">${alertWarn}</div>
-        <h4>Open “QuitX”?</h4>
-        <p>Apple is not able to verify that it is free from malware that could harm your Mac or compromise your privacy. Don’t open this unless you are certain it is from a trustworthy source.</p>
-        <div class="btn" id="openA">Open Anyway</div><div class="btn">Move to Trash</div></div>
+        confirm: () => `<div class="wall inset-0 absolute bg-[radial-gradient(60%_75%_at_82%_8%,rgba(254,188,51,0.5),transparent_62%),radial-gradient(55%_65%_at_100%_100%,rgba(214,92,26,0.5),transparent_60%),radial-gradient(70%_80%_at_0%_100%,rgba(70,38,14,0.9),transparent_65%),linear-gradient(160deg,#1a1511_0%,#120f0c_45%,#24160c_100%)]"></div>${menubar()}
+      <div class="alert px-[18px] pt-[20px] pb-[16px] absolute w-[272px] rounded-[14px] text-center text-white bg-[rgba(44,41,40,.92)] [backdrop-filter:blur(30px)_saturate(1.5)] shadow-[0_0_0_0.5px_rgba(255,255,255,0.18),0_0_0_1px_rgba(0,0,0,0.5),0_30px_70px_rgba(0,0,0,0.55)]" style="zoom:1.45;left:217px;top:72px"><div class="ic mx-auto mt-0 mb-[12px] relative w-[64px] h-[64px]"><img class="w-[64px] h-[64px]" src="${A}icon.png" alt="">${alertWarn}</div>
+        <h4 class="mx-0 mt-0 mb-[6px] text-[13.5px] font-bold leading-[1.3]">Open “QuitX”?</h4>
+        <p class="mx-0 mt-0 mb-[16px] text-[11.5px] leading-[1.4] text-[rgba(255,255,255,0.82)]">Apple is not able to verify that it is free from malware that could harm your Mac or compromise your privacy. Don’t open this unless you are certain it is from a trustworthy source.</p>
+        <div class="btn mt-[8px] place-items-center h-[28px] rounded-[7px] grid text-[13px] font-[var(--font-weight-medium)] bg-[rgba(255,255,255,.14)]" id="openA">Open Anyway</div><div class="btn mt-[8px] place-items-center h-[28px] rounded-[7px] grid text-[13px] font-[var(--font-weight-medium)] bg-[rgba(255,255,255,.14)]">Move to Trash</div></div>
       ${badge(4, "Click Open Anyway, then enter your password or use Touch ID", 300, 660)}`,
 
         ready: () => {
           const pop = QX.popover({ apps: QX.APPS.slice(0, 9), hover: "Music" });
-          return `<div class="wall"></div>${menubar(true)}<div id="popwrap" style="position:absolute;zoom:1.35">${pop}</div>${badge(5, "Done. QuitX lives in your menu bar", 60, 600)}`;
+          return `<div class="wall inset-0 absolute bg-[radial-gradient(60%_75%_at_82%_8%,rgba(254,188,51,0.5),transparent_62%),radial-gradient(55%_65%_at_100%_100%,rgba(214,92,26,0.5),transparent_60%),radial-gradient(70%_80%_at_0%_100%,rgba(70,38,14,0.9),transparent_65%),linear-gradient(160deg,#1a1511_0%,#120f0c_45%,#24160c_100%)]"></div>${menubar(true)}<div id="popwrap" style="position:absolute;zoom:1.35">${pop}</div>${badge(5, "Done. QuitX lives in your menu bar", 60, 600)}`;
         },
 
         strip: () =>
-          `<div class="wall" style="opacity:.6"></div><div style="position:absolute;inset:24px;display:grid;grid-template-columns:1fr 1fr;gap:20px">${[
+          `<div class="wall inset-0 absolute bg-[radial-gradient(60%_75%_at_82%_8%,rgba(254,188,51,0.5),transparent_62%),radial-gradient(55%_65%_at_100%_100%,rgba(214,92,26,0.5),transparent_60%),radial-gradient(70%_80%_at_0%_100%,rgba(70,38,14,0.9),transparent_65%),linear-gradient(160deg,#1a1511_0%,#120f0c_45%,#24160c_100%)]" style="opacity:.6"></div><div style="position:absolute;inset:24px;display:grid;grid-template-columns:1fr 1fr;gap:20px">${[
             ["dmg", "Drag QuitX into Applications"],
             ["blocked", "First launch: click Done"],
             ["settings", "Privacy &amp; Security › Open Anyway"],
@@ -506,84 +117,101 @@
           ]
             .map(
               ([k, t], i) =>
-                `<div style="position:relative;border-radius:14px;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,.12),0 16px 40px rgba(0,0,0,.45)"><iframe src="install.html#${k}-bare" style="width:1200px;height:750px;border:0;transform:scale(.4667);transform-origin:0 0;display:block" scrolling="no"></iframe><div class="badge" style="left:12px;bottom:12px;font-size:14px"><b>${i + 1}</b>${t}</div></div>`,
+                `<div style="position:relative;border-radius:14px;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,.12),0 16px 40px rgba(0,0,0,.45)"><iframe src="install.html#${k}-bare" style="width:1200px;height:750px;border:0;transform:scale(.4667);transform-origin:0 0;display:block" scrolling="no"></iframe><div class="badge py-[8px] pr-[14px] pl-[8px] gap-[10px] absolute z-[9] flex items-center rounded-[999px] bg-[rgba(14,12,10,.86)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14),0_12px_28px_rgba(0,0,0,0.4)] text-[15px] font-semibold text-white whitespace-nowrap [backdrop-filter:blur(10px)]" style="left:12px;bottom:12px;font-size:14px"><b class="place-items-center w-[28px] h-[28px] rounded-full grid bg-[var(--color-gold)] text-[#1A1205] text-[14px]">${i + 1}</b>${t}</div></div>`,
             )
             .join("")}</div>`,
 
-        terminal: () => `<div class="wall"></div>${menubar()}
-      <div class="win term left-[160px] top-[150px] w-[880px] h-[450px] bg-[#151413]"><div class="tb"><span class="lights"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i></span><div class="t">Terminal</div></div>
-<pre><span class="p">~</span> curl -fsSL https://quitx.kiron.dev/install | bash
-<span class="g">==></span> <b>Finding the latest QuitX release</b>
-    <span class="d">QuitX 1.2.1</span>
-<span class="g">==></span> <b>Downloading</b>
-<span class="d">######################################################################## 100.0%</span>
-<span class="g">==></span> <b>Verifying checksum</b>
-    <span class="d">SHA-256 matches GitHub (0e358a884c81bd1eb7f0ba654ea0193e4289e425…)</span>
-<span class="g">==></span> <b>Checking the app</b>
-    <span class="d">Code signature valid, version 1.2.1</span>
-<span class="g">==></span> <b>Installing in /Applications</b>
-<span class="g">==></span> <b>Opening QuitX</b>
+        terminal: () => `<div class="wall inset-0 absolute bg-[radial-gradient(60%_75%_at_82%_8%,rgba(254,188,51,0.5),transparent_62%),radial-gradient(55%_65%_at_100%_100%,rgba(214,92,26,0.5),transparent_60%),radial-gradient(70%_80%_at_0%_100%,rgba(70,38,14,0.9),transparent_65%),linear-gradient(160deg,#1a1511_0%,#120f0c_45%,#24160c_100%)]"></div>${menubar()}
+      <div class="win term overflow-hidden absolute rounded-[12px] bg-[#262527] text-[#ECEAE6] shadow-[0_0_0_0.5px_rgba(255,255,255,0.14),0_0_0_1px_rgba(0,0,0,0.6),0_36px_72px_rgba(0,0,0,0.5),0_6px_18px_rgba(0,0,0,0.3)] top-[150px] left-[160px] h-[450px] w-[880px]"><div class="tb py-0 px-[16px] [border-bottom:1px_solid_rgba(0,0,0,0.45)] h-[44px] flex items-center bg-[#262422] relative"><span class="lights gap-[8px] flex"><i class="w-[12px] h-[12px] rounded-full block shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.25)]" style="background:#FF5F57"></i><i class="w-[12px] h-[12px] rounded-full block shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.25)]" style="background:#FEBC2E"></i><i class="w-[12px] h-[12px] rounded-full block shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.25)]" style="background:#28C840"></i></span><div class="t absolute left-0 right-0 text-center text-[13px] font-semibold text-[rgba(255,255,255,.85)] pointer-events-none">Terminal</div></div>
+<pre class="py-[18px] px-[20px] m-0 font-normal text-[13.5px] leading-[1.75] font-['QX_Mono',monospace] text-[#E8E2D8] whitespace-pre-wrap"><span class="p text-[#8FD1FF]">~</span> curl -fsSL https://quitx.kiron.dev/install | bash
+<span class="g text-[#FEBC33] font-bold">==></span> <b>Finding the latest QuitX release</b>
+    <span class="d text-[rgba(232,226,216,.5)]">QuitX 1.2.1</span>
+<span class="g text-[#FEBC33] font-bold">==></span> <b>Downloading</b>
+<span class="d text-[rgba(232,226,216,.5)]">######################################################################## 100.0%</span>
+<span class="g text-[#FEBC33] font-bold">==></span> <b>Verifying checksum</b>
+    <span class="d text-[rgba(232,226,216,.5)]">SHA-256 matches GitHub (0e358a884c81bd1eb7f0ba654ea0193e4289e425…)</span>
+<span class="g text-[#FEBC33] font-bold">==></span> <b>Checking the app</b>
+    <span class="d text-[rgba(232,226,216,.5)]">Code signature valid, version 1.2.1</span>
+<span class="g text-[#FEBC33] font-bold">==></span> <b>Installing in /Applications</b>
+<span class="g text-[#FEBC33] font-bold">==></span> <b>Opening QuitX</b>
 
-<span class="ok">QuitX 1.2.1 is installed.</span> Look for its icon in the menu bar.
-<span class="d">It updates itself from GitHub. Settings are in its menu.</span></pre></div>`,
+<span class="ok text-[#30D158]">QuitX 1.2.1 is installed.</span> Look for its icon in the menu bar.
+<span class="d text-[rgba(232,226,216,.5)]">It updates itself from GitHub. Settings are in its menu.</span></pre></div>`,
       };
 
       const hash = (location.hash || "#dmg").slice(1);
       const bare = hash.endsWith("-bare");
       const id = hash.replace("-bare", "");
-      document.getElementById("root").innerHTML =
-        `<div class="scene absolute inset-0 overflow-hidden">${SCENES[id]()}</div>`;
-
-      const ring = (el, pad = 6) => {
-        const r = el.getBoundingClientRect();
-        document
-          .querySelector(".scene")
-          .insertAdjacentHTML(
-            "beforeend",
-            `<div class="ring absolute rounded-[10px] pointer-events-none" style="left:${r.left - pad}px;top:${r.top - pad}px;width:${r.width + pad * 2}px;height:${r.height + pad * 2}px"></div>`,
-          );
-        return r;
+      const twSettle = async () => {
+        let last = "";
+        for (let i = 0; i < 120; i++) {
+          await new Promise((r) => requestAnimationFrame(r));
+          const now = [...document.querySelectorAll("style:not([type])")]
+            .map((s) => s.textContent.length)
+            .join();
+          if (i > 1 && now === last) return;
+          last = now;
+        }
       };
-      if (id === "blocked") {
-        const r = ring(document.getElementById("done"), 4);
-        document
-          .querySelector(".scene")
-          .insertAdjacentHTML(
-            "beforeend",
-            cursor(r.left + r.width * 0.62, r.top + r.height * 0.55),
-          );
-      }
-      if (id === "settings") {
-        const r = ring(document.getElementById("openAnyway"), 5);
-        document
-          .querySelector(".scene")
-          .insertAdjacentHTML(
-            "beforeend",
-            cursor(r.left + r.width * 0.6, r.top + r.height * 0.6),
-          );
-      }
-      if (id === "confirm") {
-        const r = ring(document.getElementById("openA"), 4);
-        document
-          .querySelector(".scene")
-          .insertAdjacentHTML(
-            "beforeend",
-            cursor(r.left + r.width * 0.62, r.top + r.height * 0.55),
-          );
-      }
-      if (id === "ready") {
-        const qr = document.getElementById("qx").getBoundingClientRect();
-        const z = 1.35,
-          cx = qr.left + qr.width / 2;
-        const left = Math.min(cx - 135 * z, 1200 - 270 * z - 8);
-        const w = document.getElementById("popwrap");
-        w.style.left = left / z + "px";
-        w.style.top = (qr.bottom + 1) / z + "px";
-        const arrow = w.querySelector(".arrow");
-        if (arrow) arrow.style.left = (cx - left) / z + "px";
-      }
-      if (bare) document.querySelectorAll(".badge").forEach((b) => b.remove());
-      window.SHOT_READY = true;
+      const build = () => {
+        document.getElementById("root").innerHTML =
+          `<div class="scene inset-0 overflow-hidden absolute">${SCENES[id]()}</div>`;
+
+        const ring = (el, pad = 6) => {
+          const r = el.getBoundingClientRect();
+          document
+            .querySelector(".scene")
+            .insertAdjacentHTML(
+              "beforeend",
+              `<div class="absolute shadow-[0_0_0_3px_var(--color-gold),0_0_0_9px_rgba(254,188,51,0.22),0_0_34px_rgba(254,188,51,0.45)] z-[8] pointer-events-none rounded-[10px]" style="left:${r.left - pad}px;top:${r.top - pad}px;width:${r.width + pad * 2}px;height:${r.height + pad * 2}px"></div>`,
+            );
+          return r;
+        };
+        if (id === "blocked") {
+          const r = ring(document.getElementById("done"), 4);
+          document
+            .querySelector(".scene")
+            .insertAdjacentHTML(
+              "beforeend",
+              cursor(r.left + r.width * 0.62, r.top + r.height * 0.55),
+            );
+        }
+        if (id === "settings") {
+          const r = ring(document.getElementById("openAnyway"), 5);
+          document
+            .querySelector(".scene")
+            .insertAdjacentHTML(
+              "beforeend",
+              cursor(r.left + r.width * 0.6, r.top + r.height * 0.6),
+            );
+        }
+        if (id === "confirm") {
+          const r = ring(document.getElementById("openA"), 4);
+          document
+            .querySelector(".scene")
+            .insertAdjacentHTML(
+              "beforeend",
+              cursor(r.left + r.width * 0.62, r.top + r.height * 0.55),
+            );
+        }
+        if (id === "ready") {
+          const qr = document.getElementById("qx").getBoundingClientRect();
+          const z = 1.35,
+            cx = qr.left + qr.width / 2;
+          const left = Math.min(cx - 135 * z, 1200 - 270 * z - 8);
+          const w = document.getElementById("popwrap");
+          w.style.left = left / z + "px";
+          w.style.top = (qr.bottom + 1) / z + "px";
+          const arrow = w.querySelector(".arrow");
+          if (arrow) arrow.style.left = (cx - left) / z + "px";
+        }
+        if (bare) document.querySelectorAll(".badge").forEach((b) => b.remove());
+      };
+      build();
+      twSettle().then(() => {
+        build();
+        window.SHOT_READY = true;
+      });
     </script>
   </body>
 </html>
