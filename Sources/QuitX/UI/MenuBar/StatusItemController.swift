@@ -908,6 +908,13 @@ final class StatusItemController: NSObject {
             systemSymbolName: "info.circle"
         ))
 
+        menu.addItem(MenuHelper.makeItem(
+            title: "Buy me a coffee",
+            action: #selector(openBuyMeACoffee),
+            target: self,
+            systemSymbolName: "cup.and.saucer.fill"
+        ))
+
         menu.addItem(.separator())
 
         menu.addItem(MenuHelper.makeItem(
@@ -934,6 +941,10 @@ final class StatusItemController: NSObject {
 
     @objc private func openAbout() {
         SettingsWindowController.shared.show(tab: .about)
+    }
+
+    @objc private func openBuyMeACoffee() {
+        NSWorkspace.shared.open(QuitXConstants.buyMeACoffeeURL)
     }
 
     @objc private func showAvailableUpdate() {

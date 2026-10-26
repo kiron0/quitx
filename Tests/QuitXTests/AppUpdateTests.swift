@@ -94,6 +94,7 @@ struct AppUpdateTests {
     func testLatestReleaseEndpoint() {
         #expect(UpdateChecker.latestReleaseURL.absoluteString == "https://api.github.com/repos/kiron0/quitx/releases/latest")
         #expect(QuitXConstants.releasesPageURL.host == "github.com")
+        #expect(QuitXConstants.buyMeACoffeeURL.absoluteString == "https://buymeacoffee.com/_thk")
     }
 
     @Test("Menu title follows update progress")

@@ -76,6 +76,7 @@ enum QuitXConstants {
     static let issuesURL = URL(string: "https://github.com/\(githubRepository)/issues/new")!
     static let releasesURL = URL(string: "https://github.com/\(githubRepository)/releases")!
     static let releasesPageURL = URL(string: "https://github.com/\(githubRepository)/releases/latest")!
+    static let buyMeACoffeeURL = URL(string: "https://buymeacoffee.com/_thk")!
 
     static var currentYear: Int {
         Calendar.current.component(.year, from: Date())

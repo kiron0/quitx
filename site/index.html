@@ -2062,6 +2062,76 @@
                 Yes. QuitX is MIT licensed. There's no paid tier and no account.
               </p>
             </details>
+            <details>
+              <summary>
+                Does QuitX collect or send my data?<svg
+                  class="i"
+                  aria-hidden="true"
+                >
+                  <use href="#i-plus" />
+                </svg>
+              </summary>
+              <p>
+                No. QuitX has no account, analytics or tracking. It only
+                connects to GitHub to check for and download updates.
+              </p>
+            </details>
+            <details>
+              <summary>
+                Can I stop QuitX from closing specific apps?<svg
+                  class="i"
+                  aria-hidden="true"
+                >
+                  <use href="#i-plus" />
+                </svg>
+              </summary>
+              <p>
+                Yes. Add any app to the Exclude list from its three-dot menu or
+                Settings. You can also protect music apps with one switch.
+              </p>
+            </details>
+            <details>
+              <summary>
+                What is the Ports feature?<svg class="i" aria-hidden="true">
+                  <use href="#i-plus" />
+                </svg>
+              </summary>
+              <p>
+                It lists listening ports with their apps, processes and Docker
+                containers, then lets you safely free selected ports. It is off
+                by default; enable it in Settings → Ports.
+              </p>
+            </details>
+            <details>
+              <summary>
+                Can QuitX uninstall apps and their leftovers?<svg
+                  class="i"
+                  aria-hidden="true"
+                >
+                  <use href="#i-plus" />
+                </svg>
+              </summary>
+              <p>
+                Yes. QuitX finds the app, caches, preferences and support files
+                for review, then moves selected items to the Trash. Apple and
+                system apps are protected.
+              </p>
+            </details>
+            <details>
+              <summary>
+                How can I support QuitX?<svg class="i" aria-hidden="true">
+                  <use href="#i-plus" />
+                </svg>
+              </summary>
+              <p>
+                Star the project on GitHub, report useful bugs, or
+                <a
+                  href="https://buymeacoffee.com/_thk"
+                  style="color: var(--color-ink); text-decoration: underline"
+                  >buy me a coffee</a
+                >. QuitX remains free and open source.
+              </p>
+            </details>
           </div>
         </div>
       </section>
@@ -2113,6 +2183,13 @@
     <script>
       (() => {
         document.getElementById("year").textContent = new Date().getFullYear();
+
+        document
+          .querySelectorAll('a[href]:not([href^="#"])')
+          .forEach((link) => {
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+          });
 
         const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 

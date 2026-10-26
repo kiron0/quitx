@@ -637,6 +637,15 @@ struct MainPopoverView: View {
             }
         ))
 
+        menu.addItem(MenuHelper.makeItem(
+            title: "Buy me a coffee",
+            systemSymbolName: "cup.and.saucer.fill",
+            action: {
+                StatusItemController.shared?.closePopover()
+                NSWorkspace.shared.open(QuitXConstants.buyMeACoffeeURL)
+            }
+        ))
+
         menu.addItem(.separator())
 
         menu.addItem(MenuHelper.makeItem(

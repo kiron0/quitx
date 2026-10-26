@@ -31,53 +31,17 @@
 
 ## Features
 
-| | |
-|---|---|
-| **Quit one, some, or all** | Every running app in one list, grouped with its windows and helpers. Search, sort by name, CPU or memory. |
-| **Confirm before quit** | A quick confirmation before Quit All, and optionally before single quits and restarts. |
-| **Normal quit or force quit** | Normal quit lets apps save first. Hold <kbd>⌥</kbd> to force quit, or make Force quit the default. |
-| **View background apps** | Show helpers and agents that never appear in the Dock, with identical instances grouped. <kbd>⌘B</kbd> |
-| **Exclude apps** | Excluded apps leave the list and are never quit, manually or automatically. Music apps can be protected with one switch. |
-| **Menu bar stats** | Live CPU, memory, GPU and battery in the menu bar, as icons or text, with your choice of refresh rate. Click a stat for a detailed view. |
-| **CPU and memory warnings** | When CPU or memory stays over your limit, QuitX notifies you and offers to quit inactive apps. |
-| **Quit apps when your Mac sleeps** | Close everything on sleep, only between the hours you pick. |
-| **Classic or Liquid Glass** | The solid classic look, or translucent Liquid Glass on macOS 26. |
-| **Sounds on quit** | A short arcade laser every time an app goes. Switch it off any time. |
-| **Last window closes, app quits** | Close an app's last window and it quits. Spaces, full screen and minimize never count. |
-| **Automation** | Quit inactive apps after a while and per-app quit timers. Slows itself down in Low Power Mode. |
-| **Uninstall apps** | Remove one app or several at once with their caches, preferences and support files, preselected with sizes. Confirms first, force quits and moves everything to the Trash. Apple and system apps are never offered. |
-| **Ports** | Optional Ports tab: every listening port with its app, folder and Docker container, refreshed live. Kill one or many, trace the process tree, exclude ports and show the count in the menu bar. Turn it on in Settings ▸ Ports. |
-| **Global shortcuts** | Open the menu, Quit All or Force Quit All from anywhere. |
-| **In-app updates** | Updates straight from GitHub Releases, verified before install. |
+- Quit one, selected, or all apps normally or by force.
+- Group app instances, windows, helpers, and optional background apps.
+- Exclude protected apps; automate quits by inactivity, timer, sleep, or last window.
+- Monitor CPU, memory, GPU, battery, and listening ports from the menu bar.
+- Warn about sustained CPU or memory pressure and rescue inactive apps.
+- Uninstall apps with reviewable leftovers, moved safely to the Trash.
+- Use global shortcuts, Classic or Liquid Glass themes, and verified in-app updates.
 
-<table width="100%">
-  <tr>
-    <td width="50%"><img src="Support/Screenshots/force.jpg" alt="Force Quit All while Option is held" /><p align="center"><strong>Normal or force quit</strong></p></td>
-    <td width="50%"><img src="Support/Screenshots/confirm.jpg" alt="Quit 14 Apps? confirmation" /><p align="center"><strong>Confirm before quit</strong></p></td>
-  </tr>
-  <tr>
-    <td width="50%"><img src="Support/Screenshots/background.jpg" alt="Background apps in the QuitX list" /><p align="center"><strong>Background apps</strong></p></td>
-    <td width="50%"><img src="Support/Screenshots/exclude.jpg" alt="Add to Exclude List in a row menu" /><p align="center"><strong>Exclude apps</strong></p></td>
-  </tr>
-  <tr>
-    <td width="50%"><img src="Support/Screenshots/stats.jpg" alt="CPU, memory, GPU and battery in the menu bar" /><p align="center"><strong>Menu bar stats</strong></p></td>
-    <td width="50%"><img src="Support/Screenshots/health.jpg" alt="High CPU usage warning" /><p align="center"><strong>CPU and memory warnings</strong></p></td>
-  </tr>
-  <tr>
-    <td width="50%"><img src="Support/Screenshots/sleep.jpg" alt="Quit apps when Mac sleeps setting" /><p align="center"><strong>Quit on sleep</strong></p></td>
-    <td width="50%"><img src="Support/Screenshots/theme.jpg" alt="Classic and Liquid Glass styles" /><p align="center"><strong>Classic or Liquid Glass</strong></p></td>
-  </tr>
-  <tr>
-    <td width="50%"><img src="Support/Screenshots/sounds.jpg" alt="Play cool sounds setting" /><p align="center"><strong>Sounds on quit</strong></p></td>
-    <td width="50%"><img src="Support/Screenshots/updates.jpg" alt="Restart to Update and the Update window" /><p align="center"><strong>In-app updates</strong></p></td>
-  </tr>
-  <tr>
-    <td width="50%"><img src="Support/Screenshots/ports.jpg" alt="The Ports tab listing listening ports" /><p align="center"><strong>Free up busy ports</strong></p></td>
-    <td width="50%"><img src="Support/Screenshots/portsSettings.jpg" alt="Ports settings with Enable port killing turned on" /><p align="center"><strong>Ports settings</strong></p></td>
-  </tr>
-</table>
+## How it works
 
----
+Architecture, macOS APIs, safety rules, permissions, ports, updates, and release details live in [docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md).
 
 ## Install
 
@@ -98,6 +62,8 @@ curl -fsSL https://quitx.kiron.dev/install | bash
 <p align="center"><img src="Support/Screenshots/install.jpg" width="100%" alt="Install steps: drag to Applications, click Done, Open Anyway in Privacy & Security, confirm" /></p>
 
 QuitX then updates itself from GitHub Releases (Settings › General).
+
+Support development: [Buy me a coffee](https://buymeacoffee.com/_thk).
 
 ## License
 
