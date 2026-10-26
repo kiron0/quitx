@@ -93,7 +93,13 @@
     .frame { position: relative; border-radius: 22px; overflow: hidden; background: #000; aspect-ratio: 16 / 10;
       box-shadow: 0 0 0 1px var(--line-strong), 0 40px 120px rgba(0,0,0,.6), 0 0 160px rgba(254, 188, 51, .08); }
     .frame video, .frame img { width: 100%; height: 100%; object-fit: cover; }
-    .controls { position: absolute; right: 16px; bottom: 16px; display: flex; gap: 8px; }
+    .poster-overlay { position: absolute; inset: 0; z-index: 2; opacity: 0; pointer-events: none; cursor: pointer; transition: opacity .25s var(--ease); display: grid; place-items: center; }
+    .poster-overlay img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .poster-play-badge { position: relative; z-index: 1; width: 72px; height: 72px; border-radius: 50%; background: rgba(14, 12, 10, .72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: inset 0 0 0 1px rgba(255, 244, 228, .2), 0 12px 32px rgba(0, 0, 0, .5); display: grid; place-items: center; color: var(--gold); transition: transform .2s var(--ease), background .2s, color .2s; }
+    .poster-overlay:hover .poster-play-badge { transform: scale(1.08); background: rgba(14, 12, 10, .9); color: #fff; }
+    .poster-play-badge svg { width: 28px; height: 28px; margin-left: 3px; }
+    .frame.is-paused .poster-overlay { opacity: 1; pointer-events: auto; }
+    .controls { position: absolute; right: 16px; bottom: 16px; display: flex; gap: 8px; z-index: 3; }
     .ctrl { width: 44px; height: 44px; border-radius: 12px; border: 0; cursor: pointer; display: grid; place-items: center; color: #fff;
       background: rgba(14, 12, 10, .62); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); transition: background .15s; }
     .ctrl:hover { background: rgba(14, 12, 10, .82); }
@@ -230,7 +236,7 @@
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
       .reveal { opacity: 1; transform: none; transition: none; }
-      .btn, .ctrl, .faq summary svg { transition: none; }
+      .btn, .ctrl, .faq summary svg, .poster-overlay, .poster-play-badge { transition: none; }
     }
     .tile.big { margin-bottom: 16px; }
     .num { display: inline-block; font: 600 12.5px/1 var(--mono); color: var(--gold); letter-spacing: .04em; margin-bottom: 12px; }
@@ -330,13 +336,19 @@
         </div>
 
         <div class="stage">
-          <div class="frame">
+          <div class="frame is-paused" id="demoFrame">
             <video id="demo" muted loop playsinline preload="metadata" poster="assets/demo-poster.jpg" aria-label="QuitX demo: quitting apps, port killing, normal vs force quit, background apps, exclusions, menu bar stats & core detail, CPU warnings & Smart Rescue, settings dashboard, quit on sleep, last window quit, Classic and Liquid Glass themes, and in-app updates">
-              <source src="assets/demo.webm" type="video/webm">
-              <source src="assets/demo.mp4" type="video/mp4">
+              <source src="assets/demo.webm" type='video/webm; codecs="vp9, opus"'>
+              <source src="assets/demo.mp4" type='video/mp4; codecs="avc1.640028, mp4a.40.2"'>
             </video>
+            <div class="poster-overlay" id="posterOverlay" role="button" tabindex="0" aria-label="Play video">
+              <img src="assets/demo-poster.jpg" alt="" loading="eager">
+              <div class="poster-play-badge" aria-hidden="true">
+                <svg class="i"><use href="#i-play"/></svg>
+              </div>
+            </div>
             <div class="controls">
-              <button class="ctrl" id="playbtn" type="button" aria-label="Pause video"><svg class="i" aria-hidden="true"><use href="#i-pause"/></svg></button>
+              <button class="ctrl" id="playbtn" type="button" aria-label="Play video"><svg class="i" aria-hidden="true"><use href="#i-play"/></svg></button>
               <button class="ctrl" id="soundbtn" type="button" aria-label="Turn sound on"><svg class="i" aria-hidden="true"><use href="#i-muted"/></svg></button>
             </div>
           </div>
@@ -601,11 +613,14 @@
         els.forEach(el => io.observe(el));
       }
 
+      const frame = document.getElementById('demoFrame');
       const video = document.getElementById('demo');
+      const posterOverlay = document.getElementById('posterOverlay');
       const playBtn = document.getElementById('playbtn');
       const soundBtn = document.getElementById('soundbtn');
-      const setPlayIcon = () => {
+      const updatePlayState = () => {
         const playing = !video.paused;
+        if (frame) frame.classList.toggle('is-paused', !playing);
         playBtn.innerHTML = `<svg class="i" aria-hidden="true"><use href="#i-${playing ? 'pause' : 'play'}"/></svg>`;
         playBtn.setAttribute('aria-label', playing ? 'Pause video' : 'Play video');
       };
@@ -613,17 +628,44 @@
         soundBtn.innerHTML = `<svg class="i" aria-hidden="true"><use href="#i-${video.muted ? 'muted' : 'sound'}"/></svg>`;
         soundBtn.setAttribute('aria-label', video.muted ? 'Turn sound on' : 'Turn sound off');
       };
+      const startOrResume = () => {
+        userPaused = false;
+        video.play().catch(() => {});
+      };
       let userPaused = false;
       playBtn.addEventListener('click', () => {
-        if (video.paused) { userPaused = false; video.play().catch(() => {}); } else { userPaused = true; video.pause(); }
+        if (video.paused) { startOrResume(); } else { userPaused = true; video.pause(); }
       });
+      if (posterOverlay) {
+        posterOverlay.addEventListener('click', startOrResume);
+        posterOverlay.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            startOrResume();
+          }
+        });
+      }
       soundBtn.addEventListener('click', () => {
         video.muted = !video.muted;
-        if (!video.muted && video.paused) { userPaused = false; video.play().catch(() => {}); }
+        if (!video.muted && video.paused) { startOrResume(); }
         setSoundIcon();
       });
-      video.addEventListener('play', setPlayIcon);
-      video.addEventListener('pause', setPlayIcon);
+      video.addEventListener('play', updatePlayState);
+      video.addEventListener('pause', updatePlayState);
+
+      const webmSource = video.querySelector('source[type*="webm"]');
+      if (webmSource) {
+        webmSource.addEventListener('error', () => {
+          if (!video.currentSrc.endsWith('.mp4')) {
+            const time = video.currentTime;
+            const wasPlaying = !video.paused;
+            video.src = 'assets/demo.mp4';
+            video.currentTime = time;
+            if (wasPlaying) video.play().catch(() => {});
+          }
+        });
+      }
+
       if (!reduce && 'IntersectionObserver' in window) {
         new IntersectionObserver(([e]) => {
           if (e.isIntersecting && !userPaused) video.play().catch(() => {});
@@ -631,7 +673,7 @@
         }, { threshold: .35 }).observe(video);
       }
       document.addEventListener('visibilitychange', () => { if (document.hidden) video.pause(); });
-      setPlayIcon();
+      updatePlayState();
       setSoundIcon();
 
       const snd = document.getElementById('quitSound');
