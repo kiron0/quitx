@@ -12,6 +12,7 @@
     "open": "open \"$HOME/Applications/QuitX.app\"",
     "ship": "./Scripts/ship.sh",
     "bump": "./Scripts/bump-version.sh",
-    "start": "npm run ship"
+    "start": "npm run ship",
+    "site": "python3 -m http.server 4173 --bind 127.0.0.1 --directory site"
   }
 }

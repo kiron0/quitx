@@ -84,7 +84,8 @@ final class HogMonitor {
         guard backgroundTask == nil else { return }
         backgroundTask = Task { [weak self] in
             while let self, !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: BatterySaver.isLowPowerMode ? 10_000_000_000 : 2_000_000_000)
+                let idle = BatterySaver.isLowPowerMode || !ConfigStore.shared.config.hogAlertEnabled
+                try? await Task.sleep(nanoseconds: idle ? 10_000_000_000 : 2_000_000_000)
                 guard !Task.isCancelled else { break }
                 await self.backgroundTick()
             }

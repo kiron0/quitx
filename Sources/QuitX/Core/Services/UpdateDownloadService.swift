@@ -166,11 +166,11 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         var didSucceed = false
         defer {
             if isMounted {
-                let detachProcess = Process()
-                detachProcess.executableURL = URL(fileURLWithPath: "/usr/bin/hdiutil")
-                detachProcess.arguments = ["detach", mountPoint.path, "-force", "-quiet"]
-                try? detachProcess.run()
-                detachProcess.waitUntilExit()
+                _ = ProcessRunner.runSync(
+                    executable: "/usr/bin/hdiutil",
+                    arguments: ["detach", mountPoint.path, "-force", "-quiet"],
+                    timeout: 20
+                )
             }
             if !didSucceed {
                 try? FileManager.default.removeItem(at: stagingDir)
@@ -182,24 +182,25 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         try FileManager.default.createDirectory(at: mountPoint, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: stagingDir, withIntermediateDirectories: true)
 
-        let attachProcess = Process()
-        attachProcess.executableURL = URL(fileURLWithPath: "/usr/bin/hdiutil")
-        attachProcess.arguments = [
-            "attach",
-            dmgURL.path,
-            "-mountpoint",
-            mountPoint.path,
-            "-nobrowse",
-            "-readonly",
-            "-noverify",
-            "-noautofsck",
-            "-noautoopen",
-            "-quiet"
-        ]
-
-        try attachProcess.run()
-        attachProcess.waitUntilExit()
-        guard attachProcess.terminationStatus == 0 else {
+        let attach = await ProcessRunner.run(
+            executable: "/usr/bin/hdiutil",
+            arguments: [
+                "attach",
+                dmgURL.path,
+                "-mountpoint",
+                mountPoint.path,
+                "-nobrowse",
+                "-readonly",
+                "-noverify",
+                "-noautofsck",
+                "-noautoopen",
+                "-quiet"
+            ],
+            timeout: 90,
+            qos: .utility
+        )
+        guard let attach, !attach.timedOut, attach.status == 0 else {
+            isMounted = attach?.timedOut == true
             try? FileManager.default.removeItem(at: stagingDir)
             throw UpdateError.mountFailed
         }
@@ -218,12 +219,13 @@ final class UpdateDownloadService: NSObject, ObservableObject {
             sourceAppURL = foundApp
         }
 
-        let copyProcess = Process()
-        copyProcess.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
-        copyProcess.arguments = [sourceAppURL.path, stagedAppURL.path]
-        try copyProcess.run()
-        copyProcess.waitUntilExit()
-        guard copyProcess.terminationStatus == 0 else {
+        let copy = await ProcessRunner.run(
+            executable: "/usr/bin/ditto",
+            arguments: [sourceAppURL.path, stagedAppURL.path],
+            timeout: 180,
+            qos: .utility
+        )
+        guard let copy, !copy.timedOut, copy.status == 0 else {
             try? FileManager.default.removeItem(at: stagingDir)
             throw UpdateError.copyFailed
         }

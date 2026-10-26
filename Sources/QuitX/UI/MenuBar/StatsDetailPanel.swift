@@ -115,26 +115,26 @@ final class StatsDetailModel: ObservableObject {
         let generation = sampleGeneration
 
         let detail = SystemUsage.cpuDetail(consumer: "statsPanel")
-        cpu = detail.total
-        systemPct = detail.system
-        userPct = detail.user
-        idlePct = detail.idle
-        perCore = detail.perCore
+        update(\.cpu, detail.total)
+        update(\.systemPct, detail.system)
+        update(\.userPct, detail.user)
+        update(\.idlePct, detail.idle)
+        update(\.perCore, detail.perCore)
 
-        load1 = SystemUsage.loadAverages().0
-        uptime = SystemUsage.uptimeDescription()
+        update(\.load1, SystemUsage.loadAverages().0)
+        update(\.uptime, SystemUsage.uptimeDescription())
 
         if let breakdown = SystemUsage.memoryBreakdown() {
-            memTotal = breakdown.total
-            memApp = breakdown.app
-            memWired = breakdown.wired
-            memCompressed = breakdown.compressed
-            memCached = breakdown.cached
-            memFree = breakdown.free
+            update(\.memTotal, breakdown.total)
+            update(\.memApp, breakdown.app)
+            update(\.memWired, breakdown.wired)
+            update(\.memCompressed, breakdown.compressed)
+            update(\.memCached, breakdown.cached)
+            update(\.memFree, breakdown.free)
         }
         let swap = SystemUsage.swapUsage()
-        swapUsed = swap.used
-        swapTotal = swap.total
+        update(\.swapUsed, swap.used)
+        update(\.swapTotal, swap.total)
 
         if ConfigStore.shared.config.batteryMenuBarEnabled, mode == .battery {
             let now = Date()
@@ -186,6 +186,12 @@ final class StatsDetailModel: ObservableObject {
         appendHistory(&cpuHistory, value: cpu)
         if memTotal > 0 {
             appendHistory(&memHistory, value: Double(memUsed) / Double(memTotal) * 100)
+        }
+    }
+
+    private func update<Value: Equatable>(_ keyPath: ReferenceWritableKeyPath<StatsDetailModel, Value>, _ value: Value) {
+        if self[keyPath: keyPath] != value {
+            self[keyPath: keyPath] = value
         }
     }
 

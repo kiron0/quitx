@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="scroll-smooth overflow-x-clip">
+<html class="overflow-x-clip scroll-smooth motion-reduce:scroll-auto" lang="en">
   <head>
     <meta charset="utf-8" />
     <meta
@@ -34,7 +34,7 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&family=JetBrains+Mono:wght@500&display=swap"
     />
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
     <style type="text/tailwindcss">
       @theme {
         --color-bg: #0e0c0a;
@@ -55,1056 +55,59 @@
         --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
         --ease-qx: cubic-bezier(0.2, 0.7, 0.2, 1);
       }
-      * {
-        @apply box-border;
-      }
-      html {
-        -webkit-text-size-adjust: 100%;
-      }
-      body {
-        font: 400 17px/1.6 var(--font-body);
-        -webkit-font-smoothing: antialiased;
-        font-feature-settings: "cv11", "ss01", "ss03";
-        overflow-wrap: break-word;
-      }
-      a {
-        color: inherit;
-        text-decoration: none;
-      }
-      img,
-      video {
-        @apply block;
-        @apply max-w-full;
-        @apply h-auto;
-      }
-      :focus-visible {
-        outline: 2px solid var(--color-gold);
-        outline-offset: 3px;
-        @apply rounded-[6px];
-      }
-      .wrap {
-        width: min(1180px, 100% - 40px);
-        margin: 0 auto;
-      }
-      h1,
-      h2,
-      h3 {
-        @apply m-0;
-        @apply tracking-[-.028em];
-        @apply text-balance;
-        @apply font-bold;
-      }
-      h2 {
-        font-size: clamp(26px, 4.2vw, 48px);
-        line-height: 1.14;
-        @apply tracking-[-.025em];
-      }
-      h3 {
-        @apply text-[19px];
-        @apply tracking-[-.012em];
-        line-height: 1.3;
-      }
-      p {
-        @apply m-0;
-      }
-      .muted {
-        @apply text-[var(--color-muted)];
-      }
-      .eyebrow {
-        font: 600 13px/1 var(--font-body);
-        letter-spacing: 0.1em;
-        @apply uppercase;
-        @apply text-[var(--color-gold)];
-      }
-      .gold {
-        @apply text-[var(--color-gold)];
-      }
-      .sr-only {
-        @apply absolute;
-        @apply w-[1px];
-        @apply h-[1px];
-        @apply overflow-hidden;
-        clip: rect(0 0 0 0);
-        @apply whitespace-nowrap;
-      }
-      svg.i {
-        @apply w-[20px];
-        @apply h-[20px];
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 1.8;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        @apply flex-none;
-      }
-      .nav {
-        z-index: 50;
-      }
-      section[id],
-      main[id] {
-        scroll-margin-top: 24px;
-      }
-      .nav .wrap {
-        @apply flex;
-        @apply items-center;
-        @apply gap-[28px];
-        @apply h-[64px];
-      }
-      .brand img {
-        @apply w-[30px];
-        @apply h-[30px];
-      }
-      .nav nav {
-        @apply flex;
-        @apply gap-[26px];
-        @apply text-[15px];
-        @apply text-[var(--color-muted)];
-      }
-      .nav nav a {
-        transition: color 0.15s;
-      }
-      .nav nav a:hover {
-        @apply text-[var(--color-ink)];
-      }
-      .nav .right {
-        @apply ml-auto;
-        @apply flex;
-        @apply items-center;
-        @apply gap-[12px];
-      }
-      .btn {
-        @apply inline-flex;
-        @apply items-center;
-        @apply justify-center;
-        @apply gap-[9px];
-        @apply min-h-[44px];
-        padding: 0 20px;
-        @apply rounded-[12px];
-        font: 600 15.5px/1 var(--font-body);
-        @apply tracking-[-.005em];
-        @apply cursor-pointer;
-        @apply border-0;
-        transition:
-          transform 0.15s var(--ease-qx),
-          background-color 0.15s,
-          box-shadow 0.15s,
-          filter 0.15s;
-        @apply whitespace-nowrap;
-      }
-      .btn:active {
-        transform: translateY(1px) scale(0.99);
-      }
-      .btn-gold {
-        background: linear-gradient(
-          180deg,
-          var(--color-gold),
-          var(--color-gold-deep)
-        );
-        color: var(--color-on-gold);
-        box-shadow:
-          inset 0 1px 0 rgba(255, 255, 255, 0.35),
-          0 8px 24px rgba(232, 155, 0, 0.22);
-      }
-      .btn-gold:hover {
-        filter: brightness(1.05);
-      }
-      .btn-ghost {
-        @apply bg-[rgba(255,_244,_228,_.06)];
-        @apply text-[var(--color-ink)];
-        box-shadow: inset 0 0 0 1px var(--color-line-strong);
-      }
-      .btn-ghost:hover {
-        @apply bg-[rgba(255,_244,_228,_.1)];
-      }
-      .btn-sm {
-        @apply min-h-[36px];
-        padding: 0 14px;
-        @apply text-[14px];
-        @apply rounded-[10px];
-      }
-      .btn small {
-        font: 500 12.5px/1 var(--font-mono);
-        opacity: 0.7;
-      }
-      .hero {
-        padding: 152px 0 40px;
-      }
-      .hero::before {
-        content: "";
-        position: absolute;
-        @apply left-[50%];
-        @apply top-[-220px];
-        @apply w-[1200px];
-        @apply h-[760px];
-        transform: translateX(-50%);
-        @apply pointer-events-none;
-        background: radial-gradient(
-          50% 50% at 50% 50%,
-          rgba(254, 188, 51, 0.22),
-          rgba(254, 188, 51, 0) 70%
-        );
-      }
-      .badge {
-        padding: 7px 14px 7px 8px;
-        box-shadow: inset 0 0 0 1px var(--color-line-strong);
-        transition: background 0.15s;
-        line-height: 1.35;
-      }
-      .badge:hover {
-        @apply bg-[rgba(255,_244,_228,_.09)];
-      }
-      .badge b {
-        @apply whitespace-nowrap;
-        padding: 4px 9px;
-        @apply rounded-[999px];
-        @apply bg-[rgba(254,_188,_51,_.14)];
-        @apply text-[var(--color-gold)];
-        @apply text-[12.5px];
-        @apply font-semibold;
-      }
-      .hero h1 {
-        @apply relative;
-        margin: 26px auto 22px;
-        @apply max-w-[14ch];
-        font-size: clamp(36px, 6.8vw, 84px);
-        line-height: 1.05;
-        @apply tracking-[-.038em];
-        font-weight: 750;
-      }
-      .hero h1 span {
-        background: linear-gradient(180deg, #ffd271, #f2a51a);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-      }
-      .hero .lede {
-        @apply relative;
-        @apply max-w-[36em];
-        margin: 0 auto;
-        font-size: clamp(16px, 1.6vw, 19.5px);
-        line-height: 1.55;
-        @apply text-[var(--color-muted)];
-      }
-      .cta {
-        @apply relative;
-        @apply flex;
-        @apply flex-wrap;
-        @apply gap-[12px];
-        @apply justify-center;
-        @apply mt-[34px];
-      }
-      .meta {
-        gap: 6px 18px;
-      }
-      .meta span {
-        @apply inline-flex;
-        @apply items-center;
-        @apply gap-[6px];
-      }
-      .meta svg.i {
-        @apply w-[15px];
-        @apply h-[15px];
-      }
-      .dlcount b {
-        @apply text-[var(--text)];
-        font-weight: 650;
-        font-variant-numeric: tabular-nums;
-      }
-      .stage {
-        margin: 64px auto 0;
-      }
-      .frame {
-        aspect-ratio: 16 / 10;
-        box-shadow:
-          0 0 0 1px var(--color-line-strong),
-          0 40px 120px rgba(0, 0, 0, 0.6),
-          0 0 160px rgba(254, 188, 51, 0.08);
-      }
-      .frame video,
-      .frame img {
-        @apply w-full;
-        @apply h-full;
-        @apply object-cover;
-      }
-      .poster-overlay {
-        z-index: 2;
-        transition: opacity 0.25s var(--ease-qx);
-      }
-      .poster-overlay img {
-        @apply absolute;
-        @apply inset-0;
-        @apply w-full;
-        @apply h-full;
-        @apply object-cover;
-      }
-      .poster-play-badge {
-        z-index: 1;
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
-        box-shadow:
-          inset 0 0 0 1px rgba(255, 244, 228, 0.2),
-          0 12px 32px rgba(0, 0, 0, 0.5);
-        transition:
-          transform 0.2s var(--ease-qx),
-          background 0.2s,
-          color 0.2s;
-      }
-      .frame:hover .poster-play-badge {
-        transform: scale(1.08);
-        background: rgba(14, 12, 10, 0.9);
-        @apply text-[#fff];
-      }
-      .poster-play-badge svg {
-        @apply w-[28px];
-        @apply h-[28px];
-        @apply ml-[3px];
-      }
-      .frame.is-paused .poster-overlay {
-        @apply opacity-100;
-      }
-      .controls {
-        z-index: 3;
-      }
-      .ctrl {
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
-        transition: background 0.15s;
-      }
-      .ctrl:hover {
-        @apply bg-[rgba(14,_12,_10,_.82)];
-      }
-      .ctrl svg {
-        @apply w-[18px];
-        @apply h-[18px];
-      }
-      section {
-        padding: 120px 0;
-      }
-      .head {
-        @apply max-w-[680px];
-        @apply mb-[52px];
-      }
-      .head p {
-        @apply mt-[18px];
-        font-size: clamp(16px, 1.7vw, 18px);
-        line-height: 1.55;
-        @apply text-[var(--color-muted)];
-      }
-      .head .eyebrow {
-        @apply block;
-        @apply mb-[16px];
-      }
-      .split-lead {
-        font-size: clamp(16px, 1.7vw, 18px);
-        line-height: 1.55;
-      }
-      .bento {
-        @apply grid;
-        grid-template-columns: repeat(6, 1fr);
-        @apply gap-[16px];
-      }
-      .tile {
-        @apply relative;
-        @apply overflow-hidden;
-        border-radius: var(--radius-card);
-        background: linear-gradient(
-          180deg,
-          var(--color-surface-2),
-          var(--color-surface)
-        );
-        box-shadow: inset 0 0 0 1px var(--color-line);
-      }
-      .tile .copy {
-        padding: 28px 28px 0;
-      }
-      .tile .copy p {
-        @apply mt-[10px];
-        @apply text-[var(--color-muted)];
-        @apply text-[15.5px];
-        @apply max-w-[34em];
-      }
-      .tile.big {
-        grid-column: span 6;
-        display: grid;
-        grid-template-columns: 1fr 1.35fr;
-        align-items: center;
-      }
-      .tile.big .copy {
-        @apply p-[44px];
-      }
-      .tile.big h3 {
-        @apply text-[30px];
-        @apply tracking-[-.025em];
-      }
-      .tile.big p {
-        @apply text-[17px];
-      }
-      .tile.half {
-        grid-column: span 3;
-      }
-      .tile.third {
-        grid-column: span 2;
-        padding: 26px;
-      }
-      .tile .shot {
-        @apply mt-[24px];
-      }
-      .tile .shot img {
-        @apply w-full;
-      }
-      .tile.big .shot {
-        @apply m-0;
-        @apply h-full;
-      }
-      .tile.big .shot {
-        @apply self-stretch;
-      }
-      .tile.big .shot img {
-        @apply h-full;
-        @apply w-full;
-        @apply object-cover;
-        object-position: 50% 0;
-      }
-      .tile.half .shot img {
-        aspect-ratio: 4 / 3;
-        object-fit: cover;
-        object-position: 30% 0;
-      }
-      .tile .ico {
-        @apply w-[42px];
-        @apply h-[42px];
-        @apply rounded-[12px];
-        @apply grid;
-        @apply place-items-center;
-        @apply text-[var(--color-gold)];
-        @apply bg-[rgba(254,_188,_51,_.1)];
-        box-shadow: inset 0 0 0 1px rgba(254, 188, 51, 0.2);
-        @apply mb-[18px];
-      }
-      .tile.third p {
-        @apply mt-[8px];
-        @apply text-[var(--color-muted)];
-        @apply text-[15px];
-      }
-      .points {
-        margin: 22px 0 0;
-      }
-      .points li {
-        @apply flex;
-        @apply gap-[10px];
-        @apply items-start;
-        @apply text-[var(--color-muted)];
-        @apply text-[15.5px];
-      }
-      .points svg.i {
-        @apply text-[var(--color-gold)];
-        @apply w-[18px];
-        @apply h-[18px];
-        @apply mt-[3px];
-      }
-      kbd {
-        font: 600 13px/1 var(--font-body);
-        padding: 4px 7px;
-        @apply rounded-[6px];
-        @apply bg-[rgba(255,255,255,.1)];
-        box-shadow:
-          inset 0 -1px 0 rgba(0, 0, 0, 0.4),
-          inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-        @apply text-[var(--color-ink)];
-      }
-      .band {
-        @apply bg-[var(--color-bg-2)];
-        border-top: 1px solid var(--color-line);
-        border-bottom: 1px solid var(--color-line);
-      }
-      .split {
-        grid-template-columns: 1fr 1.15fr;
-      }
-      .steps {
-        margin: 34px 0 0;
-        counter-reset: s;
-      }
-      .steps li {
-        counter-increment: s;
-        display: grid;
-        grid-template-columns: 40px 1fr;
-        gap: 16px;
-      }
-      .steps li::before {
-        content: counter(s);
-        width: 40px;
-        @apply h-[40px];
-        @apply rounded-[12px];
-        @apply grid;
-        @apply place-items-center;
-        font: 600 15px/1 var(--font-mono);
-        @apply text-[var(--color-gold)];
-        @apply bg-[rgba(254,_188,_51,_.1)];
-        box-shadow: inset 0 0 0 1px rgba(254, 188, 51, 0.22);
-      }
-      .steps strong {
-        @apply block;
-        @apply text-[17px];
-        @apply font-semibold;
-        @apply mb-[2px];
-      }
-      .steps span {
-        @apply text-[var(--color-muted)];
-        @apply text-[15.5px];
-      }
-      .shotframe {
-        box-shadow:
-          0 0 0 1px var(--color-line-strong),
-          0 30px 80px rgba(0, 0, 0, 0.5);
-      }
-      .trust {
-        grid-template-columns: repeat(3, 1fr);
-      }
-      .trust .tile {
-        @apply p-[28px];
-      }
-      .trust h3 {
-        @apply mt-[2px];
-      }
-      .trust p {
-        @apply mt-[8px];
-        @apply text-[var(--color-muted)];
-        @apply text-[15.5px];
-      }
-      .install {
-        @apply grid;
-        grid-template-columns: 1fr 1fr;
-        @apply gap-[16px];
-      }
-      .install .tile {
-        @apply p-[30px];
-      }
-      .install ol {
-        margin: 16px 0 0;
-        padding-left: 20px;
-        @apply text-[var(--color-muted)];
-        @apply grid;
-        @apply gap-[8px];
-      }
-      .install ol a {
-        @apply text-[var(--color-ink)];
-        text-decoration: underline;
-        text-decoration-color: var(--color-line-strong);
-        text-underline-offset: 4px;
-      }
-      .code {
-        padding: 8px 8px 8px 16px;
-        box-shadow: inset 0 0 0 1px var(--color-line);
-      }
-      .code code {
-        @apply flex-1;
-        @apply min-w-0;
-        @apply overflow-x-auto;
-        @apply whitespace-nowrap;
-        font: 500 14px/1.6 var(--font-mono);
-        @apply text-[#EDE6DA];
-        scrollbar-width: none;
-      }
-      .code code::-webkit-scrollbar {
-        @apply hidden;
-      }
-      .code .copybtn {
-        @apply min-h-[36px];
-      }
-      .install .note {
-        @apply mt-[14px];
-        @apply text-[14px];
-        @apply text-[var(--color-faint)];
-      }
-      .faq {
-        margin: 0 auto;
-      }
-      .faq details {
-        border-bottom: 1px solid var(--color-line);
-      }
-      .faq summary {
-        @apply list-none;
-        @apply cursor-pointer;
-        @apply flex;
-        @apply items-center;
-        @apply justify-between;
-        @apply gap-[20px];
-        padding: 22px 2px;
-        @apply text-[18px];
-        @apply font-semibold;
-        @apply tracking-[-.01em];
-        @apply min-h-[44px];
-      }
-      .faq summary::-webkit-details-marker {
-        @apply hidden;
-      }
-      .faq summary svg {
-        transition: transform 0.2s var(--ease-qx);
-        color: var(--color-muted);
-      }
-      .faq details[open] summary svg {
-        transform: rotate(45deg);
-      }
-      .faq details p {
-        padding: 0 2px 22px;
-        color: var(--color-muted);
-        @apply max-w-[62ch];
-      }
-      .final {
-        padding: 120px 0 130px;
-      }
-      .final::before {
-        content: "";
-        position: absolute;
-        @apply left-[50%];
-        @apply bottom-[-320px];
-        @apply w-[1100px];
-        @apply h-[640px];
-        transform: translateX(-50%);
-        background: radial-gradient(
-          50% 50% at 50% 50%,
-          rgba(254, 188, 51, 0.2),
-          transparent 70%
-        );
-        @apply pointer-events-none;
-      }
-      .final img {
-        @apply relative;
-        @apply w-[96px];
-        @apply h-[96px];
-        margin: 0 auto 26px;
-        filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.5));
-      }
-      .final h2 {
-        @apply relative;
-      }
-      .final p {
-        @apply relative;
-        margin: 16px auto 0;
-        @apply text-[var(--color-muted)];
-        @apply text-[18px];
-        @apply max-w-[34em];
-      }
-      .final .cta {
-        @apply mt-[30px];
-      }
-      footer {
-        border-top: 1px solid var(--color-line);
-        padding: 34px 0 48px;
-      }
-      footer .wrap {
-        @apply flex;
-        @apply flex-wrap;
-        @apply items-center;
-        gap: 14px 28px;
-      }
-      footer nav {
-        @apply ml-auto;
-        @apply flex;
-        @apply flex-wrap;
-        gap: 8px 22px;
-      }
-      footer a:hover {
-        @apply text-[var(--color-ink)];
-      }
-      .reveal {
-        @apply opacity-0;
-        transform: translateY(16px);
-        transition:
-          opacity 0.6s var(--ease-qx),
-          transform 0.6s var(--ease-qx);
-      }
-      .reveal.in {
-        @apply opacity-100;
-        transform: none;
-      }
-      @media (max-width: 960px) {
-        .nav nav {
-          @apply hidden;
+      @custom-variant hover (&:hover);
+      @custom-variant lte-1180 (@media (max-width: 1180px));
+      @custom-variant lte-960 (@media (max-width: 960px));
+      @custom-variant lte-560 (@media (max-width: 560px));
+      @custom-variant lte-380 (@media (max-width: 380px));
+      @layer base {
+        a {
+          color: inherit;
+          text-decoration: none;
         }
-        .tile.big {
-          grid-template-columns: 1fr;
+        img,
+        video {
+          display: block;
+          max-width: 100%;
+          height: auto;
         }
-        .tile.big .copy {
-          padding: 32px 28px 8px;
+        :focus-visible {
+          outline: 2px solid var(--color-gold);
+          outline-offset: 3px;
+          border-radius: 6px;
         }
-        .tile.big .shot img {
-          @apply h-auto;
+        h1,
+        h2,
+        h3 {
+          margin: 0;
+          letter-spacing: -0.028em;
+          text-wrap: balance;
+          font-weight: 700;
         }
-        .tile.half,
-        .tile.third {
-          grid-column: span 6;
+        h2 {
+          font-size: clamp(26px, 4.2vw, 48px);
+          line-height: 1.14;
+          letter-spacing: -0.025em;
         }
-        .split,
-        .install,
-        .trust {
-          grid-template-columns: 1fr;
-        }
-        .split {
-          @apply gap-[40px];
-        }
-        section {
-          padding: 80px 0;
-        }
-      }
-      @media (max-width: 560px) {
-        .wrap {
-          width: min(1180px, 100% - 32px);
-        }
-        body {
-          @apply text-[15.5px];
-          line-height: 1.55;
-        }
-        .hero {
-          @apply pt-[104px];
-        }
-        .hero h1 {
-          margin: 20px auto 16px;
-          font-size: clamp(30px, 8.5vw, 42px);
-          line-height: 1.08;
-          letter-spacing: -0.03em;
-          @apply max-w-full;
-        }
-        .hero .lede {
-          @apply text-[15.5px];
-          line-height: 1.5;
-        }
-        .badge {
-          @apply text-[12px];
-          padding: 5px 11px 5px 6px;
-          @apply gap-[7px];
-        }
-        .badge b {
-          @apply text-[11px];
-          padding: 3px 7px;
-        }
-        .meta {
-          @apply text-[12.5px];
-          gap: 6px 12px;
-          @apply mt-[14px];
-        }
-        .nav .right .btn-ghost {
-          @apply hidden;
-        }
-        .cta .btn {
-          @apply w-full;
-          @apply text-[15px];
-        }
-        .frame {
-          @apply rounded-[14px];
-        }
-        .head {
-          @apply mb-[36px];
-        }
-        .head p {
-          @apply mt-[12px];
-          @apply text-[15px];
-        }
-        .tile.big .copy {
-          padding: 24px 18px 8px;
-        }
-        .tile.big h3 {
-          @apply text-[22px];
-          line-height: 1.25;
-        }
-        .tile.big p {
-          @apply text-[15px];
-        }
-        .tile .copy,
-        .tile.third,
-        .trust .tile,
-        .install .tile {
-          padding: 20px 18px;
-        }
-        .fbody {
-          @apply p-[18px];
-        }
-        .fbody h3 {
-          @apply text-[17.5px];
+        h3 {
+          font-size: 19px;
+          letter-spacing: -0.012em;
           line-height: 1.3;
         }
-        .fbody p {
-          @apply text-[14.5px];
-          line-height: 1.5;
+        p {
+          margin: 0;
         }
-        .steps {
-          @apply mt-[24px];
-          @apply gap-[16px];
-        }
-        .steps li {
-          grid-template-columns: 34px 1fr;
-          gap: 12px;
-        }
-        .steps li::before {
-          @apply w-[34px];
-          @apply h-[34px];
-          @apply text-[13.5px];
-          @apply rounded-[10px];
-        }
-        .steps strong {
-          @apply text-[15px];
-        }
-        .steps span {
-          @apply text-[14px];
-          line-height: 1.5;
-        }
-        .code {
-          padding: 6px 6px 6px 12px;
-        }
-        .code code {
-          @apply text-[12px];
-        }
-        .faq summary {
-          @apply text-[16px];
-          padding: 16px 0;
-          line-height: 1.35;
-        }
-        .faq details p {
-          @apply text-[14.5px];
-          line-height: 1.55;
-          padding: 0 0 16px;
-        }
-        .final {
-          padding: 72px 0 80px;
-        }
-        .final h2 {
-          font-size: clamp(26px, 6.5vw, 36px);
-          line-height: 1.15;
-        }
-        .final p {
-          @apply text-[15.5px];
-        }
-        footer {
-          padding: 26px 0 34px;
-          font-size: 13px;
-        }
-        footer nav {
-          margin-left: 0;
-        }
-      }
-      @media (max-width: 380px) {
-        .badge {
-          @apply flex-col;
-          @apply items-start;
-          @apply rounded-[12px];
-          padding: 8px 10px;
-        }
-        .hero h1 {
-          @apply text-[27px];
-        }
-        .code code {
-          @apply text-[11px];
-        }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        html {
-          scroll-behavior: auto;
-        }
-        .reveal {
-          @apply opacity-100;
-          transform: none;
-          transition: none;
-        }
-        .btn,
-        .ctrl,
-        .faq summary svg,
-        .poster-overlay,
-        .poster-play-badge {
-          transition: none;
-        }
-      }
-      .tile.big {
-        @apply mb-[16px];
-      }
-      .num {
-        @apply inline-block;
-        font: 600 12.5px/1 var(--font-mono);
-        @apply text-[var(--color-gold)];
-        @apply tracking-[.04em];
-        @apply mb-[12px];
-      }
-      .fgrid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-      .fcard {
-        border-radius: var(--radius-card);
-        overflow: hidden;
-        background: linear-gradient(
-          180deg,
-          var(--color-surface-2),
-          var(--color-surface)
-        );
-        box-shadow: inset 0 0 0 1px var(--color-line);
-        @apply flex;
-        @apply flex-col;
-      }
-      .fcard .media {
-        aspect-ratio: 16 / 11;
-        overflow: hidden;
-        @apply bg-[#120F0C];
-        border-bottom: 1px solid var(--color-line);
-      }
-      .fcard .media img {
-        @apply w-full;
-        @apply h-full;
-        @apply object-cover;
-        object-position: 50% 0;
-        transition: transform 0.6s var(--ease-qx);
-      }
-      .fcard:hover .media img {
-        transform: scale(1.02);
-      }
-      .fbody {
-        padding: 24px 26px 28px;
-      }
-      .fbody p {
-        @apply mt-[8px];
-        @apply text-[var(--color-muted)];
-        @apply text-[15.5px];
-      }
-      .fbody .play {
-        @apply mt-[16px];
-      }
-      .mini {
-        grid-template-columns: repeat(4, 1fr);
-      }
-      @media (max-width: 1180px) {
-        .mini {
-          grid-template-columns: repeat(2, 1fr);
-        }
-      }
-      @media (max-width: 960px) {
-        .fgrid,
-        .mini {
-          grid-template-columns: 1fr;
-        }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .fcard .media img {
-          transition: none;
-        }
-      }
-      .ipaths {
-        grid-template-columns: 1fr;
-      }
-      .ipath .tag {
-        @apply inline-block;
-        @apply mb-[14px];
-        padding: 5px 10px;
-        @apply rounded-[999px];
-        @apply text-[12.5px];
-        @apply font-semibold;
-        @apply text-[var(--color-gold)];
-        @apply bg-[rgba(254,188,51,.1)];
-        box-shadow: inset 0 0 0 1px rgba(254, 188, 51, 0.22);
-      }
-      .ipath p.muted {
-        @apply mt-[8px];
-        @apply text-[15.5px];
-      }
-      .ipath .note {
-        @apply mt-[14px];
-        @apply text-[14px];
-        @apply text-[var(--color-faint)];
-      }
-      .ipath .note a {
-        @apply text-[var(--color-ink)];
-        text-decoration: underline;
-        text-underline-offset: 3px;
-      }
-      .ipath .media.small {
-        @apply mt-[18px];
-        @apply rounded-[12px];
-        @apply overflow-hidden;
-        box-shadow: 0 0 0 1px var(--color-line);
-      }
-      .isteps {
-        margin: 40px 0 0;
-        grid-template-columns: repeat(2, 1fr);
-      }
-      .istep {
-        border-radius: var(--radius-card);
-        overflow: hidden;
-        background: linear-gradient(
-          180deg,
-          var(--color-surface-2),
-          var(--color-surface)
-        );
-        box-shadow: inset 0 0 0 1px var(--color-line);
-      }
-      .istep:last-child {
-        grid-column: span 2;
-        display: grid;
-        grid-template-columns: 1.2fr 1fr;
-        align-items: center;
-      }
-      .istep .media {
-        aspect-ratio: 16 / 10;
-        overflow: hidden;
-        border-bottom: 1px solid var(--color-line);
-        background: #120f0c;
-      }
-      .istep:last-child .media {
-        border-bottom: 0;
-        border-right: 1px solid var(--color-line);
-      }
-      .istep .media img {
-        @apply w-full;
-        @apply h-full;
-        @apply object-cover;
-      }
-      .ibody {
-        padding: 22px 26px 26px;
-      }
-      .ibody p {
-        @apply mt-[8px];
-        @apply text-[var(--color-muted)];
-        @apply text-[15.5px];
-      }
-      .ibody b {
-        @apply text-[var(--color-ink)];
-        @apply font-semibold;
-      }
-      .ibody code {
-        font: 500 13.5px var(--font-mono);
-        color: var(--color-ink);
-      }
-      .inotes {
-        grid-template-columns: 1fr 1fr;
-      }
-      .inotes .tile {
-        @apply p-[26px];
-      }
-      .inotes p {
-        @apply mt-[8px];
-        @apply text-[15.5px];
-      }
-      .inotes b {
-        @apply text-[var(--color-ink)];
-        @apply font-semibold;
-      }
-      @media (max-width: 960px) {
-        .ipaths,
-        .isteps,
-        .inotes {
-          grid-template-columns: 1fr;
-        }
-        .istep:last-child {
-          grid-column: auto;
-          display: block;
-        }
-        .istep:last-child .media {
-          border-right: 0;
-          border-bottom: 1px solid var(--color-line);
+        section[id],
+        main[id] {
+          scroll-margin-top: 24px;
         }
       }
     </style>
   </head>
   <body
-    class="m-0 bg-[var(--color-bg)] text-[var(--color-ink)] overflow-x-hidden"
+    class="m-0 overflow-x-hidden bg-bg text-ink font-normal text-[17px] leading-[1.6] font-body antialiased [font-feature-settings:'cv11','ss01','ss03'] wrap-break-word lte-560:text-[15.5px] lte-560:leading-[1.55]"
   >
-    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+    <svg class="absolute" width="0" height="0" aria-hidden="true">
       <defs>
         <symbol id="i-download" viewBox="0 0 24 24">
           <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />
@@ -1203,29 +206,52 @@
     </svg>
 
     <header
-      class="nav absolute top-0 left-0 right-0 w-full bg-[transparent]"
+      class="absolute top-0 right-0 left-0 w-full bg-transparent z-50"
       id="nav"
     >
-      <div class="wrap">
+      <div
+        class="my-0 mx-auto gap-[28px] w-[min(1180px,100%_-_40px)] flex items-center h-[64px] lte-560:w-[min(1180px,100%_-_32px)]"
+      >
         <a
-          class="brand flex items-center gap-[10px] font-bold text-[18px] tracking-[-.02em]"
+          class="gap-[10px] flex items-center text-[18px] font-bold tracking-[-.02em]"
           href="#top"
           aria-label="QuitX home"
-          ><img src="assets/icon.png" alt="" width="30" height="30" />QuitX</a
+          ><img
+            class="h-[30px] w-[30px]"
+            src="assets/icon.png"
+            alt=""
+            width="30"
+            height="30"
+          />QuitX</a
         >
-        <nav aria-label="Primary">
-          <a href="#features">Features</a>
-          <a href="#updates">Updates</a>
-          <a href="#install">Install</a>
-          <a href="#faq">FAQ</a>
+        <nav
+          class="gap-[26px] flex text-[15px] text-muted lte-960:hidden"
+          aria-label="Primary"
+        >
+          <a class="[transition:color_0.15s] hover:text-ink" href="#features"
+            >Features</a
+          >
+          <a class="[transition:color_0.15s] hover:text-ink" href="#updates"
+            >Updates</a
+          >
+          <a class="[transition:color_0.15s] hover:text-ink" href="#install"
+            >Install</a
+          >
+          <a class="[transition:color_0.15s] hover:text-ink" href="#faq">FAQ</a>
         </nav>
-        <div class="right">
-          <a class="btn btn-ghost btn-sm" href="https://github.com/kiron0/quitx"
-            ><svg class="i" aria-hidden="true"><use href="#i-github" /></svg
+        <div class="ml-auto gap-[12px] flex items-center">
+          <a
+            class="py-0 px-[14px] gap-[9px] border-0 text-ink rounded-[10px] inline-flex items-center justify-center min-h-[36px] font-semibold text-[14px] leading-[1] font-body tracking-[-.005em] cursor-pointer [transition:transform_0.15s_var(--ease-qx),background-color_0.15s,box-shadow_0.15s,filter_0.15s] whitespace-nowrap bg-[rgba(255,244,228,.06)] shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[rgba(255,244,228,.1)] active:[transform:translateY(1px)_scale(0.99)] motion-reduce:[transition:none] lte-560:hidden"
+            href="https://github.com/kiron0/quitx"
+            ><svg
+              class="w-[20px] h-[20px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none"
+              aria-hidden="true"
+            >
+              <use href="#i-github" /></svg
             >GitHub</a
           >
           <a
-            class="btn btn-gold btn-sm dl"
+            class="dl py-0 px-[14px] gap-[9px] border-0 text-on-gold rounded-[10px] inline-flex items-center justify-center min-h-[36px] font-semibold text-[14px] leading-[1] font-body tracking-[-.005em] cursor-pointer [transition:transform_0.15s_var(--ease-qx),background-color_0.15s,box-shadow_0.15s,filter_0.15s] whitespace-nowrap bg-[linear-gradient(180deg,var(--color-gold),var(--color-gold-deep))] shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_8px_24px_rgba(232,155,0,0.22)] hover:[filter:brightness(1.05)] active:[transform:translateY(1px)_scale(0.99)] motion-reduce:[transition:none]"
             href="https://github.com/kiron0/quitx/releases/latest"
             >Download</a
           >
@@ -1234,64 +260,115 @@
     </header>
 
     <main id="top">
-      <div class="hero relative text-center overflow-hidden">
-        <div class="wrap">
+      <div
+        class="px-0 pt-[152px] pb-[40px] overflow-hidden relative text-center before:content-[''] before:absolute before:left-[50%] before:top-[-220px] before:w-[1200px] before:h-[760px] before:[transform:translateX(-50%)] before:pointer-events-none before:bg-[radial-gradient(50%_50%_at_50%_50%,rgba(254,188,51,0.22),rgba(254,188,51,0)_70%)] lte-560:pt-[104px]"
+      >
+        <div
+          class="my-0 mx-auto w-[min(1180px,100%_-_40px)] lte-560:w-[min(1180px,100%_-_32px)]"
+        >
           <a
-            class="badge relative inline-flex items-center gap-[10px] rounded-[999px] bg-[rgba(255,_244,_228,_.05)] text-[14px] text-[var(--color-muted)] max-w-full"
+            class="py-[7px] pr-[14px] pl-[8px] gap-[10px] relative inline-flex max-w-full items-center rounded-[999px] bg-[rgba(255,244,228,.05)] text-[14px] shadow-[inset_0_0_0_1px_var(--color-line-strong)] [transition:background_0.15s] leading-[1.35] hover:bg-[rgba(255,244,228,.09)] focus-visible:rounded-[6px] lte-560:py-[5px] lte-560:pr-[11px] lte-560:pl-[6px] lte-560:gap-[7px] lte-560:text-[12px] lte-380:py-[8px] lte-380:px-[10px] lte-380:items-start lte-380:rounded-[12px] lte-380:flex-col lte-380:focus-visible:rounded-[12px]"
             href="https://github.com/kiron0/quitx"
-            ><b>Open Source</b>100% free &amp; MIT licensed on GitHub</a
+            ><b
+              class="py-[4px] px-[9px] rounded-[999px] whitespace-nowrap bg-[rgba(254,188,51,.14)] text-gold text-[12.5px] font-semibold lte-560:py-[3px] lte-560:px-[7px] lte-560:text-[11px]"
+              >Open Source</b
+            >100% free &amp; MIT licensed on GitHub</a
           >
-          <h1>Quit everything. <span>Keep what matters.</span></h1>
-          <p class="lede">
+          <h1
+            class="mx-auto mt-[26px] mb-[22px] tracking-[-.038em] font-[750] relative max-w-[14ch] text-[length:clamp(36px,6.8vw,84px)] leading-[1.05] lte-560:mt-[20px] lte-560:mb-[16px] lte-560:tracking-[-0.03em] lte-560:max-w-full lte-560:text-[length:clamp(30px,8.5vw,42px)] lte-560:leading-[1.08] lte-380:text-[27px]"
+          >
+            Quit everything.
+            <span
+              class="bg-[linear-gradient(180deg,#ffd271,#f2a51a)] bg-clip-text text-transparent"
+              >Keep what matters.</span
+            >
+          </h1>
+          <p
+            class="my-0 mx-auto relative max-w-[36em] text-[length:clamp(16px,1.6vw,19.5px)] leading-[1.55] text-muted lte-560:text-[15.5px] lte-560:leading-[1.5]"
+          >
             QuitX lives in your menu bar and lists every running app, grouped
             with its windows and helpers. Quit one, some, or all of them in a
             click. Apps still get to ask about unsaved work.
           </p>
-          <div class="cta">
+          <div
+            class="mt-[34px] gap-[12px] relative flex flex-wrap justify-center"
+          >
             <a
-              class="btn btn-gold dl"
+              class="dl py-0 px-[20px] gap-[9px] border-0 text-on-gold rounded-[12px] inline-flex items-center justify-center min-h-[44px] font-semibold text-[15.5px] leading-[1] font-body tracking-[-.005em] cursor-pointer [transition:transform_0.15s_var(--ease-qx),background-color_0.15s,box-shadow_0.15s,filter_0.15s] whitespace-nowrap bg-[linear-gradient(180deg,var(--color-gold),var(--color-gold-deep))] shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_8px_24px_rgba(232,155,0,0.22)] hover:[filter:brightness(1.05)] active:[transform:translateY(1px)_scale(0.99)] motion-reduce:[transition:none] lte-560:text-[15px] lte-560:w-full"
               href="https://github.com/kiron0/quitx/releases/latest"
-              ><svg class="i" aria-hidden="true"><use href="#i-download" /></svg
-              >Download for Mac <small class="ver"></small
+              ><svg
+                class="w-[20px] h-[20px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none"
+                aria-hidden="true"
+              >
+                <use href="#i-download" /></svg
+              >Download for Mac
+              <small
+                class="ver font-medium text-[12.5px] leading-[1] font-mono opacity-[0.7]"
+              ></small
             ></a>
-            <a class="btn btn-ghost" href="https://github.com/kiron0/quitx"
-              ><svg class="i" aria-hidden="true"><use href="#i-github" /></svg
+            <a
+              class="py-0 px-[20px] gap-[9px] border-0 text-ink rounded-[12px] inline-flex items-center justify-center min-h-[44px] font-semibold text-[15.5px] leading-[1] font-body tracking-[-.005em] cursor-pointer [transition:transform_0.15s_var(--ease-qx),background-color_0.15s,box-shadow_0.15s,filter_0.15s] whitespace-nowrap bg-[rgba(255,244,228,.06)] shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[rgba(255,244,228,.1)] active:[transform:translateY(1px)_scale(0.99)] motion-reduce:[transition:none] lte-560:text-[15px] lte-560:w-full"
+              href="https://github.com/kiron0/quitx"
+              ><svg
+                class="w-[20px] h-[20px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none"
+                aria-hidden="true"
+              >
+                <use href="#i-github" /></svg
               >View source</a
             >
           </div>
           <div
-            class="meta relative mt-[18px] text-[14px] text-[var(--color-faint)] flex flex-wrap justify-center"
+            class="mt-[18px] gap-y-[6px] gap-x-[18px] relative flex flex-wrap justify-center text-[14px] text-faint lte-560:mt-[14px] lte-560:gap-x-[12px] lte-560:text-[12.5px]"
           >
-            <span
-              ><svg class="i" aria-hidden="true"><use href="#i-apple" /></svg
+            <span class="gap-[6px] inline-flex items-center"
+              ><svg
+                class="w-[15px] h-[15px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none"
+                aria-hidden="true"
+              >
+                <use href="#i-apple" /></svg
               >macOS 14 or later</span
             >
-            <span
-              ><svg class="i" aria-hidden="true"><use href="#i-code" /></svg
+            <span class="gap-[6px] inline-flex items-center"
+              ><svg
+                class="w-[15px] h-[15px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none"
+                aria-hidden="true"
+              >
+                <use href="#i-code" /></svg
               >Free and open source (MIT)</span
             >
-            <span
-              ><svg class="i" aria-hidden="true"><use href="#i-lock" /></svg>No
-              account, no tracking</span
+            <span class="gap-[6px] inline-flex items-center"
+              ><svg
+                class="w-[15px] h-[15px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none"
+                aria-hidden="true"
+              >
+                <use href="#i-lock" /></svg
+              >No account, no tracking</span
             >
             <span
-              class="dlcount"
+              class="dlcount gap-[6px] inline-flex items-center"
               hidden
               title="Total downloads from GitHub Releases, updated live"
-              ><svg class="i" aria-hidden="true"><use href="#i-download" /></svg
-              ><b data-downloads>0</b>&nbsp;downloads</span
+              ><svg
+                class="w-[15px] h-[15px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none"
+                aria-hidden="true"
+              >
+                <use href="#i-download" /></svg
+              ><b class="text-inherit font-[650] tabular-nums" data-downloads
+                >0</b
+              >&nbsp;downloads</span
             >
           </div>
 
-          <div class="stage relative max-w-[1180px]">
+          <div class="mx-auto mt-[64px] mb-0 relative max-w-[1180px]">
             <div
-              class="frame is-paused relative rounded-[22px] overflow-hidden bg-[#000] cursor-pointer"
+              class="is-paused group/frame overflow-hidden relative cursor-pointer rounded-[22px] bg-[#000] aspect-[16/10] shadow-[0_0_0_1px_var(--color-line-strong),0_40px_120px_rgba(0,0,0,0.6),0_0_160px_rgba(254,188,51,0.08)] focus-visible:rounded-[6px] lte-560:rounded-[14px] lte-560:focus-visible:rounded-[14px]"
               id="demoFrame"
               role="button"
               tabindex="0"
               aria-label="Toggle demo video playback"
             >
               <video
+                class="h-full w-full object-cover"
                 id="demo"
                 muted
                 loop
@@ -1310,28 +387,40 @@
                 />
               </video>
               <div
-                class="poster-overlay absolute inset-0 opacity-0 pointer-events-none grid place-items-center"
+                class="inset-0 place-items-center pointer-events-none absolute grid opacity-0 z-[2] [transition:opacity_0.25s_var(--ease-qx)] motion-reduce:[transition:none] group-[.is-paused]/frame:opacity-100"
                 id="posterOverlay"
                 aria-hidden="true"
               >
-                <img src="assets/demo-poster.jpg" alt="" loading="eager" />
+                <img
+                  class="inset-0 h-full w-full object-cover absolute"
+                  src="assets/demo-poster.jpg"
+                  alt=""
+                  loading="eager"
+                />
                 <div
-                  class="poster-play-badge relative w-[72px] h-[72px] rounded-full bg-[rgba(14,_12,_10,_.72)] grid place-items-center text-[var(--color-gold)]"
+                  class="place-items-center relative grid h-[72px] w-[72px] rounded-full bg-[rgba(14,12,10,.72)] text-gold z-[1] [backdrop-filter:blur(14px)] [-webkit-backdrop-filter:blur(14px)] shadow-[inset_0_0_0_1px_rgba(255,244,228,0.2),0_12px_32px_rgba(0,0,0,0.5)] [transition:transform_0.2s_var(--ease-qx),background_0.2s,color_0.2s] focus-visible:rounded-[6px] motion-reduce:[transition:none] group-hover/frame:bg-[rgba(14,12,10,0.9)] group-hover/frame:text-white group-hover/frame:[transform:scale(1.08)]"
                   aria-hidden="true"
                 >
-                  <svg class="i"><use href="#i-play" /></svg>
+                  <svg
+                    class="ml-[3px] w-[28px] h-[28px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none"
+                  >
+                    <use href="#i-play" />
+                  </svg>
                 </div>
               </div>
               <div
-                class="controls absolute right-[16px] bottom-[16px] flex gap-[8px]"
+                class="gap-[8px] absolute right-[16px] bottom-[16px] flex z-[3]"
               >
                 <button
-                  class="ctrl w-[44px] h-[44px] rounded-[12px] border-0 cursor-pointer grid place-items-center text-[#fff] bg-[rgba(14,_12,_10,_.62)]"
+                  class="place-items-center border-0 grid h-[44px] w-[44px] cursor-pointer rounded-[12px] bg-[rgba(14,12,10,.62)] text-white [backdrop-filter:blur(12px)] [-webkit-backdrop-filter:blur(12px)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)] [transition:background_0.15s] hover:bg-[rgba(14,12,10,.82)] focus-visible:rounded-[6px] motion-reduce:[transition:none]"
                   id="soundbtn"
                   type="button"
                   aria-label="Turn sound on"
                 >
-                  <svg class="i" aria-hidden="true">
+                  <svg
+                    class="w-[18px] h-[18px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none"
+                    aria-hidden="true"
+                  >
                     <use href="#i-muted" />
                   </svg>
                 </button>
@@ -1341,45 +430,86 @@
         </div>
       </div>
 
-      <section id="features">
-        <div class="wrap">
-          <div class="head reveal">
-            <span class="eyebrow">Features</span>
+      <section class="py-[120px] px-0 lte-960:py-[80px]" id="features">
+        <div
+          class="my-0 mx-auto w-[min(1180px,100%_-_40px)] lte-560:w-[min(1180px,100%_-_32px)]"
+        >
+          <div
+            class="reveal mb-[52px] max-w-[680px] opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none] lte-560:mb-[36px]"
+          >
+            <span
+              class="mb-[16px] font-semibold text-[13px] leading-[1] font-body tracking-[0.1em] uppercase text-gold block"
+              >Features</span
+            >
             <h2>Everything a quit button should have been.</h2>
-            <p>
+            <p
+              class="mt-[18px] text-[length:clamp(16px,1.7vw,18px)] leading-[1.55] text-muted lte-560:mt-[12px] lte-560:text-[15px]"
+            >
               Built on public macOS APIs. It never reads other apps' files, and
               the only thing it asks the internet is whether a new QuitX release
               is out.
             </p>
           </div>
 
-          <article class="tile big reveal">
-            <div class="copy">
-              <span class="num">01</span>
-              <h3>Quit one, some, or all</h3>
-              <p>
+          <article
+            class="reveal mb-[16px] overflow-hidden rounded-card relative bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] col-[span_6] grid grid-cols-[1fr_1.35fr] items-center opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none] lte-960:grid-cols-[1fr]"
+          >
+            <div
+              class="p-[44px] lte-960:px-[28px] lte-960:pt-[32px] lte-960:pb-[8px] lte-560:px-[18px] lte-560:pt-[24px]"
+            >
+              <span
+                class="mb-[12px] inline-block font-semibold text-[12.5px] leading-[1] font-mono text-gold tracking-[.04em]"
+                >01</span
+              >
+              <h3
+                class="tracking-[-.025em] text-[30px] lte-560:text-[22px] lte-560:leading-[1.25]"
+              >
+                Quit one, some, or all
+              </h3>
+              <p
+                class="mt-[10px] text-muted text-[17px] max-w-[34em] lte-560:text-[15px]"
+              >
                 Every running app gets one row with all of its windows and
                 helpers. Check what should go, press Quit, done. Apps still get
                 to ask about unsaved work.
               </p>
-              <ul class="points list-none p-0 grid gap-[10px]">
-                <li>
-                  <svg class="i" aria-hidden="true"><use href="#i-check" /></svg
+              <ul class="p-0 mx-0 mt-[22px] mb-0 gap-[10px] grid list-none">
+                <li
+                  class="gap-[10px] flex items-start text-muted text-[15.5px]"
+                >
+                  <svg
+                    class="mt-[3px] w-[18px] h-[18px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none text-gold"
+                    aria-hidden="true"
+                  >
+                    <use href="#i-check" /></svg
                   >Search, and sort by name, CPU or memory
                 </li>
-                <li>
-                  <svg class="i" aria-hidden="true"><use href="#i-check" /></svg
+                <li
+                  class="gap-[10px] flex items-start text-muted text-[15.5px]"
+                >
+                  <svg
+                    class="mt-[3px] w-[18px] h-[18px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none text-gold"
+                    aria-hidden="true"
+                  >
+                    <use href="#i-check" /></svg
                   >Quit, restart, or quit every other app from a row's ••• menu
                 </li>
-                <li>
-                  <svg class="i" aria-hidden="true"><use href="#i-check" /></svg
+                <li
+                  class="gap-[10px] flex items-start text-muted text-[15.5px]"
+                >
+                  <svg
+                    class="mt-[3px] w-[18px] h-[18px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none text-gold"
+                    aria-hidden="true"
+                  >
+                    <use href="#i-check" /></svg
                   >Apps that linger in the background are asked again, so one
                   click is enough
                 </li>
               </ul>
             </div>
-            <div class="shot">
+            <div class="m-0 h-full self-stretch">
               <img
+                class="h-full w-full object-cover object-[50%_0] lte-960:h-auto"
                 src="assets/shots/hero.jpg"
                 alt="The QuitX menu listing running apps with a Quit All button"
                 width="1340"
@@ -1389,10 +519,17 @@
             </div>
           </article>
 
-          <div class="fgrid grid gap-[16px]">
-            <article class="fcard reveal">
-              <div class="media">
+          <div
+            class="gap-[16px] grid grid-cols-[repeat(2,1fr)] lte-960:grid-cols-[1fr]"
+          >
+            <article
+              class="reveal group/fcard overflow-hidden rounded-card opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] flex flex-col [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none]"
+            >
+              <div
+                class="overflow-hidden [border-bottom:1px_solid_var(--color-line)] aspect-[16/11] bg-[#120F0C]"
+              >
                 <img
+                  class="h-full w-full object-cover object-[50%_0] [transition:transform_0.6s_var(--ease-qx)] motion-reduce:[transition:none] group-hover/fcard:[transform:scale(1.02)]"
                   src="assets/shots/confirm.jpg"
                   alt="QuitX asking Quit 14 Apps? with Cancel and Quit buttons"
                   width="940"
@@ -1400,18 +537,30 @@
                   loading="lazy"
                 />
               </div>
-              <div class="fbody">
-                <span class="num">02</span>
-                <h3>Confirm before quit</h3>
-                <p>
+              <div class="px-[26px] pt-[24px] pb-[28px]">
+                <span
+                  class="mb-[12px] inline-block font-semibold text-[12.5px] leading-[1] font-mono text-gold tracking-[.04em]"
+                  >02</span
+                >
+                <h3 class="lte-560:text-[17.5px] lte-560:leading-[1.3]">
+                  Confirm before quit
+                </h3>
+                <p
+                  class="mt-[8px] text-[15.5px] text-muted lte-560:leading-[1.5]"
+                >
                   A quick “Quit 14 Apps?” before Quit All, and optionally before
                   single quits and restarts. Return confirms, Escape cancels.
                 </p>
               </div>
             </article>
-            <article class="fcard reveal">
-              <div class="media">
+            <article
+              class="reveal group/fcard overflow-hidden rounded-card opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] flex flex-col [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none]"
+            >
+              <div
+                class="overflow-hidden [border-bottom:1px_solid_var(--color-line)] aspect-[16/11] bg-[#120F0C]"
+              >
                 <img
+                  class="h-full w-full object-cover object-[50%_0] [transition:transform_0.6s_var(--ease-qx)] motion-reduce:[transition:none] group-hover/fcard:[transform:scale(1.02)]"
                   src="assets/shots/force.jpg"
                   alt="The QuitX menu in force quit mode with Force Quit All"
                   width="1254"
@@ -1419,18 +568,35 @@
                   loading="lazy"
                 />
               </div>
-              <div class="fbody">
-                <span class="num">03</span>
-                <h3>Normal quit or force quit</h3>
-                <p>
-                  Normal quit lets apps save first. Hold <kbd>⌥</kbd> to force
-                  quit a frozen app, or make Force quit the default in Settings.
+              <div class="px-[26px] pt-[24px] pb-[28px]">
+                <span
+                  class="mb-[12px] inline-block font-semibold text-[12.5px] leading-[1] font-mono text-gold tracking-[.04em]"
+                  >03</span
+                >
+                <h3 class="lte-560:text-[17.5px] lte-560:leading-[1.3]">
+                  Normal quit or force quit
+                </h3>
+                <p
+                  class="mt-[8px] text-[15.5px] text-muted lte-560:leading-[1.5]"
+                >
+                  Normal quit lets apps save first. Hold
+                  <kbd
+                    class="py-[4px] px-[7px] rounded-[6px] font-semibold text-[13px] leading-[1] font-body bg-[rgba(255,255,255,.1)] shadow-[inset_0_-1px_0_rgba(0,0,0,0.4),inset_0_0_0_1px_rgba(255,255,255,0.08)] text-ink"
+                    >⌥</kbd
+                  >
+                  to force quit a frozen app, or make Force quit the default in
+                  Settings.
                 </p>
               </div>
             </article>
-            <article class="fcard reveal">
-              <div class="media">
+            <article
+              class="reveal group/fcard overflow-hidden rounded-card opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] flex flex-col [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none]"
+            >
+              <div
+                class="overflow-hidden [border-bottom:1px_solid_var(--color-line)] aspect-[16/11] bg-[#120F0C]"
+              >
                 <img
+                  class="h-full w-full object-cover object-[50%_0] [transition:transform_0.6s_var(--ease-qx)] motion-reduce:[transition:none] group-hover/fcard:[transform:scale(1.02)]"
                   src="assets/shots/background.jpg"
                   alt="The QuitX menu showing background apps and the View Background Apps option"
                   width="1912"
@@ -1438,19 +604,34 @@
                   loading="lazy"
                 />
               </div>
-              <div class="fbody">
-                <span class="num">04</span>
-                <h3>View background apps</h3>
-                <p>
+              <div class="px-[26px] pt-[24px] pb-[28px]">
+                <span
+                  class="mb-[12px] inline-block font-semibold text-[12.5px] leading-[1] font-mono text-gold tracking-[.04em]"
+                  >04</span
+                >
+                <h3 class="lte-560:text-[17.5px] lte-560:leading-[1.3]">
+                  View background apps
+                </h3>
+                <p
+                  class="mt-[8px] text-[15.5px] text-muted lte-560:leading-[1.5]"
+                >
                   Show helpers and agents that never appear in the Dock, with
                   identical instances grouped into one row. Toggle with
-                  <kbd>⌘B</kbd>.
+                  <kbd
+                    class="py-[4px] px-[7px] rounded-[6px] font-semibold text-[13px] leading-[1] font-body bg-[rgba(255,255,255,.1)] shadow-[inset_0_-1px_0_rgba(0,0,0,0.4),inset_0_0_0_1px_rgba(255,255,255,0.08)] text-ink"
+                    >⌘B</kbd
+                  >.
                 </p>
               </div>
             </article>
-            <article class="fcard reveal">
-              <div class="media">
+            <article
+              class="reveal group/fcard overflow-hidden rounded-card opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] flex flex-col [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none]"
+            >
+              <div
+                class="overflow-hidden [border-bottom:1px_solid_var(--color-line)] aspect-[16/11] bg-[#120F0C]"
+              >
                 <img
+                  class="h-full w-full object-cover object-[50%_0] [transition:transform_0.6s_var(--ease-qx)] motion-reduce:[transition:none] group-hover/fcard:[transform:scale(1.02)]"
                   src="assets/shots/exclude.jpg"
                   alt="A row menu in QuitX with Add to Exclude List selected"
                   width="1282"
@@ -1458,19 +639,31 @@
                   loading="lazy"
                 />
               </div>
-              <div class="fbody">
-                <span class="num">05</span>
-                <h3>Exclude apps</h3>
-                <p>
+              <div class="px-[26px] pt-[24px] pb-[28px]">
+                <span
+                  class="mb-[12px] inline-block font-semibold text-[12.5px] leading-[1] font-mono text-gold tracking-[.04em]"
+                  >05</span
+                >
+                <h3 class="lte-560:text-[17.5px] lte-560:leading-[1.3]">
+                  Exclude apps
+                </h3>
+                <p
+                  class="mt-[8px] text-[15.5px] text-muted lte-560:leading-[1.5]"
+                >
                   Add an app from its ••• menu and it disappears from the list,
                   safe from every manual and automatic quit. Music apps can be
                   protected with one switch.
                 </p>
               </div>
             </article>
-            <article class="fcard reveal">
-              <div class="media">
+            <article
+              class="reveal group/fcard overflow-hidden rounded-card opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] flex flex-col [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none]"
+            >
+              <div
+                class="overflow-hidden [border-bottom:1px_solid_var(--color-line)] aspect-[16/11] bg-[#120F0C]"
+              >
                 <img
+                  class="h-full w-full object-cover object-[50%_0] [transition:transform_0.6s_var(--ease-qx)] motion-reduce:[transition:none] group-hover/fcard:[transform:scale(1.02)]"
                   src="assets/shots/stats.jpg"
                   alt="CPU, memory, GPU and battery stats in the menu bar with QuitX settings"
                   width="2244"
@@ -1478,19 +671,31 @@
                   loading="lazy"
                 />
               </div>
-              <div class="fbody">
-                <span class="num">06</span>
-                <h3>Menu bar stats</h3>
-                <p>
+              <div class="px-[26px] pt-[24px] pb-[28px]">
+                <span
+                  class="mb-[12px] inline-block font-semibold text-[12.5px] leading-[1] font-mono text-gold tracking-[.04em]"
+                  >06</span
+                >
+                <h3 class="lte-560:text-[17.5px] lte-560:leading-[1.3]">
+                  Menu bar stats
+                </h3>
+                <p
+                  class="mt-[8px] text-[15.5px] text-muted lte-560:leading-[1.5]"
+                >
                   Live CPU, memory, GPU and battery in the menu bar. Show any
                   mix, as icons or text, pick how often they refresh, and click
                   a stat for a detailed view.
                 </p>
               </div>
             </article>
-            <article class="fcard reveal">
-              <div class="media">
+            <article
+              class="reveal group/fcard overflow-hidden rounded-card opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] flex flex-col [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none]"
+            >
+              <div
+                class="overflow-hidden [border-bottom:1px_solid_var(--color-line)] aspect-[16/11] bg-[#120F0C]"
+              >
                 <img
+                  class="h-full w-full object-cover object-[50%_0] [transition:transform_0.6s_var(--ease-qx)] motion-reduce:[transition:none] group-hover/fcard:[transform:scale(1.02)]"
                   src="assets/shots/health.jpg"
                   alt="QuitX warning about high CPU usage and offering to quit three apps"
                   width="1478"
@@ -1498,19 +703,31 @@
                   loading="lazy"
                 />
               </div>
-              <div class="fbody">
-                <span class="num">07</span>
-                <h3>CPU &amp; memory warnings</h3>
-                <p>
+              <div class="px-[26px] pt-[24px] pb-[28px]">
+                <span
+                  class="mb-[12px] inline-block font-semibold text-[12.5px] leading-[1] font-mono text-gold tracking-[.04em]"
+                  >07</span
+                >
+                <h3 class="lte-560:text-[17.5px] lte-560:leading-[1.3]">
+                  CPU &amp; memory warnings
+                </h3>
+                <p
+                  class="mt-[8px] text-[15.5px] text-muted lte-560:leading-[1.5]"
+                >
                   When CPU or memory stays over your limit, QuitX notifies you
                   and offers to quit inactive apps. Never the app you’re using,
                   never without asking.
                 </p>
               </div>
             </article>
-            <article class="fcard reveal">
-              <div class="media">
+            <article
+              class="reveal group/fcard overflow-hidden rounded-card opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] flex flex-col [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none]"
+            >
+              <div
+                class="overflow-hidden [border-bottom:1px_solid_var(--color-line)] aspect-[16/11] bg-[#120F0C]"
+              >
                 <img
+                  class="h-full w-full object-cover object-[50%_0] [transition:transform_0.6s_var(--ease-qx)] motion-reduce:[transition:none] group-hover/fcard:[transform:scale(1.02)]"
                   src="assets/shots/sleep.jpg"
                   alt="QuitX Automation settings with Quit apps when Mac sleeps turned on"
                   width="1842"
@@ -1518,18 +735,30 @@
                   loading="lazy"
                 />
               </div>
-              <div class="fbody">
-                <span class="num">08</span>
-                <h3>Quit apps when your Mac sleeps</h3>
-                <p>
+              <div class="px-[26px] pt-[24px] pb-[28px]">
+                <span
+                  class="mb-[12px] inline-block font-semibold text-[12.5px] leading-[1] font-mono text-gold tracking-[.04em]"
+                  >08</span
+                >
+                <h3 class="lte-560:text-[17.5px] lte-560:leading-[1.3]">
+                  Quit apps when your Mac sleeps
+                </h3>
+                <p
+                  class="mt-[8px] text-[15.5px] text-muted lte-560:leading-[1.5]"
+                >
                   Close everything when your Mac goes to sleep, only between the
                   hours you pick. Wake up to a clean desktop.
                 </p>
               </div>
             </article>
-            <article class="fcard reveal">
-              <div class="media">
+            <article
+              class="reveal group/fcard overflow-hidden rounded-card opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] flex flex-col [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none]"
+            >
+              <div
+                class="overflow-hidden [border-bottom:1px_solid_var(--color-line)] aspect-[16/11] bg-[#120F0C]"
+              >
                 <img
+                  class="h-full w-full object-cover object-[50%_0] [transition:transform_0.6s_var(--ease-qx)] motion-reduce:[transition:none] group-hover/fcard:[transform:scale(1.02)]"
                   src="assets/shots/theme.jpg"
                   alt="The QuitX menu in the Classic and Liquid Glass styles side by side"
                   width="1668"
@@ -1537,18 +766,30 @@
                   loading="lazy"
                 />
               </div>
-              <div class="fbody">
-                <span class="num">09</span>
-                <h3>Classic or Liquid Glass</h3>
-                <p>
+              <div class="px-[26px] pt-[24px] pb-[28px]">
+                <span
+                  class="mb-[12px] inline-block font-semibold text-[12.5px] leading-[1] font-mono text-gold tracking-[.04em]"
+                  >09</span
+                >
+                <h3 class="lte-560:text-[17.5px] lte-560:leading-[1.3]">
+                  Classic or Liquid Glass
+                </h3>
+                <p
+                  class="mt-[8px] text-[15.5px] text-muted lte-560:leading-[1.5]"
+                >
                   Choose the solid classic look or translucent Liquid Glass on
                   macOS 26. Every window and menu follows along.
                 </p>
               </div>
             </article>
-            <article class="fcard reveal">
-              <div class="media">
+            <article
+              class="reveal group/fcard overflow-hidden rounded-card opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] flex flex-col [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none]"
+            >
+              <div
+                class="overflow-hidden [border-bottom:1px_solid_var(--color-line)] aspect-[16/11] bg-[#120F0C]"
+              >
                 <img
+                  class="h-full w-full object-cover object-[50%_0] [transition:transform_0.6s_var(--ease-qx)] motion-reduce:[transition:none] group-hover/fcard:[transform:scale(1.02)]"
                   src="assets/shots/sounds.jpg"
                   alt="QuitX General settings with Play cool sounds turned on"
                   width="2130"
@@ -1556,19 +797,30 @@
                   loading="lazy"
                 />
               </div>
-              <div class="fbody">
-                <span class="num">10</span>
-                <h3>Sounds on quit</h3>
-                <p>
+              <div class="px-[26px] pt-[24px] pb-[28px]">
+                <span
+                  class="mb-[12px] inline-block font-semibold text-[12.5px] leading-[1] font-mono text-gold tracking-[.04em]"
+                  >10</span
+                >
+                <h3 class="lte-560:text-[17.5px] lte-560:leading-[1.3]">
+                  Sounds on quit
+                </h3>
+                <p
+                  class="mt-[8px] text-[15.5px] text-muted lte-560:leading-[1.5]"
+                >
                   A short arcade laser plays every time an app goes. Switch it
                   off any time in Settings.
                 </p>
                 <button
-                  class="btn btn-ghost btn-sm play"
+                  class="py-0 px-[14px] mt-[16px] gap-[9px] border-0 rounded-[10px] inline-flex items-center justify-center min-h-[36px] font-semibold text-[14px] leading-[1] font-body tracking-[-.005em] cursor-pointer [transition:transform_0.15s_var(--ease-qx),background-color_0.15s,box-shadow_0.15s,filter_0.15s] whitespace-nowrap bg-[rgba(255,244,228,.06)] text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[rgba(255,244,228,.1)] active:[transform:translateY(1px)_scale(0.99)] motion-reduce:[transition:none]"
                   type="button"
                   id="playSound"
                 >
-                  <svg class="i" aria-hidden="true"><use href="#i-sound" /></svg
+                  <svg
+                    class="w-[20px] h-[20px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none"
+                    aria-hidden="true"
+                  >
+                    <use href="#i-sound" /></svg
                   ><span>Play the sound</span></button
                 ><audio id="quitSound" preload="auto">
                   <source src="assets/quit.wav" type="audio/wav" />
@@ -1578,41 +830,79 @@
             </article>
           </div>
 
-          <article class="tile big reveal" id="ports" style="margin-top: 16px">
-            <div class="copy">
-              <span class="num">11</span>
-              <h3>Free up busy ports</h3>
-              <p>
+          <article
+            class="reveal my-[16px] overflow-hidden rounded-card relative bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] col-[span_6] grid grid-cols-[1fr_1.35fr] items-center opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none] lte-960:grid-cols-[1fr]"
+            id="ports"
+          >
+            <div
+              class="p-[44px] lte-960:px-[28px] lte-960:pt-[32px] lte-960:pb-[8px] lte-560:px-[18px] lte-560:pt-[24px]"
+            >
+              <span
+                class="mb-[12px] inline-block font-semibold text-[12.5px] leading-[1] font-mono text-gold tracking-[.04em]"
+                >11</span
+              >
+              <h3
+                class="tracking-[-.025em] text-[30px] lte-560:text-[22px] lte-560:leading-[1.25]"
+              >
+                Free up busy ports
+              </h3>
+              <p
+                class="mt-[10px] text-muted text-[17px] max-w-[34em] lte-560:text-[15px]"
+              >
                 Turn on Ports in Settings and a Ports tab appears next to Apps.
                 Every listening port shows up with its app, project folder and
                 Docker container, refreshed live.
               </p>
-              <ul class="points list-none p-0 grid gap-[10px]">
-                <li>
-                  <svg class="i" aria-hidden="true"><use href="#i-check" /></svg
+              <ul class="p-0 mx-0 mt-[22px] mb-0 gap-[10px] grid list-none">
+                <li
+                  class="gap-[10px] flex items-start text-muted text-[15.5px]"
+                >
+                  <svg
+                    class="mt-[3px] w-[18px] h-[18px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none text-gold"
+                    aria-hidden="true"
+                  >
+                    <use href="#i-check" /></svg
                   >Kill one, some, or all, along with the process tree behind
                   each port
                 </li>
-                <li>
-                  <svg class="i" aria-hidden="true"><use href="#i-check" /></svg
+                <li
+                  class="gap-[10px] flex items-start text-muted text-[15.5px]"
+                >
+                  <svg
+                    class="mt-[3px] w-[18px] h-[18px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none text-gold"
+                    aria-hidden="true"
+                  >
+                    <use href="#i-check" /></svg
                   >Asks nicely with SIGTERM first, then SIGKILL only if the
                   process won't let go
                 </li>
-                <li>
-                  <svg class="i" aria-hidden="true"><use href="#i-check" /></svg
+                <li
+                  class="gap-[10px] flex items-start text-muted text-[15.5px]"
+                >
+                  <svg
+                    class="mt-[3px] w-[18px] h-[18px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none text-gold"
+                    aria-hidden="true"
+                  >
+                    <use href="#i-check" /></svg
                   >Docker containers are stopped through Docker, and system
                   processes are never touched
                 </li>
-                <li>
-                  <svg class="i" aria-hidden="true"><use href="#i-check" /></svg
+                <li
+                  class="gap-[10px] flex items-start text-muted text-[15.5px]"
+                >
+                  <svg
+                    class="mt-[3px] w-[18px] h-[18px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none text-gold"
+                    aria-hidden="true"
+                  >
+                    <use href="#i-check" /></svg
                   >Show the port count in the menu bar and exclude ports you
                   always need
                 </li>
               </ul>
             </div>
-            <div class="shot">
+            <div class="m-0 h-full self-stretch">
               <img
-                style="object-position: 100% 0"
+                class="h-full w-full object-cover object-[100%_0] lte-960:h-auto"
                 src="assets/shots/ports.jpg"
                 alt="The QuitX Ports tab listing listening ports with a Kill 2 Ports button"
                 width="1690"
@@ -1622,45 +912,81 @@
             </div>
           </article>
 
-          <div class="mini grid gap-[16px] mt-[16px]">
-            <article class="tile third reveal">
-              <div class="ico">
-                <svg class="i" aria-hidden="true"><use href="#i-window" /></svg>
+          <div
+            class="mt-[16px] gap-[16px] grid grid-cols-[repeat(4,1fr)] lte-1180:grid-cols-[repeat(2,1fr)] lte-960:grid-cols-[1fr]"
+          >
+            <article
+              class="reveal p-[26px] overflow-hidden rounded-card relative bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] col-[span_2] opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none] lte-960:col-[span_6] lte-560:py-[20px] lte-560:px-[18px]"
+            >
+              <div
+                class="mb-[18px] place-items-center rounded-[12px] w-[42px] h-[42px] grid text-gold bg-[rgba(254,188,51,.1)] shadow-[inset_0_0_0_1px_rgba(254,188,51,0.2)]"
+              >
+                <svg
+                  class="w-[20px] h-[20px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none"
+                  aria-hidden="true"
+                >
+                  <use href="#i-window" />
+                </svg>
               </div>
               <h3>Last window closes, app quits</h3>
-              <p>
+              <p class="mt-[8px] text-muted text-[15px]">
                 Close an app's last window and it quits with all its helpers.
                 Switching Spaces, full screen and minimize never count.
               </p>
             </article>
-            <article class="tile third reveal">
-              <div class="ico">
-                <svg class="i" aria-hidden="true"><use href="#i-timer" /></svg>
+            <article
+              class="reveal p-[26px] overflow-hidden rounded-card relative bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] col-[span_2] opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none] lte-960:col-[span_6] lte-560:py-[20px] lte-560:px-[18px]"
+            >
+              <div
+                class="mb-[18px] place-items-center rounded-[12px] w-[42px] h-[42px] grid text-gold bg-[rgba(254,188,51,.1)] shadow-[inset_0_0_0_1px_rgba(254,188,51,0.2)]"
+              >
+                <svg
+                  class="w-[20px] h-[20px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none"
+                  aria-hidden="true"
+                >
+                  <use href="#i-timer" />
+                </svg>
               </div>
               <h3>Auto quit and timers</h3>
-              <p>
+              <p class="mt-[8px] text-muted text-[15px]">
                 Quit apps you haven't touched in a while, and set a timer on one
                 app. QuitX slows itself down in Low Power Mode.
               </p>
             </article>
-            <article class="tile third reveal">
-              <div class="ico">
-                <svg class="i" aria-hidden="true">
+            <article
+              class="reveal p-[26px] overflow-hidden rounded-card relative bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] col-[span_2] opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none] lte-960:col-[span_6] lte-560:py-[20px] lte-560:px-[18px]"
+            >
+              <div
+                class="mb-[18px] place-items-center rounded-[12px] w-[42px] h-[42px] grid text-gold bg-[rgba(254,188,51,.1)] shadow-[inset_0_0_0_1px_rgba(254,188,51,0.2)]"
+              >
+                <svg
+                  class="w-[20px] h-[20px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none"
+                  aria-hidden="true"
+                >
                   <use href="#i-command" />
                 </svg>
               </div>
               <h3>Global shortcuts</h3>
-              <p>
+              <p class="mt-[8px] text-muted text-[15px]">
                 Open the menu, Quit All or Force Quit All from anywhere with
                 your own key combos.
               </p>
             </article>
-            <article class="tile third reveal">
-              <div class="ico">
-                <svg class="i" aria-hidden="true"><use href="#i-trash" /></svg>
+            <article
+              class="reveal p-[26px] overflow-hidden rounded-card relative bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] col-[span_2] opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none] lte-960:col-[span_6] lte-560:py-[20px] lte-560:px-[18px]"
+            >
+              <div
+                class="mb-[18px] place-items-center rounded-[12px] w-[42px] h-[42px] grid text-gold bg-[rgba(254,188,51,.1)] shadow-[inset_0_0_0_1px_rgba(254,188,51,0.2)]"
+              >
+                <svg
+                  class="w-[20px] h-[20px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none"
+                  aria-hidden="true"
+                >
+                  <use href="#i-trash" />
+                </svg>
               </div>
               <h3>Uninstall with leftovers</h3>
-              <p>
+              <p class="mt-[8px] text-muted text-[15px]">
                 Remove one app or several at once, with the caches, preferences
                 and support files they left behind. It confirms first, and
                 everything goes to the Trash.
@@ -1670,58 +996,81 @@
         </div>
       </section>
 
-      <section class="band" id="updates">
-        <div class="wrap split grid gap-[64px] items-center">
-          <div class="reveal">
-            <span class="eyebrow">In-app updates</span>
-            <h2 style="margin-top: 16px">
-              Updates itself, straight from GitHub.
-            </h2>
-            <p class="muted split-lead" style="margin-top: 18px">
+      <section
+        class="py-[120px] px-0 [border-top:1px_solid_var(--color-line)] [border-bottom:1px_solid_var(--color-line)] bg-bg-2 lte-960:py-[80px]"
+        id="updates"
+      >
+        <div
+          class="my-0 mx-auto gap-[64px] grid items-center w-[min(1180px,100%_-_40px)] grid-cols-[1fr_1.15fr] lte-960:gap-[40px] lte-960:grid-cols-[1fr] lte-560:w-[min(1180px,100%_-_32px)]"
+        >
+          <div
+            class="reveal opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none]"
+          >
+            <span
+              class="font-semibold text-[13px] leading-[1] font-body tracking-[0.1em] uppercase text-gold"
+              >In-app updates</span
+            >
+            <h2 class="mt-[16px]">Updates itself, straight from GitHub.</h2>
+            <p
+              class="mt-[18px] text-muted text-[length:clamp(16px,1.7vw,18px)] leading-[1.55]"
+            >
               No update server and no keys to trust. QuitX reads this project's
               GitHub Releases and checks every download before it installs.
             </p>
-            <ol class="steps list-none p-0 grid gap-[22px]">
-              <li>
+            <ol
+              class="p-0 mx-0 mt-[34px] mb-0 gap-[22px] grid list-none [counter-reset:s] lte-560:mt-[24px] lte-560:gap-[16px]"
+            >
+              <li
+                class="gap-[16px] [counter-increment:s] grid grid-cols-[40px_1fr] before:place-items-center before:content-[counter(s)] before:w-[40px] before:h-[40px] before:rounded-[12px] before:grid before:font-semibold before:text-[15px] before:leading-[1] before:font-mono before:text-gold before:bg-[rgba(254,188,51,.1)] before:shadow-[inset_0_0_0_1px_rgba(254,188,51,0.22)] lte-560:gap-[12px] lte-560:grid-cols-[34px_1fr] lte-560:before:w-[34px] lte-560:before:h-[34px] lte-560:before:rounded-[10px] lte-560:before:text-[13.5px]"
+              >
                 <div>
-                  <strong>A red dot appears</strong
+                  <strong
+                    class="mb-[2px] block text-[17px] font-semibold lte-560:text-[15px]"
+                    >A red dot appears</strong
                   ><span
+                    class="text-muted text-[15.5px] lte-560:text-[14px] lte-560:leading-[1.5]"
                     >When a new version ships, the menu bar icon gets a dot and
                     the menu offers the update.</span
                   >
                 </div>
               </li>
-              <li>
+              <li
+                class="gap-[16px] [counter-increment:s] grid grid-cols-[40px_1fr] before:place-items-center before:content-[counter(s)] before:w-[40px] before:h-[40px] before:rounded-[12px] before:grid before:font-semibold before:text-[15px] before:leading-[1] before:font-mono before:text-gold before:bg-[rgba(254,188,51,.1)] before:shadow-[inset_0_0_0_1px_rgba(254,188,51,0.22)] lte-560:gap-[12px] lte-560:grid-cols-[34px_1fr] lte-560:before:w-[34px] lte-560:before:h-[34px] lte-560:before:rounded-[10px] lte-560:before:text-[13.5px]"
+              >
                 <div>
-                  <strong>Downloaded and verified</strong
+                  <strong
+                    class="mb-[2px] block text-[17px] font-semibold lte-560:text-[15px]"
+                    >Downloaded and verified</strong
                   ><span
+                    class="text-muted text-[15.5px] lte-560:text-[14px] lte-560:leading-[1.5]"
                     >The checksum, bundle, version and code signature all have
                     to match.</span
                   >
                 </div>
               </li>
-              <li>
+              <li
+                class="gap-[16px] [counter-increment:s] grid grid-cols-[40px_1fr] before:place-items-center before:content-[counter(s)] before:w-[40px] before:h-[40px] before:rounded-[12px] before:grid before:font-semibold before:text-[15px] before:leading-[1] before:font-mono before:text-gold before:bg-[rgba(254,188,51,.1)] before:shadow-[inset_0_0_0_1px_rgba(254,188,51,0.22)] lte-560:gap-[12px] lte-560:grid-cols-[34px_1fr] lte-560:before:w-[34px] lte-560:before:h-[34px] lte-560:before:rounded-[10px] lte-560:before:text-[13.5px]"
+              >
                 <div>
-                  <strong>Restart to Update</strong
+                  <strong
+                    class="mb-[2px] block text-[17px] font-semibold lte-560:text-[15px]"
+                    >Restart to Update</strong
                   ><span
+                    class="text-muted text-[15.5px] lte-560:text-[14px] lte-560:leading-[1.5]"
                     >QuitX swaps itself in place and reopens. Your settings stay
                     as they were.</span
                   >
                 </div>
               </li>
             </ol>
-            <p
-              style="
-                margin-top: 28px;
-                font-size: 14.5px;
-                color: var(--color-faint);
-              "
-            >
+            <p class="mt-[28px] text-[14.5px] text-faint">
               Turn automatic checks and background downloads on or off in
               Settings → General.
             </p>
           </div>
-          <div class="shotframe reveal rounded-[18px] overflow-hidden">
+          <div
+            class="reveal overflow-hidden rounded-[18px] shadow-[0_0_0_1px_var(--color-line-strong),0_30px_80px_rgba(0,0,0,0.5)] opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] [&.in]:opacity-100 [&.in]:transform-none focus-visible:rounded-[6px] motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none]"
+          >
             <img
               src="assets/shots/updates.jpg"
               alt="The QuitX menu showing Restart to Update next to the Update window"
@@ -1733,42 +1082,75 @@
         </div>
       </section>
 
-      <section>
-        <div class="wrap">
+      <section class="py-[120px] px-0 lte-960:py-[80px]">
+        <div
+          class="my-0 mx-auto w-[min(1180px,100%_-_40px)] lte-560:w-[min(1180px,100%_-_32px)]"
+        >
           <div
-            class="head center reveal text-center ml-auto mr-auto"
-            style="text-align: center"
+            class="reveal mx-auto mb-[52px] text-center max-w-[680px] opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none] lte-560:mb-[36px]"
           >
-            <span class="eyebrow">Privacy</span>
+            <span
+              class="mb-[16px] font-semibold text-[13px] leading-[1] font-body tracking-[0.1em] uppercase text-gold block"
+              >Privacy</span
+            >
             <h2>Your Mac, your business.</h2>
           </div>
-          <div class="trust grid gap-[16px]">
-            <div class="tile reveal">
-              <div class="ico">
-                <svg class="i" aria-hidden="true"><use href="#i-lock" /></svg>
+          <div
+            class="gap-[16px] grid grid-cols-[repeat(3,1fr)] lte-960:grid-cols-[1fr]"
+          >
+            <div
+              class="reveal p-[28px] overflow-hidden rounded-card relative bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none] lte-560:py-[20px] lte-560:px-[18px]"
+            >
+              <div
+                class="mb-[18px] place-items-center rounded-[12px] w-[42px] h-[42px] grid text-gold bg-[rgba(254,188,51,.1)] shadow-[inset_0_0_0_1px_rgba(254,188,51,0.2)]"
+              >
+                <svg
+                  class="w-[20px] h-[20px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none"
+                  aria-hidden="true"
+                >
+                  <use href="#i-lock" />
+                </svg>
               </div>
-              <h3>No data leaves your Mac</h3>
-              <p>
+              <h3 class="mt-[2px]">No data leaves your Mac</h3>
+              <p class="mt-[8px] text-muted text-[15.5px]">
                 No analytics and no account. The only request QuitX makes is
                 asking GitHub for the latest release.
               </p>
             </div>
-            <div class="tile reveal">
-              <div class="ico">
-                <svg class="i" aria-hidden="true"><use href="#i-shield" /></svg>
+            <div
+              class="reveal p-[28px] overflow-hidden rounded-card relative bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none] lte-560:py-[20px] lte-560:px-[18px]"
+            >
+              <div
+                class="mb-[18px] place-items-center rounded-[12px] w-[42px] h-[42px] grid text-gold bg-[rgba(254,188,51,.1)] shadow-[inset_0_0_0_1px_rgba(254,188,51,0.2)]"
+              >
+                <svg
+                  class="w-[20px] h-[20px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none"
+                  aria-hidden="true"
+                >
+                  <use href="#i-shield" />
+                </svg>
               </div>
-              <h3>Only the access it needs</h3>
-              <p>
+              <h3 class="mt-[2px]">Only the access it needs</h3>
+              <p class="mt-[8px] text-muted text-[15.5px]">
                 Accessibility is used only for window features like Quit When
                 Last Window Closes. Everything else works without it.
               </p>
             </div>
-            <div class="tile reveal">
-              <div class="ico">
-                <svg class="i" aria-hidden="true"><use href="#i-code" /></svg>
+            <div
+              class="reveal p-[28px] overflow-hidden rounded-card relative bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none] lte-560:py-[20px] lte-560:px-[18px]"
+            >
+              <div
+                class="mb-[18px] place-items-center rounded-[12px] w-[42px] h-[42px] grid text-gold bg-[rgba(254,188,51,.1)] shadow-[inset_0_0_0_1px_rgba(254,188,51,0.2)]"
+              >
+                <svg
+                  class="w-[20px] h-[20px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none"
+                  aria-hidden="true"
+                >
+                  <use href="#i-code" />
+                </svg>
               </div>
-              <h3>Read every line</h3>
-              <p>
+              <h3 class="mt-[2px]">Read every line</h3>
+              <p class="mt-[8px] text-muted text-[15.5px]">
                 MIT licensed and built in the open. Issues and pull requests are
                 welcome on GitHub.
               </p>
@@ -1777,12 +1159,24 @@
         </div>
       </section>
 
-      <section class="band" id="install">
-        <div class="wrap">
-          <div class="head reveal">
-            <span class="eyebrow">Install</span>
+      <section
+        class="py-[120px] px-0 [border-top:1px_solid_var(--color-line)] [border-bottom:1px_solid_var(--color-line)] bg-bg-2 lte-960:py-[80px]"
+        id="install"
+      >
+        <div
+          class="my-0 mx-auto w-[min(1180px,100%_-_40px)] lte-560:w-[min(1180px,100%_-_32px)]"
+        >
+          <div
+            class="reveal mb-[52px] max-w-[680px] opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none] lte-560:mb-[36px]"
+          >
+            <span
+              class="mb-[16px] font-semibold text-[13px] leading-[1] font-body tracking-[0.1em] uppercase text-gold block"
+              >Install</span
+            >
             <h2>Up and running in a minute.</h2>
-            <p>
+            <p
+              class="mt-[18px] text-[length:clamp(16px,1.7vw,18px)] leading-[1.55] text-muted lte-560:mt-[12px] lte-560:text-[15px]"
+            >
               QuitX is free and open source, so it isn't notarized by Apple
               (that needs a paid developer account). macOS asks you to confirm
               it once, the first time you open it. Here's exactly what you'll
@@ -1790,33 +1184,51 @@
             </p>
           </div>
 
-          <div class="ipaths grid gap-[16px]">
-            <div class="tile ipath reveal p-[30px]">
-              <span class="tag">Fastest · no prompts</span>
+          <div class="gap-[16px] grid grid-cols-[1fr]">
+            <div
+              class="reveal p-[30px] overflow-hidden rounded-card relative bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none]"
+            >
+              <span
+                class="py-[5px] px-[10px] mb-[14px] rounded-[999px] inline-block text-[12.5px] font-semibold text-gold bg-[rgba(254,188,51,.1)] shadow-[inset_0_0_0_1px_rgba(254,188,51,0.22)]"
+                >Fastest · no prompts</span
+              >
               <h3>Install from Terminal</h3>
-              <p class="muted">
+              <p class="mt-[8px] text-muted text-[15.5px]">
                 Downloads the latest release from GitHub, checks its SHA-256
                 checksum and code signature, installs QuitX in Applications and
                 opens it. Never run it with sudo.
               </p>
               <div
-                class="code mt-[16px] flex items-center gap-[10px] rounded-[12px] bg-[#0A0908]"
+                class="py-[8px] pr-[8px] pl-[16px] mt-[16px] gap-[10px] flex items-center rounded-[12px] bg-[#0A0908] shadow-[inset_0_0_0_1px_var(--color-line)] focus-visible:rounded-[6px] lte-560:py-[6px] lte-560:pr-[6px] lte-560:pl-[12px]"
               >
-                <code id="cmd"
+                <code
+                  class="overflow-x-auto flex-1 min-w-0 whitespace-nowrap font-medium text-[14px] leading-[1.6] font-mono text-[#EDE6DA] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lte-560:text-[12px] lte-380:text-[11px]"
+                  id="cmd"
                   >curl -fsSL https://quitx.kiron.dev/install | bash</code
                 ><button
-                  class="btn btn-ghost btn-sm copybtn"
+                  class="py-0 px-[14px] gap-[9px] border-0 rounded-[10px] inline-flex items-center justify-center min-h-[36px] font-semibold text-[14px] leading-[1] font-body tracking-[-.005em] cursor-pointer [transition:transform_0.15s_var(--ease-qx),background-color_0.15s,box-shadow_0.15s,filter_0.15s] whitespace-nowrap bg-[rgba(255,244,228,.06)] text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[rgba(255,244,228,.1)] active:[transform:translateY(1px)_scale(0.99)] motion-reduce:[transition:none]"
                   type="button"
                   data-copy="cmd"
                 >
-                  <svg class="i" aria-hidden="true"><use href="#i-copy" /></svg
+                  <svg
+                    class="w-[20px] h-[20px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none"
+                    aria-hidden="true"
+                  >
+                    <use href="#i-copy" /></svg
                   ><span>Copy</span>
                 </button>
               </div>
-              <p class="note">
-                Want to read it first? <a href="install">View the script</a>.
+              <p class="mt-[14px] text-[14px] text-faint">
+                Want to read it first?
+                <a
+                  class="text-ink underline underline-offset-[3px]"
+                  href="install"
+                  >View the script</a
+                >.
               </p>
-              <div class="media small">
+              <div
+                class="mt-[18px] overflow-hidden rounded-[12px] shadow-[0_0_0_1px_var(--color-line)]"
+              >
                 <img
                   src="assets/install/terminal.jpg"
                   alt="Terminal output of the QuitX installer finishing successfully"
@@ -1826,30 +1238,49 @@
                 />
               </div>
             </div>
-            <div class="tile ipath reveal p-[30px]">
-              <span class="tag">Classic</span>
+            <div
+              class="reveal p-[30px] overflow-hidden rounded-card relative bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none]"
+            >
+              <span
+                class="py-[5px] px-[10px] mb-[14px] rounded-[999px] inline-block text-[12.5px] font-semibold text-gold bg-[rgba(254,188,51,.1)] shadow-[inset_0_0_0_1px_rgba(254,188,51,0.22)]"
+                >Classic</span
+              >
               <h3>Download the app</h3>
-              <p class="muted">
+              <p class="mt-[8px] text-muted text-[15.5px]">
                 Get the disk image and follow the five steps below. You only do
                 the Privacy &amp; Security part once; updates install without
                 it.
               </p>
               <a
-                class="btn btn-gold dl"
+                class="dl py-0 px-[20px] mt-[18px] gap-[9px] border-0 text-on-gold rounded-[12px] inline-flex items-center justify-center min-h-[44px] font-semibold text-[15.5px] leading-[1] font-body tracking-[-.005em] cursor-pointer [transition:transform_0.15s_var(--ease-qx),background-color_0.15s,box-shadow_0.15s,filter_0.15s] whitespace-nowrap bg-[linear-gradient(180deg,var(--color-gold),var(--color-gold-deep))] shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_8px_24px_rgba(232,155,0,0.22)] hover:[filter:brightness(1.05)] active:[transform:translateY(1px)_scale(0.99)] motion-reduce:[transition:none]"
                 href="https://github.com/kiron0/quitx/releases/latest"
-                style="margin-top: 18px"
-                ><svg class="i" aria-hidden="true">
+                ><svg
+                  class="w-[20px] h-[20px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none"
+                  aria-hidden="true"
+                >
                   <use href="#i-download" /></svg
-                >Download for Mac <small class="ver"></small
+                >Download for Mac
+                <small
+                  class="ver font-medium text-[12.5px] leading-[1] font-mono opacity-[0.7]"
+                ></small
               ></a>
-              <p class="note">Requires macOS 14 Sonoma or later.</p>
+              <p class="mt-[14px] text-[14px] text-faint">
+                Requires macOS 14 Sonoma or later.
+              </p>
             </div>
           </div>
 
-          <ol class="isteps list-none p-0 grid gap-[16px]">
-            <li class="istep reveal">
-              <div class="media">
+          <ol
+            class="p-0 mx-0 mt-[40px] mb-0 gap-[16px] grid list-none grid-cols-[repeat(2,1fr)] lte-960:grid-cols-[1fr]"
+          >
+            <li
+              class="reveal overflow-hidden rounded-card opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none]"
+            >
+              <div
+                class="overflow-hidden [border-bottom:1px_solid_var(--color-line)] aspect-[16/10] bg-[#120f0c]"
+              >
                 <img
+                  class="h-full w-full object-cover"
                   src="assets/install/dmg.jpg"
                   alt="The QuitX disk image window with QuitX being dragged into Applications"
                   width="2400"
@@ -1857,18 +1288,30 @@
                   loading="lazy"
                 />
               </div>
-              <div class="ibody">
-                <span class="num">STEP 1</span>
+              <div class="px-[26px] pt-[22px] pb-[26px]">
+                <span
+                  class="mb-[12px] inline-block font-semibold text-[12.5px] leading-[1] font-mono text-gold tracking-[.04em]"
+                  >STEP 1</span
+                >
                 <h3>Drag QuitX into Applications</h3>
-                <p>
-                  Open the downloaded <code>QuitX-vX.Y.Z.dmg</code> and drag the
-                  QuitX icon onto the Applications folder.
+                <p class="mt-[8px] text-muted text-[15.5px]">
+                  Open the downloaded
+                  <code
+                    class="font-medium text-[13.5px] leading-[normal] font-mono text-ink"
+                    >QuitX-vX.Y.Z.dmg</code
+                  >
+                  and drag the QuitX icon onto the Applications folder.
                 </p>
               </div>
             </li>
-            <li class="istep reveal">
-              <div class="media">
+            <li
+              class="reveal overflow-hidden rounded-card opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none]"
+            >
+              <div
+                class="overflow-hidden [border-bottom:1px_solid_var(--color-line)] aspect-[16/10] bg-[#120f0c]"
+              >
                 <img
+                  class="h-full w-full object-cover"
                   src="assets/install/blocked.jpg"
                   alt="The “QuitX” Not Opened alert with the Done button highlighted"
                   width="2400"
@@ -1876,18 +1319,29 @@
                   loading="lazy"
                 />
               </div>
-              <div class="ibody">
-                <span class="num">STEP 2</span>
+              <div class="px-[26px] pt-[22px] pb-[26px]">
+                <span
+                  class="mb-[12px] inline-block font-semibold text-[12.5px] leading-[1] font-mono text-gold tracking-[.04em]"
+                  >STEP 2</span
+                >
                 <h3>Open QuitX, then click Done</h3>
-                <p>
-                  macOS says <b>“QuitX” Not Opened</b> because Apple hasn't
-                  checked it. Click <b>Done</b>. Don't choose Move to Trash.
+                <p class="mt-[8px] text-muted text-[15.5px]">
+                  macOS says
+                  <b class="text-ink font-semibold">“QuitX” Not Opened</b>
+                  because Apple hasn't checked it. Click
+                  <b class="text-ink font-semibold">Done</b>. Don't choose Move
+                  to Trash.
                 </p>
               </div>
             </li>
-            <li class="istep reveal">
-              <div class="media">
+            <li
+              class="reveal overflow-hidden rounded-card opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none]"
+            >
+              <div
+                class="overflow-hidden [border-bottom:1px_solid_var(--color-line)] aspect-[16/10] bg-[#120f0c]"
+              >
                 <img
+                  class="h-full w-full object-cover"
                   src="assets/install/settings.jpg"
                   alt="System Settings, Privacy & Security, with the Open Anyway button highlighted"
                   width="2400"
@@ -1895,20 +1349,32 @@
                   loading="lazy"
                 />
               </div>
-              <div class="ibody">
-                <span class="num">STEP 3</span>
+              <div class="px-[26px] pt-[22px] pb-[26px]">
+                <span
+                  class="mb-[12px] inline-block font-semibold text-[12.5px] leading-[1] font-mono text-gold tracking-[.04em]"
+                  >STEP 3</span
+                >
                 <h3>Allow it in Privacy &amp; Security</h3>
-                <p>
-                  Open <b>System Settings › Privacy &amp; Security</b> and
-                  scroll to <b>Security</b>. Next to “QuitX” was blocked to
-                  protect your Mac, click <b>Open Anyway</b>. The button shows
-                  for about an hour after step 2.
+                <p class="mt-[8px] text-muted text-[15.5px]">
+                  Open
+                  <b class="text-ink font-semibold"
+                    >System Settings › Privacy &amp; Security</b
+                  >
+                  and scroll to <b class="text-ink font-semibold">Security</b>.
+                  Next to “QuitX” was blocked to protect your Mac, click
+                  <b class="text-ink font-semibold">Open Anyway</b>. The button
+                  shows for about an hour after step 2.
                 </p>
               </div>
             </li>
-            <li class="istep reveal">
-              <div class="media">
+            <li
+              class="reveal overflow-hidden rounded-card opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none]"
+            >
+              <div
+                class="overflow-hidden [border-bottom:1px_solid_var(--color-line)] aspect-[16/10] bg-[#120f0c]"
+              >
                 <img
+                  class="h-full w-full object-cover"
                   src="assets/install/confirm.jpg"
                   alt="The Open “QuitX”? dialog with Open Anyway highlighted"
                   width="2400"
@@ -1916,19 +1382,27 @@
                   loading="lazy"
                 />
               </div>
-              <div class="ibody">
-                <span class="num">STEP 4</span>
+              <div class="px-[26px] pt-[22px] pb-[26px]">
+                <span
+                  class="mb-[12px] inline-block font-semibold text-[12.5px] leading-[1] font-mono text-gold tracking-[.04em]"
+                  >STEP 4</span
+                >
                 <h3>Confirm with Open Anyway</h3>
-                <p>
-                  Click <b>Open Anyway</b> once more and enter your password or
-                  use Touch ID. macOS remembers your choice, so QuitX opens
-                  normally from now on.
+                <p class="mt-[8px] text-muted text-[15.5px]">
+                  Click <b class="text-ink font-semibold">Open Anyway</b> once
+                  more and enter your password or use Touch ID. macOS remembers
+                  your choice, so QuitX opens normally from now on.
                 </p>
               </div>
             </li>
-            <li class="istep reveal">
-              <div class="media">
+            <li
+              class="reveal overflow-hidden rounded-card opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] col-[span_2] grid grid-cols-[1.2fr_1fr] items-center [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none] lte-960:col-auto lte-960:block"
+            >
+              <div
+                class="overflow-hidden [border-right:1px_solid_var(--color-line)] [border-bottom:0] aspect-[16/10] bg-[#120f0c] lte-960:[border-right:0] lte-960:[border-bottom:1px_solid_var(--color-line)]"
+              >
                 <img
+                  class="h-full w-full object-cover"
                   src="assets/install/ready.jpg"
                   alt="The QuitX menu open in the menu bar"
                   width="2400"
@@ -1936,10 +1410,13 @@
                   loading="lazy"
                 />
               </div>
-              <div class="ibody">
-                <span class="num">STEP 5</span>
+              <div class="px-[26px] pt-[22px] pb-[26px]">
+                <span
+                  class="mb-[12px] inline-block font-semibold text-[12.5px] leading-[1] font-mono text-gold tracking-[.04em]"
+                  >STEP 5</span
+                >
                 <h3>Find it in your menu bar</h3>
-                <p>
+                <p class="mt-[8px] text-muted text-[15.5px]">
                   QuitX lives next to the clock. Click it to see every running
                   app. Grant Accessibility later only if you want the window
                   features.
@@ -1948,17 +1425,24 @@
             </li>
           </ol>
 
-          <div class="inotes grid gap-[16px] mt-[16px]">
-            <div class="tile reveal">
+          <div
+            class="mt-[16px] gap-[16px] grid grid-cols-[1fr_1fr] lte-960:grid-cols-[1fr]"
+          >
+            <div
+              class="reveal p-[26px] overflow-hidden rounded-card relative bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none]"
+            >
               <h3>On macOS 14 Sonoma</h3>
-              <p class="muted">
+              <p class="mt-[8px] text-muted text-[15.5px]">
                 You can skip step 3: Control-click QuitX in Applications, choose
-                <b>Open</b>, then click <b>Open</b> in the dialog.
+                <b class="text-ink font-semibold">Open</b>, then click
+                <b class="text-ink font-semibold">Open</b> in the dialog.
               </p>
             </div>
-            <div class="tile reveal">
+            <div
+              class="reveal p-[26px] overflow-hidden rounded-card relative bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none]"
+            >
               <h3>Why the warning?</h3>
-              <p class="muted">
+              <p class="mt-[8px] text-muted text-[15.5px]">
                 Notarization is Apple's malware scan for apps from paid
                 developer accounts. QuitX skips it, but its source is public and
                 every install or update is checked against GitHub's SHA-256
@@ -1969,165 +1453,249 @@
         </div>
       </section>
 
-      <section id="faq">
-        <div class="wrap">
+      <section class="py-[120px] px-0 lte-960:py-[80px]" id="faq">
+        <div
+          class="my-0 mx-auto w-[min(1180px,100%_-_40px)] lte-560:w-[min(1180px,100%_-_32px)]"
+        >
           <div
-            class="head center reveal text-center ml-auto mr-auto"
-            style="text-align: center"
+            class="reveal mx-auto mb-[52px] text-center max-w-[680px] opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none] lte-560:mb-[36px]"
           >
-            <span class="eyebrow">FAQ</span>
+            <span
+              class="mb-[16px] font-semibold text-[13px] leading-[1] font-body tracking-[0.1em] uppercase text-gold block"
+              >FAQ</span
+            >
             <h2>Good questions.</h2>
           </div>
-          <div class="faq reveal max-w-[820px]">
-            <details>
-              <summary>
+          <div
+            class="reveal my-0 mx-auto max-w-[820px] opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none]"
+          >
+            <details
+              class="group/details [border-bottom:1px_solid_var(--color-line)]"
+            >
+              <summary
+                class="py-[22px] px-[2px] gap-[20px] list-none cursor-pointer flex items-center justify-between text-[18px] font-semibold tracking-[-.01em] min-h-[44px] [&::-webkit-details-marker]:hidden lte-560:py-[16px] lte-560:px-0 lte-560:text-[16px] lte-560:leading-[1.35]"
+              >
                 Why does macOS say it can’t verify QuitX?<svg
-                  class="i"
+                  class="w-[20px] h-[20px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none [transition:transform_0.2s_var(--ease-qx)] text-muted motion-reduce:[transition:none] group-open/details:[transform:rotate(45deg)]"
                   aria-hidden="true"
                 >
                   <use href="#i-plus" />
                 </svg>
               </summary>
-              <p>
+              <p
+                class="px-[2px] pt-0 pb-[22px] text-muted max-w-[62ch] lte-560:px-0 lte-560:pb-[16px] lte-560:text-[14.5px] lte-560:leading-[1.55]"
+              >
                 QuitX isn't notarized by Apple, because that needs a paid
                 developer account. macOS asks you to confirm it once. Follow the
-                <a
-                  href="#install"
-                  style="color: var(--color-ink); text-decoration: underline"
-                  >install steps</a
-                >, or install from Terminal, which skips the prompt.
+                <a class="text-ink underline" href="#install">install steps</a>,
+                or install from Terminal, which skips the prompt.
               </p>
             </details>
-            <details>
-              <summary>
-                Will I lose unsaved work?<svg class="i" aria-hidden="true">
+            <details
+              class="group/details [border-bottom:1px_solid_var(--color-line)]"
+            >
+              <summary
+                class="py-[22px] px-[2px] gap-[20px] list-none cursor-pointer flex items-center justify-between text-[18px] font-semibold tracking-[-.01em] min-h-[44px] [&::-webkit-details-marker]:hidden lte-560:py-[16px] lte-560:px-0 lte-560:text-[16px] lte-560:leading-[1.35]"
+              >
+                Will I lose unsaved work?<svg
+                  class="w-[20px] h-[20px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none [transition:transform_0.2s_var(--ease-qx)] text-muted motion-reduce:[transition:none] group-open/details:[transform:rotate(45deg)]"
+                  aria-hidden="true"
+                >
                   <use href="#i-plus" />
                 </svg>
               </summary>
-              <p>
+              <p
+                class="px-[2px] pt-0 pb-[22px] text-muted max-w-[62ch] lte-560:px-0 lte-560:pb-[16px] lte-560:text-[14.5px] lte-560:leading-[1.55]"
+              >
                 No. A normal quit asks each app to quit the same way the Dock
                 does, so apps can still prompt you to save. QuitX only force
                 quits when you choose it, for example by holding Option.
               </p>
             </details>
-            <details>
-              <summary>
+            <details
+              class="group/details [border-bottom:1px_solid_var(--color-line)]"
+            >
+              <summary
+                class="py-[22px] px-[2px] gap-[20px] list-none cursor-pointer flex items-center justify-between text-[18px] font-semibold tracking-[-.01em] min-h-[44px] [&::-webkit-details-marker]:hidden lte-560:py-[16px] lte-560:px-0 lte-560:text-[16px] lte-560:leading-[1.35]"
+              >
                 Which macOS versions are supported?<svg
-                  class="i"
+                  class="w-[20px] h-[20px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none [transition:transform_0.2s_var(--ease-qx)] text-muted motion-reduce:[transition:none] group-open/details:[transform:rotate(45deg)]"
                   aria-hidden="true"
                 >
                   <use href="#i-plus" />
                 </svg>
               </summary>
-              <p>
+              <p
+                class="px-[2px] pt-0 pb-[22px] text-muted max-w-[62ch] lte-560:px-0 lte-560:pb-[16px] lte-560:text-[14.5px] lte-560:leading-[1.55]"
+              >
                 macOS 14 Sonoma and later. On macOS 26 you can switch between
                 the classic look and Liquid Glass.
               </p>
             </details>
-            <details>
-              <summary>
-                How do updates work?<svg class="i" aria-hidden="true">
+            <details
+              class="group/details [border-bottom:1px_solid_var(--color-line)]"
+            >
+              <summary
+                class="py-[22px] px-[2px] gap-[20px] list-none cursor-pointer flex items-center justify-between text-[18px] font-semibold tracking-[-.01em] min-h-[44px] [&::-webkit-details-marker]:hidden lte-560:py-[16px] lte-560:px-0 lte-560:text-[16px] lte-560:leading-[1.35]"
+              >
+                How do updates work?<svg
+                  class="w-[20px] h-[20px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none [transition:transform_0.2s_var(--ease-qx)] text-muted motion-reduce:[transition:none] group-open/details:[transform:rotate(45deg)]"
+                  aria-hidden="true"
+                >
                   <use href="#i-plus" />
                 </svg>
               </summary>
-              <p>
+              <p
+                class="px-[2px] pt-0 pb-[22px] text-muted max-w-[62ch] lte-560:px-0 lte-560:pb-[16px] lte-560:text-[14.5px] lte-560:leading-[1.55]"
+              >
                 QuitX checks GitHub Releases a few times a day when automatic
                 checks are on. You'll see a red dot on the menu bar icon and an
                 update item in the menu. The download is verified before QuitX
                 restarts into the new version.
               </p>
             </details>
-            <details>
-              <summary>
+            <details
+              class="group/details [border-bottom:1px_solid_var(--color-line)]"
+            >
+              <summary
+                class="py-[22px] px-[2px] gap-[20px] list-none cursor-pointer flex items-center justify-between text-[18px] font-semibold tracking-[-.01em] min-h-[44px] [&::-webkit-details-marker]:hidden lte-560:py-[16px] lte-560:px-0 lte-560:text-[16px] lte-560:leading-[1.35]"
+              >
                 Why does it ask for Accessibility?<svg
-                  class="i"
+                  class="w-[20px] h-[20px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none [transition:transform_0.2s_var(--ease-qx)] text-muted motion-reduce:[transition:none] group-open/details:[transform:rotate(45deg)]"
                   aria-hidden="true"
                 >
                   <use href="#i-plus" />
                 </svg>
               </summary>
-              <p>
+              <p
+                class="px-[2px] pt-0 pb-[22px] text-muted max-w-[62ch] lte-560:px-0 lte-560:pb-[16px] lte-560:text-[14.5px] lte-560:leading-[1.55]"
+              >
                 Only window-based features need it, such as quitting an app when
                 its last window closes and the per-app Windows menu. You can use
                 the rest of QuitX without granting it.
               </p>
             </details>
-            <details>
-              <summary>
-                Is it really free?<svg class="i" aria-hidden="true">
-                  <use href="#i-plus" />
-                </svg>
-              </summary>
-              <p>
-                Yes. QuitX is MIT licensed. There's no paid tier and no account.
-              </p>
-            </details>
-            <details>
-              <summary>
-                Does QuitX collect or send my data?<svg
-                  class="i"
+            <details
+              class="group/details [border-bottom:1px_solid_var(--color-line)]"
+            >
+              <summary
+                class="py-[22px] px-[2px] gap-[20px] list-none cursor-pointer flex items-center justify-between text-[18px] font-semibold tracking-[-.01em] min-h-[44px] [&::-webkit-details-marker]:hidden lte-560:py-[16px] lte-560:px-0 lte-560:text-[16px] lte-560:leading-[1.35]"
+              >
+                Is it really free?<svg
+                  class="w-[20px] h-[20px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none [transition:transform_0.2s_var(--ease-qx)] text-muted motion-reduce:[transition:none] group-open/details:[transform:rotate(45deg)]"
                   aria-hidden="true"
                 >
                   <use href="#i-plus" />
                 </svg>
               </summary>
-              <p>
+              <p
+                class="px-[2px] pt-0 pb-[22px] text-muted max-w-[62ch] lte-560:px-0 lte-560:pb-[16px] lte-560:text-[14.5px] lte-560:leading-[1.55]"
+              >
+                Yes. QuitX is MIT licensed. There's no paid tier and no account.
+              </p>
+            </details>
+            <details
+              class="group/details [border-bottom:1px_solid_var(--color-line)]"
+            >
+              <summary
+                class="py-[22px] px-[2px] gap-[20px] list-none cursor-pointer flex items-center justify-between text-[18px] font-semibold tracking-[-.01em] min-h-[44px] [&::-webkit-details-marker]:hidden lte-560:py-[16px] lte-560:px-0 lte-560:text-[16px] lte-560:leading-[1.35]"
+              >
+                Does QuitX collect or send my data?<svg
+                  class="w-[20px] h-[20px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none [transition:transform_0.2s_var(--ease-qx)] text-muted motion-reduce:[transition:none] group-open/details:[transform:rotate(45deg)]"
+                  aria-hidden="true"
+                >
+                  <use href="#i-plus" />
+                </svg>
+              </summary>
+              <p
+                class="px-[2px] pt-0 pb-[22px] text-muted max-w-[62ch] lte-560:px-0 lte-560:pb-[16px] lte-560:text-[14.5px] lte-560:leading-[1.55]"
+              >
                 No. QuitX has no account, analytics or tracking. It only
                 connects to GitHub to check for and download updates.
               </p>
             </details>
-            <details>
-              <summary>
+            <details
+              class="group/details [border-bottom:1px_solid_var(--color-line)]"
+            >
+              <summary
+                class="py-[22px] px-[2px] gap-[20px] list-none cursor-pointer flex items-center justify-between text-[18px] font-semibold tracking-[-.01em] min-h-[44px] [&::-webkit-details-marker]:hidden lte-560:py-[16px] lte-560:px-0 lte-560:text-[16px] lte-560:leading-[1.35]"
+              >
                 Can I stop QuitX from closing specific apps?<svg
-                  class="i"
+                  class="w-[20px] h-[20px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none [transition:transform_0.2s_var(--ease-qx)] text-muted motion-reduce:[transition:none] group-open/details:[transform:rotate(45deg)]"
                   aria-hidden="true"
                 >
                   <use href="#i-plus" />
                 </svg>
               </summary>
-              <p>
+              <p
+                class="px-[2px] pt-0 pb-[22px] text-muted max-w-[62ch] lte-560:px-0 lte-560:pb-[16px] lte-560:text-[14.5px] lte-560:leading-[1.55]"
+              >
                 Yes. Add any app to the Exclude list from its three-dot menu or
                 Settings. You can also protect music apps with one switch.
               </p>
             </details>
-            <details>
-              <summary>
-                What is the Ports feature?<svg class="i" aria-hidden="true">
+            <details
+              class="group/details [border-bottom:1px_solid_var(--color-line)]"
+            >
+              <summary
+                class="py-[22px] px-[2px] gap-[20px] list-none cursor-pointer flex items-center justify-between text-[18px] font-semibold tracking-[-.01em] min-h-[44px] [&::-webkit-details-marker]:hidden lte-560:py-[16px] lte-560:px-0 lte-560:text-[16px] lte-560:leading-[1.35]"
+              >
+                What is the Ports feature?<svg
+                  class="w-[20px] h-[20px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none [transition:transform_0.2s_var(--ease-qx)] text-muted motion-reduce:[transition:none] group-open/details:[transform:rotate(45deg)]"
+                  aria-hidden="true"
+                >
                   <use href="#i-plus" />
                 </svg>
               </summary>
-              <p>
+              <p
+                class="px-[2px] pt-0 pb-[22px] text-muted max-w-[62ch] lte-560:px-0 lte-560:pb-[16px] lte-560:text-[14.5px] lte-560:leading-[1.55]"
+              >
                 It lists listening ports with their apps, processes and Docker
                 containers, then lets you safely free selected ports. It is off
                 by default; enable it in Settings → Ports.
               </p>
             </details>
-            <details>
-              <summary>
+            <details
+              class="group/details [border-bottom:1px_solid_var(--color-line)]"
+            >
+              <summary
+                class="py-[22px] px-[2px] gap-[20px] list-none cursor-pointer flex items-center justify-between text-[18px] font-semibold tracking-[-.01em] min-h-[44px] [&::-webkit-details-marker]:hidden lte-560:py-[16px] lte-560:px-0 lte-560:text-[16px] lte-560:leading-[1.35]"
+              >
                 Can QuitX uninstall apps and their leftovers?<svg
-                  class="i"
+                  class="w-[20px] h-[20px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none [transition:transform_0.2s_var(--ease-qx)] text-muted motion-reduce:[transition:none] group-open/details:[transform:rotate(45deg)]"
                   aria-hidden="true"
                 >
                   <use href="#i-plus" />
                 </svg>
               </summary>
-              <p>
+              <p
+                class="px-[2px] pt-0 pb-[22px] text-muted max-w-[62ch] lte-560:px-0 lte-560:pb-[16px] lte-560:text-[14.5px] lte-560:leading-[1.55]"
+              >
                 Yes. QuitX finds the app, caches, preferences and support files
                 for review, then moves selected items to the Trash. Apple and
                 system apps are protected.
               </p>
             </details>
-            <details>
-              <summary>
-                How can I support QuitX?<svg class="i" aria-hidden="true">
+            <details
+              class="group/details [border-bottom:1px_solid_var(--color-line)]"
+            >
+              <summary
+                class="py-[22px] px-[2px] gap-[20px] list-none cursor-pointer flex items-center justify-between text-[18px] font-semibold tracking-[-.01em] min-h-[44px] [&::-webkit-details-marker]:hidden lte-560:py-[16px] lte-560:px-0 lte-560:text-[16px] lte-560:leading-[1.35]"
+              >
+                How can I support QuitX?<svg
+                  class="w-[20px] h-[20px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none [transition:transform_0.2s_var(--ease-qx)] text-muted motion-reduce:[transition:none] group-open/details:[transform:rotate(45deg)]"
+                  aria-hidden="true"
+                >
                   <use href="#i-plus" />
                 </svg>
               </summary>
-              <p>
+              <p
+                class="px-[2px] pt-0 pb-[22px] text-muted max-w-[62ch] lte-560:px-0 lte-560:pb-[16px] lte-560:text-[14.5px] lte-560:leading-[1.55]"
+              >
                 Star the project on GitHub, report useful bugs, or
                 <a
+                  class="text-ink underline"
                   href="https://buymeacoffee.com/_thk"
-                  style="color: var(--color-ink); text-decoration: underline"
                   >buy me a coffee</a
                 >. QuitX remains free and open source.
               </p>
@@ -2136,44 +1704,82 @@
         </div>
       </section>
 
-      <div class="final relative text-center overflow-hidden">
-        <div class="wrap">
+      <div
+        class="px-0 pt-[120px] pb-[130px] overflow-hidden relative text-center before:content-[''] before:absolute before:left-[50%] before:bottom-[-320px] before:w-[1100px] before:h-[640px] before:[transform:translateX(-50%)] before:bg-[radial-gradient(50%_50%_at_50%_50%,rgba(254,188,51,0.2),transparent_70%)] before:pointer-events-none lte-560:pt-[72px] lte-560:pb-[80px]"
+      >
+        <div
+          class="my-0 mx-auto w-[min(1180px,100%_-_40px)] lte-560:w-[min(1180px,100%_-_32px)]"
+        >
           <img
+            class="mx-auto mt-0 mb-[26px] h-[96px] relative w-[96px] [filter:drop-shadow(0_18px_30px_rgba(0,0,0,0.5))]"
             src="assets/icon.png"
             alt=""
             width="96"
             height="96"
             loading="lazy"
           />
-          <h2>Give your Mac a fresh start.</h2>
-          <p>No restart required.</p>
-          <div class="cta">
+          <h2
+            class="relative lte-560:text-[length:clamp(26px,6.5vw,36px)] lte-560:leading-[1.15]"
+          >
+            Give your Mac a fresh start.
+          </h2>
+          <p
+            class="mx-auto mt-[16px] mb-0 relative text-muted text-[18px] max-w-[34em] lte-560:text-[15.5px]"
+          >
+            No restart required.
+          </p>
+          <div
+            class="mt-[30px] gap-[12px] relative flex flex-wrap justify-center"
+          >
             <a
-              class="btn btn-gold dl"
+              class="dl py-0 px-[20px] gap-[9px] border-0 text-on-gold rounded-[12px] inline-flex items-center justify-center min-h-[44px] font-semibold text-[15.5px] leading-[1] font-body tracking-[-.005em] cursor-pointer [transition:transform_0.15s_var(--ease-qx),background-color_0.15s,box-shadow_0.15s,filter_0.15s] whitespace-nowrap bg-[linear-gradient(180deg,var(--color-gold),var(--color-gold-deep))] shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_8px_24px_rgba(232,155,0,0.22)] hover:[filter:brightness(1.05)] active:[transform:translateY(1px)_scale(0.99)] motion-reduce:[transition:none] lte-560:text-[15px] lte-560:w-full"
               href="https://github.com/kiron0/quitx/releases/latest"
-              ><svg class="i" aria-hidden="true"><use href="#i-download" /></svg
-              >Download for Mac <small class="ver"></small
+              ><svg
+                class="w-[20px] h-[20px] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round] flex-none"
+                aria-hidden="true"
+              >
+                <use href="#i-download" /></svg
+              >Download for Mac
+              <small
+                class="ver font-medium text-[12.5px] leading-[1] font-mono opacity-[0.7]"
+              ></small
             ></a>
           </div>
         </div>
       </div>
     </main>
 
-    <footer class="text-[var(--color-faint)] text-[14px]">
-      <div class="wrap">
+    <footer
+      class="px-0 pt-[34px] pb-[48px] [border-top:1px_solid_var(--color-line)] text-[14px] text-faint lte-560:pt-[26px] lte-560:pb-[34px] lte-560:text-[13px]"
+    >
+      <div
+        class="my-0 mx-auto gap-y-[14px] gap-x-[28px] w-[min(1180px,100%_-_40px)] flex flex-wrap items-center lte-560:w-[min(1180px,100%_-_32px)]"
+      >
         <span
           >© <span id="year">2026</span> Toufiq Hasan Kiron · MIT License</span
         >
-        <nav aria-label="Footer">
-          <a href="https://github.com/kiron0/quitx/releases">Releases</a>
-          <a href="https://github.com/kiron0/quitx/blob/main/CHANGELOG.md"
+        <nav
+          class="ml-auto gap-y-[8px] gap-x-[22px] flex flex-wrap lte-560:ml-0"
+          aria-label="Footer"
+        >
+          <a
+            class="hover:text-ink"
+            href="https://github.com/kiron0/quitx/releases"
+            >Releases</a
+          >
+          <a
+            class="hover:text-ink"
+            href="https://github.com/kiron0/quitx/blob/main/CHANGELOG.md"
             >Changelog</a
           >
           <a
+            class="hover:text-ink"
             href="https://github.com/kiron0/quitx/blob/main/docs/HOW-IT-WORKS.md"
             >How it works</a
           >
-          <a href="https://github.com/kiron0/quitx/issues/new"
+          <a
+            class="hover:text-ink"
+            href="https://github.com/kiron0/quitx/issues/new"
             >Report an issue</a
           >
         </nav>
@@ -2243,7 +1849,9 @@
           }
         };
         const setSoundIcon = () => {
-          soundBtn.innerHTML = `<svg class="i" aria-hidden="true"><use href="#i-${video.muted ? "muted" : "sound"}"/></svg>`;
+          soundBtn
+            .querySelector("use")
+            .setAttribute("href", `#i-${video.muted ? "muted" : "sound"}`);
           soundBtn.setAttribute(
             "aria-label",
             video.muted ? "Turn sound on" : "Turn sound off",
@@ -2377,8 +1985,10 @@
         const countWrap = document.querySelectorAll(".dlcount");
         const cacheKey = "quitx-downloads";
         let shown = 0;
+        let frameId = 0;
         const render = (total, animate) => {
           if (!Number.isFinite(total) || total <= 0) return;
+          cancelAnimationFrame(frameId);
           countWrap.forEach((el) => {
             el.hidden = false;
           });
@@ -2392,13 +2002,13 @@
             countEls.forEach((el) => {
               el.textContent = value.toLocaleString("en-US");
             });
-            if (t < 1) requestAnimationFrame(step);
+            if (t < 1) frameId = requestAnimationFrame(step);
           };
           if (
             animate &&
             !matchMedia("(prefers-reduced-motion: reduce)").matches
           )
-            requestAnimationFrame(step);
+            frameId = requestAnimationFrame(step);
           else
             countEls.forEach((el) => {
               el.textContent = total.toLocaleString("en-US");
