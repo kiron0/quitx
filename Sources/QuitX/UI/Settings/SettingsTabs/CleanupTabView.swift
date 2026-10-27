@@ -59,6 +59,41 @@ final class CleanupViewModel: ObservableObject {
     func selectAll() { selected = Set(items.map(\.id)) }
     func deselectAll() { selected.removeAll() }
 
+    @Published var searchText: String = ""
+    @Published var sizeFilter: ItemSizeFilter = .any
+    @Published var ageFilter: ItemAgeFilter = .any
+    @Published var sortOrder: ItemSortOrder = .largest
+
+    var filteredItems: [CleanupItem] {
+        ItemFilterHelper.filterAndSort(
+            items: items,
+            query: searchText,
+            size: sizeFilter,
+            age: ageFilter,
+            sort: sortOrder
+        )
+    }
+
+    var allVisibleSelected: Bool {
+        let visible = filteredItems
+        return !visible.isEmpty && visible.allSatisfy { selected.contains($0.id) }
+    }
+
+    func selectVisible() {
+        selected.formUnion(filteredItems.map(\.id))
+    }
+
+    func deselectVisible() {
+        selected.subtract(filteredItems.map(\.id))
+    }
+
+    func resetFilters() {
+        searchText = ""
+        sizeFilter = .any
+        ageFilter = .any
+        sortOrder = .largest
+    }
+
     func requestRemoval() {
         guard phase == .ready, !selected.isEmpty else { return }
         confirmationShown = true
@@ -254,7 +289,32 @@ struct CleanupTabView: View {
                     action: model.scan
                 )
             } else {
-                itemList
+                VStack(spacing: 6) {
+                    CleanupFilterBar(
+                        query: $model.searchText,
+                        size: $model.sizeFilter,
+                        age: $model.ageFilter,
+                        sort: $model.sortOrder,
+                        visibleCount: model.filteredItems.count,
+                        totalCount: model.items.count,
+                        onSelectVisible: model.selectVisible,
+                        onDeselectVisible: model.deselectVisible,
+                        allVisibleSelected: model.allVisibleSelected
+                    )
+
+                    if model.filteredItems.isEmpty {
+                        emptyState(
+                            symbol: "line.3.horizontal.decrease.circle",
+                            title: "No Matching Files",
+                            detail: "Try another search term, size threshold, or modified date range.",
+                            tint: category.tint,
+                            actionTitle: "Reset Filters",
+                            action: model.resetFilters
+                        )
+                    } else {
+                        itemList
+                    }
+                }
             }
         }
     }
@@ -262,7 +322,7 @@ struct CleanupTabView: View {
     private var itemList: some View {
         ScrollView {
             LazyVStack(spacing: 0) {
-                ForEach(model.items) { item in
+                ForEach(model.filteredItems) { item in
                     cleanupRow(item)
                     Divider().padding(.leading, 54)
                 }
@@ -307,6 +367,13 @@ struct CleanupTabView: View {
                     .background(Color.primary.opacity(0.07), in: Capsule())
             }
 
+            if let date = item.lastModified {
+                Text(date, style: .date)
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 80, alignment: .trailing)
+            }
+
             Text(formatBytes(item.bytes))
                 .font(.system(size: 11, weight: .medium))
                 .monospacedDigit()
@@ -327,6 +394,15 @@ struct CleanupTabView: View {
         .padding(.vertical, 8)
         .contentShape(Rectangle())
         .onTapGesture { model.toggle(item) }
+        .contextMenu {
+            Button("Reveal in Finder") {
+                NSWorkspace.shared.activateFileViewerSelecting([item.url])
+            }
+            Button("Copy Path") {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(item.url.path, forType: .string)
+            }
+        }
     }
 
     private var footer: some View {

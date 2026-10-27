@@ -32,6 +32,21 @@ final class UninstallViewModel: ObservableObject {
         case grid
     }
 
+    enum AppStatusFilter: String, CaseIterable, Identifiable, Sendable {
+        case all = "All apps"
+        case running = "Running"
+        case background = "Menu bar"
+        var id: String { rawValue }
+    }
+
+    enum AppSortOrder: String, CaseIterable, Identifiable, Sendable {
+        case nameAsc = "Name (A–Z)"
+        case nameDesc = "Name (Z–A)"
+        case largest = "Largest first"
+        case smallest = "Smallest first"
+        var id: String { rawValue }
+    }
+
     @Published private(set) var screen: Screen = .picker
     @Published private(set) var cameFromPicker = false
 
@@ -40,6 +55,20 @@ final class UninstallViewModel: ObservableObject {
     private(set) var hasLoadedApps = false
     @Published var pickerSelection: Set<String> = []
     @Published var searchText = ""
+    @Published var sizeFilter: ItemSizeFilter = .any
+    @Published var statusFilter: AppStatusFilter = .all
+    @Published var sortOrder: AppSortOrder = .nameAsc
+    var isFiltered: Bool {
+        !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            || sizeFilter != .any
+            || statusFilter != .all
+    }
+    func resetFilters() {
+        searchText = ""
+        sizeFilter = .any
+        statusFilter = .all
+        sortOrder = .nameAsc
+    }
     @Published private(set) var bundleSizes: [String: Int64] = [:]
     @Published private(set) var runningIDs: Set<String> = []
     @Published var layoutMode: LayoutMode = {
@@ -84,10 +113,37 @@ final class UninstallViewModel: ObservableObject {
 
     var filteredPickerApps: [PickerApp] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return pickerApps }
-        return pickerApps.filter {
-            $0.target.name.localizedCaseInsensitiveContains(query)
-                || $0.target.bundleIdentifier.localizedCaseInsensitiveContains(query)
+        return pickerApps.filter { app in
+            if sizeFilter != .any {
+                let size = bundleSizes[app.id] ?? 0
+                guard size >= sizeFilter.minimumBytes else { return false }
+            }
+            if statusFilter == .running {
+                guard runningIDs.contains(app.id) else { return false }
+            } else if statusFilter == .background {
+                guard app.isBackground else { return false }
+            }
+            guard !query.isEmpty else { return true }
+            return app.target.name.localizedCaseInsensitiveContains(query)
+                || app.target.bundleIdentifier.localizedCaseInsensitiveContains(query)
+        }.sorted { left, right in
+            switch sortOrder {
+            case .nameAsc:
+                let comp = left.target.name.localizedStandardCompare(right.target.name)
+                if comp != .orderedSame { return comp == .orderedAscending }
+            case .nameDesc:
+                let comp = left.target.name.localizedStandardCompare(right.target.name)
+                if comp != .orderedSame { return comp == .orderedDescending }
+            case .largest:
+                let lSize = bundleSizes[left.id] ?? 0
+                let rSize = bundleSizes[right.id] ?? 0
+                if lSize != rSize { return lSize > rSize }
+            case .smallest:
+                let lSize = bundleSizes[left.id] ?? 0
+                let rSize = bundleSizes[right.id] ?? 0
+                if lSize != rSize { return lSize < rSize }
+            }
+            return left.target.name.localizedStandardCompare(right.target.name) == .orderedAscending
         }
     }
 

@@ -57,7 +57,7 @@ enum LeftoverScanner {
                           !belongsToInstalledApp(identifier, installed: normalizedInstalled) else { continue }
                     let url = root.url.appendingPathComponent(name).standardizedFileURL
                     guard seen.insert(url.path).inserted else { continue }
-                    let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+                    let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey, .contentModificationDateKey])
                     guard values?.isSymbolicLink != true else { continue }
                     let measured = AppUninstaller.measure(url)
                     items.append(LeftoverItem(
@@ -66,7 +66,8 @@ enum LeftoverScanner {
                         bytes: measured.bytes,
                         fileCount: measured.files,
                         isDirectory: values?.isDirectory ?? false,
-                        targetID: identifier
+                        targetID: identifier,
+                        lastModified: values?.contentModificationDate
                     ))
                 }
             }

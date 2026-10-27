@@ -120,9 +120,49 @@ struct UninstallView: View {
 
             HStack(spacing: 8) {
                 searchField
+
+                Picker("", selection: $model.statusFilter) {
+                    ForEach(UninstallViewModel.AppStatusFilter.allCases) { Text($0.rawValue).tag($0) }
+                }
+                .frame(width: 86)
+                .labelsHidden()
+                .settingsMenu()
+
+                Picker("", selection: $model.sizeFilter) {
+                    ForEach(ItemSizeFilter.allCases) { Text($0.rawValue).tag($0) }
+                }
+                .frame(width: 102)
+                .labelsHidden()
+                .settingsMenu()
+
+                Picker("", selection: $model.sortOrder) {
+                    ForEach(UninstallViewModel.AppSortOrder.allCases) { Text($0.rawValue).tag($0) }
+                }
+                .frame(width: 110)
+                .labelsHidden()
+                .settingsMenu()
+
                 layoutSwitchButtons
             }
-            .padding(.bottom, 10)
+            .padding(.bottom, 6)
+
+            if model.hasLoadedApps && !model.pickerApps.isEmpty {
+                HStack(spacing: 6) {
+                    Text("\(model.filteredPickerApps.count) of \(model.pickerApps.count) apps shown")
+                        .font(.system(size: 10.5))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    if model.isFiltered {
+                        Button("Reset Filters") {
+                            model.resetFilters()
+                        }
+                        .buttonStyle(.plain)
+                        .font(.system(size: 10.5))
+                        .foregroundStyle(QuitXTheme.accent)
+                    }
+                }
+                .padding(.bottom, 8)
+            }
 
             Group {
                 if model.isLoadingApps && model.pickerApps.isEmpty {
@@ -130,12 +170,18 @@ struct UninstallView: View {
                 } else if model.filteredPickerApps.isEmpty {
                     VStack(spacing: 8) {
                         Spacer()
-                        Image(systemName: "magnifyingglass")
+                        Image(systemName: "line.3.horizontal.decrease.circle")
                             .font(.system(size: 24))
                             .foregroundStyle(.secondary)
-                        Text(model.searchText.isEmpty ? "No apps can be uninstalled." : "No apps match \u{201C}\(model.searchText)\u{201D}.")
+                        Text(model.isFiltered ? "No apps match current filters." : (model.searchText.isEmpty ? "No apps can be uninstalled." : "No apps match \u{201C}\(model.searchText)\u{201D}."))
                             .font(.system(size: 12))
                             .foregroundStyle(.secondary)
+                        if model.isFiltered {
+                            Button("Reset Filters") {
+                                model.resetFilters()
+                            }
+                            .buttonStyle(UninstallSecondaryButtonStyle())
+                        }
                         Spacer()
                     }
                 } else if model.layoutMode == .list {
@@ -345,6 +391,10 @@ struct UninstallView: View {
         .contextMenu {
             Button("Uninstall \(app.target.name)…") { model.startReview([app.target], fromPicker: true) }
             Button("Reveal in Finder") { NSWorkspace.shared.activateFileViewerSelecting([app.target.bundleURL]) }
+            Button("Copy Path") {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(app.target.bundleURL.path, forType: .string)
+            }
         }
         .help(app.target.bundleURL.path)
     }
@@ -422,6 +472,10 @@ struct UninstallView: View {
         .contextMenu {
             Button("Uninstall \(app.target.name)…") { model.startReview([app.target], fromPicker: true) }
             Button("Reveal in Finder") { NSWorkspace.shared.activateFileViewerSelecting([app.target.bundleURL]) }
+            Button("Copy Path") {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(app.target.bundleURL.path, forType: .string)
+            }
         }
         .help(app.target.bundleURL.path)
     }
@@ -657,13 +711,19 @@ struct UninstallView: View {
                     .font(.system(size: 12))
                     .lineLimit(1)
                     .truncationMode(.middle)
-                Text(showsCategory
-                     ? "\(item.category.title) · \(displayPath(item.url))"
-                     : displayPath(item.url))
-                    .font(.system(size: 10))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+                HStack(spacing: 4) {
+                    Text(showsCategory
+                         ? "\(item.category.title) · \(displayPath(item.url))"
+                         : displayPath(item.url))
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    if let date = item.lastModified {
+                        Text("·")
+                        Text(date, style: .date)
+                    }
+                }
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
             }
 
             Spacer(minLength: 8)
@@ -703,6 +763,10 @@ struct UninstallView: View {
         }
         .contextMenu {
             Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([item.url]) }
+            Button("Copy Path") {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(item.url.path, forType: .string)
+            }
             Button("Remove…") { model.requestRemove(item) }
                 .disabled(model.phase != .ready)
         }

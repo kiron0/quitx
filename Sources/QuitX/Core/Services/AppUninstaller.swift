@@ -63,6 +63,7 @@ struct LeftoverItem: Identifiable, Hashable, Sendable {
     let fileCount: Int
     var isDirectory: Bool = false
     var targetID: String = ""
+    var lastModified: Date? = nil
 
     var id: String { url.path }
     var name: String { url.lastPathComponent }
@@ -296,8 +297,10 @@ enum AppUninstaller {
             return found.map { entry -> LeftoverItem in
                 let (url, category) = entry
                 let measured = measure(url)
-                let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
-                return LeftoverItem(url: url, category: category, bytes: measured.bytes, fileCount: measured.files, isDirectory: isDirectory, targetID: target.id)
+                let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .contentModificationDateKey])
+                let isDirectory = values?.isDirectory ?? false
+                let date = values?.contentModificationDate
+                return LeftoverItem(url: url, category: category, bytes: measured.bytes, fileCount: measured.files, isDirectory: isDirectory, targetID: target.id, lastModified: date)
             }
         }.value
     }
