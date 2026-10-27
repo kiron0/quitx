@@ -118,8 +118,11 @@ struct UninstallView: View {
             summaryCard
                 .padding(.bottom, 12)
 
-            searchField
-                .padding(.bottom, 8)
+            HStack(spacing: 8) {
+                searchField
+                layoutSwitchButtons
+            }
+            .padding(.bottom, 8)
 
             HStack(spacing: 8) {
                 Picker("", selection: $model.statusFilter) {
@@ -142,8 +145,6 @@ struct UninstallView: View {
                 .frame(width: 110)
                 .labelsHidden()
                 .settingsMenu()
-
-                layoutSwitchButtons
 
                 Spacer(minLength: 8)
 

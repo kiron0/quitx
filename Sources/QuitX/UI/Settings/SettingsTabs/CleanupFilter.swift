@@ -151,9 +151,8 @@ struct CleanupFilterBar: View {
     @Binding var sort: ItemSortOrder
     let visibleCount: Int
     let totalCount: Int
-    let onSelectVisible: () -> Void
-    let onDeselectVisible: () -> Void
-    let allVisibleSelected: Bool
+    var isFiltered: Bool = false
+    var onReset: (() -> Void)? = nil
 
     var body: some View {
         VStack(spacing: 8) {
@@ -210,16 +209,12 @@ struct CleanupFilterBar: View {
                     .font(.system(size: 10.5))
                     .foregroundStyle(.secondary)
 
-                if visibleCount > 0 {
-                    Button(allVisibleSelected ? "Deselect visible" : "Select visible") {
-                        if allVisibleSelected {
-                            onDeselectVisible()
-                        } else {
-                            onSelectVisible()
-                        }
+                if isFiltered, let onReset {
+                    Button("Reset Filters") {
+                        onReset()
                     }
-                    .font(.system(size: 10.5, weight: .medium))
                     .buttonStyle(.plain)
+                    .font(.system(size: 10.5))
                     .foregroundStyle(QuitXTheme.accent)
                 }
             }

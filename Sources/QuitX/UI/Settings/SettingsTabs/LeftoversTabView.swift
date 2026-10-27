@@ -25,7 +25,6 @@ final class LeftoversViewModel: ObservableObject {
     var selectedItems: [LeftoverItem] { items.filter { selected.contains($0.id) } }
     var totalBytes: Int64 { items.reduce(0) { $0 + $1.bytes } }
     var selectedBytes: Int64 { selectedItems.reduce(0) { $0 + $1.bytes } }
-    var allSelected: Bool { !items.isEmpty && selected.count == items.count }
 
     func scan() {
         guard phase != .removing else { return }
@@ -57,8 +56,7 @@ final class LeftoversViewModel: ObservableObject {
         }
     }
 
-    func selectAll() { selected = Set(items.map(\.id)) }
-    func deselectAll() { selected.removeAll() }
+    // Selection handled by visible items below
 
     @Published var searchText: String = ""
     @Published var sizeFilter: ItemSizeFilter = .any
@@ -75,18 +73,22 @@ final class LeftoversViewModel: ObservableObject {
         )
     }
 
-    var allVisibleSelected: Bool {
+    var isFiltered: Bool {
+        !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            || sizeFilter != .any
+            || ageFilter != .any
+    }
+
+    var allSelected: Bool {
         let visible = filteredItems
         return !visible.isEmpty && visible.allSatisfy { selected.contains($0.id) }
     }
-
-    func selectVisible() {
-        selected.formUnion(filteredItems.map(\.id))
+    var noneSelected: Bool {
+        !filteredItems.contains { selected.contains($0.id) }
     }
 
-    func deselectVisible() {
-        selected.subtract(filteredItems.map(\.id))
-    }
+    func selectAll() { selected.formUnion(filteredItems.map(\.id)) }
+    func deselectAll() { selected.subtract(filteredItems.map(\.id)) }
 
     func resetFilters() {
         searchText = ""
@@ -288,9 +290,8 @@ struct LeftoversTabView: View {
                         sort: $model.sortOrder,
                         visibleCount: model.filteredItems.count,
                         totalCount: model.items.count,
-                        onSelectVisible: model.selectVisible,
-                        onDeselectVisible: model.deselectVisible,
-                        allVisibleSelected: model.allVisibleSelected
+                        isFiltered: model.isFiltered,
+                        onReset: model.resetFilters
                     )
 
                     if model.filteredItems.isEmpty {
@@ -421,7 +422,7 @@ struct LeftoversTabView: View {
                     .disabled(model.allSelected)
                 Button("Deselect All") { model.deselectAll() }
                     .buttonStyle(UninstallSecondaryButtonStyle())
-                    .disabled(model.selected.isEmpty)
+                    .disabled(model.noneSelected)
                 Spacer()
                 Button {
                     model.requestRemoval()
