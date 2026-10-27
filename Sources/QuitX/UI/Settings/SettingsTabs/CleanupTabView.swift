@@ -80,7 +80,14 @@ final class CleanupViewModel: ObservableObject {
             if result.failed.isEmpty {
                 resultMessage = "Permanently removed \(result.trashed.count) \(result.trashed.count == 1 ? "item" : "items")."
             } else {
-                errorMessage = "\(result.failed.count) \(result.failed.count == 1 ? "item couldn't" : "items couldn't") be removed."
+                let hasFDAIssue = result.failed.contains { $0.message.contains("Full Disk Access") } || (!FullDiskAccessManager.checkFullDiskAccess() && (category == .mailFiles || category == .systemJunk))
+                if hasFDAIssue {
+                    errorMessage = "\(result.failed.count) \(result.failed.count == 1 ? "item couldn't" : "items couldn't") be removed. Full Disk Access is required."
+                } else if let first = result.failed.first, result.failed.count == 1 {
+                    errorMessage = "\(first.url.lastPathComponent): \(first.message)"
+                } else {
+                    errorMessage = "\(result.failed.count) items couldn't be removed."
+                }
             }
             phase = .ready
         }
@@ -90,6 +97,7 @@ final class CleanupViewModel: ObservableObject {
 struct CleanupTabView: View {
     let category: CleanupCategory
     @ObservedObject private var model: CleanupViewModel
+    @ObservedObject private var fdaManager = FullDiskAccessManager.shared
 
     init(model: CleanupViewModel) {
         category = model.category
@@ -102,6 +110,11 @@ struct CleanupTabView: View {
                 summaryCard
                     .padding(.bottom, 12)
 
+                if category == .mailFiles && !fdaManager.hasFullDiskAccess {
+                    fullDiskAccessBanner
+                        .padding(.bottom, 12)
+                }
+
                 content
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
@@ -113,13 +126,13 @@ struct CleanupTabView: View {
             }
 
             if model.phase == .removing {
-                Color(NSColor.windowBackgroundColor).opacity(0.72)
-                VStack(spacing: 10) {
-                    ProgressView().controlSize(.small)
-                    Text("Removing selected files permanently…")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.secondary)
-                }
+                QuitProgressOverlay(
+                    title: "Removing Selected Files…",
+                    subtitle: "Permanently deleting \(model.selectedItems.count) \(model.selectedItems.count == 1 ? "item" : "items") (\(formatBytes(model.selectedBytes)))",
+                    style: .settings,
+                    cardWidth: 320
+                )
+                .transition(.opacity.combined(with: .scale(scale: 0.95)))
             }
 
             if model.confirmationShown {
@@ -139,9 +152,34 @@ struct CleanupTabView: View {
         }
         .frame(width: SettingsTab.contentWidth, alignment: .topLeading)
         .animation(.easeInOut(duration: 0.18), value: model.confirmationShown)
+        .animation(.easeInOut(duration: 0.18), value: model.phase == .removing)
         .onAppear {
             if model.phase == .idle { model.scan() }
         }
+    }
+
+    private var fullDiskAccessBanner: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "lock.shield.fill")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.orange)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Full Disk Access Required to Clean Mail Files")
+                    .font(.system(size: 11.5, weight: .semibold))
+                Text("macOS requires Full Disk Access permission to remove protected mail attachments.")
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 8)
+            Button("Grant Access") {
+                FullDiskAccessManager.shared.openSettingsAndReveal()
+            }
+            .buttonStyle(UninstallSecondaryButtonStyle())
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .background(Color.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.orange.opacity(0.25), lineWidth: 0.8))
     }
 
     private var summaryCard: some View {
@@ -294,9 +332,18 @@ struct CleanupTabView: View {
     private var footer: some View {
         VStack(alignment: .leading, spacing: 8) {
             if let error = model.errorMessage {
-                Label(error, systemImage: "exclamationmark.triangle.fill")
-                    .font(.system(size: 10.5))
-                    .foregroundStyle(Color(nsColor: .systemRed))
+                HStack(spacing: 8) {
+                    Label(error, systemImage: "exclamationmark.triangle.fill")
+                        .font(.system(size: 10.5))
+                        .foregroundStyle(Color(nsColor: .systemRed))
+                    if !fdaManager.hasFullDiskAccess {
+                        Button("Grant Access") {
+                            FullDiskAccessManager.shared.openSettingsAndReveal()
+                        }
+                        .font(.system(size: 10.5, weight: .semibold))
+                        .buttonStyle(.link)
+                    }
+                }
             } else if let message = model.resultMessage {
                 Label(message, systemImage: "checkmark.circle.fill")
                     .font(.system(size: 10.5))

@@ -22,7 +22,7 @@ enum InstalledApplicationScanner {
 
     private static var cached: [InstalledApplication]?
     private static var cachedAt = Date.distantPast
-    private static let cacheLifetime: TimeInterval = 60
+    private static let cacheLifetime: TimeInterval = 300
     private static let lock = NSLock()
 
     @MainActor

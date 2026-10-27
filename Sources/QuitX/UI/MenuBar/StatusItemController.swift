@@ -26,6 +26,7 @@ final class StatusItemController: NSObject {
     private var refreshTask: Task<Void, Never>?
     private var liveMonitoringTask: Task<Void, Never>?
     private var lastCloseTimestamp: Date = .distantPast
+    private var openTimestamp: Date = .distantPast
     private var workspaceObservers: [NSObjectProtocol] = []
     private var backgroundRefreshTask: Task<Void, Never>?
     private var liveTickCount = 0
@@ -275,6 +276,13 @@ final class StatusItemController: NSObject {
         ) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self, self.isShown else { return }
+                if Date().timeIntervalSince(self.openTimestamp) < 0.25 {
+                    if !NSApp.isActive {
+                        NSApp.activate(ignoringOtherApps: true)
+                    }
+                    self.window?.makeKeyAndOrderFront(nil)
+                    return
+                }
                 self.closePopover()
             }
         }
@@ -413,8 +421,14 @@ final class StatusItemController: NSObject {
 
     @MainActor
     func showPopover() {
+        lastCloseTimestamp = .distantPast
         if !isShown {
             togglePopover()
+        } else {
+            if !NSApp.isActive {
+                NSApp.activate(ignoringOtherApps: true)
+            }
+            window?.makeKeyAndOrderFront(nil)
         }
     }
 
@@ -428,6 +442,7 @@ final class StatusItemController: NSObject {
             }
             StatsDetailController.shared.close()
             guard let win = window else { return }
+            openTimestamp = Date()
             updatePopoverSize()
             win.prepareForDisplay()
             if !NSApp.isActive {
@@ -1034,7 +1049,9 @@ final class StatusItemController: NSObject {
             let popupWindow = self.window
             let statusWindow = self.statusItem.button?.window
             if event.window !== popupWindow, event.window !== statusWindow {
-                self.closePopover()
+                if Date().timeIntervalSince(self.openTimestamp) >= 0.25 {
+                    self.closePopover()
+                }
             }
             return event
         }
@@ -1048,7 +1065,14 @@ final class StatusItemController: NSObject {
                 queue: .main
             ) { [weak self] _ in
                 Task { @MainActor in
-                    self?.closePopover()
+                    guard let self else { return }
+                    if Date().timeIntervalSince(self.openTimestamp) < 0.25 {
+                        if !NSApp.isActive {
+                            NSApp.activate(ignoringOtherApps: true)
+                        }
+                        return
+                    }
+                    self.closePopover()
                 }
             }
         }
@@ -1057,6 +1081,9 @@ final class StatusItemController: NSObject {
             matching: [.leftMouseDown, .rightMouseDown]
         ) { [weak self] _ in
             guard let self, self.isShown else { return }
+            if Date().timeIntervalSince(self.openTimestamp) < 0.25 {
+                return
+            }
 
             if let button = self.statusItem.button, let buttonWindow = button.window {
                 let mouseLoc = NSEvent.mouseLocation

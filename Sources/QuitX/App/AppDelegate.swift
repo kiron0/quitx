@@ -59,6 +59,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         AutoQuitService.shared.startTracking()
         SleepService.shared.start()
         AccessibilityPermission.shared.startObserving()
+        FullDiskAccessManager.shared.triggerRegistration()
         LastWindowQuitService.shared.start()
         MemoryPressureService.shared.start()
         QuitTimerService.shared.start()

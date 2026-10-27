@@ -81,7 +81,12 @@ final class LeftoversViewModel: ObservableObject {
             if result.failed.isEmpty {
                 resultMessage = "Permanently removed \(result.trashed.count) \(result.trashed.count == 1 ? "leftover" : "leftovers")."
             } else {
-                errorMessage = "\(result.failed.count) \(result.failed.count == 1 ? "leftover couldn't" : "leftovers couldn't") be removed."
+                let hasFDAIssue = result.failed.contains { $0.message.contains("Full Disk Access") } || !FullDiskAccessManager.checkFullDiskAccess()
+                if hasFDAIssue {
+                    errorMessage = "\(result.failed.count) \(result.failed.count == 1 ? "leftover couldn't" : "leftovers couldn't") be removed. Full Disk Access is required for sandbox containers."
+                } else {
+                    errorMessage = "\(result.failed.count) \(result.failed.count == 1 ? "leftover couldn't" : "leftovers couldn't") be removed."
+                }
             }
             phase = .ready
         }
@@ -90,6 +95,7 @@ final class LeftoversViewModel: ObservableObject {
 
 struct LeftoversTabView: View {
     @ObservedObject private var model: LeftoversViewModel
+    @ObservedObject private var fdaManager = FullDiskAccessManager.shared
     private let tint = Color(nsColor: .systemOrange)
 
     init(model: LeftoversViewModel) {
@@ -101,6 +107,12 @@ struct LeftoversTabView: View {
             VStack(spacing: 0) {
                 summaryCard
                     .padding(.bottom, 12)
+
+                if !fdaManager.hasFullDiskAccess {
+                    fullDiskAccessBanner
+                        .padding(.bottom, 12)
+                }
+
                 content
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 if model.phase == .ready, !model.items.isEmpty {
@@ -110,13 +122,13 @@ struct LeftoversTabView: View {
             }
 
             if model.phase == .removing {
-                Color(NSColor.windowBackgroundColor).opacity(0.72)
-                VStack(spacing: 10) {
-                    ProgressView().controlSize(.small)
-                    Text("Removing selected leftovers permanently…")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.secondary)
-                }
+                QuitProgressOverlay(
+                    title: "Removing Selected Leftovers…",
+                    subtitle: "Permanently deleting \(model.selectedItems.count) \(model.selectedItems.count == 1 ? "item" : "items") (\(formatBytes(model.selectedBytes)))",
+                    style: .settings,
+                    cardWidth: 320
+                )
+                .transition(.opacity.combined(with: .scale(scale: 0.95)))
             }
 
             if model.confirmationShown {
@@ -136,9 +148,34 @@ struct LeftoversTabView: View {
         }
         .frame(width: SettingsTab.contentWidth, alignment: .topLeading)
         .animation(.easeInOut(duration: 0.18), value: model.confirmationShown)
+        .animation(.easeInOut(duration: 0.18), value: model.phase == .removing)
         .onAppear {
             if model.phase == .idle { model.scan() }
         }
+    }
+
+    private var fullDiskAccessBanner: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "lock.shield.fill")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.orange)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Full Disk Access Required to Delete Containers")
+                    .font(.system(size: 11.5, weight: .semibold))
+                Text("macOS requires Full Disk Access permission to remove sandbox containers in ~/Library/Containers.")
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 8)
+            Button("Grant Access") {
+                FullDiskAccessManager.shared.openSettingsAndReveal()
+            }
+            .buttonStyle(UninstallSecondaryButtonStyle())
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .background(Color.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.orange.opacity(0.25), lineWidth: 0.8))
     }
 
     private var summaryCard: some View {
@@ -286,9 +323,18 @@ struct LeftoversTabView: View {
     private var footer: some View {
         VStack(alignment: .leading, spacing: 8) {
             if let error = model.errorMessage {
-                Label(error, systemImage: "exclamationmark.triangle.fill")
-                    .font(.system(size: 10.5))
-                    .foregroundStyle(Color(nsColor: .systemRed))
+                HStack(spacing: 8) {
+                    Label(error, systemImage: "exclamationmark.triangle.fill")
+                        .font(.system(size: 10.5))
+                        .foregroundStyle(Color(nsColor: .systemRed))
+                    if !fdaManager.hasFullDiskAccess {
+                        Button("Grant Access") {
+                            FullDiskAccessManager.shared.openSettingsAndReveal()
+                        }
+                        .font(.system(size: 10.5, weight: .semibold))
+                        .buttonStyle(.link)
+                    }
+                }
             } else if let message = model.resultMessage {
                 Label(message, systemImage: "checkmark.circle.fill")
                     .font(.system(size: 10.5))

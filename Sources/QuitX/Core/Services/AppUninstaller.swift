@@ -432,12 +432,28 @@ enum AppUninstaller {
 
     static func isSafePermanentRemoval(_ url: URL, home: URL = FileManager.default.homeDirectoryForCurrentUser) -> Bool {
         let path = url.standardizedFileURL.resolvingSymlinksInPath().path
+        let rawPath = url.standardizedFileURL.path
         let homePath = home.standardizedFileURL.resolvingSymlinksInPath().path
+        let rawHomePath = home.standardizedFileURL.path
         let temporaryPath = FileManager.default.temporaryDirectory.standardizedFileURL.resolvingSymlinksInPath().path
-        let blocked = ["/", "/Applications", "/Library", "/System", "/Users", homePath, homePath + "/Library", homePath + "/.Trash"]
-        guard !blocked.contains(path), !path.isEmpty else { return false }
+        let blocked = [
+            "/", "/Applications", "/Library", "/System", "/Users",
+            homePath, rawHomePath,
+            homePath + "/Library", rawHomePath + "/Library",
+            homePath + "/.Trash", rawHomePath + "/.Trash"
+        ]
+        guard !blocked.contains(path), !blocked.contains(rawPath), !path.isEmpty else { return false }
+
+        if path.contains("/System/Applications") || path.hasPrefix("/System/Volumes/Preboot") || rawPath.hasPrefix("/System/") {
+            return false
+        }
+
         let blockedPrefixes = ["/System/", "/usr/", "/bin/", "/sbin/"]
-        guard !blockedPrefixes.contains(where: path.hasPrefix) else { return false }
+        if blockedPrefixes.contains(where: path.hasPrefix) {
+            let isSafeApp = rawPath.hasPrefix("/Applications/") || rawPath.hasPrefix(rawHomePath + "/Applications/")
+            guard isSafeApp else { return false }
+        }
+
         let allowedPrefixes = [
             "/Applications/",
             "/Library/Application Support/",
@@ -447,12 +463,21 @@ enum AppUninstaller {
             "/Library/LaunchAgents/",
             "/Library/LaunchDaemons/",
             "/Library/PrivilegedHelperTools/",
+            "/tmp/",
             "/private/tmp/",
+            "/var/tmp/",
             "/private/var/tmp/",
+            "/var/folders/",
+            "/private/var/folders/",
+            "/var/log/",
+            "/private/var/log/",
+            "/var/db/receipts/",
+            "/private/var/db/receipts/",
             temporaryPath + "/",
-            homePath + "/"
+            homePath + "/",
+            rawHomePath + "/"
         ]
-        return allowedPrefixes.contains(where: path.hasPrefix)
+        return allowedPrefixes.contains(where: path.hasPrefix) || allowedPrefixes.contains(where: rawPath.hasPrefix)
     }
 
     static func removePermanently(_ urls: [URL]) async -> RemovalResult {
@@ -520,15 +545,36 @@ enum AppUninstaller {
         let trash = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".Trash")
         let formatter = DateFormatter()
         formatter.dateFormat = "HH.mm.ss"
-        let command = adminTrashCommand(for: urls, trash: trash, stamp: formatter.string(from: Date()))
-        let escaped = command.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
-        let source = "do shell script \"\(escaped)\" with administrator privileges"
-        var error: NSDictionary?
-        let script = NSAppleScript(source: source)
-        script?.executeAndReturnError(&error)
+        let stamp = formatter.string(from: Date())
+        var commands: [String] = []
+        for url in urls {
+            let keepsExtension = ["app", "plist"].contains(url.pathExtension.lowercased())
+            let base = keepsExtension ? url.deletingPathExtension().lastPathComponent : url.lastPathComponent
+            let name = keepsExtension ? "\(base) \(stamp).\(url.pathExtension)" : "\(base) \(stamp)"
+            let destination = trash.appendingPathComponent(name)
+            commands.append("/bin/mv -f \(shellQuoted(url.path)) \(shellQuoted(destination.path))")
+        }
+        guard !commands.isEmpty else { return result }
+
+        let tempScript = FileManager.default.temporaryDirectory
+            .appendingPathComponent("quitx-trash-\(UUID().uuidString).sh")
+        let scriptContent = "#!/bin/sh\n" + commands.joined(separator: "\n")
+        guard let data = scriptContent.data(using: .utf8) else { return result }
+        do {
+            try data.write(to: tempScript, options: [.atomic])
+            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: tempScript.path)
+        } catch {
+            return result
+        }
+        defer { try? FileManager.default.removeItem(at: tempScript) }
+
+        let quotedScriptPath = shellQuoted(tempScript.path)
+        let source = "do shell script \"/bin/sh \(quotedScriptPath)\" with administrator privileges"
+        var errorInfo: NSDictionary?
+        NSAppleScript(source: source)?.executeAndReturnError(&errorInfo)
         for url in urls {
             if FileManager.default.fileExists(atPath: url.path) {
-                let message = (error?[NSAppleScript.errorMessage] as? String) ?? "Permission denied"
+                let message = (errorInfo?[NSAppleScript.errorMessage] as? String) ?? "Permission denied"
                 result.failed.append(RemovalFailure(url: url, message: message))
             } else {
                 result.trashed.append(url)
@@ -540,17 +586,56 @@ enum AppUninstaller {
     private static func removePermanentlyWithAdministrator(_ urls: [URL]) -> RemovalResult {
         var result = RemovalResult()
         let safeURLs = urls.filter { isSafePermanentRemoval($0) }
-        let command = adminPermanentRemovalCommand(for: safeURLs)
-        let escaped = command.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
-        let source = "do shell script \"\(escaped)\" with administrator privileges"
-        var error: NSDictionary?
-        NSAppleScript(source: source)?.executeAndReturnError(&error)
+        guard !safeURLs.isEmpty else { return result }
+
+        var preDeleteInodes: [String: UInt64] = [:]
+        for url in safeURLs {
+            if let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
+               let inode = (attrs[.systemFileNumber] as? NSNumber)?.uint64Value {
+                preDeleteInodes[url.path] = inode
+            }
+        }
+
+        let staged = safeURLs.map(\.path).joined(separator: "\u{0}")
+        guard let payload = staged.data(using: .utf8) else { return result }
+        let tempFile = FileManager.default.temporaryDirectory
+            .appendingPathComponent("quitx-rm-\(UUID().uuidString)")
+        do {
+            try payload.write(to: tempFile, options: [.atomic])
+        } catch {
+            return result
+        }
+        defer { try? FileManager.default.removeItem(at: tempFile) }
+
+        let quotedTempPath = shellQuoted(tempFile.path)
+        let script = """
+        do shell script "/usr/bin/xargs -0 /bin/rm -rf -- < \(quotedTempPath)" with administrator privileges
+        """
+
+        var errorInfo: NSDictionary?
+        let appleScript = NSAppleScript(source: script)
+        appleScript?.executeAndReturnError(&errorInfo)
+        let runError = errorInfo.flatMap { "\($0)" }
+
+        if let runError, runError.contains("-128") {
+            for url in urls {
+                result.failed.append(RemovalFailure(url: url, message: "User canceled administrator authorization"))
+            }
+            return result
+        }
+
         for url in urls {
-            if FileManager.default.fileExists(atPath: url.path) {
-                let message = (error?[NSAppleScript.errorMessage] as? String) ?? "Permission denied"
-                result.failed.append(RemovalFailure(url: url, message: message))
-            } else {
+            let path = url.path
+            if !FileManager.default.fileExists(atPath: path) {
                 result.trashed.append(url)
+            } else if let preInode = preDeleteInodes[path],
+                      let nowInode = ((try? FileManager.default.attributesOfItem(atPath: path))?[.systemFileNumber] as? NSNumber)?.uint64Value,
+                      nowInode != preInode {
+                result.trashed.append(url)
+            } else {
+                let isFDA = (path.contains("/Library/Containers/") || path.contains("/Library/Group Containers/") || path.contains("/Library/Mail") || path.contains("/Library/Safari")) && !FullDiskAccessManager.checkFullDiskAccess()
+                let message = isFDA ? "Full Disk Access required" : ((errorInfo?[NSAppleScript.errorMessage] as? String) ?? "Permission denied")
+                result.failed.append(RemovalFailure(url: url, message: message))
             }
         }
         return result

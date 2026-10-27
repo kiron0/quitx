@@ -94,9 +94,18 @@ struct UninstallView: View {
                     onCancel: { withAnimation(.easeInOut(duration: 0.15)) { model.confirmation = nil } }
                 )
                 .transition(.opacity.combined(with: .scale(scale: 0.95)))
+            } else if model.phase == .removing {
+                QuitProgressOverlay(
+                    title: model.runningTargets.isEmpty ? "Removing Files Permanently…" : "Force Quitting & Removing…",
+                    subtitle: model.targets.count > 1 ? "Uninstalling \(model.targets.count) apps and related files" : "Uninstalling \(model.targets.first?.name ?? "app") and related files",
+                    style: .settings,
+                    cardWidth: 320
+                )
+                .transition(.opacity.combined(with: .scale(scale: 0.95)))
             }
         }
         .animation(.easeInOut(duration: 0.18), value: model.confirmation != nil)
+        .animation(.easeInOut(duration: 0.18), value: model.phase == .removing)
         .modifier(UninstallSafeAreaModifier(enabled: !embedded))
         .onAppear {
             if model.screen == .picker { model.loadAppsIfNeeded() }
@@ -105,27 +114,49 @@ struct UninstallView: View {
 
     private var picker: some View {
         VStack(spacing: 0) {
-            searchField
-                .padding(.horizontal, 16)
-                .padding(.top, 6)
-                .padding(.bottom, 10)
+            summaryCard
+                .padding(.bottom, 12)
+
+            HStack(spacing: 8) {
+                searchField
+                layoutSwitchButtons
+            }
+            .padding(.bottom, 10)
 
             Group {
                 if model.isLoadingApps && model.pickerApps.isEmpty {
                     loading("Finding installed apps…", detail: nil)
                 } else if model.filteredPickerApps.isEmpty {
-                    Text(model.searchText.isEmpty ? "No apps can be uninstalled." : "No apps match \u{201C}\(model.searchText)\u{201D}.")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                } else {
+                    VStack(spacing: 8) {
+                        Spacer()
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 24))
+                            .foregroundStyle(.secondary)
+                        Text(model.searchText.isEmpty ? "No apps can be uninstalled." : "No apps match \u{201C}\(model.searchText)\u{201D}.")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                } else if model.layoutMode == .list {
                     ScrollView {
                         LazyVStack(spacing: 0) {
                             ForEach(model.filteredPickerApps) { app in
                                 pickerRow(app)
                             }
                         }
-                        .padding(.horizontal, 16)
                         .padding(.bottom, 8)
+                    }
+                } else {
+                    ScrollView {
+                        LazyVGrid(
+                            columns: [GridItem(.adaptive(minimum: 112, maximum: 130), spacing: 10)],
+                            spacing: 10
+                        ) {
+                            ForEach(model.filteredPickerApps) { app in
+                                pickerGridCard(app)
+                            }
+                        }
+                        .padding(.bottom, 10)
                     }
                 }
             }
@@ -153,9 +184,91 @@ struct UninstallView: View {
                 .buttonStyle(UninstallPrimaryButtonStyle(isEnabled: count > 0))
                 .disabled(count == 0)
             }
-            .padding(.horizontal, 16)
             .padding(.vertical, 12)
         }
+        .padding(.horizontal, embedded ? 0 : 16)
+    }
+
+    private var summaryCard: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "xmark.app")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(QuitXTheme.accent)
+                .frame(width: 38, height: 38)
+                .background(QuitXTheme.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Uninstall Apps")
+                    .font(.system(size: 13, weight: .semibold))
+                Text("Remove installed applications, bundle files, and all associated leftovers.")
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 8)
+
+            if model.hasLoadedApps && !model.isLoadingApps {
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(UninstallViewModel.formatBytes(model.pickerTotalBytes))
+                        .font(.system(size: 14, weight: .semibold))
+                        .monospacedDigit()
+                    Text("\(model.pickerApps.count) \(model.pickerApps.count == 1 ? "app" : "apps")")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Button(model.isLoadingApps ? "Scanning…" : (model.hasLoadedApps ? "Scan Again" : "Scan")) {
+                model.loadApps(forceRefresh: true)
+            }
+            .buttonStyle(UninstallPrimaryButtonStyle(isEnabled: !model.isLoadingApps))
+            .disabled(model.isLoadingApps || model.phase == .removing)
+        }
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 11).fill(QuitXTheme.cardBackground))
+        .overlay(RoundedRectangle(cornerRadius: 11).stroke(Color.primary.opacity(0.07), lineWidth: 0.5))
+    }
+
+    private var layoutSwitchButtons: some View {
+        HStack(spacing: 2) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    model.layoutMode = .list
+                }
+            } label: {
+                Image(systemName: "list.bullet")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(model.layoutMode == .list ? Color.primary : Color.secondary)
+                    .frame(width: 26, height: 24)
+                    .background(
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(model.layoutMode == .list ? Color.primary.opacity(0.12) : Color.clear)
+                    )
+            }
+            .buttonStyle(.plain)
+            .help("List View")
+
+            Button {
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    model.layoutMode = .grid
+                }
+            } label: {
+                Image(systemName: "square.grid.2x2")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(model.layoutMode == .grid ? Color.primary : Color.secondary)
+                    .frame(width: 26, height: 24)
+                    .background(
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(model.layoutMode == .grid ? Color.primary.opacity(0.12) : Color.clear)
+                    )
+            }
+            .buttonStyle(.plain)
+            .help("Grid View")
+        }
+        .padding(2)
+        .background(RoundedRectangle(cornerRadius: 7).fill(Color.primary.opacity(0.05)))
+        .overlay(RoundedRectangle(cornerRadius: 7).stroke(Color.primary.opacity(0.08), lineWidth: 0.5))
     }
 
     private var searchField: some View {
@@ -205,7 +318,7 @@ struct UninstallView: View {
                         tag("Menu Bar")
                     }
                 }
-                Text(displayPath(app.target.bundleURL.deletingLastPathComponent()))
+                Text(app.target.bundleIdentifier)
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -228,6 +341,83 @@ struct UninstallView: View {
         .contentShape(Rectangle())
         .onTapGesture { model.togglePicker(app) }
         .onHover { hover.itemID = $0 ? app.id : (hover.itemID == app.id ? nil : hover.itemID) }
+        .contextMenu {
+            Button("Uninstall \(app.target.name)…") { model.startReview([app.target], fromPicker: true) }
+            Button("Reveal in Finder") { NSWorkspace.shared.activateFileViewerSelecting([app.target.bundleURL]) }
+        }
+        .help(app.target.bundleURL.path)
+    }
+
+    private func pickerGridCard(_ app: UninstallViewModel.PickerApp) -> some View {
+        let isSelected = model.pickerSelection.contains(app.id)
+        let isRunning = model.runningIDs.contains(app.id)
+        let isHovered = hover.itemID == app.id
+
+        return VStack(spacing: 6) {
+            HStack {
+                if isRunning {
+                    Circle()
+                        .fill(Color(nsColor: .systemGreen))
+                        .frame(width: 6, height: 6)
+                        .help("Running")
+                } else if app.isBackground {
+                    Circle()
+                        .fill(Color(nsColor: .systemOrange))
+                        .frame(width: 6, height: 6)
+                        .help("Menu Bar App")
+                } else {
+                    Spacer().frame(width: 6, height: 6)
+                }
+
+                Spacer(minLength: 0)
+
+                QuitXSelectionCheckbox(isSelected: isSelected)
+            }
+            .padding(.horizontal, 6)
+            .padding(.top, 6)
+
+            Image(nsImage: model.icon(for: app.target))
+                .resizable()
+                .interpolation(.high)
+                .frame(width: 44, height: 44)
+                .shadow(color: Color.black.opacity(0.12), radius: 3, y: 1.5)
+                .padding(.top, 2)
+
+            VStack(spacing: 2) {
+                Text(app.target.name)
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .multilineTextAlignment(.center)
+
+                Text(app.target.bundleIdentifier)
+                    .font(.system(size: 9))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+
+                Text(model.bundleSizes[app.id].map(UninstallViewModel.formatBytes) ?? "—")
+                    .font(.system(size: 9.5))
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
+            .padding(.horizontal, 6)
+            .padding(.bottom, 8)
+        }
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(isSelected ? QuitXTheme.accent.opacity(0.12) : (isHovered ? Color.primary.opacity(0.05) : QuitXTheme.cardBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(isSelected ? QuitXTheme.accent.opacity(0.70) : Color.primary.opacity(0.07), lineWidth: isSelected ? 1.5 : 0.8)
+        )
+        .contentShape(Rectangle())
+        .onTapGesture { model.togglePicker(app) }
+        .onHover { hovering in
+            hover.itemID = hovering ? app.id : (hover.itemID == app.id ? nil : hover.itemID)
+        }
         .contextMenu {
             Button("Uninstall \(app.target.name)…") { model.startReview([app.target], fromPicker: true) }
             Button("Reveal in Finder") { NSWorkspace.shared.activateFileViewerSelecting([app.target.bundleURL]) }
@@ -318,19 +508,6 @@ struct UninstallView: View {
             loading("Scanning for related files…", detail: "Checking \(model.searchLocationCount) locations")
         case .ready, .removing:
             leftoverList
-                .overlay {
-                    if model.phase == .removing {
-                        ZStack {
-                            Color(NSColor.windowBackgroundColor).opacity(0.7)
-                            VStack(spacing: 10) {
-                                ProgressView().controlSize(.small)
-                                Text(model.runningTargets.isEmpty ? "Removing files permanently…" : "Force quitting and removing files permanently…")
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                }
         case let .finished(trashed, failed):
             finished(trashed: trashed, failed: failed)
         }
@@ -585,6 +762,16 @@ struct UninstallView: View {
                         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AppBundles") {
                             NSWorkspace.shared.open(url)
                         }
+                    }
+                    .buttonStyle(.link)
+                    .font(.system(size: 11))
+                }
+                if failed.contains(where: { $0.message.contains("Full Disk Access") }) || (!FullDiskAccessManager.checkFullDiskAccess() && failed.contains(where: { $0.url.path.contains("/Library/Containers/") })) {
+                    Text("Full Disk Access is required to remove protected container files.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                    Button("Grant Full Disk Access") {
+                        FullDiskAccessManager.shared.openSettingsAndReveal()
                     }
                     .buttonStyle(.link)
                     .font(.system(size: 11))

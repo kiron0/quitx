@@ -27,6 +27,11 @@ final class UninstallViewModel: ObservableObject {
         var id: String { target.id }
     }
 
+    enum LayoutMode: String, CaseIterable {
+        case list
+        case grid
+    }
+
     @Published private(set) var screen: Screen = .picker
     @Published private(set) var cameFromPicker = false
 
@@ -37,6 +42,17 @@ final class UninstallViewModel: ObservableObject {
     @Published var searchText = ""
     @Published private(set) var bundleSizes: [String: Int64] = [:]
     @Published private(set) var runningIDs: Set<String> = []
+    @Published var layoutMode: LayoutMode = {
+        if let saved = UserDefaults.standard.string(forKey: "QuitXUninstallLayoutMode"),
+           let mode = LayoutMode(rawValue: saved) {
+            return mode
+        }
+        return .list
+    }() {
+        didSet {
+            UserDefaults.standard.set(layoutMode.rawValue, forKey: "QuitXUninstallLayoutMode")
+        }
+    }
 
     @Published private(set) var targets: [UninstallTarget] = []
     @Published private(set) var items: [LeftoverItem] = []
@@ -83,6 +99,10 @@ final class UninstallViewModel: ObservableObject {
         pickerSelectedApps.reduce(0) { $0 + (bundleSizes[$1.id] ?? 0) }
     }
 
+    var pickerTotalBytes: Int64 {
+        pickerApps.reduce(0) { $0 + (bundleSizes[$1.id] ?? 0) }
+    }
+
     func showPicker() {
         guard phase != .removing else { return }
         scanTask?.cancel()
@@ -93,11 +113,12 @@ final class UninstallViewModel: ObservableObject {
     }
 
     func loadAppsIfNeeded() {
-        guard !hasLoadedApps, !isLoadingApps else { return }
+        guard (!hasLoadedApps || pickerApps.isEmpty), !isLoadingApps else { return }
         loadApps(forceRefresh: false)
     }
 
     func loadApps(forceRefresh: Bool) {
+        if !forceRefresh, hasLoadedApps, !pickerApps.isEmpty { return }
         loadTask?.cancel()
         isLoadingApps = true
         let running = InstalledApplicationScanner.runningApplicationInfos()

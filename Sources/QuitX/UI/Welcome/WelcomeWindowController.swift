@@ -43,7 +43,9 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         let rootView = WelcomeView(
             onDismiss: { [weak self] in
                 self?.close()
-                StatusItemController.shared?.showPopover()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                    StatusItemController.shared?.showPopover()
+                }
             }
         ).environmentObject(ConfigStore.shared)
 
