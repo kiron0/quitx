@@ -68,7 +68,8 @@ struct UninstallView: View {
                 review
             }
         }
-        .frame(minWidth: 560, minHeight: embedded ? 420 : 460)
+        .frame(width: embedded ? SettingsTab.contentWidth : nil, alignment: .topLeading)
+        .frame(minWidth: embedded ? nil : 560, minHeight: embedded ? 420 : 460)
         .background {
             if !embedded {
                 if LiquidGlass.enabled {
@@ -149,7 +150,7 @@ struct UninstallView: View {
                 } else {
                     ScrollView {
                         LazyVGrid(
-                            columns: [GridItem(.adaptive(minimum: 112, maximum: 130), spacing: 10)],
+                            columns: [GridItem(.adaptive(minimum: 112), spacing: 10)],
                             spacing: 10
                         ) {
                             ForEach(model.filteredPickerApps) { app in
@@ -437,8 +438,8 @@ struct UninstallView: View {
     private var review: some View {
         VStack(spacing: 0) {
             headerCard
-                .padding(.horizontal, 16)
-                .padding(.top, 6)
+                .padding(.horizontal, embedded ? 0 : 16)
+                .padding(.top, embedded ? 0 : 6)
                 .padding(.bottom, 12)
 
             reviewContent
@@ -447,7 +448,7 @@ struct UninstallView: View {
             Divider()
 
             reviewFooter
-                .padding(.horizontal, 16)
+                .padding(.horizontal, embedded ? 0 : 16)
                 .padding(.vertical, 12)
         }
     }
@@ -482,8 +483,8 @@ struct UninstallView: View {
             }
         }
         .padding(12)
-        .background(RoundedRectangle(cornerRadius: 10).fill(QuitXTheme.cardBackground))
-        .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Color.primary.opacity(0.06)))
+        .background(RoundedRectangle(cornerRadius: 11).fill(QuitXTheme.cardBackground))
+        .overlay(RoundedRectangle(cornerRadius: 11).stroke(Color.primary.opacity(0.07), lineWidth: 0.5))
     }
 
     private var headerIcons: some View {
@@ -553,7 +554,7 @@ struct UninstallView: View {
                     }
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, embedded ? 0 : 16)
             .padding(.bottom, 8)
         }
     }
