@@ -45,18 +45,21 @@ struct UninstallView: View {
     @ObservedObject var model: UninstallViewModel
     @ObservedObject private var configStore: ConfigStore = ConfigStore.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var embedded = false
     var onDismiss: () -> Void
 
     @StateObject private var hover = UninstallHoverState()
 
     var body: some View {
         VStack(spacing: 0) {
-            Text(model.title)
-                .font(.system(size: 13, weight: .semibold))
-                .lineLimit(1)
-                .padding(.horizontal, 80)
-                .frame(maxWidth: .infinity)
-                .frame(height: 28)
+            if !embedded {
+                Text(model.title)
+                    .font(.system(size: 13, weight: .semibold))
+                    .lineLimit(1)
+                    .padding(.horizontal, 80)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 28)
+            }
 
             switch model.screen {
             case .picker:
@@ -65,14 +68,16 @@ struct UninstallView: View {
                 review
             }
         }
-        .frame(minWidth: 560, minHeight: 460)
+        .frame(minWidth: 560, minHeight: embedded ? 420 : 460)
         .background {
-            if LiquidGlass.enabled {
-                LiquidGlassFill(shape: Rectangle())
-                    .ignoresSafeArea()
-            } else {
-                QuitXTheme.windowBackground
-                    .ignoresSafeArea()
+            if !embedded {
+                if LiquidGlass.enabled {
+                    LiquidGlassFill(shape: Rectangle())
+                        .ignoresSafeArea()
+                } else {
+                    QuitXTheme.windowBackground
+                        .ignoresSafeArea()
+                }
             }
         }
         .overlay {
@@ -83,14 +88,19 @@ struct UninstallView: View {
                     confirmTitle: model.targets.count > 1 && model.confirmation == .removeSelected ? "Uninstall" : "Remove",
                     systemImage: "trash.fill",
                     isForced: true,
+                    style: .settings,
                     cardWidth: 300,
                     onConfirm: { withAnimation(.easeInOut(duration: 0.15)) { model.confirm() } },
                     onCancel: { withAnimation(.easeInOut(duration: 0.15)) { model.confirmation = nil } }
                 )
-                .transition(.opacity)
+                .transition(.opacity.combined(with: .scale(scale: 0.95)))
             }
         }
-        .ignoresSafeArea()
+        .animation(.easeInOut(duration: 0.18), value: model.confirmation != nil)
+        .modifier(UninstallSafeAreaModifier(enabled: !embedded))
+        .onAppear {
+            if model.screen == .picker { model.loadAppsIfNeeded() }
+        }
     }
 
     private var picker: some View {
@@ -314,7 +324,7 @@ struct UninstallView: View {
                             Color(NSColor.windowBackgroundColor).opacity(0.7)
                             VStack(spacing: 10) {
                                 ProgressView().controlSize(.small)
-                                Text(model.runningTargets.isEmpty ? "Moving files to the Trash…" : "Force quitting and moving files to the Trash…")
+                                Text(model.runningTargets.isEmpty ? "Removing files permanently…" : "Force quitting and removing files permanently…")
                                     .font(.system(size: 12))
                                     .foregroundStyle(.secondary)
                             }
@@ -550,7 +560,7 @@ struct UninstallView: View {
                  ? (model.targets.count == 1 ? "\(model.targets[0].name) was uninstalled" : "\(model.targets.count) apps were uninstalled")
                  : "Some items couldn't be removed")
                 .font(.system(size: 14, weight: .semibold))
-            Text("\(trashed) \(trashed == 1 ? "item" : "items") moved to the Trash. Empty the Trash to free the space.")
+            Text("\(trashed) \(trashed == 1 ? "item" : "items") permanently removed.")
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
             if !failed.isEmpty {
@@ -590,10 +600,6 @@ struct UninstallView: View {
         switch model.phase {
         case .finished:
             HStack(spacing: 8) {
-                Button("Open Trash") {
-                    NSWorkspace.shared.open(FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".Trash"))
-                }
-                .buttonStyle(UninstallSecondaryButtonStyle())
                 Spacer()
                 Button("Uninstall More Apps") { model.showPicker() }
                     .buttonStyle(UninstallSecondaryButtonStyle())
@@ -666,6 +672,18 @@ struct UninstallView: View {
         }
         .buttonStyle(UninstallDestructiveButtonStyle(isEnabled: enabled))
         .disabled(!enabled)
+    }
+}
+
+private struct UninstallSafeAreaModifier: ViewModifier {
+    let enabled: Bool
+
+    func body(content: Content) -> some View {
+        if enabled {
+            content.ignoresSafeArea()
+        } else {
+            content
+        }
     }
 }
 

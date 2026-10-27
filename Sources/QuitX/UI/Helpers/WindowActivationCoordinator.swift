@@ -9,7 +9,6 @@ enum WindowActivationCoordinator {
             || HelpWindowController.shared.isOpen
             || AppUpdateWindowController.shared.isOpen
             || ChangelogWindowController.shared.isOpen
-            || UninstallWindowController.shared.isOpen
             || PortDetailsWindowController.shared.isOpen
             || ProcessTraceWindowController.shared.isOpen
             || ExcludePortPickerWindowController.shared.isOpen

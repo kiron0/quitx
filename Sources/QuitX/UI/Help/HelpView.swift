@@ -94,7 +94,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Uninstall apps",
-                    body: "Choose Uninstall in an app row's menu to open the uninstaller, or Uninstall Apps in the gear menu to pick several installed apps at once. It finds each app and the files it left in your Library: application support, caches, preferences, containers, saved state, logs, and launch items. Everything starts selected; uncheck anything you want to keep, then click Remove and confirm. Hover a file to show it in Finder or remove only that file. QuitX force quits the app first, so save your work, then moves the files to the Trash. You can put files back until you empty the Trash. Apple apps, parts of macOS, helpers inside other apps, and QuitX itself can't be uninstalled. Your Documents and Desktop are never touched."
+                    body: "Choose Uninstall in an app row's menu or open Settings > Applications > Uninstall Apps. It finds each app and its application support, caches, preferences, containers, saved state, logs, and launch items. Everything starts selected; uncheck anything you want to keep, then click Remove and confirm. Hover a file to show it in Finder or remove only that file. QuitX force quits the app first, so save your work. Selected items are permanently deleted and cannot be recovered from Trash. Apple apps, parts of macOS, helpers inside other apps, and QuitX itself can't be uninstalled. Your Documents and Desktop are never touched."
                 ),
                 QuitXHelpSection(
                     title: "Quit Other Apps",
@@ -340,7 +340,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "Finding your way around",
-                    body: "Settings opens on Overview: a card for every feature with its current state, like On, Off or Normal. Click a card to jump to its page. The sidebar groups pages into App, Quitting, Developer and QuitX, and Search settings… finds a page by any word, such as sleep, docker or liquid glass. Press Return to open the first match."
+                    body: "Settings opens on Overview: a card for every feature with its current state, like On, Off or Normal. Click a card to jump to its page. The sidebar groups pages into App, Quitting, Applications, Cleanup, Developer Cleanup, Developer and QuitX. Search settings… finds a page by any word, such as sleep, docker or liquid glass. Press Return to open the first match."
                 ),
                 QuitXHelpSection(
                     title: "General, Automation & Advanced",
@@ -349,6 +349,10 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 QuitXHelpSection(
                     title: "Exclude & Shortcuts",
                     body: "Settings > Exclude manages your protected apps list. Settings > Shortcuts allows recording global hotkeys with conflict checks."
+                ),
+                QuitXHelpSection(
+                    title: "Applications & Cleanup",
+                    body: "Settings > Applications contains the integrated app uninstaller and a Leftovers scan for files from apps no longer installed. Cleanup lets you review System Junk, User Cache, Mail Files, Trash Bins, Large & Old Files, and AI Apps. Developer Cleanup covers Xcode, Homebrew, Node, and Docker caches. Every scan is reviewable before permanent deletion; Large & Old Files never start selected."
                 ),
                 QuitXHelpSection(
                     title: "About & Updates",

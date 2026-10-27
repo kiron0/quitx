@@ -19,6 +19,18 @@ enum SettingsFeature: String, CaseIterable, Identifiable {
     case finderTrash
     case exclude
     case ports
+    case uninstallApps
+    case leftovers
+    case systemJunk
+    case userCache
+    case mailFiles
+    case trashBins
+    case largeOldFiles
+    case aiApps
+    case xcodeJunk
+    case brewCache
+    case nodeCache
+    case dockerCache
 
     var id: String { rawValue }
 
@@ -30,6 +42,18 @@ enum SettingsFeature: String, CaseIterable, Identifiable {
         case .backgroundApps, .musicProtection, .confirmations, .finderTrash: return .advanced
         case .exclude: return .exclude
         case .ports: return .ports
+        case .uninstallApps: return .uninstallApps
+        case .leftovers: return .leftovers
+        case .systemJunk: return .systemJunk
+        case .userCache: return .userCache
+        case .mailFiles: return .mailFiles
+        case .trashBins: return .trashBins
+        case .largeOldFiles: return .largeOldFiles
+        case .aiApps: return .aiApps
+        case .xcodeJunk: return .xcodeJunk
+        case .brewCache: return .brewCache
+        case .nodeCache: return .nodeCache
+        case .dockerCache: return .dockerCache
         }
     }
 
@@ -52,6 +76,18 @@ enum SettingsFeature: String, CaseIterable, Identifiable {
         case .finderTrash: return "Finder & Trash"
         case .exclude: return "Exclude List"
         case .ports: return "Port Killing"
+        case .uninstallApps: return "Uninstall Apps"
+        case .leftovers: return "Leftovers"
+        case .systemJunk: return "System Junk"
+        case .userCache: return "User Cache"
+        case .mailFiles: return "Mail Files"
+        case .trashBins: return "Trash Bins"
+        case .largeOldFiles: return "Large & Old Files"
+        case .aiApps: return "AI Apps"
+        case .xcodeJunk: return "Xcode Junk"
+        case .brewCache: return "Brew Cache"
+        case .nodeCache: return "Node Cache"
+        case .dockerCache: return "Docker Cache"
         }
     }
 
@@ -74,6 +110,18 @@ enum SettingsFeature: String, CaseIterable, Identifiable {
         case .finderTrash: return "Add Finder windows and Empty Trash to the list."
         case .exclude: return "Apps and ports that QuitX never touches."
         case .ports: return "Free ports held by dev servers, databases and Docker."
+        case .uninstallApps: return "Remove apps and every related file from one settings page."
+        case .leftovers: return "Find files left behind by apps you already removed."
+        case .systemJunk: return "Review system caches, logs and temporary files."
+        case .userCache: return "Review regenerable cache data from your apps."
+        case .mailFiles: return "Find attachments downloaded by Mail."
+        case .trashBins: return "Review items already waiting in the Trash."
+        case .largeOldFiles: return "Find large and old files in your personal folders."
+        case .aiApps: return "Clean Ollama and LM Studio caches and logs."
+        case .xcodeJunk: return "Clean DerivedData, simulator and Swift package caches."
+        case .brewCache: return "Clean Homebrew downloads and logs."
+        case .nodeCache: return "Clean npm, Yarn and pnpm caches."
+        case .dockerCache: return "Clean Docker Desktop caches and logs safely."
         }
     }
 
@@ -96,6 +144,18 @@ enum SettingsFeature: String, CaseIterable, Identifiable {
         case .finderTrash: return "trash"
         case .exclude: return "nosign"
         case .ports: return "network"
+        case .uninstallApps: return "xmark.app"
+        case .leftovers: return "doc.questionmark"
+        case .systemJunk: return "gearshape.2"
+        case .userCache: return "internaldrive"
+        case .mailFiles: return "envelope"
+        case .trashBins: return "trash"
+        case .largeOldFiles: return "clock"
+        case .aiApps: return "cpu"
+        case .xcodeJunk: return "hammer"
+        case .brewCache: return "mug"
+        case .nodeCache: return "leaf"
+        case .dockerCache: return "shippingbox"
         }
     }
 
@@ -141,6 +201,9 @@ enum SettingsFeature: String, CaseIterable, Identifiable {
             if apps + ports == 0 { return "Empty" }
             return "\(apps + ports) item\(apps + ports == 1 ? "" : "s")"
         case .ports: return onOff(config.portsEnabled)
+        case .uninstallApps, .leftovers, .systemJunk, .userCache, .mailFiles, .trashBins,
+             .largeOldFiles, .aiApps, .xcodeJunk, .brewCache, .nodeCache, .dockerCache:
+            return nil
         }
     }
 
@@ -322,7 +385,7 @@ struct SettingsOverviewView: View {
                             detail: "Remove apps and their leftover files.",
                             footer: "Choose an app"
                         ) {
-                            UninstallWindowController.shared.showPicker()
+                            navigation.select(.uninstallApps)
                         }
 
                         utilityButton(

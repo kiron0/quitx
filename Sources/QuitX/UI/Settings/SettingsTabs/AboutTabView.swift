@@ -35,7 +35,6 @@ struct AboutTabView: View {
 
     private static let resourceColumns = [
         GridItem(.flexible(), spacing: 12, alignment: .top),
-        GridItem(.flexible(), spacing: 12, alignment: .top),
         GridItem(.flexible(), spacing: 12, alignment: .top)
     ]
 
@@ -68,26 +67,6 @@ struct AboutTabView: View {
 
                 LazyVGrid(columns: Self.resourceColumns, alignment: .leading, spacing: 12) {
                     resourceCard(
-                        id: "help",
-                        symbol: "questionmark.circle.fill",
-                        tint: Color(red: 0.24, green: 0.62, blue: 0.96),
-                        title: "Help Center",
-                        detail: "Guides for every feature.",
-                        footer: "Open Help"
-                    ) {
-                        HelpWindowController.shared.show()
-                    }
-                    resourceCard(
-                        id: "changelog",
-                        symbol: "sparkles",
-                        tint: Color(red: 0.62, green: 0.45, blue: 0.96),
-                        title: "What's New",
-                        detail: "Recent features and fixes.",
-                        footer: "View Updates"
-                    ) {
-                        ChangelogWindowController.shared.show()
-                    }
-                    resourceCard(
                         id: "issues",
                         symbol: "ladybug.fill",
                         tint: Color(red: 0.94, green: 0.38, blue: 0.36),
@@ -96,6 +75,16 @@ struct AboutTabView: View {
                         footer: "Open GitHub"
                     ) {
                         NSWorkspace.shared.open(QuitXConstants.issuesURL)
+                    }
+                    resourceCard(
+                        id: "coffee",
+                        symbol: "cup.and.saucer.fill",
+                        tint: QuitXTheme.accent,
+                        title: "Buy Me a Coffee",
+                        detail: "Support independent development.",
+                        footer: "Open Buy Me a Coffee"
+                    ) {
+                        NSWorkspace.shared.open(QuitXConstants.buyMeACoffeeURL)
                     }
                 }
                 .padding(.leading, 33)

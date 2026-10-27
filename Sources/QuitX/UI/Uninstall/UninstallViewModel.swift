@@ -32,6 +32,7 @@ final class UninstallViewModel: ObservableObject {
 
     @Published private(set) var pickerApps: [PickerApp] = []
     @Published private(set) var isLoadingApps = false
+    private(set) var hasLoadedApps = false
     @Published var pickerSelection: Set<String> = []
     @Published var searchText = ""
     @Published private(set) var bundleSizes: [String: Int64] = [:]
@@ -54,6 +55,7 @@ final class UninstallViewModel: ObservableObject {
         loadTask?.cancel()
         sizeTask?.cancel()
         scanTask?.cancel()
+        isLoadingApps = false
     }
 
     func icon(for target: UninstallTarget) -> NSImage {
@@ -87,7 +89,12 @@ final class UninstallViewModel: ObservableObject {
         confirmation = nil
         errorMessage = nil
         screen = .picker
-        if pickerApps.isEmpty { loadApps(forceRefresh: false) }
+        loadAppsIfNeeded()
+    }
+
+    func loadAppsIfNeeded() {
+        guard !hasLoadedApps, !isLoadingApps else { return }
+        loadApps(forceRefresh: false)
     }
 
     func loadApps(forceRefresh: Bool) {
@@ -104,6 +111,7 @@ final class UninstallViewModel: ObservableObject {
                 return PickerApp(target: target, isBackground: app.isBackground)
             }
             self.pickerApps = apps
+            self.hasLoadedApps = true
             self.pickerSelection.formIntersection(Set(apps.map(\.id)))
             self.isLoadingApps = false
             self.refreshRunningState()
@@ -290,16 +298,16 @@ final class UninstallViewModel: ObservableObject {
     var confirmationSubtitle: String {
         switch confirmation {
         case .removeSelected:
-            let size = "\(Self.formatFiles(selectedFiles)) (\(Self.formatBytes(selectedBytes))) move to the Trash."
+            let size = "\(Self.formatFiles(selectedFiles)) (\(Self.formatBytes(selectedBytes))) will be permanently deleted. This can't be undone."
             let running = runningTargets.filter { target in selectedItems.contains { $0.targetID == target.id } }
             guard !running.isEmpty else { return size }
             let names = running.count == 1 ? running[0].name : "\(running.count) running apps"
             return "\(names) will be force quit without saving. \(size)"
         case let .removeItem(item):
             if item.category == .application, let target = target(for: item), runningIDs.contains(target.id) {
-                return "\(target.name) will be force quit without saving, then moved to the Trash."
+                return "\(target.name) will be force quit without saving, then permanently deleted. This can't be undone."
             }
-            return "It moves to the Trash (\(Self.formatBytes(item.bytes)))."
+            return "It will be permanently deleted (\(Self.formatBytes(item.bytes))). This can't be undone."
         case nil:
             return ""
         }
@@ -346,7 +354,7 @@ final class UninstallViewModel: ObservableObject {
                     continue
                 }
             }
-            let result = await AppUninstaller.moveToTrash(owned.map(\.url))
+            let result = await AppUninstaller.removePermanently(owned.map(\.url))
             outcome.trashed.append(contentsOf: result.trashed)
             outcome.failed.append(contentsOf: result.failed)
         }

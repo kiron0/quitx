@@ -55,7 +55,6 @@
         --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
         --ease-qx: cubic-bezier(0.2, 0.7, 0.2, 1);
       }
-      @custom-variant hover (&:hover);
       @custom-variant lte-1180 (@media (max-width: 1180px));
       @custom-variant lte-960 (@media (max-width: 960px));
       @custom-variant lte-560 (@media (max-width: 560px));
@@ -988,8 +987,8 @@
               <h3>Uninstall with leftovers</h3>
               <p class="mt-[8px] text-muted text-[15px]">
                 Remove one app or several at once, with the caches, preferences
-                and support files they left behind. It confirms first, and
-                everything goes to the Trash.
+                and support files they left behind. Review every item in
+                Settings before permanent removal.
               </p>
             </article>
           </div>
@@ -1672,8 +1671,8 @@
                 class="px-[2px] pt-0 pb-[22px] text-muted max-w-[62ch] lte-560:px-0 lte-560:pb-[16px] lte-560:text-[14.5px] lte-560:leading-[1.55]"
               >
                 Yes. QuitX finds the app, caches, preferences and support files
-                for review, then moves selected items to the Trash. Apple and
-                system apps are protected.
+                for review, then permanently removes only the selected items.
+                Apple and system apps are protected.
               </p>
             </details>
             <details

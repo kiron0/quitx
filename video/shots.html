@@ -195,7 +195,7 @@
               x: 700,
               y: 92,
               zoom: 2,
-              html: `<div style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:12px;background:rgba(18,14,10,.55);backdrop-filter:blur(20px);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.2),0 12px 30px rgba(0,0,0,.4)">${QX.stats({ cpu: "12%", mem: "9.4 GB", gpu: "8%", bat: "82%" })}<span style="width:22px;height:20px;display:grid;place-items:center"><img src="${A}status-icon.png" style="width:15px;height:15px;filter:invert(1)" alt=""></span></div>`,
+              html: `<div class="py-[5px] px-[10px] gap-[6px] flex items-center rounded-[12px] bg-[rgba(18,14,10,.55)] [backdrop-filter:blur(20px)] shadow-[inset_0_0_0_.5px_rgba(255,255,255,.2),0_12px_30px_rgba(0,0,0,.4)]">${QX.stats({ cpu: "12%", mem: "9.4 GB", gpu: "8%", bat: "82%" })}<span class="w-[22px] h-[20px] grid place-items-center"><img src="${A}status-icon.png" class="w-[15px] h-[15px] invert" alt=""></span></div>`,
             },
           ],
           ring: "statsItem",
@@ -295,7 +295,7 @@
             {
               x: 950,
               y: 650,
-              html: `<div class="wave gap-[5px] flex items-center h-[80px]">${[18, 34, 56, 74, 48, 66, 40, 58, 30, 46, 24, 36, 16, 26, 12].map((h) => `<i class="w-[6px] rounded-[3px] bg-[linear-gradient(#ffd271,#e89b00)]" style="height:${h}px"></i>`).join("")}</div>`,
+              html: `<div class="wave gap-[5px] flex items-center h-[80px]">${[18, 34, 56, 74, 48, 66, 40, 58, 30, 46, 24, 36, 16, 26, 12].map((h) => `<i class="w-[6px] h-[${h}px] rounded-[3px] bg-[linear-gradient(#ffd271,#e89b00)]"></i>`).join("")}</div>`,
             },
           ],
         }),
@@ -329,7 +329,7 @@
             {
               x: 770,
               y: 300,
-              html: `<div class="qx-win overflow-hidden rounded-[12px] bg-[#262527] text-[#EDEBE7] font-['Inter',-apple-system,system-ui,sans-serif] shadow-[0_0_0_.5px_rgba(255,255,255,.14),0_0_0_1px_rgba(0,0,0,.6),0_36px_72px_rgba(0,0,0,.5),0_6px_18px_rgba(0,0,0,.3)]" style="width:412px;padding:0 22px 18px;background:#2A292C"><div style="height:34px;display:flex;align-items:center;justify-content:center;position:relative;font-size:13px;font-weight:600;color:rgba(255,255,255,.88)"><span class="lights gap-[8px] flex" style="position:absolute;left:-8px"><i class="w-[12px] h-[12px] rounded-[50%] block shadow-[inset_0_0_0_.5px_rgba(0,0,0,.25)]" style="background:#FF5F57"></i><i class="w-[12px] h-[12px] rounded-[50%] block shadow-[inset_0_0_0_.5px_rgba(0,0,0,.25)]" style="background:#58565A"></i><i class="w-[12px] h-[12px] rounded-[50%] block shadow-[inset_0_0_0_.5px_rgba(0,0,0,.25)]" style="background:#58565A"></i></span>Update</div><div style="display:flex;align-items:flex-start;gap:16px;margin-top:10px"><div style="position:relative;flex:none"><img src="${A}icon.png" style="width:64px;height:64px;display:block" alt=""><span style="position:absolute;right:3px;bottom:3px;width:22px;height:22px;border-radius:50%;background:#30D158;display:grid;place-items:center;box-shadow:0 0 0 2px #2A292C"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M2.4 6.3l2.3 2.3L9.8 3.4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div><div><div style="margin:2px 0 6px;font-size:15px;font-weight:700">Ready to Install v1.2.1</div><div style="font-size:12.5px;color:rgba(255,255,255,.8);line-height:1.45">The latest version has been downloaded and verified.</div><div style="font-size:12px;color:rgba(255,255,255,.52);margin-top:4px">QuitX will restart to finish installing the update.</div></div></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px"><span style="height:30px;padding:0 15px;border-radius:7px;display:inline-flex;align-items:center;font-size:13px;font-weight:500;background:rgba(255,255,255,.1)">Later</span><span style="height:30px;padding:0 15px;border-radius:7px;display:inline-flex;align-items:center;font-size:13px;font-weight:600;background:#FEBC33;color:rgba(0,0,0,.88)">Restart &amp; Update</span></div></div>`,
+              html: `<div class="qx-win py-0 pr-[22px] pb-[18px] pl-[22px] overflow-hidden w-[412px] rounded-[12px] bg-[#2A292C] text-[#EDEBE7] font-['Inter',-apple-system,system-ui,sans-serif] shadow-[0_0_0_.5px_rgba(255,255,255,.14),0_0_0_1px_rgba(0,0,0,.6),0_36px_72px_rgba(0,0,0,.5),0_6px_18px_rgba(0,0,0,.3)]"><div class="h-[34px] flex items-center justify-center relative text-[13px] font-semibold text-[rgba(255,255,255,.88)]"><span class="lights gap-[8px] flex absolute left-[-8px]"><i class="w-[12px] h-[12px] rounded-[50%] block bg-[#FF5F57] shadow-[inset_0_0_0_.5px_rgba(0,0,0,.25)]"></i><i class="w-[12px] h-[12px] rounded-[50%] block bg-[#58565A] shadow-[inset_0_0_0_.5px_rgba(0,0,0,.25)]"></i><i class="w-[12px] h-[12px] rounded-[50%] block bg-[#58565A] shadow-[inset_0_0_0_.5px_rgba(0,0,0,.25)]"></i></span>Update</div><div class="mt-[10px] gap-[16px] flex items-start"><div class="relative flex-none"><img src="${A}icon.png" class="w-[64px] h-[64px] block" alt=""><span class="absolute right-[3px] bottom-[3px] w-[22px] h-[22px] rounded-full bg-[#30D158] grid place-items-center shadow-[0_0_0_2px_#2A292C]"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M2.4 6.3l2.3 2.3L9.8 3.4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div><div><div class="mt-[2px] mx-0 mb-[6px] text-[15px] font-bold">Ready to Install v1.2.1</div><div class="text-[12.5px] text-[rgba(255,255,255,.8)] leading-[1.45]">The latest version has been downloaded and verified.</div><div class="mt-[4px] text-[12px] text-[rgba(255,255,255,.52)]">QuitX will restart to finish installing the update.</div></div></div><div class="mt-[20px] gap-[8px] flex justify-end"><span class="py-0 px-[15px] h-[30px] rounded-[7px] inline-flex items-center text-[13px] font-medium bg-[rgba(255,255,255,.1)]">Later</span><span class="py-0 px-[15px] h-[30px] rounded-[7px] inline-flex items-center text-[13px] font-semibold bg-[#FEBC33] text-[rgba(0,0,0,.88)]">Restart &amp; Update</span></div></div>`,
             },
           ],
         }),
@@ -449,7 +449,7 @@
             const r = el.getBoundingClientRect();
             root.insertAdjacentHTML(
               "beforeend",
-              `<div class="label absolute tracking-[.08em] uppercase font-semibold text-[13px] leading-[1] font-['Inter'] text-[rgba(255,255,255,.75)]" style="left:${r.left}px;top:${r.top - 26}px">${u.label}</div>`,
+              `<div class="label absolute left-[${r.left}px] top-[${r.top - 26}px] tracking-[.08em] uppercase font-semibold text-[13px] leading-[1] font-['Inter'] text-[rgba(255,255,255,.75)]">${u.label}</div>`,
             );
           }
         }

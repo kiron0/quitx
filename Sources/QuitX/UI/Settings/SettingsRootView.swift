@@ -4,6 +4,17 @@ import SwiftUI
 struct SettingsRootView: View {
     @ObservedObject var navigation: SettingsNavigationModel
     @EnvironmentObject private var configStore: ConfigStore
+    @StateObject private var leftoversModel = LeftoversViewModel()
+    @StateObject private var systemJunkModel = CleanupViewModel(category: .systemJunk)
+    @StateObject private var userCacheModel = CleanupViewModel(category: .userCache)
+    @StateObject private var mailFilesModel = CleanupViewModel(category: .mailFiles)
+    @StateObject private var trashBinsModel = CleanupViewModel(category: .trashBins)
+    @StateObject private var largeOldFilesModel = CleanupViewModel(category: .largeOldFiles)
+    @StateObject private var aiAppsModel = CleanupViewModel(category: .aiApps)
+    @StateObject private var xcodeJunkModel = CleanupViewModel(category: .xcodeJunk)
+    @StateObject private var brewCacheModel = CleanupViewModel(category: .brewCache)
+    @StateObject private var nodeCacheModel = CleanupViewModel(category: .nodeCache)
+    @StateObject private var dockerCacheModel = CleanupViewModel(category: .dockerCache)
 
     private var trimmedQuery: String {
         navigation.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -230,6 +241,34 @@ struct SettingsRootView: View {
             scrolling(PortsTabView())
         case .exclude:
             ExcludeTabView()
+        case .uninstallApps:
+            UninstallView(
+                model: UninstallWindowController.shared.model,
+                embedded: true,
+                onDismiss: { navigation.select(.overview) }
+            )
+        case .leftovers:
+            LeftoversTabView(model: leftoversModel)
+        case .systemJunk:
+            CleanupTabView(model: systemJunkModel)
+        case .userCache:
+            CleanupTabView(model: userCacheModel)
+        case .mailFiles:
+            CleanupTabView(model: mailFilesModel)
+        case .trashBins:
+            CleanupTabView(model: trashBinsModel)
+        case .largeOldFiles:
+            CleanupTabView(model: largeOldFilesModel)
+        case .aiApps:
+            CleanupTabView(model: aiAppsModel)
+        case .xcodeJunk:
+            CleanupTabView(model: xcodeJunkModel)
+        case .brewCache:
+            CleanupTabView(model: brewCacheModel)
+        case .nodeCache:
+            CleanupTabView(model: nodeCacheModel)
+        case .dockerCache:
+            CleanupTabView(model: dockerCacheModel)
         case .shortcuts:
             scrolling(ShortcutsTabView())
         case .about:

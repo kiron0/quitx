@@ -166,7 +166,7 @@ struct SettingsTabTests {
     @Test("SettingsTab all cases, overview first and Marquee last")
     func testSettingsTabCases() {
         let all = SettingsTab.allCases
-        #expect(all.count == 9)
+        #expect(all.count == 21)
         #expect(all.first == .overview)
         #expect(all.last == .marquee)
         for tab in [SettingsTab.general, .automation, .advanced, .exclude, .ports, .shortcuts, .about] {

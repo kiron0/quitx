@@ -430,6 +430,64 @@ enum AppUninstaller {
         return result
     }
 
+    static func isSafePermanentRemoval(_ url: URL, home: URL = FileManager.default.homeDirectoryForCurrentUser) -> Bool {
+        let path = url.standardizedFileURL.resolvingSymlinksInPath().path
+        let homePath = home.standardizedFileURL.resolvingSymlinksInPath().path
+        let temporaryPath = FileManager.default.temporaryDirectory.standardizedFileURL.resolvingSymlinksInPath().path
+        let blocked = ["/", "/Applications", "/Library", "/System", "/Users", homePath, homePath + "/Library", homePath + "/.Trash"]
+        guard !blocked.contains(path), !path.isEmpty else { return false }
+        let blockedPrefixes = ["/System/", "/usr/", "/bin/", "/sbin/"]
+        guard !blockedPrefixes.contains(where: path.hasPrefix) else { return false }
+        let allowedPrefixes = [
+            "/Applications/",
+            "/Library/Application Support/",
+            "/Library/Caches/",
+            "/Library/Preferences/",
+            "/Library/Logs/",
+            "/Library/LaunchAgents/",
+            "/Library/LaunchDaemons/",
+            "/Library/PrivilegedHelperTools/",
+            "/private/tmp/",
+            "/private/var/tmp/",
+            temporaryPath + "/",
+            homePath + "/"
+        ]
+        return allowedPrefixes.contains(where: path.hasPrefix)
+    }
+
+    static func removePermanently(_ urls: [URL]) async -> RemovalResult {
+        let safeURLs = urls.filter { isSafePermanentRemoval($0) }
+        var result = RemovalResult()
+        let rejected = urls.filter { !safeURLs.contains($0) }
+        result.failed.append(contentsOf: rejected.map { RemovalFailure(url: $0, message: "Blocked by removal safety checks") })
+
+        let local = await Task.detached(priority: .userInitiated) { () -> RemovalResult in
+            var partial = RemovalResult()
+            for url in safeURLs {
+                do {
+                    try FileManager.default.removeItem(at: url)
+                    partial.trashed.append(url)
+                } catch {
+                    if FileManager.default.fileExists(atPath: url.path) {
+                        partial.failed.append(RemovalFailure(url: url, message: error.localizedDescription))
+                    } else {
+                        partial.trashed.append(url)
+                    }
+                }
+            }
+            return partial
+        }.value
+        result.trashed.append(contentsOf: local.trashed)
+        guard !local.failed.isEmpty else { return result }
+
+        let admin = await Task.detached(priority: .userInitiated) {
+            removePermanentlyWithAdministrator(local.failed.map(\.url))
+        }.value
+        result.trashed.append(contentsOf: admin.trashed)
+        result.failed.append(contentsOf: admin.failed)
+        return result
+    }
+
     @MainActor
     private static func recycle(_ urls: [URL]) async -> [URL] {
         await withCheckedContinuation { continuation in
@@ -453,6 +511,10 @@ enum AppUninstaller {
         }.joined(separator: "; ")
     }
 
+    static func adminPermanentRemovalCommand(for urls: [URL]) -> String {
+        "/bin/rm -rf -- " + urls.map { shellQuoted($0.path) }.joined(separator: " ")
+    }
+
     private static func moveToTrashWithAdministrator(_ urls: [URL]) -> RemovalResult {
         var result = RemovalResult()
         let trash = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".Trash")
@@ -464,6 +526,25 @@ enum AppUninstaller {
         var error: NSDictionary?
         let script = NSAppleScript(source: source)
         script?.executeAndReturnError(&error)
+        for url in urls {
+            if FileManager.default.fileExists(atPath: url.path) {
+                let message = (error?[NSAppleScript.errorMessage] as? String) ?? "Permission denied"
+                result.failed.append(RemovalFailure(url: url, message: message))
+            } else {
+                result.trashed.append(url)
+            }
+        }
+        return result
+    }
+
+    private static func removePermanentlyWithAdministrator(_ urls: [URL]) -> RemovalResult {
+        var result = RemovalResult()
+        let safeURLs = urls.filter { isSafePermanentRemoval($0) }
+        let command = adminPermanentRemovalCommand(for: safeURLs)
+        let escaped = command.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
+        let source = "do shell script \"\(escaped)\" with administrator privileges"
+        var error: NSDictionary?
+        NSAppleScript(source: source)?.executeAndReturnError(&error)
         for url in urls {
             if FileManager.default.fileExists(atPath: url.path) {
                 let message = (error?[NSAppleScript.errorMessage] as? String) ?? "Permission denied"

@@ -36,7 +36,8 @@
 - Exclude protected apps; automate quits by inactivity, timer, sleep, or last window.
 - Monitor CPU, memory, GPU, battery, and listening ports from the menu bar.
 - Warn about sustained CPU or memory pressure and rescue inactive apps.
-- Uninstall apps with reviewable leftovers, moved safely to the Trash.
+- Uninstall apps with reviewable leftovers and permanent removal from Settings.
+- Scan system junk, caches, Mail files, Trash, large files, AI apps, Xcode, Homebrew, Node, and Docker data before deleting anything.
 - Use global shortcuts, Classic or Liquid Glass themes, and verified in-app updates.
 
 ## How it works
