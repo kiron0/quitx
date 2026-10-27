@@ -157,32 +157,32 @@ struct CleanupFilterBar: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            HStack(spacing: 8) {
-                HStack(spacing: 6) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(.secondary)
 
-                    TextField("Search name or path…", text: $query)
-                        .textFieldStyle(.plain)
-                        .font(.system(size: 11.5))
+                TextField("Search name or path…", text: $query)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 11.5))
 
-                    if !query.isEmpty {
-                        Button {
-                            query = ""
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 11))
-                                .foregroundStyle(.secondary)
-                        }
-                        .buttonStyle(.plain)
+                if !query.isEmpty {
+                    Button {
+                        query = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
                     }
+                    .buttonStyle(.plain)
                 }
-                .padding(.horizontal, 8)
-                .frame(height: 28)
-                .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 7))
-                .overlay(RoundedRectangle(cornerRadius: 7).stroke(Color.primary.opacity(0.08), lineWidth: 0.5))
+            }
+            .padding(.horizontal, 8)
+            .frame(height: 28)
+            .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 7))
+            .overlay(RoundedRectangle(cornerRadius: 7).stroke(Color.primary.opacity(0.08), lineWidth: 0.5))
 
+            HStack(spacing: 8) {
                 Picker("", selection: $size) {
                     ForEach(ItemSizeFilter.allCases) { Text($0.rawValue).tag($0) }
                 }
@@ -203,14 +203,12 @@ struct CleanupFilterBar: View {
                 .frame(width: 118)
                 .labelsHidden()
                 .settingsMenu()
-            }
 
-            HStack {
+                Spacer()
+
                 Text("\(visibleCount) of \(totalCount) items shown")
                     .font(.system(size: 10.5))
                     .foregroundStyle(.secondary)
-
-                Spacer()
 
                 if visibleCount > 0 {
                     Button(allVisibleSelected ? "Deselect visible" : "Select visible") {

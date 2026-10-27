@@ -118,9 +118,10 @@ struct UninstallView: View {
             summaryCard
                 .padding(.bottom, 12)
 
-            HStack(spacing: 8) {
-                searchField
+            searchField
+                .padding(.bottom, 8)
 
+            HStack(spacing: 8) {
                 Picker("", selection: $model.statusFilter) {
                     ForEach(UninstallViewModel.AppStatusFilter.allCases) { Text($0.rawValue).tag($0) }
                 }
@@ -143,15 +144,14 @@ struct UninstallView: View {
                 .settingsMenu()
 
                 layoutSwitchButtons
-            }
-            .padding(.bottom, 6)
 
-            if model.hasLoadedApps && !model.pickerApps.isEmpty {
-                HStack(spacing: 6) {
+                Spacer(minLength: 8)
+
+                if model.hasLoadedApps && !model.pickerApps.isEmpty {
                     Text("\(model.filteredPickerApps.count) of \(model.pickerApps.count) apps shown")
                         .font(.system(size: 10.5))
                         .foregroundStyle(.secondary)
-                    Spacer()
+
                     if model.isFiltered {
                         Button("Reset Filters") {
                             model.resetFilters()
@@ -161,8 +161,8 @@ struct UninstallView: View {
                         .foregroundStyle(QuitXTheme.accent)
                     }
                 }
-                .padding(.bottom, 8)
             }
+            .padding(.bottom, 10)
 
             Group {
                 if model.isLoadingApps && model.pickerApps.isEmpty {
