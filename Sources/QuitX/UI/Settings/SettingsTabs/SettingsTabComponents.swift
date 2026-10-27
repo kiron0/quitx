@@ -351,6 +351,62 @@ extension View {
     }
 }
 
+struct NativeFilterPicker<T: Hashable & CaseIterable & RawRepresentable>: NSViewRepresentable where T.RawValue == String, T.AllCases: RandomAccessCollection {
+    @Binding var selection: T
+
+    func makeNSView(context: Context) -> NSPopUpButton {
+        let button = NSPopUpButton(frame: .zero, pullsDown: false)
+        button.bezelStyle = .rounded
+        button.controlSize = .small
+        button.font = NSFont.systemFont(ofSize: 11.5)
+        button.target = context.coordinator
+        button.action = #selector(Coordinator.valueChanged(_:))
+        button.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        for item in T.allCases {
+            button.addItem(withTitle: item.rawValue)
+        }
+        if let idx = Array(T.allCases).firstIndex(of: selection) {
+            button.selectItem(at: idx)
+        }
+        return button
+    }
+
+    func updateNSView(_ nsView: NSPopUpButton, context: Context) {
+        context.coordinator.parent = self
+        let cases = Array(T.allCases)
+        if nsView.numberOfItems != cases.count {
+            nsView.removeAllItems()
+            for item in cases {
+                nsView.addItem(withTitle: item.rawValue)
+            }
+        }
+        if let idx = cases.firstIndex(of: selection), nsView.indexOfSelectedItem != idx {
+            nsView.selectItem(at: idx)
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    class Coordinator: NSObject {
+        var parent: NativeFilterPicker
+
+        init(_ parent: NativeFilterPicker) {
+            self.parent = parent
+        }
+
+        @objc func valueChanged(_ sender: NSPopUpButton) {
+            let index = sender.indexOfSelectedItem
+            let cases = Array(T.allCases)
+            if index >= 0 && index < cases.count {
+                parent.selection = cases[index]
+            }
+        }
+    }
+}
+
 struct SettingsInlineNote: View {
     let symbol: String
     let title: String

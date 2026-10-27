@@ -182,26 +182,9 @@ struct CleanupFilterBar: View {
             .overlay(RoundedRectangle(cornerRadius: 7).stroke(Color.primary.opacity(0.08), lineWidth: 0.5))
 
             HStack(spacing: 8) {
-                Picker("", selection: $size) {
-                    ForEach(ItemSizeFilter.allCases) { Text($0.rawValue).tag($0) }
-                }
-                .frame(maxWidth: .infinity)
-                .labelsHidden()
-                .settingsMenu()
-
-                Picker("", selection: $age) {
-                    ForEach(ItemAgeFilter.allCases) { Text($0.rawValue).tag($0) }
-                }
-                .frame(maxWidth: .infinity)
-                .labelsHidden()
-                .settingsMenu()
-
-                Picker("", selection: $sort) {
-                    ForEach(ItemSortOrder.allCases) { Text($0.rawValue).tag($0) }
-                }
-                .frame(maxWidth: .infinity)
-                .labelsHidden()
-                .settingsMenu()
+                NativeFilterPicker(selection: $size)
+                NativeFilterPicker(selection: $age)
+                NativeFilterPicker(selection: $sort)
             }
 
             HStack {

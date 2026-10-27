@@ -127,26 +127,9 @@ struct UninstallView: View {
             .padding(.bottom, 8)
 
             HStack(spacing: 8) {
-                Picker("", selection: $model.statusFilter) {
-                    ForEach(UninstallViewModel.AppStatusFilter.allCases) { Text($0.rawValue).tag($0) }
-                }
-                .frame(maxWidth: .infinity)
-                .labelsHidden()
-                .settingsMenu()
-
-                Picker("", selection: $model.sizeFilter) {
-                    ForEach(ItemSizeFilter.allCases) { Text($0.rawValue).tag($0) }
-                }
-                .frame(maxWidth: .infinity)
-                .labelsHidden()
-                .settingsMenu()
-
-                Picker("", selection: $model.sortOrder) {
-                    ForEach(UninstallViewModel.AppSortOrder.allCases) { Text($0.rawValue).tag($0) }
-                }
-                .frame(maxWidth: .infinity)
-                .labelsHidden()
-                .settingsMenu()
+                NativeFilterPicker(selection: $model.statusFilter)
+                NativeFilterPicker(selection: $model.sizeFilter)
+                NativeFilterPicker(selection: $model.sortOrder)
             }
             .padding(.bottom, 6)
 
