@@ -115,8 +115,10 @@ struct UninstallView: View {
 
     private var picker: some View {
         VStack(spacing: 0) {
-            summaryCard
-                .padding(.bottom, 12)
+            if !embedded {
+                summaryCard
+                    .padding(.bottom, 12)
+            }
 
             HStack(spacing: 8) {
                 searchField
@@ -128,30 +130,33 @@ struct UninstallView: View {
                 Picker("", selection: $model.statusFilter) {
                     ForEach(UninstallViewModel.AppStatusFilter.allCases) { Text($0.rawValue).tag($0) }
                 }
-                .frame(width: 86)
+                .frame(maxWidth: .infinity)
                 .labelsHidden()
                 .settingsMenu()
 
                 Picker("", selection: $model.sizeFilter) {
                     ForEach(ItemSizeFilter.allCases) { Text($0.rawValue).tag($0) }
                 }
-                .frame(width: 102)
+                .frame(maxWidth: .infinity)
                 .labelsHidden()
                 .settingsMenu()
 
                 Picker("", selection: $model.sortOrder) {
                     ForEach(UninstallViewModel.AppSortOrder.allCases) { Text($0.rawValue).tag($0) }
                 }
-                .frame(width: 110)
+                .frame(maxWidth: .infinity)
                 .labelsHidden()
                 .settingsMenu()
+            }
+            .padding(.bottom, 6)
 
-                Spacer(minLength: 8)
-
-                if model.hasLoadedApps && !model.pickerApps.isEmpty {
+            if model.hasLoadedApps && !model.pickerApps.isEmpty {
+                HStack {
                     Text("\(model.filteredPickerApps.count) of \(model.pickerApps.count) apps shown")
                         .font(.system(size: 10.5))
                         .foregroundStyle(.secondary)
+
+                    Spacer()
 
                     if model.isFiltered {
                         Button("Reset Filters") {
@@ -162,8 +167,8 @@ struct UninstallView: View {
                         .foregroundStyle(QuitXTheme.accent)
                     }
                 }
+                .padding(.bottom, 8)
             }
-            .padding(.bottom, 10)
 
             Group {
                 if model.isLoadingApps && model.pickerApps.isEmpty {

@@ -15,6 +15,7 @@ struct SettingsRootView: View {
     @StateObject private var brewCacheModel = CleanupViewModel(category: .brewCache)
     @StateObject private var nodeCacheModel = CleanupViewModel(category: .nodeCache)
     @StateObject private var dockerCacheModel = CleanupViewModel(category: .dockerCache)
+    @ObservedObject private var uninstallModel = UninstallWindowController.shared.model
 
     private var trimmedQuery: String {
         navigation.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -220,8 +221,100 @@ struct SettingsRootView: View {
                     .foregroundStyle(Color.secondary)
                     .lineLimit(1)
             }
+
+            Spacer(minLength: 16)
+
+            headerAccessory(for: tab)
         }
+        .frame(width: SettingsTab.contentWidth)
         .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder
+    private func headerAccessory(for tab: SettingsTab) -> some View {
+        switch tab {
+        case .systemJunk: cleanupHeaderAccessory(systemJunkModel)
+        case .userCache: cleanupHeaderAccessory(userCacheModel)
+        case .mailFiles: cleanupHeaderAccessory(mailFilesModel)
+        case .trashBins: cleanupHeaderAccessory(trashBinsModel)
+        case .largeOldFiles: cleanupHeaderAccessory(largeOldFilesModel)
+        case .aiApps: cleanupHeaderAccessory(aiAppsModel)
+        case .xcodeJunk: cleanupHeaderAccessory(xcodeJunkModel)
+        case .brewCache: cleanupHeaderAccessory(brewCacheModel)
+        case .nodeCache: cleanupHeaderAccessory(nodeCacheModel)
+        case .dockerCache: cleanupHeaderAccessory(dockerCacheModel)
+        case .leftovers: leftoversHeaderAccessory(leftoversModel)
+        case .uninstallApps: uninstallHeaderAccessory(uninstallModel)
+        default: EmptyView()
+        }
+    }
+
+    @ViewBuilder
+    private func cleanupHeaderAccessory(_ model: CleanupViewModel) -> some View {
+        HStack(spacing: 12) {
+            if model.phase == .ready {
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(UninstallViewModel.formatBytes(model.totalBytes))
+                        .font(.system(size: 14, weight: .semibold))
+                        .monospacedDigit()
+                    Text("\(model.items.count) \(model.items.count == 1 ? "item" : "items")")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Button(model.phase == .scanning ? "Scanning…" : (model.phase == .idle ? "Scan" : "Scan Again")) {
+                model.scan()
+            }
+            .buttonStyle(UninstallPrimaryButtonStyle(isEnabled: model.phase != .scanning && model.phase != .removing))
+            .disabled(model.phase == .scanning || model.phase == .removing)
+        }
+    }
+
+    @ViewBuilder
+    private func leftoversHeaderAccessory(_ model: LeftoversViewModel) -> some View {
+        HStack(spacing: 12) {
+            if model.phase == .ready {
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(UninstallViewModel.formatBytes(model.totalBytes))
+                        .font(.system(size: 14, weight: .semibold))
+                        .monospacedDigit()
+                    Text("\(model.items.count) \(model.items.count == 1 ? "item" : "items")")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Button(model.phase == .scanning ? "Scanning…" : (model.phase == .idle ? "Scan" : "Scan Again")) {
+                model.scan()
+            }
+            .buttonStyle(UninstallPrimaryButtonStyle(isEnabled: model.phase != .scanning && model.phase != .removing))
+            .disabled(model.phase == .scanning || model.phase == .removing)
+        }
+    }
+
+    @ViewBuilder
+    private func uninstallHeaderAccessory(_ model: UninstallViewModel) -> some View {
+        if model.screen == .picker {
+            HStack(spacing: 12) {
+                if model.hasLoadedApps && !model.isLoadingApps {
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(UninstallViewModel.formatBytes(model.pickerTotalBytes))
+                            .font(.system(size: 14, weight: .semibold))
+                            .monospacedDigit()
+                        Text("\(model.pickerApps.count) \(model.pickerApps.count == 1 ? "app" : "apps")")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Button(model.isLoadingApps ? "Scanning…" : (model.hasLoadedApps ? "Scan Again" : "Scan")) {
+                    model.loadApps(forceRefresh: true)
+                }
+                .buttonStyle(UninstallPrimaryButtonStyle(isEnabled: !model.isLoadingApps && model.phase != .removing))
+                .disabled(model.isLoadingApps || model.phase == .removing)
+            }
+        }
     }
 
     @ViewBuilder
@@ -243,7 +336,7 @@ struct SettingsRootView: View {
             ExcludeTabView()
         case .uninstallApps:
             UninstallView(
-                model: UninstallWindowController.shared.model,
+                model: uninstallModel,
                 embedded: true,
                 onDismiss: { navigation.select(.overview) }
             )

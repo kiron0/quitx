@@ -141,9 +141,6 @@ struct LeftoversTabView: View {
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
-                summaryCard
-                    .padding(.bottom, 12)
-
                 if !fdaManager.hasFullDiskAccess {
                     fullDiskAccessBanner
                         .padding(.bottom, 12)
@@ -214,40 +211,7 @@ struct LeftoversTabView: View {
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.orange.opacity(0.25), lineWidth: 0.8))
     }
 
-    private var summaryCard: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "doc.questionmark")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(tint)
-                .frame(width: 38, height: 38)
-                .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Leftovers")
-                    .font(.system(size: 13, weight: .semibold))
-                Text("Files whose app bundle identifier no longer matches an installed app.")
-                    .font(.system(size: 10.5))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-            }
-            Spacer(minLength: 8)
-            if model.phase == .ready {
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text(formatBytes(model.totalBytes))
-                        .font(.system(size: 14, weight: .semibold))
-                        .monospacedDigit()
-                    Text("\(model.items.count) \(model.items.count == 1 ? "item" : "items")")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
-                }
-            }
-            Button(model.phase == .idle ? "Scan" : "Scan Again") { model.scan() }
-                .buttonStyle(UninstallPrimaryButtonStyle(isEnabled: model.phase != .scanning))
-                .disabled(model.phase == .scanning || model.phase == .removing)
-        }
-        .padding(12)
-        .background(RoundedRectangle(cornerRadius: 11).fill(QuitXTheme.cardBackground))
-        .overlay(RoundedRectangle(cornerRadius: 11).stroke(Color.primary.opacity(0.07), lineWidth: 0.5))
-    }
+
 
     @ViewBuilder
     private var content: some View {

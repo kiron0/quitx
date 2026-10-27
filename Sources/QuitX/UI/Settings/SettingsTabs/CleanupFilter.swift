@@ -185,29 +185,31 @@ struct CleanupFilterBar: View {
                 Picker("", selection: $size) {
                     ForEach(ItemSizeFilter.allCases) { Text($0.rawValue).tag($0) }
                 }
-                .frame(width: 108)
+                .frame(maxWidth: .infinity)
                 .labelsHidden()
                 .settingsMenu()
 
                 Picker("", selection: $age) {
                     ForEach(ItemAgeFilter.allCases) { Text($0.rawValue).tag($0) }
                 }
-                .frame(width: 124)
+                .frame(maxWidth: .infinity)
                 .labelsHidden()
                 .settingsMenu()
 
                 Picker("", selection: $sort) {
                     ForEach(ItemSortOrder.allCases) { Text($0.rawValue).tag($0) }
                 }
-                .frame(width: 118)
+                .frame(maxWidth: .infinity)
                 .labelsHidden()
                 .settingsMenu()
+            }
 
-                Spacer()
-
+            HStack {
                 Text("\(visibleCount) of \(totalCount) items shown")
                     .font(.system(size: 10.5))
                     .foregroundStyle(.secondary)
+
+                Spacer()
 
                 if isFiltered, let onReset {
                     Button("Reset Filters") {
