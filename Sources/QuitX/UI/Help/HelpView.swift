@@ -252,11 +252,11 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "Menu bar stats readout",
-                    body: "Enable Show stats in menu bar in Settings > General, then choose CPU, Memory, GPU, and Battery independently. Configure Style format with Icon (SF Symbols) or Text (CPU / MEM / GPU prefixes), and Memory format with Gigabytes (GB) or Percentage (%). Choose how often the readout updates under Refresh, from every second to every 10 seconds. Battery options appear only on Macs with a battery, and GPU only when macOS reports GPU statistics."
+                    body: "Enable Show stats in menu bar in Settings > General, then click CPU, Memory, GPU, and Battery to show or hide each one, and drag them into the order you want them in the menu bar. Configure Style format with Icon (SF Symbols) or Text (CPU / MEM / GPU prefixes), and Memory format with Gigabytes (GB) or Percentage (%). Choose how often the readout updates under Refresh, from every second to every 10 seconds. Battery options appear only on Macs with a battery, and GPU only when macOS reports GPU statistics."
                 ),
                 QuitXHelpSection(
                     title: "Stats detail panel",
-                    body: "Click a menu bar stat to open its detail panel. CPU and memory show live breakdowns and top processes, GPU shows utilization and memory, and battery shows power source, charge time, power draw, voltage, temperature, capacity, and cycle count when macOS reports them. Click the stats item again, click anywhere outside, or press Esc to dismiss it."
+                    body: "Click a menu bar stat to open its detail panel. CPU and memory show live breakdowns and top processes, GPU shows utilization and memory, and battery shows power source, charge time, power draw, voltage, temperature (read from the battery sensors when macOS does not report it), capacity, and cycle count when available. Click the stats item again, click anywhere outside, or press Esc to dismiss it."
                 ),
                 QuitXHelpSection(
                     title: "Low Power Mode",

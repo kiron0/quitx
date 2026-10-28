@@ -32,6 +32,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
     var batteryMenuBarEnabled: Bool = false
     var menuBarStatStyle: MenuBarStatStyle = .icon
     var menuBarMemoryUnit: MenuBarMemoryUnit = .gb
+    var menuBarStatOrder: [MenuBarStat] = MenuBarStat.defaultOrder
     var hogAlertEnabled: Bool = false
     var hogCpuThreshold: Double = 80
     var memoryPressureQuitEnabled: Bool = false
@@ -57,7 +58,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         case exclude, force, includeFinder, includeTrash, includeBackground, groupBackground
         case defaultSelectAll, neverQuitMusic, musicApps, autoUpdate, autoInstallUpdates, confirmQuitAll, confirmIndividualAction, playSounds
         case quitInactiveAfterMinutes, disableQuitTips, sortBy, perAppQuitRules
-        case quitOnSleep, quitOnScreenLock, showMenuBarStats, menuBarShowCpu, menuBarShowMemory, menuBarShowGpu, batteryMenuBarEnabled, menuBarStatStyle, menuBarMemoryUnit
+        case quitOnSleep, quitOnScreenLock, showMenuBarStats, menuBarShowCpu, menuBarShowMemory, menuBarShowGpu, batteryMenuBarEnabled, menuBarStatStyle, menuBarMemoryUnit, menuBarStatOrder
         case quitWhenLastWindowClosed
         case sleepLockStartMinutes, sleepLockEndMinutes, sleepLockUse24Hour
         case hogAlertEnabled, hogCpuThreshold
@@ -180,6 +181,8 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         batteryMenuBarEnabled = Self.dec(container, .batteryMenuBarEnabled, defaults.batteryMenuBarEnabled)
         menuBarStatStyle = Self.dec(container, .menuBarStatStyle, defaults.menuBarStatStyle)
         menuBarMemoryUnit = Self.dec(container, .menuBarMemoryUnit, defaults.menuBarMemoryUnit)
+        let storedOrder = ((try? container.decodeIfPresent([String].self, forKey: .menuBarStatOrder)) ?? nil) ?? []
+        menuBarStatOrder = MenuBarStat.normalized(storedOrder.compactMap(MenuBarStat.init(rawValue:)))
         hogAlertEnabled = Self.dec(container, .hogAlertEnabled, defaults.hogAlertEnabled)
         hogCpuThreshold = Self.dec(container, .hogCpuThreshold, defaults.hogCpuThreshold)
         memoryPressureQuitEnabled = Self.dec(container, .memoryPressureQuitEnabled, defaults.memoryPressureQuitEnabled)
@@ -312,6 +315,52 @@ struct QuitXConfig: Codable, Equatable, Sendable {
                 self = .icon
             }
         }
+    }
+
+    enum MenuBarStat: String, Codable, Equatable, CaseIterable, Sendable {
+        case cpu
+        case gpu
+        case memory
+        case battery
+        case ports
+
+        static let defaultOrder: [MenuBarStat] = [.cpu, .gpu, .memory, .battery, .ports]
+
+        var title: String {
+            switch self {
+            case .cpu: "CPU"
+            case .gpu: "GPU"
+            case .memory: "Memory"
+            case .battery: "Battery"
+            case .ports: "Ports"
+            }
+        }
+
+        static func normalized(_ order: [MenuBarStat]) -> [MenuBarStat] {
+            var seen = Set<MenuBarStat>()
+            var result = order.filter { seen.insert($0).inserted }
+            for stat in defaultOrder where !seen.contains(stat) {
+                let anchor = defaultOrder.prefix { $0 != stat }.last { result.contains($0) }
+                let index = anchor.flatMap { result.firstIndex(of: $0).map { $0 + 1 } } ?? 0
+                result.insert(stat, at: index)
+                seen.insert(stat)
+            }
+            return result
+        }
+
+        static func moving(_ stat: MenuBarStat, onto target: MenuBarStat, in order: [MenuBarStat]) -> [MenuBarStat] {
+            var result = normalized(order)
+            guard stat != target,
+                  let from = result.firstIndex(of: stat),
+                  let to = result.firstIndex(of: target) else { return result }
+            result.remove(at: from)
+            result.insert(stat, at: to)
+            return result
+        }
+    }
+
+    var orderedMenuBarStats: [MenuBarStat] {
+        MenuBarStat.normalized(menuBarStatOrder)
     }
 
     enum MenuBarMemoryUnit: String, Codable, Equatable, CaseIterable, Sendable {

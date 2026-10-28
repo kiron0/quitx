@@ -3,6 +3,7 @@ import SwiftUI
 
 protocol PortServicing {
     func fetchListeningPorts() async -> [PortInfo]
+    func fetchListeningPorts(metadataMaxAge: TimeInterval) async -> [PortInfo]
     func refreshStats(for ports: [PortInfo]) async -> [PortInfo]
     func killPort(
         _ port: PortInfo,
@@ -11,6 +12,12 @@ protocol PortServicing {
     ) async -> Bool
     func killMultiplePorts(_ ports: [PortInfo], force: Bool) async -> Int
     func traceProcessTree(pid: pid_t) async -> [ProcessTreeNodeInfo]
+}
+
+extension PortServicing {
+    func fetchListeningPorts(metadataMaxAge: TimeInterval) async -> [PortInfo] {
+        await fetchListeningPorts()
+    }
 }
 
 extension PortService: PortServicing {}
@@ -264,7 +271,10 @@ final class PortListViewModel: ObservableObject {
             if activeRefreshes == 0 { isLoading = false }
         }
 
-        let fetchedPorts = await portService.fetchListeningPorts()
+        let isVisible = StatusItemController.shared.map { $0.isShown && $0.isPortsTabActive } ?? true
+        let fetchedPorts = isVisible
+            ? await portService.fetchListeningPorts()
+            : await portService.fetchListeningPorts(metadataMaxAge: PortService.backgroundMetadataReuseSeconds)
         guard gen == fetchGeneration, isEnabled else { return }
         statsGeneration += 1
         let previousPorts = ports

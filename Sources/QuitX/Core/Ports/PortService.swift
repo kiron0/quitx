@@ -56,18 +56,19 @@ public final class PortService {
     private let reuseLock = NSLock()
     private var lastFullScan: (signature: [String], ports: [PortInfo], date: Date)?
     static let metadataReuseSeconds: TimeInterval = 10
+    static let backgroundMetadataReuseSeconds: TimeInterval = 300
     private init() {}
 
     static func listenerSignature(_ parsed: [RawParsedLsof]) -> [String] {
         parsed.map { "\($0.proto)|\($0.port)|\($0.pid)|\($0.address)|\($0.state)" }.sorted()
     }
 
-    private func reusableScan(signature: [String]) -> [PortInfo]? {
+    private func reusableScan(signature: [String], maxAge: TimeInterval) -> [PortInfo]? {
         reuseLock.lock()
         let previous = lastFullScan
         reuseLock.unlock()
         guard let previous, previous.signature == signature,
-              Date().timeIntervalSince(previous.date) < Self.metadataReuseSeconds else { return nil }
+              Date().timeIntervalSince(previous.date) < maxAge else { return nil }
         var memoryByPid: [pid_t: UInt64] = [:]
         return previous.ports.map { port in
             let memory: UInt64
@@ -154,14 +155,19 @@ public final class PortService {
     }
 
     public func fetchListeningPorts() async -> [PortInfo] {
+        await fetchListeningPorts(metadataMaxAge: Self.metadataReuseSeconds)
+    }
+
+    public func fetchListeningPorts(metadataMaxAge: TimeInterval) async -> [PortInfo] {
         let includeUDP = await MainActor.run { ConfigStore.shared.config.portsIncludeUDP }
-        let cacheKey = includeUDP ? "tcp+udp" : "tcp"
+        let maxAge = max(0, metadataMaxAge)
+        let cacheKey = "\(includeUDP ? "tcp+udp" : "tcp")|\(Int(maxAge))"
         return await scanGate.run(cacheKey: cacheKey) { [weak self] in
-            await self?.performListeningPortScan() ?? []
+            await self?.performListeningPortScan(metadataMaxAge: maxAge) ?? []
         }
     }
 
-    private func performListeningPortScan() async -> [PortInfo] {
+    private func performListeningPortScan(metadataMaxAge: TimeInterval) async -> [PortInfo] {
         let scanStarted = Date()
         let includeUDP = await MainActor.run { ConfigStore.shared.config.portsIncludeUDP }
         let parsed: [RawParsedLsof]
@@ -177,7 +183,7 @@ public final class PortService {
             return []
         }
         let signature = Self.listenerSignature(parsed)
-        if let reused = reusableScan(signature: signature) {
+        if let reused = reusableScan(signature: signature, maxAge: metadataMaxAge) {
             let finished = Date()
             updateScanMetrics(PortScanMetrics(
                 discovery: discoveryFinished.timeIntervalSince(scanStarted),

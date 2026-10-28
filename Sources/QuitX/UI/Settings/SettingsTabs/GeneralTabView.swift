@@ -86,52 +86,9 @@ struct GeneralTabView: View {
             }
 
             row(label: "") {
-                HStack(spacing: 16) {
-                    toggle("CPU", isOn: Binding(
-                        get: { configStore.config.menuBarShowCpu },
-                        set: {
-                            configStore.config.menuBarShowCpu = $0
-                            configStore.config.showMenuBarStats = configStore.config.availableMenuBarStatsEnabled
-                            configStore.save()
-                            StatusItemController.shared?.updateMenuBarStats()
-                        }
-                    ))
-                    toggle("Memory", isOn: Binding(
-                        get: { configStore.config.menuBarShowMemory },
-                        set: {
-                            configStore.config.menuBarShowMemory = $0
-                            configStore.config.showMenuBarStats = configStore.config.availableMenuBarStatsEnabled
-                            configStore.save()
-                            StatusItemController.shared?.updateMenuBarStats()
-                        }
-                    ))
-                    if HardwareCapabilities.hasGpuStatistics {
-                        toggle("GPU", isOn: Binding(
-                            get: { configStore.config.menuBarShowGpu },
-                            set: {
-                                configStore.config.menuBarShowGpu = $0
-                                configStore.config.showMenuBarStats = configStore.config.availableMenuBarStatsEnabled
-                                configStore.save()
-                                StatusItemController.shared?.updateMenuBarStats()
-                            }
-                        ))
-                    }
-                    if HardwareCapabilities.hasBattery {
-                        toggle("Battery", isOn: Binding(
-                            get: { configStore.config.batteryMenuBarEnabled },
-                            set: {
-                                configStore.config.batteryMenuBarEnabled = $0
-                                configStore.config.showMenuBarStats = configStore.config.availableMenuBarStatsEnabled
-                                configStore.save()
-                                StatusItemController.shared?.updateMenuBarStats()
-                            }
-                        ))
-                    }
-                }
-                .disabled(!configStore.config.showMenuBarStats)
-                .opacity(configStore.config.showMenuBarStats ? 1.0 : 0.42)
+                MenuBarStatChips()
             } help: {
-                HelpPopoverButton(text: HardwareCapabilities.hasBattery ? "Assemble your menu bar dream team! Toggle CPU, memory, GPU, or battery independently. The master switch commands them all. 🕹️📊" : "Assemble your menu bar dream team! Toggle CPU, memory, or GPU independently. The master switch commands them all. 🕹️📊")
+                HelpPopoverButton(text: HardwareCapabilities.hasBattery ? "Assemble your menu bar dream team! Toggle CPU, memory, GPU, or battery independently, and drag them into any order. The master switch commands them all. 🕹️📊" : "Assemble your menu bar dream team! Toggle CPU, memory, or GPU independently, and drag them into any order. The master switch commands them all. 🕹️📊")
             }
 
             row(label: "") {

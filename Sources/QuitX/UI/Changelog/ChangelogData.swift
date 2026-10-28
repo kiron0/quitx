@@ -2,6 +2,21 @@ import Foundation
 
 extension ChangelogProvider {
     static let appReleases: [ReleaseChangelog] = [
+        ReleaseChangelog("1.2.3", "Applications & cleanup in Settings, reorderable stats", [
+            ("New Features", [
+                "**Applications in Settings**: Uninstall Apps now lives in the Settings sidebar instead of a separate window, with a Leftovers scanner for files left behind by apps that are no longer installed.",
+                "**Cleanup Scanners**: Review-first pages for System Junk, User Cache, Mail Files, Trash Bins, Large & Old Files, AI Apps, Xcode Junk, Homebrew, Node, and Docker caches.",
+                "**Reorder Menu Bar Stats**: Drag CPU, GPU, Memory, Battery, and Ports into any order in Settings ▸ General. Clicking a stat still opens its own window.",
+                "**Support Link**: Buy Me a Coffee on the About page."
+            ]),
+            ("Improvements", [
+                "**Battery Temperature**: The Battery window shows temperature again on Macs where macOS stopped reporting it, read straight from the battery sensors.",
+                "**Permanent Removal**: Confirmed uninstall, leftover, and cleanup selections are deleted permanently instead of being moved to Trash.",
+                "**Safer Leftovers**: Containers, launch items, Application Support folders, and files from vendors you still have apps from now need your review before removal.",
+                "**Faster Lists**: The app list, cleanup pages, and leftovers filter and sort only when something changes, and app sizes arrive in batches."
+            ])
+        ]),
+
         ReleaseChangelog("1.2.2", "Settings redesign, Marquee integration & optimizations", [
             ("New Features", [
                 "**Settings Redesign**: Settings now features a spacious window with an organized sidebar, instant search, and an Overview dashboard showing each feature's status.",

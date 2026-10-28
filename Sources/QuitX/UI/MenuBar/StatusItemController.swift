@@ -9,13 +9,23 @@ final class StatusItemController: NSObject {
 
     private var statusItem: NSStatusItem
     private var statsStatusItem: NSStatusItem?
-    private struct SegmentMetrics {
-        var cpuWidth: CGFloat? = nil
+    struct SegmentMetrics {
+        var segments: [(stat: QuitXConfig.MenuBarStat, width: CGFloat)] = []
         var sepWidth: CGFloat = 0
-        var memWidth: CGFloat? = nil
-        var gpuWidth: CGFloat? = nil
-        var batWidth: CGFloat? = nil
-        var portWidth: CGFloat? = nil
+
+        func hit(atOffset offset: CGFloat) -> (stat: QuitXConfig.MenuBarStat, midX: CGFloat)? {
+            guard !segments.isEmpty else { return nil }
+            var cursor: CGFloat = 0
+            for (index, segment) in segments.enumerated() {
+                let end = cursor + segment.width
+                let isLast = index == segments.count - 1
+                if isLast || offset < end + sepWidth / 2 {
+                    return (segment.stat, cursor + segment.width / 2)
+                }
+                cursor = end + sepWidth
+            }
+            return nil
+        }
     }
     private var segmentMetrics = SegmentMetrics()
     private var window: ArrowPopoverWindow?
@@ -550,9 +560,8 @@ final class StatusItemController: NSObject {
 
     nonisolated static func sampleMenuBar(config cfg: QuitXConfig, cpu: Double? = nil, memoryUsed: UInt64? = nil) -> MenuBarSample {
         let powerSources = cfg.batteryMenuBarEnabled ? BatterySaver.currentDescriptions() : nil
-        let menuBarCpu = SystemUsage.cpuPercent(consumer: "menuBar")
         return MenuBarSample(
-            cpu: cpu ?? menuBarCpu,
+            cpu: cpu ?? SystemUsage.cpuPercent(consumer: "menuBar"),
             memoryUsed: memoryUsed ?? SystemUsage.memoryUsedBytes(),
             battery: cfg.batteryMenuBarEnabled
                 ? BatteryDetailSampler.menuBarSnapshot(descriptions: powerSources)
@@ -597,7 +606,8 @@ final class StatusItemController: NSObject {
         let batteryKey = battery.map { "\($0.percent)-\($0.isCharging)-\($0.isACPower)" } ?? "none"
         let gpuKey = gpu.map { "\(Int($0.deviceUtilization.rounded()))-\($0.memoryUsedBytes)" } ?? "none"
         let portKey = portCount.map(String.init) ?? "none"
-        let titleKey = "\(cfg.menuBarStatStyle.rawValue)|\(showCpu)|\(showMemory)|\(cfg.menuBarShowGpu)|\(cpuText)|\(memText)|\(gpuKey)|\(batteryKey)|\(portKey)"
+        let order = cfg.orderedMenuBarStats
+        let titleKey = "\(order.map(\.rawValue).joined(separator: ","))|\(cfg.menuBarStatStyle.rawValue)|\(showCpu)|\(showMemory)|\(cfg.menuBarShowGpu)|\(cpuText)|\(memText)|\(gpuKey)|\(batteryKey)|\(portKey)"
         if titleKey == lastStatTitleKey {
             return
         }
@@ -658,27 +668,6 @@ final class StatusItemController: NSObject {
             ]
         )
 
-        let fullTitle = NSMutableAttributedString()
-        var didAppend = false
-        if let cpuAttr {
-            fullTitle.append(cpuAttr)
-            didAppend = true
-        }
-        if let gpuAttr {
-            if didAppend { fullTitle.append(sepAttr) }
-            fullTitle.append(gpuAttr)
-            didAppend = true
-        }
-        if let memAttr {
-            if didAppend { fullTitle.append(sepAttr) }
-            fullTitle.append(memAttr)
-            didAppend = true
-        }
-        if let batAttr {
-            if didAppend { fullTitle.append(sepAttr) }
-            fullTitle.append(batAttr)
-            didAppend = true
-        }
         let portAttr: NSAttributedString? = portCount.map {
             Self.statSegmentTitle(
                 symbolNames: ["network"],
@@ -687,11 +676,19 @@ final class StatusItemController: NSObject {
                 style: cfg.menuBarStatStyle
             )
         }
-        if let portAttr {
-            if didAppend { fullTitle.append(sepAttr) }
-            fullTitle.append(portAttr)
-            didAppend = true
+        let candidates: [QuitXConfig.MenuBarStat: NSAttributedString?] = [
+            .cpu: cpuAttr, .gpu: gpuAttr, .memory: memAttr, .battery: batAttr, .ports: portAttr
+        ]
+        let attributes = candidates.compactMapValues { $0 }
+        let fullTitle = NSMutableAttributedString()
+        var segments: [(stat: QuitXConfig.MenuBarStat, width: CGFloat)] = []
+        for stat in order {
+            guard let attr = attributes[stat] else { continue }
+            if !segments.isEmpty { fullTitle.append(sepAttr) }
+            fullTitle.append(attr)
+            segments.append((stat, attr.size().width))
         }
+        let didAppend = !segments.isEmpty
         guard didAppend else {
             removeStatsItem()
             return
@@ -700,14 +697,7 @@ final class StatusItemController: NSObject {
         button.attributedTitle = fullTitle
         lastStatTitleKey = titleKey
 
-        segmentMetrics = SegmentMetrics(
-            cpuWidth: cpuAttr?.size().width,
-            sepWidth: sepAttr.size().width,
-            memWidth: memAttr?.size().width,
-            gpuWidth: gpuAttr?.size().width,
-            batWidth: batAttr?.size().width,
-            portWidth: portAttr?.size().width
-        )
+        segmentMetrics = SegmentMetrics(segments: segments, sepWidth: sepAttr.size().width)
     }
 
     private var lastStatTitleKey: String?
@@ -734,64 +724,29 @@ final class StatusItemController: NSObject {
             return
         }
 
-        if clickedPortSegment(on: button, window: buttonWindow) {
+        let buttonScreenRect = buttonWindow.convertToScreen(button.bounds)
+        let fullWidth = button.attributedTitle.size().width
+        let titleInsetX = max(0, (button.bounds.width - fullWidth) / 2)
+        let contentStartX = buttonScreenRect.minX + titleInsetX
+        let hit = segmentMetrics.hit(atOffset: NSEvent.mouseLocation.x - contentStartX)
+        if hit?.stat == .ports {
             StatsDetailController.shared.close()
             AppListViewModel.shared.selectTab(.ports)
             showPopover()
             return
         }
-        let (mode, anchorX) = resolveClickedStat(on: button, window: buttonWindow)
+        let mode = hit.map { Self.detailMode(for: $0.stat) } ?? .cpu
+        let anchorX = contentStartX + (hit?.midX ?? 0)
         StatsDetailController.shared.toggle(from: button, mode: mode, anchorScreenX: anchorX)
     }
 
-    private func clickedPortSegment(on button: NSStatusBarButton, window: NSWindow) -> Bool {
-        guard let portWidth = segmentMetrics.portWidth else { return false }
-        let buttonScreenRect = window.convertToScreen(button.bounds)
-        let fullWidth = button.attributedTitle.size().width
-        let titleInsetX = max(0, (button.bounds.width - fullWidth) / 2)
-        let portStartX = buttonScreenRect.minX + titleInsetX + fullWidth - portWidth
-        let hasOtherSegments = segmentMetrics.cpuWidth != nil || segmentMetrics.memWidth != nil
-            || segmentMetrics.gpuWidth != nil || segmentMetrics.batWidth != nil
-        guard hasOtherSegments else { return true }
-        return NSEvent.mouseLocation.x >= portStartX - segmentMetrics.sepWidth / 2
-    }
-
-    private func resolveClickedStat(on button: NSStatusBarButton, window: NSWindow) -> (StatsDetailModel.Mode, CGFloat) {
-        let buttonScreenRect = window.convertToScreen(button.bounds)
-        let fullWidth = button.attributedTitle.size().width
-        let titleInsetX = max(0, (button.bounds.width - fullWidth) / 2)
-        let contentScreenStartX = buttonScreenRect.minX + titleInsetX
-
-        let m = segmentMetrics
-        var segments: [(mode: StatsDetailModel.Mode, midX: CGFloat, endX: CGFloat)] = []
-        var cursorX = contentScreenStartX
-        if let w = m.cpuWidth {
-            segments.append((.cpu, cursorX + w / 2, cursorX + w))
-            cursorX += w + m.sepWidth
+    static func detailMode(for stat: QuitXConfig.MenuBarStat) -> StatsDetailModel.Mode {
+        switch stat {
+        case .cpu, .ports: .cpu
+        case .gpu: .gpu
+        case .memory: .memory
+        case .battery: .battery
         }
-        if let w = m.gpuWidth {
-            segments.append((.gpu, cursorX + w / 2, cursorX + w))
-            cursorX += w + m.sepWidth
-        }
-        if let w = m.memWidth {
-            segments.append((.memory, cursorX + w / 2, cursorX + w))
-            cursorX += w + m.sepWidth
-        }
-        if let w = m.batWidth {
-            segments.append((.battery, cursorX + w / 2, cursorX + w))
-        }
-        guard let first = segments.first else { return (.cpu, contentScreenStartX) }
-        guard segments.count > 1 else { return (first.mode, first.midX) }
-
-        let clickScreenX = NSEvent.mouseLocation.x
-        for index in 0..<(segments.count - 1) {
-            let boundary = segments[index].endX + m.sepWidth / 2
-            if clickScreenX < boundary {
-                return (segments[index].mode, segments[index].midX)
-            }
-        }
-        guard let last = segments.last else { return (first.mode, first.midX) }
-        return (last.mode, last.midX)
     }
 
     func startMenuBarStats() {

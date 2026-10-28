@@ -80,7 +80,7 @@
 
   function arrow(x, glass) {
     const fill = glass ? 'rgba(62,56,52,.7)' : '#2B2A2D';
-    return `<div class="arrow [.qx-pop_&]:-ml-[11px] [.qx-pop_&]:absolute [.qx-pop_&]:top-0 [.qx-pop_&]:w-[22px] [.qx-pop_&]:h-[11px] [.qx-pop_&]:z-[2] [.qx-rescue_&]:-ml-[11px] [.qx-rescue_&]:absolute [.qx-rescue_&]:top-0 [.qx-rescue_&]:w-[22px] [.qx-rescue_&]:h-[11px] [.qx-rescue_&]:z-[2] [.qx-stats-panel_&]:-ml-[11px] [.qx-stats-panel_&]:absolute [.qx-stats-panel_&]:top-[-10px] [.qx-stats-panel_&]:w-[22px] [.qx-stats-panel_&]:h-[11px] [.qx-stats-panel_&]:z-[2]" style="left:${x}px"><svg class="[.qx-pop_.arrow_&]:block [.qx-rescue_.arrow_&]:block [.qx-stats-panel_.arrow_&]:block" width="22" height="11" viewBox="0 0 22 11"><path d="M0 11C5 11 8 1.5 11 1.5S17 11 22 11z" fill="${fill}" stroke="rgba(255,255,255,.16)" stroke-width=".5"/></svg></div>`;
+    return `<div class="arrow [.qx-pop_&]:-ml-[11px] [.qx-pop_&]:absolute [.qx-pop_&]:top-0 [.qx-pop_&]:w-[22px] [.qx-pop_&]:h-[11px] [.qx-pop_&]:z-[2] [.qx-rescue_&]:-ml-[11px] [.qx-rescue_&]:absolute [.qx-rescue_&]:top-0 [.qx-rescue_&]:w-[22px] [.qx-rescue_&]:h-[11px] [.qx-rescue_&]:z-[2] [.qx-stats-panel_&]:-ml-[11px] [.qx-stats-panel_&]:absolute [.qx-stats-panel_&]:top-0 [.qx-stats-panel_&]:w-[22px] [.qx-stats-panel_&]:h-[11px] [.qx-stats-panel_&]:z-[2]" style="left:${x}px"><svg class="[.qx-pop_.arrow_&]:block [.qx-rescue_.arrow_&]:block [.qx-stats-panel_.arrow_&]:block" width="22" height="11" viewBox="0 0 22 11"><path d="M0 11C5 11 8 1.5 11 1.5S17 11 22 11z" fill="${fill}" stroke="rgba(255,255,255,.16)" stroke-width=".5"/></svg></div>`;
   }
 
   function row(a, o) {
@@ -160,7 +160,16 @@
   }
 
   function stats(o) {
-    return `<div class="qx-stats py-0 px-[8px] gap-[12px] flex items-center h-[22px] rounded-[5px] text-[13px] font-medium text-[rgba(255,255,255,.95)] tabular-nums whitespace-nowrap [&.active]:bg-[rgba(255,255,255,.22)]">${o.ports != null ? `<span class="pc gap-[4px] text-[rgba(255,255,255,.95)] inline-flex items-center">${S.network}${o.ports}</span>` : ''}${o.cpu != null ? `<span class="gap-[4px] inline-flex items-center">${S.cpu}${o.cpu}</span>` : ''}${o.mem != null ? `<span class="gap-[4px] inline-flex items-center">${S.mem}${o.mem}</span>` : ''}${o.gpu != null ? `<span class="gap-[4px] inline-flex items-center">${S.gpu}${o.gpu}</span>` : ''}${o.bat != null ? `<span class="gap-[4px] inline-flex items-center">${S.batt.replace('<svg', '<svg class="w-[14px] h-[14px] fill-none [stroke:#fff] stroke-[1.5] [stroke-linecap:round] [stroke-linejoin:round] [.menubar_&]:block" style="width:22px;height:12px"')}${o.bat}</span>` : ''}</div>`;
+    const seg = (k, inner) => `<span data-k="${k}" class="gap-[4px] inline-flex items-center">${inner}</span>`;
+    const parts = {
+      cpu: o.cpu != null ? seg('cpu', `${S.cpu}${o.cpu}`) : '',
+      gpu: o.gpu != null ? seg('gpu', `${S.gpu}${o.gpu}`) : '',
+      mem: o.mem != null ? seg('mem', `${S.mem}${o.mem}`) : '',
+      bat: o.bat != null ? seg('bat', `${S.batt.replace('<svg', '<svg class="w-[14px] h-[14px] fill-none [stroke:#fff] stroke-[1.5] [stroke-linecap:round] [stroke-linejoin:round] [.menubar_&]:block" style="width:22px;height:12px"')}${o.bat}`) : '',
+      ports: o.ports != null ? seg('ports', `${S.network}${o.ports}`) : '',
+    };
+    const order = o.order || ['cpu', 'gpu', 'mem', 'bat', 'ports'];
+    return `<div class="qx-stats py-0 px-[8px] gap-[12px] flex items-center h-[22px] rounded-[5px] text-[13px] font-medium text-[rgba(255,255,255,.95)] tabular-nums whitespace-nowrap [&.active]:bg-[rgba(255,255,255,.22)]">${order.map(k => parts[k] || '').join('')}</div>`;
   }
 
   function rescue(o) {
@@ -176,7 +185,22 @@
     Overview: '<svg class="w-[14px] h-[14px] flex-none fill-none [stroke:rgba(235,235,245,.6)] stroke-[1.6] [stroke-linecap:round] [stroke-linejoin:round] [.qx-settings.side_.si.on_&:not(.mq)]:[stroke:var(--qx-gold)]" viewBox="0 0 20 20"><rect x="3" y="3" width="5.5" height="5.5" rx="1.2"/><rect x="11.5" y="3" width="5.5" height="5.5" rx="1.2"/><rect x="3" y="11.5" width="5.5" height="5.5" rx="1.2"/><rect x="11.5" y="11.5" width="5.5" height="5.5" rx="1.2"/></svg>',
     Marquee: '<svg viewBox="0 0 512 512" class="mq w-[14px] h-[14px] flex-none fill-none [stroke:none] stroke-[1.6] [stroke-linecap:round] [stroke-linejoin:round]"><rect x="16" y="16" width="480" height="480" rx="116" fill="#FFCF1A"/><g fill="none" stroke="#1D1D1F" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"><path d="M112 196V128a16 16 0 0 1 16-16h68"/><path d="M400 316v68a16 16 0 0 1-16 16h-68"/></g><rect x="166" y="166" width="124" height="124" rx="20" fill="none" stroke="#1D1D1F" stroke-width="26"/><rect x="222" y="222" width="124" height="124" rx="20" fill="#1D1D1F"/></svg>',
   }, tabIcons);
-  const sideGroups = [['', ['Overview']], ['App', ['General', 'Shortcuts']], ['Quitting', ['Automation', 'Advanced', 'Exclude']], ['Developer', ['Ports']], ['QuitX', ['About']], ['More Apps', ['Marquee']]];
+  const sideIcon = d => `<svg class="w-[14px] h-[14px] flex-none fill-none [stroke:rgba(235,235,245,.6)] stroke-[1.6] [stroke-linecap:round] [stroke-linejoin:round] [.qx-settings.side_.si.on_&:not(.mq)]:[stroke:var(--qx-gold)]" viewBox="0 0 20 20">${d}</svg>`;
+  Object.assign(sideIcons, {
+    'Uninstall Apps': sideIcon('<rect x="3" y="3" width="14" height="14" rx="3.2"/><path d="M7.5 7.5l5 5M12.5 7.5l-5 5"/>'),
+    Leftovers: sideIcon('<path d="M5 2.8h6.5L15 6.3v10.9H5z"/><path d="M8.3 9.2a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1v.4M10 14.6v.1"/>'),
+    'System Junk': sideIcon('<circle cx="7.5" cy="7.5" r="2"/><path d="M7.5 3v1.5M7.5 10.5V12M3 7.5h1.5M10.5 7.5H12"/><circle cx="13.5" cy="13.5" r="1.6"/><path d="M13.5 10.3v1.2M13.5 15.5v1.2M10.3 13.5h1.2M15.5 13.5h1.2"/>'),
+    'User Cache': sideIcon('<path d="M3 11.5l2-6.5h10l2 6.5v3.5H3z"/><path d="M3 11.5h14M6 13.3h.1M8.5 13.3h.1"/>'),
+    'Mail Files': sideIcon('<rect x="2.8" y="4.5" width="14.4" height="11" rx="1.8"/><path d="M3.2 5.5l6.8 5 6.8-5"/>'),
+    'Trash Bins': sideIcon('<path d="M4 5.5h12M8 5.5V3.8h4v1.7M5.5 5.5l.8 11h7.4l.8-11M8.5 8.5v5M11.5 8.5v5"/>'),
+    'Large & Old Files': sideIcon('<circle cx="10" cy="10" r="7"/><path d="M10 6v4.3l2.8 1.7"/>'),
+    'AI Apps': sideIcon('<rect x="5" y="5" width="10" height="10" rx="1.8"/><path d="M8 2.5v2.5M12 2.5v2.5M8 15v2.5M12 15v2.5M2.5 8H5M2.5 12H5M15 8h2.5M15 12h2.5"/>'),
+    'Xcode Junk': sideIcon('<path d="M11.5 3.5l5 5-2 2-5-5zM9.5 5.5L3 12l2.5 2.5L12 8"/>'),
+    'Brew Cache': sideIcon('<path d="M4 6.5h9v6.5a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3z"/><path d="M13 8h1.5a2 2 0 0 1 0 4H13M7 2.5v2M10 2.5v2"/>'),
+    'Node Cache': sideIcon('<path d="M4 16c0-7 4-11.5 12-12-.3 7.8-4.8 12-12 12z"/><path d="M4 16l6.5-6.5"/>'),
+    'Docker Cache': sideIcon('<path d="M10 2.8l6.5 3.5v7.4L10 17.2l-6.5-3.5V6.3z"/><path d="M3.5 6.3L10 9.8l6.5-3.5M10 9.8v7.4M6.8 4.5l6.5 3.5"/>'),
+  });
+  const sideGroups = [['', ['Overview']], ['App', ['General', 'Shortcuts']], ['Quitting', ['Automation', 'Advanced', 'Exclude']], ['Applications', ['Uninstall Apps', 'Leftovers']], ['Cleanup', ['System Junk', 'User Cache', 'Mail Files', 'Trash Bins', 'Large & Old Files', 'AI Apps']], ['Developer Cleanup', ['Xcode Junk', 'Brew Cache', 'Node Cache', 'Docker Cache']], ['Developer', ['Ports']], ['QuitX', ['About']], ['More Apps', ['Marquee']]];
   const summaries = {
     General: 'Startup, sounds, updates, menu bar stats and how QuitX looks.',
     Automation: 'Let QuitX quit apps on sleep, after their last window, or when idle.',
@@ -187,9 +211,24 @@
     About: 'Version, updates and ways to get in touch.',
   };
 
+  function sideShift(tab) {
+    let y = 0, target = 0;
+    for (const [g, tabs] of sideGroups) {
+      if (g) y += 23;
+      for (const t of tabs) {
+        if (t === tab) target = y;
+        y += 24;
+      }
+    }
+    const visible = 474 - 74 - 14;
+    if (target + 24 <= visible) return 0;
+    return Math.round(Math.min(y - visible, target - visible / 2));
+  }
+
   function settings(o) {
+    const shift = o.sideScroll != null ? o.sideScroll : sideShift(o.tab);
     const side = sideGroups.map(([g, tabs]) => `${g ? `<div class="sg px-[8px] pt-[9px] pb-[3px] text-[9px] font-bold tracking-[.04em] uppercase text-[var(--qx-sub)]">${g}</div>` : ''}${tabs.map(t => `<div class="si${t === o.tab ? ' on' : ''} py-0 px-[8px] gap-[7px] h-[24px] rounded-[5px] flex items-center text-[12px] text-[rgba(255,255,255,.88)] [&.on]:bg-[rgba(254,188,51,.18)] [&.on]:font-semibold" data-tab="${t}">${sideIcons[t]}<span>${t}</span></div>`).join('')}`).join('');
-    return `<div class="qx-win qx-settings side overflow-hidden w-[680px] flex items-stretch h-[474px] rounded-[12px] bg-[#262527] text-[#EDEBE7] font-['Inter',-apple-system,system-ui,sans-serif] shadow-[0_0_0_.5px_rgba(255,255,255,.14),0_0_0_1px_rgba(0,0,0,.6),0_36px_72px_rgba(0,0,0,.5),0_6px_18px_rgba(0,0,0,.3)]"><div class="sb px-[8px] pt-[40px] pb-[14px] [border-right:1px_solid_rgba(0,0,0,.35)] w-[164px] flex-none bg-[#2E2D30] relative"><span class="lights gap-[8px] absolute left-[14px] top-[14px] flex"><i class="w-[12px] h-[12px] rounded-[50%] block shadow-[inset_0_0_0_.5px_rgba(0,0,0,.25)]" style="background:#FF5F57"></i><i class="w-[12px] h-[12px] rounded-[50%] block shadow-[inset_0_0_0_.5px_rgba(0,0,0,.25)]" style="background:#FEBC2E"></i><i class="w-[12px] h-[12px] rounded-[50%] block shadow-[inset_0_0_0_.5px_rgba(0,0,0,.25)]" style="background:#58565A"></i></span><div class="ss py-0 px-[8px] mx-[2px] mt-0 mb-[10px] gap-[6px] h-[24px] rounded-[6px] flex items-center text-[11.5px] text-[var(--qx-sub)] bg-[#3A393C] shadow-[inset_0_0_0_.5px_rgba(255,255,255,.1)]">${S.search}Search settings…</div><div class="sl">${side}</div></div><div class="dt px-[22px] pt-[34px] pb-[20px] overflow-hidden flex-1 min-w-0 bg-[#262527] relative flex flex-col"><div class="dh mb-[12px] gap-[10px] block items-center"><div class="h text-[18px] font-bold text-[rgba(255,255,255,.95)]">${o.tab}</div><div class="sum mt-[3px] text-[11.5px] text-[var(--qx-sub)]">${summaries[o.tab] || ''}</div></div><div class="pv py-0 px-[10px] my-0 -mx-[10px] overflow-hidden flex-1 min-h-0"><div class="pane text-left"${o.scroll ? ` style="transform:translateY(-${o.scroll}px)"` : ''}>${o.content}</div></div></div></div>`;
+    return `<div class="qx-win qx-settings side overflow-hidden w-[680px] flex items-stretch h-[474px] rounded-[12px] bg-[#262527] text-[#EDEBE7] font-['Inter',-apple-system,system-ui,sans-serif] shadow-[0_0_0_.5px_rgba(255,255,255,.14),0_0_0_1px_rgba(0,0,0,.6),0_36px_72px_rgba(0,0,0,.5),0_6px_18px_rgba(0,0,0,.3)]"><div class="sb px-[8px] pt-[40px] pb-[14px] [border-right:1px_solid_rgba(0,0,0,.35)] w-[164px] flex-none bg-[#2E2D30] relative" style="display:flex;flex-direction:column"><span class="lights gap-[8px] absolute left-[14px] top-[14px] flex"><i class="w-[12px] h-[12px] rounded-[50%] block shadow-[inset_0_0_0_.5px_rgba(0,0,0,.25)]" style="background:#FF5F57"></i><i class="w-[12px] h-[12px] rounded-[50%] block shadow-[inset_0_0_0_.5px_rgba(0,0,0,.25)]" style="background:#FEBC2E"></i><i class="w-[12px] h-[12px] rounded-[50%] block shadow-[inset_0_0_0_.5px_rgba(0,0,0,.25)]" style="background:#58565A"></i></span><div class="ss py-0 px-[8px] mx-[2px] mt-0 mb-[10px] gap-[6px] h-[24px] rounded-[6px] flex items-center text-[11.5px] text-[var(--qx-sub)] bg-[#3A393C] shadow-[inset_0_0_0_.5px_rgba(255,255,255,.1)]">${S.search}Search settings…</div><div style="flex:1;min-height:0;overflow:hidden;margin:0 -8px;padding:0 8px"><div class="sl"${shift ? ` style="transform:translateY(-${shift}px)"` : ''}>${side}</div></div></div><div class="dt px-[22px] pt-[34px] pb-[20px] overflow-hidden flex-1 min-w-0 bg-[#262527] relative flex flex-col"><div class="dh mb-[12px] gap-[10px] block items-center"><div class="h text-[18px] font-bold text-[rgba(255,255,255,.95)]">${o.tab}</div><div class="sum mt-[3px] text-[11.5px] text-[var(--qx-sub)]">${summaries[o.tab] || ''}</div></div><div class="pv py-0 px-[10px] my-0 -mx-[10px] overflow-hidden flex-1 min-h-0"><div class="pane text-left"${o.scroll ? ` style="transform:translateY(-${o.scroll}px)"` : ''}>${o.content}</div></div></div></div>`;
   }
 
   const cb = (t, on = true) => `<span class="cbl gap-[9px] inline-flex items-center text-[rgba(255,255,255,.9)] relative"><span class="qx-sw${on ? ' on' : ''} w-[26px] h-[15px] rounded-[8px] bg-[rgba(255,255,255,.14)] bg-none relative flex-none inline-block after:content-[''] after:absolute after:left-[2px] after:top-[2px] after:w-[11px] after:h-[11px] after:rounded-[50%] after:bg-[#fff] after:shadow-[0_1px_2px_rgba(0,0,0,.3)] [&.on]:bg-transparent [&.on]:bg-[linear-gradient(var(--qx-gold),var(--qx-gold-deep))] [&.on]:after:left-[13px]"></span>${t}</span>`;
@@ -245,6 +284,14 @@
   };
   const r = (label, inner, o = {}) => `${label ? section(label, o.dim) : ''}<div class="r${o.hl ? ' hl' : ''}${o.dim ? ' dim' : ''} py-[3px] pl-[31px] gap-[10px] h-auto min-h-[26px] flex items-center text-[13px] relative [&.hl]:before:content-[''] [&.hl]:before:absolute [&.hl]:before:left-[-8px] [&.hl]:before:right-[-8px] [&.hl]:before:top-[-2px] [&.hl]:before:bottom-[-2px] [&.hl]:before:rounded-[8px] [&.hl]:before:bg-[rgba(254,188,51,.1)] [&.hl]:before:shadow-[inset_0_0_0_1px_rgba(254,188,51,.35)]"${o.id ? ` id="${o.id}"` : ''}>${inner}${o.help === false ? '' : help}</div>`;
 
+  const grip = '<svg width="8" height="7" viewBox="0 0 8 7"><path d="M0 1h8M0 3.5h8M0 6h8" stroke="rgba(235,235,245,.45)" stroke-width="1.3"/></svg>';
+  const chipSwitch = on => `<span style="position:relative;width:30px;height:18px;border-radius:9px;flex:none;background:${on ? 'var(--qx-gold)' : 'rgba(255,255,255,.13)'}"><i style="position:absolute;top:2px;left:${on ? 14 : 2}px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 .5px 1px rgba(0,0,0,.16)"></i></span>`;
+  function statChips(order, on, dragging) {
+    return `<span class="chips" style="display:inline-flex;gap:5px;align-items:center">${order.map(t => `<span data-chip="${t}" style="display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 8px 0 6px;box-sizing:border-box;border-radius:7px;background:${dragging === t ? 'rgba(255,255,255,.10)' : 'rgba(255,255,255,.045)'};box-shadow:inset 0 0 0 1px ${dragging === t ? 'rgba(254,188,51,.8)' : 'rgba(255,255,255,.08)'};font-size:11px;font-weight:500;color:rgba(255,255,255,.9)${dragging === t ? ';transform:translateY(-2px) scale(1.04);box-shadow:inset 0 0 0 1px rgba(254,188,51,.8),0 8px 18px rgba(0,0,0,.4)' : ''}">${grip}${chipSwitch(on)}${t}</span>`).join('')}</span>`;
+  }
+
+  const tileIcon = d => `<svg class="${T.gauge.match(/class="([^"]*)"/)[1]}" viewBox="0 0 16 16">${d}</svg>`;
+
   function general(o = {}) {
     const st = o.stats !== false;
     return [
@@ -253,8 +300,9 @@
       r('Updates:', cb('Check for updates automatically'), { hl: o.hl === 'updates' }),
       r('', cb('Download and prepare updates automatically'), { hl: o.hl === 'updates' }),
       r('Menu Bar:', cb('Show stats in menu bar', st), { hl: o.hl === 'stats', id: 'r-stats' }),
-      r('', `<span class="sub gap-[16px] flex items-center relative">${cb('CPU', st)}${cb('Memory', st)}${cb('GPU', st)}${cb('Battery', st)}</span>`, { hl: o.hl === 'stats', dim: !st }),
+      r('', statChips(o.statOrder || ['CPU', 'GPU', 'Memory', 'Battery'], st, o.dragging), { hl: o.hl === 'stats' || o.hl === 'order', dim: !st }),
       r('', sub('Style format', tiles([{ t: 'Icon', i: T.gauge, on: true }, { t: 'Text', i: T.text }])), { help: false, dim: !st }),
+      r('', sub('Memory format', tiles([{ t: 'GB', i: tileIcon('<rect x="2" y="5" width="12" height="6" rx="1.2"/><path d="M4.5 11v1.8M7 11v1.8M9 11v1.8M11.5 11v1.8"/>'), on: true }, { t: 'Percentage', i: tileIcon('<path d="M12.5 3.5l-9 9"/><circle cx="4.5" cy="4.5" r="1.6"/><circle cx="11.5" cy="11.5" r="1.6"/>') }])), { help: false, dim: !st }),
       r('', sub('Refresh', tiles([{ t: '1 sec', i: T.fast, on: true }, { t: '2 sec', i: T.gauge }, { t: '3 sec', i: T.gauge }, { t: '5 sec', i: T.gauge }, { t: '10 sec', i: T.slow }], { small: true })), { hl: o.hl === 'stats' || o.hl === 'refresh', dim: !st }),
       r('Appearance:', tiles([{ t: 'Classic', i: T.square, on: o.glass === false }, { t: 'Liquid Glass', i: T.drop, on: o.glass !== false }], { id: 'appearance' }), { hl: o.hl === 'theme' }),
       r('Sort:', tiles([{ t: 'CPU High', i: T.down }, { t: 'CPU Low', i: T.up }, { t: 'Memory High', i: T.down }, { t: 'Memory Low', i: T.up }, { t: 'A–Z', i: T.abc, on: true }, { t: 'Z–A', i: T.abc }], { small: true })),
@@ -321,7 +369,7 @@
       <div class="hero p-[14px] gap-[14px] [border:1px_solid_rgba(255,255,255,.08)] flex items-center rounded-[12px] bg-[linear-gradient(135deg,rgba(254,188,51,.12),rgba(255,255,255,.02))]">
         <img class="w-[64px] h-[64px] rounded-[14px] flex-none" src="${A}icon.png" alt="">
         <div class="hero-text">
-          <h2 class="mx-0 mt-0 mb-[3px] gap-[8px] text-[18px] font-bold flex items-center">QuitX <span class="ver py-[2px] px-[6px] text-[9px] font-bold rounded-[999px] bg-[rgba(254,188,51,.15)] text-[var(--qx-gold)]">VERSION 1.2.1</span></h2>
+          <h2 class="mx-0 mt-0 mb-[3px] gap-[8px] text-[18px] font-bold flex items-center">QuitX <span class="ver py-[2px] px-[6px] text-[9px] font-bold rounded-[999px] bg-[rgba(254,188,51,.15)] text-[var(--qx-gold)]">VERSION 1.2.3</span></h2>
           <div class="tagline mb-[4px] text-[12px] font-medium text-[rgba(255,255,255,.9)]">Quit everything. Keep what matters.</div>
           <div class="status gap-[5px] text-[11px] text-[#30D158] flex items-center"><svg width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="6" fill="#30D158"/><path d="M3.2 6.2l2 2 3.8-4" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Up to date</div>
         </div>
@@ -342,22 +390,103 @@
     </div>`;
   }
 
+  const SD = {
+    red: '#F0454D', blue: '#218CF2', chart: '#268CFA', orange: '#FF9E26', pink: '#FA4D73',
+    gray: 'rgba(255,255,255,.25)', yellow: '#FACC33', green: '#33B859', gold: '#FEBC33',
+    ink: 'rgba(255,255,255,.92)', sub: 'rgba(235,235,245,.6)',
+  };
+  const hsb = (h, sat, v) => {
+    const f = n => { const k = (n + h * 6) % 6; return v - v * sat * Math.max(0, Math.min(k, 4 - k, 1)); };
+    return `rgb(${Math.round(f(5) * 255)},${Math.round(f(3) * 255)},${Math.round(f(1) * 255)})`;
+  };
+  const levelColor = i => hsb((0.56 + i * 0.61803398875) % 1, 0.72, 0.92);
+  const sdIcons = {
+    cpu: '<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="9" height="9" rx="1.6"/><rect x="6" y="6" width="4" height="4" rx=".6" fill="currentColor"/><path d="M6 1.5v2M10 1.5v2M6 12.5v2M10 12.5v2M1.5 6h2M1.5 10h2M12.5 6h2M12.5 10h2"/></svg>',
+    memory: '<svg width="12" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="4.5" width="13" height="6.5" rx="1"/><path d="M4 7v1.5M6.5 7v1.5M9 7v1.5M11.5 7v1.5M3 11v2M6 11v2M10 11v2M13 11v2"/></svg>',
+    gpu: '<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.6l5.6 3.2v6.4L8 14.4 2.4 11.2V4.8z"/><path d="M2.4 4.8L8 8l5.6-3.2M8 8v6.4"/></svg>',
+    battery: '<svg width="13" height="9" viewBox="0 0 22 12"><rect x="1" y="1.5" width="17" height="9" rx="2.6" fill="currentColor"/><path d="M19.6 4.6v2.8c.7-.2 1.1-.8 1.1-1.4s-.4-1.2-1.1-1.4z" fill="currentColor"/></svg>',
+    activity: '<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 11.5a6 6 0 1 1 10.8 0"/><path d="M8 9.2l2.6-3"/><circle cx="8" cy="9.4" r="1" fill="currentColor"/></svg>',
+    wave: '<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 8.5h3l1.5-4 3 8 1.6-4.5h3.9"/></svg>',
+    batteryBlock: '<svg width="12" height="10" viewBox="0 0 16 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.5" y="3" width="13" height="9.5" rx="2"/><path d="M4.5 1.2v1.8M11.5 1.2v1.8"/></svg>',
+    out: '<svg width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l4.2-4.2M3.6 2.8h3.6v3.6"/></svg>',
+  };
+  const sdRing = (segments, text, size, lw, fontScale = 0.22) => {
+    const r = (size - lw) / 2, c = 2 * Math.PI * r;
+    let acc = 0;
+    const arcs = segments.map(([frac, color]) => {
+      const len = Math.max(0, Math.min(1, frac)) * c;
+      const el = `<circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="${color}" stroke-width="${lw}" stroke-dasharray="${len} ${c}" stroke-dashoffset="${-acc}" transform="rotate(-90 ${size / 2} ${size / 2})"/>`;
+      acc += len;
+      return el;
+    }).join('');
+    return `<div style="position:relative;width:${size}px;height:${size}px;flex:none"><svg width="${size}" height="${size}" style="display:block"><circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="${SD.gray}" stroke-width="${lw}"/>${arcs}</svg><div style="position:absolute;inset:0;display:grid;place-items:center;font-size:${(size * fontScale).toFixed(1)}px;font-weight:600;color:${SD.ink};font-variant-numeric:tabular-nums">${text}</div></div>`;
+  };
+  const sdCard = (inner, extra = '') => `<div style="padding:8px 9px;border-radius:7px;background:rgba(255,255,255,.035);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.08);${extra}">${inner}</div>`;
+  const sdSection = (title, inner) => `<div style="display:flex;flex-direction:column;gap:5px"><div style="padding:0 2px;font-size:9.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:${SD.sub}">${title}</div>${inner}</div>`;
+  const sdRow = (title, value, dot) => `<div style="display:flex;align-items:center;gap:7px;height:18px">${dot ? `<i style="width:10px;height:10px;border-radius:2.5px;background:${dot};flex:none"></i>` : ''}<span style="font-size:11px;color:rgba(255,255,255,.8)">${title}</span><b style="margin-left:auto;font-size:11px;font-weight:600;color:${SD.ink};font-variant-numeric:tabular-nums">${value}</b></div>`;
+  const sdRows = rows => sdCard(`<div style="display:flex;flex-direction:column;gap:4.5px">${rows.join('')}</div>`);
+  const sdHeader = (title, icon) => `<div style="display:flex;align-items:center;gap:8px;padding:1px 2px"><span style="display:grid;place-items:center;min-width:20px;height:20px;padding:0 4.5px;box-sizing:border-box;border-radius:5px;background:rgba(254,188,51,.14);color:${SD.gold}">${icon}</span><span style="font-size:12.5px;font-weight:600;color:${SD.ink}">${title}</span></div>`;
+  const sdFooter = (title, icon) => `<div style="display:flex;align-items:center;gap:6px;height:26px;padding:0 9px;border-radius:6px;background:rgba(255,255,255,.035);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.08)"><span style="color:${SD.gold};display:grid">${icon}</span><span style="font-size:11px;font-weight:500;color:${SD.ink}">${title}</span><span style="margin-left:auto;color:${SD.sub};display:grid">${sdIcons.out}</span></div>`;
+  const sdChart = (values, color) => {
+    const w = 232, h = 56, step = w / (values.length - 1);
+    const y = v => h - Math.min(1, Math.max(0, v / 100)) * (h - 2) - 1;
+    const line = values.map((v, i) => `${i ? 'L' : 'M'}${(i * step).toFixed(1)} ${y(v).toFixed(1)}`).join('');
+    const id = `g${color.replace(/[^0-9a-z]/gi, '')}`;
+    return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="display:block;width:100%;height:${h}px;border-radius:6px"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".95"/><stop offset="1" stop-color="${color}" stop-opacity=".45"/></linearGradient></defs><path d="${line}L${w} ${h}L0 ${h}Z" fill="url(#${id})"/><path d="${line}" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="1"/></svg>`;
+  };
+  const sdWave = (n, base, amp, period, jitter = 0) => Array.from({ length: n }, (_, i) => base + amp * Math.sin(i / period) + (jitter ? (i % 7) * jitter : 0));
+
   function statsDetail(o = {}) {
-    const cpus = [14, 28, 42, 18, 55, 32, 22, 10];
-    return `<div class="qx-stats-panel p-[14px] w-[310px] rounded-[12px] bg-[#262527] text-[#EDEBE7] font-['Inter',-apple-system,system-ui,sans-serif] shadow-[0_0_0_.5px_rgba(255,255,255,.14),0_0_0_1px_rgba(0,0,0,.6),0_36px_72px_rgba(0,0,0,.5)] text-left relative">${arrow(o.arrowX || 155)}
-      <div class="sd-sec mb-[12px]">
-        <div class="sd-head mb-[6px] flex items-baseline justify-between"><div class="sd-title gap-[6px] text-[12px] font-semibold flex items-center">${S.cpu}System CPU</div><div class="sd-val text-[15px] font-bold text-[var(--qx-gold)] tabular-nums">12%</div></div>
-        <div class="sd-bar mb-[6px] overflow-hidden h-[8px] rounded-[4px] bg-[rgba(255,255,255,.1)] flex"><div class="sd-seg-user bg-[#30D158] h-full" style="width:8%"></div><div class="sd-seg-sys bg-[var(--qx-gold)] h-full" style="width:4%"></div></div>
-        <div class="sd-legend flex justify-between text-[10px] text-[var(--qx-sub)]"><span>User 8%</span><span>System 4%</span><span>Idle 88%</span></div>
-        <div class="sd-cores py-[6px] px-[8px] gap-[4px] grid grid-cols-[repeat(8,1fr)] h-[28px] items-end rounded-[6px] bg-[rgba(0,0,0,.25)]">${cpus.map(h => `<div class="sd-core rounded-[2px] bg-[linear-gradient(to_top,#0A84FF,#5AC8FA)] min-h-[4px]" style="height:${h}%"></div>`).join('')}</div>
-      </div>
-      <div class="sd-sec mb-[12px]" style="margin-bottom:0">
-        <div class="sd-head mb-[6px] flex items-baseline justify-between"><div class="sd-title gap-[6px] text-[12px] font-semibold flex items-center">${S.mem}Used Memory</div><div class="sd-val text-[15px] font-bold text-[var(--qx-gold)] tabular-nums">9.4 GB <small style="font-size:11px;font-weight:400;color:var(--qx-sub)">/ 16 GB</small></div></div>
-        <div class="sd-bar mb-[6px] overflow-hidden h-[8px] rounded-[4px] bg-[rgba(255,255,255,.1)] flex"><div class="sd-seg-app bg-[#0A84FF] h-full" style="width:38%"></div><div class="sd-seg-wire bg-[#BF5AF2] h-full" style="width:13%"></div><div class="sd-seg-comp bg-[#FF9F0A] h-full" style="width:8%"></div></div>
-        <div class="sd-legend flex justify-between text-[10px] text-[var(--qx-sub)]"><span>App 6.1 GB</span><span>Wired 2.1 GB</span><span>Compressed 1.2 GB</span></div>
-      </div>
-    </div>`;
+    const mode = o.mode || 'cpu';
+    const d = Object.assign({
+      cpu: 23, system: 8, user: 15, idle: 77, load: 2.41, cores: [41, 33, 27, 19, 12, 9, 7, 5],
+      levels: [['Performance', 4], ['Efficiency', 4]], uptime: '3 days, 4 hrs',
+      memTotal: 16, memApp: 6.1, memWired: 2.1, memComp: 1.2, memCached: 4.0, memFree: 0.9, swap: 0,
+      gpu: 18, renderer: 15, tiler: 6, gpuMem: '820 MB', gpuAlloc: '2.0 GB', gpuCores: 10, gpuName: 'Apple M2',
+      battery: 82, remaining: '3 hr 57 min', power: '18.6 W', amps: '-1580 mA', volts: '11.79 V', temp: '31.4 °C', charge: '2886 / 4382 mAh', cycles: 223, health: '82%',
+    }, o.data || {});
+    let body;
+    if (mode === 'memory') {
+      const used = d.memApp + d.memWired + d.memComp, frac = used / d.memTotal;
+      const gaugeR = 39, gx = 45, gy = 66, ang = Math.PI * (1 + frac);
+      const gauge = `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;width:90px"><svg width="90" height="72" viewBox="0 0 90 72"><path d="M${gx - gaugeR} ${gy}A${gaugeR} ${gaugeR} 0 0 1 ${gx + gaugeR} ${gy}" fill="none" stroke="${SD.gray}" stroke-width="7"/><path d="M${gx - gaugeR} ${gy}A${gaugeR} ${gaugeR} 0 0 1 ${(gx + gaugeR * Math.cos(ang)).toFixed(2)} ${(gy + gaugeR * Math.sin(ang)).toFixed(2)}" fill="none" stroke="${SD.blue}" stroke-width="7"/><path d="M${gx} ${gy}L${(gx + (gaugeR - 8) * Math.cos(ang)).toFixed(2)} ${(gy + (gaugeR - 8) * Math.sin(ang)).toFixed(2)}" stroke="${SD.gold}" stroke-width="2.5" stroke-linecap="round"/><circle cx="${gx}" cy="${gy}" r="3" fill="${SD.gold}"/></svg><span style="font-size:11px;font-weight:600;color:${SD.sub};margin-top:-2px">Memory used</span></div>`;
+      const gb = v => `${v.toFixed(2)} GB`;
+      const bar = `<div style="display:flex;gap:1.5px;height:7px;margin:2px 0">${[[d.memApp, SD.blue], [d.memWired, SD.orange], [d.memComp, SD.pink]].map(([v, c]) => `<i style="width:${(v / d.memTotal * 100).toFixed(2)}%;border-radius:2px;background:${c}"></i>`).join('')}</div>`;
+      body = [
+        sdHeader('Memory Usage', sdIcons.memory),
+        sdCard(`<div style="display:flex;align-items:center;justify-content:center;gap:16px;padding:2px 0">${gauge}${sdRing([[d.memApp / d.memTotal, SD.blue], [d.memWired / d.memTotal, SD.orange], [d.memComp / d.memTotal, SD.pink]], `${Math.round(frac * 100)}%`, 72, 8)}</div>`),
+        sdSection('Usage History', sdCard(sdChart(sdWave(90, frac * 100, 3, 9), SD.chart))),
+        sdSection('Details', sdRows([sdRow('Used:', gb(used)), bar, sdRow('App:', gb(d.memApp), SD.blue), sdRow('Wired:', gb(d.memWired), SD.orange), sdRow('Compressed:', gb(d.memComp), SD.pink), sdRow('Cached:', gb(d.memCached)), sdRow('Free:', gb(d.memFree), SD.gray), sdRow('Swap:', d.swap ? gb(d.swap) : 'None', SD.yellow)])),
+        sdFooter('Open Activity Monitor', sdIcons.wave),
+      ];
+    } else if (mode === 'gpu') {
+      body = [
+        sdHeader('GPU Usage', sdIcons.gpu),
+        sdCard(`<div style="display:flex;align-items:center;gap:16px;padding:3px 0">${sdRing([[d.gpu / 100, SD.pink]], `${d.gpu}%`, 78, 8.5)}<div style="display:flex;flex-direction:column;gap:3px"><b style="font-size:11px;font-weight:600;color:${SD.ink}">${d.gpuName}</b><span style="font-size:10px;color:${SD.sub}">${d.gpuCores} cores</span><span style="font-size:10px;color:${SD.sub}">In use: ${d.gpuMem}</span></div></div>`),
+        sdSection('Usage History', sdCard(sdChart(sdWave(90, d.gpu, 5, 5), SD.pink))),
+        sdSection('Details', sdRows([sdRow('Utilization:', `${d.gpu}%`, SD.pink), sdRow('Renderer:', `${d.renderer}%`, SD.pink), sdRow('Tiler:', `${d.tiler}%`, SD.pink), sdRow('Memory in use:', d.gpuMem, SD.blue), sdRow('Allocated:', d.gpuAlloc, SD.blue), sdRow('Cores:', d.gpuCores), sdRow('Device:', d.gpuName)])),
+        sdFooter('Open Activity Monitor', sdIcons.activity),
+      ];
+    } else if (mode === 'battery') {
+      body = [
+        sdHeader('Battery Status', sdIcons.battery),
+        sdCard(`<div style="display:flex;flex-direction:column;gap:6px;padding:2px 0"><div style="display:flex;align-items:center;gap:10px"><svg width="44" height="22" viewBox="0 0 22 12"><rect x="1" y="1.5" width="17" height="9" rx="2.6" fill="none" stroke="${SD.ink}" stroke-width="1"/><rect x="2.6" y="3.1" width="${(13.8 * d.battery / 100).toFixed(1)}" height="5.8" rx="1.4" fill="${SD.ink}"/><path d="M19.6 4.6v2.8c.7-.2 1.1-.8 1.1-1.4s-.4-1.2-1.1-1.4z" fill="${SD.ink}"/></svg><b style="font-size:22px;font-weight:600;color:${SD.ink}">${d.battery}%</b></div><span style="font-size:11px;color:${SD.sub}">Power Source: Battery</span><span style="font-size:11px;color:${SD.sub}">Remaining: ${d.remaining}</span></div>`),
+        sdSection('Details', sdRows([sdRow('Power:', d.power), sdRow('Amperage:', d.amps, SD.orange), sdRow('Voltage:', d.volts), sdRow('Temperature:', d.temp, SD.green), sdRow('Charge:', d.charge, SD.blue), sdRow('Cycle Count:', d.cycles), sdRow('Max Capacity:', d.health)])),
+        sdFooter('Open Battery Settings', sdIcons.batteryBlock),
+      ];
+    } else {
+      const logical = d.levels.reduce((a, l) => a + l[1], 0) || 1;
+      const bars = `<div style="display:flex;gap:4px;height:34px">${d.cores.map(v => `<div style="flex:1;display:flex;align-items:flex-end;border-radius:3px;background:rgba(255,255,255,.07)"><i style="display:block;width:100%;height:${Math.max(3, 34 * Math.min(100, v) / 100).toFixed(1)}px;border-radius:3px;background:${SD.blue}"></i></div>`).join('')}</div>`;
+      body = [
+        sdHeader('CPU Usage', sdIcons.cpu),
+        sdCard(`<div style="display:flex;align-items:center;justify-content:center;gap:16px;padding:3px 0">${sdRing([[d.system / 100, SD.red], [d.user / 100, SD.blue], [d.idle / 100, SD.gray]], `${d.cpu}%`, 78, 8.5)}<div style="display:flex;flex-direction:column;align-items:center;gap:3px">${sdRing([[d.load / logical, SD.blue]], d.load.toFixed(2), 50, 5.5)}<span style="font-size:9.5px;font-weight:500;color:${SD.sub}">load</span></div></div>`),
+        sdSection('Usage History', sdCard(`<div style="display:flex;flex-direction:column;gap:8px">${sdChart(o.history || sdWave(90, Math.max(8, d.cpu - 5), 9, 6, 1), SD.chart)}${bars}</div>`)),
+        sdSection('Details', sdRows([sdRow('System:', `${d.system}%`, SD.red), sdRow('User:', `${d.user}%`, SD.blue), sdRow('Idle:', `${d.idle}%`, SD.gray), ...d.levels.map((l, i) => sdRow(`${l[0]} cores:`, l[1], levelColor(i))), sdRow('Uptime:', d.uptime)])),
+        sdFooter('Open Activity Monitor', sdIcons.activity),
+      ];
+    }
+    return `<div class="qx-stats-panel" style="position:relative;width:270px;font-family:'Inter',-apple-system,system-ui,sans-serif;color:${SD.ink};text-align:left;-webkit-font-smoothing:antialiased">${arrow(o.arrowX || 135)}<div style="margin-top:10px;padding:12px 10px 10px;border-radius:12px;background:var(--qx-panel);display:flex;flex-direction:column;gap:10px;box-shadow:0 0 0 .5px rgba(255,255,255,.16),0 0 0 1px rgba(0,0,0,.55),0 22px 44px rgba(0,0,0,.5),0 3px 10px rgba(0,0,0,.3)">${body.join('')}</div></div>`;
   }
 
-  window.QX = { S, APPS, BACKGROUND, PORTS, icon, popover, ports, confirm, menu, stats, rescue, note, settings, general, automation, portSettings, overview, aboutTab, statsDetail };
+  window.QX = { S, APPS, BACKGROUND, PORTS, icon, popover, ports, confirm, menu, stats, rescue, note, settings, general, automation, portSettings, overview, aboutTab, statsDetail, sideShift };
 })();

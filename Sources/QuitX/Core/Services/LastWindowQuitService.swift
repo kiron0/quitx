@@ -413,6 +413,8 @@ final class LastWindowQuitService: ObservableObject {
     private let pollInterval: Duration = .seconds(1)
     private var cachedIndex: (index: RunningAppIndex, keys: [pid_t: String], builtAt: Date)?
     private var workspaceTokens: [NSObjectProtocol] = []
+    private var ineligibleKeys: Set<String> = []
+    private var ineligibleConfig: QuitXConfig?
     private static let indexLifetime: TimeInterval = 60
     private let requiredEmptySamples = 2
 
@@ -520,6 +522,7 @@ final class LastWindowQuitService: ObservableObject {
             keys[app.processIdentifier] = Self.appKey(for: app, index: index)
         }
         cachedIndex = (index, keys, Date())
+        ineligibleKeys.removeAll()
         return (index, keys)
     }
 
@@ -683,6 +686,10 @@ final class LastWindowQuitService: ObservableObject {
             return
         }
         let config = ConfigStore.shared.config
+        if config != ineligibleConfig {
+            ineligibleConfig = config
+            ineligibleKeys.removeAll()
+        }
         guard let visible = LastWindowQuitWindowCounter.visibleWindowIDs() else { return }
 
         let groups = currentGroups()
@@ -692,9 +699,9 @@ final class LastWindowQuitService: ObservableObject {
         }
 
         for (key, members) in groups {
-            let withWindows = Set(members.filter { !(visible[$0.processIdentifier] ?? []).isEmpty }.map(\.processIdentifier))
-            let regular = Set(members.filter { $0.activationPolicy == .regular }.map(\.processIdentifier))
-            let live = Set(members.map(\.processIdentifier))
+            let withWindows = Set(members.filter { !(visible[$0.pid] ?? []).isEmpty }.map(\.pid))
+            let regular = Set(members.filter(\.isRegular).map(\.pid))
+            let live = Set(members.map(\.pid))
 
             if var entry = tracked[key] {
                 entry.owners = entry.owners.union(withWindows).union(regular).intersection(live)
@@ -707,18 +714,21 @@ final class LastWindowQuitService: ObservableObject {
                 tracked[key] = entry
                 continue
             }
-            guard !pendingQuits.contains(key), !withWindows.isEmpty else { continue }
+            guard !pendingQuits.contains(key), !withWindows.isEmpty, !regular.isEmpty,
+                  !ineligibleKeys.contains(key) else { continue }
             let identity = Self.identityApplication(key: key, members: members)
             let name = Self.resolvedName(for: identity)
-            guard !name.isEmpty else { continue }
-            guard LastWindowQuitPolicy.isEligible(
+            guard !name.isEmpty, LastWindowQuitPolicy.isEligible(
                 bundleId: identity.bundleIdentifier,
                 name: name,
-                isRegular: !regular.isEmpty,
+                isRegular: true,
                 bundleURL: identity.bundleURL,
                 executableURL: identity.executableURL,
                 config: config
-            ) else { continue }
+            ) else {
+                ineligibleKeys.insert(key)
+                continue
+            }
             let owners = withWindows.union(regular)
             guard let total = totalWindows(owners), total > 0 else { continue }
 
@@ -753,17 +763,17 @@ final class LastWindowQuitService: ObservableObject {
         }
     }
 
-    private func currentGroups() -> [String: [NSRunningApplication]] {
+    private func currentGroups() -> [String: [RunningAppIndex.Member]] {
         let ownPid = ProcessInfo.processInfo.processIdentifier
-        var groups: [String: [NSRunningApplication]] = [:]
+        var groups: [String: [RunningAppIndex.Member]] = [:]
         let (index, keys) = runningIndex()
-        for app in index.apps {
-            let pid = app.processIdentifier
+        for member in index.members {
+            let pid = member.pid
             guard pid > 0, pid != ownPid, QuitService.processIsRunning(pid) else { continue }
-            groups[keys[pid] ?? Self.appKey(for: app, index: index), default: []].append(app)
+            groups[keys[pid] ?? Self.appKey(for: member.app, index: index), default: []].append(member)
         }
         if let restrictedPID {
-            groups = groups.filter { $0.value.contains { $0.processIdentifier == restrictedPID } }
+            groups = groups.filter { $0.value.contains { $0.pid == restrictedPID } }
         }
         return groups
     }
@@ -784,7 +794,7 @@ final class LastWindowQuitService: ObservableObject {
             pendingQuits.remove(key)
             return
         }
-        let owners = entry.owners.union(members.filter { $0.activationPolicy == .regular }.map(\.processIdentifier))
+        let owners = entry.owners.union(members.filter(\.isRegular).map(\.pid))
         guard remainingWindows(entry, owners: owners) == 0 else {
             pendingQuits.remove(key)
             return
@@ -810,7 +820,7 @@ final class LastWindowQuitService: ObservableObject {
         let isOptionPressed = NSEvent.modifierFlags.contains(.option)
         let forceConfig = ConfigStore.shared.config.force == .force
         let force = isOptionPressed ? !forceConfig : forceConfig
-        let targets = Self.quitTargets(identity: identity, members: members)
+        let targets = Self.quitTargets(identity: identity, members: members.map(\.app))
         quitRequests.append(targets.compactMap(\.pid))
         Task { @MainActor [weak self] in
             let results = await QuitService.shared.quit(apps: targets, force: force)
@@ -822,20 +832,31 @@ final class LastWindowQuitService: ObservableObject {
     }
 
     struct RunningAppIndex {
+        struct Member {
+            let app: NSRunningApplication
+            let pid: pid_t
+            let isRegular: Bool
+            let bundlePath: String?
+        }
+
         let apps: [NSRunningApplication]
+        let members: [Member]
         let bundlePaths: [pid_t: String]
         let enclosingPaths: [pid_t: String]
         let byBundlePath: [String: [NSRunningApplication]]
 
         init(_ running: [NSRunningApplication]) {
             var apps: [NSRunningApplication] = []
+            var members: [Member] = []
             var bundlePaths: [pid_t: String] = [:]
             var enclosingPaths: [pid_t: String] = [:]
             var byBundlePath: [String: [NSRunningApplication]] = [:]
             for app in running where app.processIdentifier > 0 && QuitService.processIsRunning(app.processIdentifier) {
                 apps.append(app)
                 let pid = app.processIdentifier
-                guard let url = app.bundleURL?.standardizedFileURL else { continue }
+                let url = app.bundleURL?.standardizedFileURL
+                members.append(Member(app: app, pid: pid, isRegular: app.activationPolicy == .regular, bundlePath: url?.path))
+                guard let url else { continue }
                 bundlePaths[pid] = url.path
                 byBundlePath[url.path, default: []].append(app)
                 if let enclosing = LastWindowQuitWindowCounter.enclosingAppURL(for: url) {
@@ -843,6 +864,7 @@ final class LastWindowQuitService: ObservableObject {
                 }
             }
             self.apps = apps
+            self.members = members
             self.bundlePaths = bundlePaths
             self.enclosingPaths = enclosingPaths
             self.byBundlePath = byBundlePath
@@ -864,11 +886,11 @@ final class LastWindowQuitService: ObservableObject {
         return "pid:\(app.processIdentifier)"
     }
 
-    private static func identityApplication(key: String, members: [NSRunningApplication]) -> NSRunningApplication {
-        members.first { $0.bundleURL?.standardizedFileURL.path == key && $0.activationPolicy == .regular }
-            ?? members.first { $0.bundleURL?.standardizedFileURL.path == key }
-            ?? members.first { $0.activationPolicy == .regular }
-            ?? members[0]
+    private static func identityApplication(key: String, members: [RunningAppIndex.Member]) -> NSRunningApplication {
+        (members.first { $0.bundlePath == key && $0.isRegular }
+            ?? members.first { $0.bundlePath == key }
+            ?? members.first(where: \.isRegular)
+            ?? members[0]).app
     }
 
     static func quitTargets(identity: NSRunningApplication, members: [NSRunningApplication]) -> [AppInfo] {

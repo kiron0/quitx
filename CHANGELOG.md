@@ -9,6 +9,11 @@ All notable changes to QuitX macOS App will be documented in this file.
 - **Applications in Settings**: Uninstall Apps now lives in the Settings sidebar instead of a detached window, with a separate Leftovers scanner for files belonging to apps no longer installed.
 - **Cleanup Scanners**: Added review-first pages for System Junk, User Cache, Mail Files, Trash Bins, Large & Old Files, AI Apps, Xcode Junk, Homebrew, Node, and Docker caches.
 - **Support Link**: Added Buy Me a Coffee to the About page.
+- **Reorder Menu Bar Stats**: Drag CPU, GPU, Memory, Battery, and Ports chips in Settings ▸ General to set their menu bar order (`menuBarStatOrder`). Click hit-testing follows the custom order.
+
+### Fixed
+
+- **Battery Temperature**: macOS 27 no longer publishes `Temperature` on `AppleSmartBattery`, so the Battery window showed "—". QuitX now falls back to the SMC battery sensors (`TB0T`, then `TB1T`/`TB2T`) and reads IORegistry temperatures as centi-Celsius.
 
 ### Changed
 

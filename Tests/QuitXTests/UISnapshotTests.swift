@@ -78,6 +78,77 @@ extension PortListViewModelTests {
         #expect(ports.hasLoadedOnce)
     }
 
+    @Test("Render every stats window mode for marketing mockups")
+    func renderStatsPanels() async throws {
+        guard Self.snapshotDirectory != nil else { return }
+        _ = NSApplication.shared
+        let store = ConfigStore.shared
+        let saved = store.config
+        defer { store.config = saved }
+        store.config.liquidGlassEnabled = false
+        store.config.batteryMenuBarEnabled = true
+        let gib: UInt64 = 1_073_741_824
+        let model = StatsDetailModel()
+        model.cpu = 23
+        model.systemPct = 8
+        model.userPct = 15
+        model.idlePct = 77
+        model.perCore = [41, 33, 27, 19, 12, 9, 7, 5]
+        model.cpuLevels = [
+            SystemUsage.CpuLevel(index: 0, name: "Performance", logicalCores: 4),
+            SystemUsage.CpuLevel(index: 1, name: "Efficiency", logicalCores: 4)
+        ]
+        model.load1 = 2.41
+        model.uptime = "3 days, 4 hrs"
+        model.cpuHistory = (0..<90).map { 18 + 9 * sin(Double($0) / 6) + Double($0 % 7) }
+        model.memTotal = 8 * gib
+        model.memApp = 3 * gib + gib / 4
+        model.memWired = gib + gib / 5
+        model.memCompressed = gib / 2
+        model.memCached = 2 * gib
+        model.memFree = gib / 3
+        model.swapUsed = gib / 4
+        model.memHistory = (0..<90).map { 62 + 4 * sin(Double($0) / 9) }
+        model.gpu = GpuUsageService.Snapshot(
+            deviceUtilization: 18,
+            rendererUtilization: 15,
+            tilerUtilization: 6,
+            memoryUsedBytes: 820 * 1_048_576,
+            allocatedBytes: 2 * gib,
+            coreCount: 7,
+            deviceName: "Apple M1",
+            isAvailable: true
+        )
+        model.gpuHistory = (0..<90).map { 14 + 6 * sin(Double($0) / 5) }
+        model.battery = BatterySnapshot(
+            percent: 82,
+            isCharging: false,
+            isACPower: false,
+            timeToEmptyMin: 237,
+            timeToFullMin: nil,
+            amperageMA: -1580,
+            voltageMV: 11795,
+            powerW: 18.6,
+            tempC: 31.4,
+            chargeMAh: 2886,
+            designCapacityMAh: 4382,
+            maxCapacityMAh: 3693,
+            cycleCount: 223,
+            condition: "Normal",
+            healthPercent: 82,
+            chargingLimitPercent: nil
+        )
+        for dark in [true, false] {
+            for mode in StatsDetailModel.Mode.allCases {
+                model.mode = mode
+                let name = "stats-\(mode.rawValue.lowercased())"
+                try await snapshot(StatsDetailView(model: model), size: NSSize(width: 270, height: 700), name: name, dark: dark)
+                try await snapshot(StatsDetailView(model: model), size: NSSize(width: 270, height: 12 + model.contentHeight), name: name, dark: dark)
+            }
+        }
+        #expect(model.contentHeight > 200)
+    }
+
     @Test("Render full settings pages and the app list for marketing mockups")
     func renderPages() async throws {
         guard Self.snapshotDirectory != nil else { return }

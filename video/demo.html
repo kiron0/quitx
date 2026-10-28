@@ -36,7 +36,7 @@
           </div>
           <div class="txt py-[30px] px-[48px] text-[15px] leading-[1.75] text-[rgba(255,255,255,0.8)]">
             <h4 class="mx-0 mt-0 mb-[10px] text-[21px] font-bold text-white">Launch checklist</h4>
-            Ship 1.2.1 with in-app updates from GitHub.<br />Record the demo
+            Ship 1.2.3 with in-app updates from GitHub.<br />Record the demo
             video and refresh the site.<br />Tell everyone the red dot means
             good news.
           </div>
@@ -756,7 +756,7 @@
         if (between(t, T.uMenu, T.uClick + 0.25)) {
           m.innerHTML = QX.menu([
             {
-              t: "Update to v1.2.1…",
+              t: "Update to v1.2.3…",
               dot: true,
               on: t >= T.uClick - 0.45,
               id: "mUp",
@@ -799,7 +799,7 @@
         });
         const s = $("stats").firstElementChild;
         if (s && t >= T.sHot - 0.3)
-          s.querySelector("span:nth-child(2)").style.color = "#FF9F0A";
+          s.querySelector('[data-k="cpu"]').style.color = "#FF9F0A";
         $("stats").style.background = between(t, T.sdClick, T.sdClose + 0.2)
           ? "rgba(255,255,255,.18)"
           : "transparent";
@@ -820,14 +820,20 @@
         }
         const rCam = $("cam").getBoundingClientRect();
         const rStats = $("stats").getBoundingClientRect();
+        const rCpu = ($("stats").querySelector('[data-k="cpu"]') || $("stats")).getBoundingClientRect();
         const scale = rCam.width / 1440;
-        const unscaledLeft = (rStats.left - rCam.left) / scale;
-        const unscaledWidth = rStats.width / scale;
         const unscaledBottom = (rStats.bottom - rCam.top) / scale;
-        const cx = unscaledLeft + unscaledWidth * 0.35;
-        const zoom = 1.35;
-        const left = cx - 155 * zoom;
-        sd.innerHTML = QX.statsDetail({ arrowX: 155 });
+        const cx = (rCpu.left + rCpu.width / 2 - rCam.left) / scale;
+        const zoom = 1;
+        const left = cx - 135 * zoom;
+        const cpuNow = Math.round(12 + Math.sin(t * 6) * 2);
+        const sys = Math.round(cpuNow * 0.35);
+        sd.innerHTML = QX.statsDetail({
+          arrowX: 135,
+          mode: "cpu",
+          data: { cpu: cpuNow, system: sys, user: cpuNow - sys, idle: 100 - cpuNow, load: 1.86, cores: [24, 19, 15, 11, 9, 7, 5, 4], levels: [["Performance", 4], ["Efficiency", 4]] },
+          history: Array.from({ length: 90 }, (_, i) => 11 + 3 * Math.sin((i + t * 30) / 6) + ((i * 7) % 5)),
+        });
         sd.style.zoom = zoom;
         sd.style.left = left / zoom + "px";
         sd.style.top = (unscaledBottom + 3) / zoom + "px";
@@ -895,7 +901,12 @@
             tab = "Ports";
             content = QX.portSettings({ enabled: true, count: true });
           }
-          s.innerHTML = QX.settings({ tab, content });
+          const sideScroll = lerp(
+            lerp(0, QX.sideShift("Ports"), prog(t, T.stPorts - 0.9, T.stPorts - 0.3, ease)),
+            QX.sideShift("About"),
+            prog(t, T.stAbout - 0.9, T.stAbout - 0.3, ease),
+          );
+          s.innerHTML = QX.settings({ tab, content, sideScroll: Math.round(sideScroll) });
           s.style.zoom = 1.15;
           s.style.left = (720 - 340 * 1.15) / 1.15 + "px";
           s.style.top = 130 / 1.15 + "px";
@@ -970,7 +981,7 @@
         measure("bItem", T.bPick - 0.1, "#mBg", 0.3);
         measure("eMore", T.eMore - 0.1, '#pop [data-app="Music"] .more');
         measure("eItem", T.ePick - 0.1, "#mEx", 0.3);
-        measure("stats", T.sdClick - 0.1, "#stats");
+        measure("stats", T.sdClick - 0.1, '#stats [data-k="cpu"]');
         measure("rBtn", T.rIn + 1, "#rescue .btns span");
         measure(
           "stPortsTab",
@@ -1186,9 +1197,9 @@
         const downloading = t < T.uDl1;
         const ready = t >= T.uReady;
         $("updh").textContent = ready
-          ? "Ready to Install v1.2.1"
+          ? "Ready to Install v1.2.3"
           : downloading
-            ? "Downloading v1.2.1..."
+            ? "Downloading v1.2.3..."
             : "Verifying Update...";
         $("updt1").textContent = ready
           ? "The latest version has been downloaded and verified."
@@ -1244,7 +1255,7 @@
           (1 - prog(t, T.sdClose + 0.1, T.sdClose + 0.5));
         css($("cam"), {
           transformOrigin: "86% 0%",
-          transform: `scale(${1 + 0.45 * statsZoom})`,
+          transform: `scale(${1 + 0.25 * statsZoom})`,
         });
 
         if (measuring || !CURSOR) return;

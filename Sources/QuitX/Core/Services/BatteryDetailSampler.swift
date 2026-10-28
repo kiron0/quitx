@@ -73,15 +73,8 @@ enum BatteryDetailSampler {
         let maxCapacity = intValue(smart, "AppleRawMaxCapacity") ?? intValue(smart, "MaxCapacity")
         let designCapacity = intValue(smart, "DesignCapacity")
         let batteryData = smart?["BatteryData"] as? [String: Any]
-        let tempC: Double? = {
-            if let deciKelvin = intValue(smart, "Temperature"), deciKelvin > 0 {
-                return Double(deciKelvin) / 10.0 - 273.15
-            }
-            if let centiCelsius = intValue(batteryData, "Temperature"), centiCelsius > 0 {
-                return Double(centiCelsius) / 100.0
-            }
-            return nil
-        }()
+        let tempC: Double? = Self.temperature(smart: smart, batteryData: batteryData)
+            ?? (smartBattery == nil ? SMCReader.batteryTemperature() : nil)
         return BatterySnapshot(
             percent: percent,
             isCharging: isCharging,
@@ -116,6 +109,15 @@ enum BatteryDetailSampler {
             isCharging: boolValue(battery, kIOPSIsChargingKey as String) ?? false,
             isACPower: !BatterySaver.isOnBattery(descriptions: descs)
         )
+    }
+
+    static func temperature(smart: [String: Any]?, batteryData: [String: Any]?) -> Double? {
+        for raw in [intValue(smart, "Temperature"), intValue(smart, "VirtualTemperature"), intValue(batteryData, "Temperature")] {
+            guard let raw, raw > 0 else { continue }
+            let celsius = Double(raw) / 100.0
+            if celsius > 0, celsius < 100 { return celsius }
+        }
+        return nil
     }
 
     static func readChargingLimit(
@@ -287,7 +289,7 @@ enum BatteryDetailSampler {
         guard service != 0 else { return nil }
         defer { IOObjectRelease(service) }
         let keys = [
-            "Amperage", "InstantAmperage", "Voltage", "Temperature", "IsCharging",
+            "Amperage", "InstantAmperage", "Voltage", "Temperature", "VirtualTemperature", "IsCharging",
             "BatteryData", "AppleRawCurrentCapacity", "CurrentCapacity", "DesignCapacity",
             "AppleRawMaxCapacity", "MaxCapacity", "CycleCount", "BatteryHealth"
         ]

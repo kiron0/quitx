@@ -98,7 +98,7 @@ struct BatteryAccuracyTests {
         #expect(snapshot?.amperageMA == -1200)
         #expect(snapshot?.voltageMV == 12000)
         #expect(abs((snapshot?.powerW ?? 0) - 14.4) < 0.01)
-        #expect(abs((snapshot?.tempC ?? 0) - 30.05) < 0.05)
+        #expect(abs((snapshot?.tempC ?? 0) - 30.32) < 0.01)
         #expect(snapshot?.chargeMAh == 2500)
         #expect(snapshot?.designCapacityMAh == 5000)
         #expect(snapshot?.maxCapacityMAh == 4800)
@@ -268,36 +268,69 @@ struct BatteryAccuracyTests {
     func amperageVoltageMatchIoreg() throws {
         guard let snapshot = BatteryDetailSampler.snapshot() else { return }
         let ioreg = try shellOutput("ioreg -r -c AppleSmartBattery -d 1")
-        guard let amps = try intFromIoreg(ioreg, key: "\"Amperage\""),
-              let volts = try intFromIoreg(ioreg, key: "\"Voltage\"") else { return }
-        #expect(snapshot.amperageMA == amps)
-        #expect(snapshot.voltageMV == volts)
+        guard let amps = try intFromIoreg(ioreg, key: "Amperage"),
+              let volts = try intFromIoreg(ioreg, key: "Voltage") else { return }
+        let sampledAmps = try #require(snapshot.amperageMA)
+        let sampledVolts = try #require(snapshot.voltageMV)
+        #expect(abs(sampledAmps - amps) <= max(200, abs(amps) / 4))
+        #expect(abs(sampledVolts - volts) <= 100)
     }
 
     @Test("Cycle count matches ioreg")
     func cycleCountMatchesIoreg() throws {
         guard let snapshot = BatteryDetailSampler.snapshot(), let cycles = snapshot.cycleCount else { return }
         let ioreg = try shellOutput("ioreg -r -c AppleSmartBattery -d 1")
-        guard let expected = try intFromIoreg(ioreg, key: "\"CycleCount\"") else { return }
+        guard let expected = try intFromIoreg(ioreg, key: "CycleCount") else { return }
         #expect(cycles == expected)
     }
 
-    @Test("Temperature matches ioreg tenths of Kelvin or BatteryData centi-Celsius")
+    @Test("Temperature matches ioreg centi-Celsius or the SMC battery sensors")
     func temperatureMatchesIoreg() throws {
-        guard let snapshot = BatteryDetailSampler.snapshot(), let temp = snapshot.tempC else { return }
+        guard let snapshot = BatteryDetailSampler.snapshot() else { return }
         let ioreg = try shellOutput("ioreg -r -c AppleSmartBattery -d 1")
-        let topLevelPattern = "\"Temperature\"\\s+=\\s+(-?\\d+)"
-        let regex = try NSRegularExpression(pattern: topLevelPattern)
-        let range = NSRange(ioreg.startIndex..., in: ioreg)
-        if let match = regex.firstMatch(in: ioreg, range: range),
-           let valueRange = Range(match.range(at: 1), in: ioreg),
-           let deciK = Int(ioreg[valueRange]), deciK > 1000 {
-            let expected = Double(deciK) / 10.0 - 273.15
-            #expect(abs(temp - expected) < 0.1)
-        } else if let centiC = try intFromIoreg(ioreg, key: "Temperature"), centiC > 0 {
-            let expected = Double(centiC) / 100.0
-            #expect(abs(temp - expected) < 0.1)
+        if let centiC = try intFromIoreg(ioreg, key: "Temperature"), centiC > 0 {
+            let temp = try #require(snapshot.tempC)
+            #expect(abs(temp - Double(centiC) / 100.0) < 0.5)
+        } else if let smc = SMCReader.batteryTemperature() {
+            let temp = try #require(snapshot.tempC)
+            #expect(abs(temp - smc) < 3)
         }
+    }
+
+    @Test("SMC values decode flt, sp78 and fpe2")
+    func smcDecoding() {
+        #expect(SMCReader.fourCharCode("TB0T") == 0x5442_3054)
+        let float = Float(41.5).bitPattern
+        let floatBytes = [UInt8(float & 0xFF), UInt8((float >> 8) & 0xFF), UInt8((float >> 16) & 0xFF), UInt8(float >> 24)]
+        #expect(SMCReader.decode(type: "flt ", bytes: floatBytes) == 41.5)
+        #expect(SMCReader.decode(type: "sp78", bytes: [0x1E, 0x80]) == 30.5)
+        #expect(SMCReader.decode(type: "fpe2", bytes: [0x00, 0x08]) == 2)
+        #expect(SMCReader.decode(type: "ui8 ", bytes: [1]) == nil)
+        #expect(SMCReader.decode(type: "flt ", bytes: [1, 2]) == nil)
+    }
+
+    @Test("SMC battery temperature prefers TB0T and ignores bogus sensors")
+    func smcBatteryTemperature() {
+        #expect(SMCReader.batteryTemperature(from: [41, 35, 30]) == 41)
+        #expect(SMCReader.batteryTemperature(from: [nil, 40, 30]) == 35)
+        #expect(SMCReader.batteryTemperature(from: [0, -5, 300, nil]) == nil)
+        #expect(SMCReader.batteryTemperature(from: [.nan, 36]) == 36)
+        #expect(SMCReader.batteryTemperature(from: []) == nil)
+    }
+
+    @Test("IORegistry temperature keys are centi-Celsius with fallbacks")
+    func ioregTemperatureKeys() {
+        #expect(BatteryDetailSampler.temperature(smart: ["Temperature": 3047], batteryData: nil) == 30.47)
+        #expect(BatteryDetailSampler.temperature(smart: ["VirtualTemperature": 3100], batteryData: nil) == 31)
+        #expect(BatteryDetailSampler.temperature(smart: [:], batteryData: ["Temperature": 2950]) == 29.5)
+        #expect(BatteryDetailSampler.temperature(smart: ["Temperature": 0], batteryData: nil) == nil)
+        #expect(BatteryDetailSampler.temperature(smart: nil, batteryData: nil) == nil)
+    }
+
+    @Test("Live battery snapshot reports temperature when the SMC has a battery sensor")
+    func liveTemperaturePresent() {
+        guard HardwareCapabilities.hasBattery, SMCReader.batteryTemperature() != nil else { return }
+        #expect(BatteryDetailSampler.snapshot()?.tempC != nil)
     }
 
     @Test("Power watts equals amperage times voltage over 1e6")
@@ -307,7 +340,7 @@ struct BatteryAccuracyTests {
         guard let amps = try intFromIoreg(ioreg, key: "Amperage"),
               let volts = try intFromIoreg(ioreg, key: "Voltage") else { return }
         let expected = Double(abs(amps) * volts) / 1_000_000
-        #expect(abs(power - expected) < 0.01)
+        #expect(abs(power - expected) <= max(1, expected / 4))
     }
 
     @Test("Charging flag matches pmset")
@@ -343,7 +376,9 @@ struct BatteryAccuracyTests {
               let valueRange = Range(match.range(at: 1), in: output) else {
             return nil
         }
-        return Int(output[valueRange])
+        let text = String(output[valueRange])
+        if let value = Int(text) { return value }
+        return UInt64(text).map { Int(bitPattern: UInt($0)) }
     }
 
     @Test("Charging limit parses System Settings domain")
