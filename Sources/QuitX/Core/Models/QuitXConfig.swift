@@ -30,6 +30,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
     var menuBarShowMemory: Bool = false
     var menuBarShowGpu: Bool = false
     var batteryMenuBarEnabled: Bool = false
+    var menuBarShowCleanup: Bool = false
     var menuBarStatStyle: MenuBarStatStyle = .icon
     var menuBarMemoryUnit: MenuBarMemoryUnit = .gb
     var menuBarStatOrder: [MenuBarStat] = MenuBarStat.defaultOrder
@@ -58,7 +59,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         case exclude, force, includeFinder, includeTrash, includeBackground, groupBackground
         case defaultSelectAll, neverQuitMusic, musicApps, autoUpdate, autoInstallUpdates, confirmQuitAll, confirmIndividualAction, playSounds
         case quitInactiveAfterMinutes, disableQuitTips, sortBy, perAppQuitRules
-        case quitOnSleep, quitOnScreenLock, showMenuBarStats, menuBarShowCpu, menuBarShowMemory, menuBarShowGpu, batteryMenuBarEnabled, menuBarStatStyle, menuBarMemoryUnit, menuBarStatOrder
+        case quitOnSleep, quitOnScreenLock, showMenuBarStats, menuBarShowCpu, menuBarShowMemory, menuBarShowGpu, batteryMenuBarEnabled, menuBarShowCleanup, menuBarStatStyle, menuBarMemoryUnit, menuBarStatOrder
         case quitWhenLastWindowClosed
         case sleepLockStartMinutes, sleepLockEndMinutes, sleepLockUse24Hour
         case hogAlertEnabled, hogCpuThreshold
@@ -179,6 +180,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         menuBarShowMemory = (try? container.decodeIfPresent(Bool.self, forKey: .menuBarShowMemory)) ?? showMenuBarStats
         menuBarShowGpu = (try? container.decodeIfPresent(Bool.self, forKey: .menuBarShowGpu)) ?? showMenuBarStats
         batteryMenuBarEnabled = Self.dec(container, .batteryMenuBarEnabled, defaults.batteryMenuBarEnabled)
+        menuBarShowCleanup = Self.dec(container, .menuBarShowCleanup, defaults.menuBarShowCleanup)
         menuBarStatStyle = Self.dec(container, .menuBarStatStyle, defaults.menuBarStatStyle)
         menuBarMemoryUnit = Self.dec(container, .menuBarMemoryUnit, defaults.menuBarMemoryUnit)
         let storedOrder = ((try? container.decodeIfPresent([String].self, forKey: .menuBarStatOrder)) ?? nil) ?? []
@@ -275,11 +277,11 @@ struct QuitXConfig: Codable, Equatable, Sendable {
     }
 
     var menuBarStatsEnabled: Bool {
-        showMenuBarStats && (menuBarShowCpu || menuBarShowMemory || menuBarShowGpu || batteryMenuBarEnabled)
+        showMenuBarStats && (menuBarShowCpu || menuBarShowMemory || menuBarShowGpu || batteryMenuBarEnabled || menuBarShowCleanup)
     }
 
     func menuBarStatsEnabled(hasBattery: Bool, hasGpu: Bool) -> Bool {
-        showMenuBarStats && (menuBarShowCpu || menuBarShowMemory || (menuBarShowGpu && hasGpu) || (batteryMenuBarEnabled && hasBattery))
+        showMenuBarStats && (menuBarShowCpu || menuBarShowMemory || (menuBarShowGpu && hasGpu) || (batteryMenuBarEnabled && hasBattery) || menuBarShowCleanup)
     }
 
     func adjustedForHardware(hasBattery: Bool, hasGpu: Bool) -> QuitXConfig {
@@ -323,8 +325,9 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         case memory
         case battery
         case ports
+        case cleanup
 
-        static let defaultOrder: [MenuBarStat] = [.cpu, .gpu, .memory, .battery, .ports]
+        static let defaultOrder: [MenuBarStat] = [.cpu, .gpu, .memory, .battery, .ports, .cleanup]
 
         var title: String {
             switch self {
@@ -333,6 +336,7 @@ struct QuitXConfig: Codable, Equatable, Sendable {
             case .memory: "Memory"
             case .battery: "Battery"
             case .ports: "Ports"
+            case .cleanup: "Cleanup"
             }
         }
 

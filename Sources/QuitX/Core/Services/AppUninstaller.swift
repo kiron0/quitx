@@ -484,7 +484,7 @@ enum AppUninstaller {
         return allowedPrefixes.contains(where: path.hasPrefix) || allowedPrefixes.contains(where: rawPath.hasPrefix)
     }
 
-    static func removePermanently(_ urls: [URL]) async -> RemovalResult {
+    static func removePermanently(_ urls: [URL], allowAdministrator: Bool = true) async -> RemovalResult {
         let safeURLs = urls.filter { isSafePermanentRemoval($0) }
         var result = RemovalResult()
         let rejected = urls.filter { !safeURLs.contains($0) }
@@ -508,6 +508,10 @@ enum AppUninstaller {
         }.value
         result.trashed.append(contentsOf: local.trashed)
         guard !local.failed.isEmpty else { return result }
+        guard allowAdministrator else {
+            result.failed.append(contentsOf: local.failed)
+            return result
+        }
 
         let admin = await Task.detached(priority: .userInitiated) {
             removePermanentlyWithAdministrator(local.failed.map(\.url))

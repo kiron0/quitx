@@ -7,6 +7,7 @@ extension ChangelogProvider {
                 "**Applications in Settings**: Uninstall Apps now lives in the Settings sidebar instead of a separate window, with a Leftovers scanner for files left behind by apps that are no longer installed.",
                 "**Cleanup Scanners**: Review-first pages for System Junk, User Cache, Mail Files, Trash Bins, Large & Old Files, AI Apps, Xcode Junk, Homebrew, Node, and Docker caches.",
                 "**Reorder Menu Bar Stats**: Drag CPU, GPU, Memory, Battery, and Ports into any order in Settings ▸ General. Clicking a stat still opens its own window. The port count switch now lives there too, instead of in Settings ▸ Ports.",
+                "**Quick Clean**: Turn on the Cleanup stat to see reclaimable cache space in the menu bar. Click it to tick User Caches, User Logs, Developer Caches, or Trash and clean them after a confirmation.",
                 "**Support Link**: Buy Me a Coffee on the About page."
             ]),
             ("Improvements", [

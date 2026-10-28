@@ -118,7 +118,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     var keywords: String {
         switch self {
         case .overview:   return "features cards everything help uninstall apps what's new changelog tools"
-        case .general:    return "login startup sounds updates download menu bar stats cpu memory gpu battery refresh appearance liquid glass classic sort default normal force quit"
+        case .general:    return "login startup sounds updates download menu bar stats cpu memory gpu battery cleanup cache quick clean order drag refresh appearance liquid glass classic sort default normal force quit"
         case .shortcuts:  return "keyboard hotkey key combo activate menu quit all force quit all settings refresh help what's new changelog uninstall apps"
         case .automation: return "sleep schedule last window close accessibility cpu hog memory pressure rescue auto quit inactive idle timer"
         case .advanced:   return "background helpers group instances music protection select by default tips confirm finder windows empty trash"

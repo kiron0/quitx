@@ -150,6 +150,15 @@ extension PortListViewModelTests {
             healthPercent: 82,
             chargingLimitPercent: nil
         )
+        let cache: (String, Int64) -> CleanupItem = { path, bytes in
+            CleanupItem(url: URL(fileURLWithPath: path), category: .userCache, bytes: bytes, fileCount: 1, isDirectory: true, lastModified: nil, isSelectedByDefault: true)
+        }
+        QuickCleanMonitor.shared.apply([
+            QuickCleanGroup(kind: .userCaches, items: [cache("/tmp/qx-snap-caches", 3_290_000_000)]),
+            QuickCleanGroup(kind: .userLogs, items: [cache("/tmp/qx-snap-logs", 732_000)]),
+            QuickCleanGroup(kind: .developerCaches, items: [cache("/tmp/qx-snap-dev", 1_777_870_000)]),
+            QuickCleanGroup(kind: .trash, items: [cache("/tmp/qx-snap-trash", 412_660_000)])
+        ])
         for dark in [true, false] {
             for mode in StatsDetailModel.Mode.allCases {
                 model.mode = mode

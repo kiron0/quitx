@@ -256,7 +256,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Stats detail panel",
-                    body: "Click a menu bar stat to open its detail panel. CPU and memory show live breakdowns and top processes, GPU shows utilization and memory, and battery shows power source, charge time, power draw, voltage, temperature (read from the battery sensors when macOS does not report it), capacity, and cycle count when available. Click the stats item again, click anywhere outside, or press Esc to dismiss it."
+                    body: "Click a menu bar stat to open its detail panel. CPU and memory show live breakdowns and top processes, GPU shows utilization and memory, Cleanup shows how much space caches use and cleans the categories you tick after you confirm, and battery shows power source, charge time, power draw, voltage, temperature (read from the battery sensors when macOS does not report it), capacity, and cycle count when available. Click the stats item again, click anywhere outside, or press Esc to dismiss it."
                 ),
                 QuitXHelpSection(
                     title: "Low Power Mode",

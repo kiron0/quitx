@@ -9,6 +9,7 @@ final class StatsDetailModel: ObservableObject {
         case memory = "Memory"
         case gpu = "GPU"
         case battery = "Battery"
+        case cleanup = "Cleanup"
     }
 
     @Published var mode: Mode = .cpu
@@ -70,6 +71,9 @@ final class StatsDetailModel: ObservableObject {
     func start() {
         stop()
         cpuLevels = SystemUsage.cpuTopology().levels
+        if mode == .cleanup {
+            QuickCleanMonitor.shared.refreshIfStale(maxAge: QuickCleanMonitor.panelMaxAge)
+        }
         tick()
         startLoop()
     }
@@ -109,6 +113,7 @@ final class StatsDetailModel: ObservableObject {
         toastTask?.cancel()
         toastTask = nil
         showToast = false
+        QuickCleanMonitor.shared.cancelClean()
     }
 
     private func tick() {
@@ -420,6 +425,7 @@ private struct DetailRow: View {
 struct StatsDetailView: View {
     @ObservedObject var model: StatsDetailModel
     @ObservedObject private var configStore: ConfigStore = ConfigStore.shared
+    @ObservedObject private var quickClean: QuickCleanMonitor = QuickCleanMonitor.shared
 
     private let panelWidth: CGFloat = 270
     private let headerHeight: CGFloat = 12
@@ -525,6 +531,8 @@ struct StatsDetailView: View {
                         gpuContent
                     case .battery:
                         batteryContent
+                    case .cleanup:
+                        cleanupContent
                     }
                 }
                 .padding(10)
@@ -555,7 +563,202 @@ struct StatsDetailView: View {
                     .padding(.bottom, 10)
             }
         }
+        .overlay {
+            if model.mode == .cleanup && quickClean.confirmationShown {
+                QuitConfirmationOverlay(
+                    title: "Clean \(QuickCleanService.format(quickClean.selectedBytes))?",
+                    subtitle: "\(quickClean.selectedItemCount) \(quickClean.selectedItemCount == 1 ? "item" : "items") from \(quickClean.selectedTitles.joined(separator: ", ")) will be deleted permanently. This can't be undone.",
+                    confirmTitle: "Clean",
+                    systemImage: "trash.fill",
+                    isForced: true,
+                    cardWidth: 236,
+                    onConfirm: { runQuickClean() },
+                    onCancel: { quickClean.cancelClean() }
+                )
+                .transition(.opacity.combined(with: .scale(scale: 0.95)))
+            }
+        }
         .animation(.easeInOut(duration: 0.2), value: model.showToast)
+        .animation(.easeInOut(duration: 0.16), value: quickClean.confirmationShown)
+    }
+
+    private func runQuickClean() {
+        let model = model
+        quickClean.clean { outcome in
+            model.toast(outcome.message, isError: outcome.removed == 0 && outcome.skipped > 0)
+        }
+    }
+
+    private var cleanupHeadline: String {
+        if quickClean.phase == .cleaning { return "Cleaning…" }
+        if quickClean.lastScan == nil { return "Scanning…" }
+        return QuickCleanService.format(quickClean.selectedBytes)
+    }
+
+    private var cleanupSubline: String {
+        if quickClean.phase == .cleaning { return "Removing selected caches" }
+        if quickClean.phase == .scanning { return "Measuring caches…" }
+        if quickClean.groups.isEmpty { return "Nothing to clean right now" }
+        let count = quickClean.groups.count
+        return "of \(QuickCleanService.format(quickClean.groups.reduce(0) { $0 + $1.bytes })) across \(count) \(count == 1 ? "category" : "categories")"
+    }
+
+    private var cleanupContent: some View {
+        let busy = quickClean.phase != .idle
+        let canClean = !busy && quickClean.selectedBytes > 0
+        return VStack(alignment: .leading, spacing: 10) {
+            windowTitleHeader(title: "Quick Clean", symbol: "sparkles")
+
+            card {
+                HStack(spacing: 11) {
+                    ZStack {
+                        Circle()
+                            .fill(QuitXTheme.accent.opacity(0.14))
+                            .frame(width: 44, height: 44)
+                        if busy {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 19, weight: .semibold))
+                                .foregroundStyle(QuitXTheme.accent)
+                        }
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(cleanupHeadline)
+                            .font(.system(size: 20, weight: .semibold).monospacedDigit())
+                            .foregroundStyle(Color.primary)
+                        Text(cleanupSubline)
+                            .font(.system(size: 10.5))
+                            .foregroundStyle(Color.secondary)
+                            .lineLimit(2)
+                    }
+                    Spacer(minLength: 4)
+                    Button {
+                        quickClean.rescan()
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 10.5, weight: .semibold))
+                            .foregroundStyle(Color.secondary)
+                            .frame(width: 22, height: 22)
+                            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 5))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(busy)
+                    .opacity(busy ? 0.4 : 1)
+                    .help("Scan again")
+                }
+                .padding(.vertical, 2)
+            }
+
+            VStack(alignment: .leading, spacing: 5) {
+                SectionHeader(title: "Categories")
+                card {
+                    if quickClean.groups.isEmpty {
+                        HStack(spacing: 8) {
+                            Image(systemName: quickClean.lastScan == nil ? "magnifyingglass" : "checkmark.seal.fill")
+                                .font(.system(size: 13))
+                                .foregroundStyle(quickClean.lastScan == nil ? Color.secondary : StatsTheme.green)
+                            Text(quickClean.lastScan == nil ? "Looking for caches…" : "Caches are already clean.")
+                                .font(.system(size: 11))
+                                .foregroundStyle(Color.secondary)
+                            Spacer()
+                        }
+                        .frame(minHeight: 36)
+                    } else {
+                        VStack(alignment: .leading, spacing: 7) {
+                            ForEach(Array(quickClean.groups.enumerated()), id: \.element.id) { index, group in
+                                if index > 0 {
+                                    Divider().opacity(0.5)
+                                }
+                                quickCleanRow(group, busy: busy)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Button {
+                quickClean.requestClean()
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "trash.fill")
+                        .font(.system(size: 10.5, weight: .semibold))
+                    Text(quickClean.selectedBytes > 0 ? "Clean \(QuickCleanService.format(quickClean.selectedBytes))" : "Select caches to clean")
+                        .font(.system(size: 12, weight: .bold))
+                }
+                .foregroundStyle(canClean ? Color.black.opacity(0.88) : Color.secondary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 28)
+                .background(
+                    RoundedRectangle(cornerRadius: 7)
+                        .fill(
+                            canClean
+                                ? AnyShapeStyle(LinearGradient(colors: [QuitXTheme.accent, Color(red: 232/255, green: 155/255, blue: 0/255)], startPoint: .top, endPoint: .bottom))
+                                : AnyShapeStyle(Color.primary.opacity(0.07))
+                        )
+                )
+            }
+            .buttonStyle(.plain)
+            .disabled(!canClean)
+
+            statsTabFooterButton(
+                title: "Open Cleanup Settings",
+                symbol: "slider.horizontal.3"
+            ) {
+                StatsDetailController.shared.close()
+                SettingsWindowController.shared.show(tab: .userCache)
+            }
+        }
+    }
+
+    private func quickCleanRow(_ group: QuickCleanGroup, busy: Bool) -> some View {
+        let selected = quickClean.selection.contains(group.kind)
+        let badgeColor = group.safety == .safe ? StatsTheme.green : StatsTheme.orange
+        return Button {
+            quickClean.toggle(group.kind)
+        } label: {
+            HStack(alignment: .top, spacing: 8) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(selected ? QuitXTheme.accent : Color.primary.opacity(0.1))
+                        .frame(width: 14, height: 14)
+                    if selected {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 8.5, weight: .heavy))
+                            .foregroundStyle(Color.black.opacity(0.88))
+                    }
+                }
+                .padding(.top, 1)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 5) {
+                        Text(group.title)
+                            .font(.system(size: 11.5, weight: .semibold))
+                            .foregroundStyle(Color.primary)
+                        Text(group.safety.rawValue.uppercased())
+                            .font(.system(size: 8, weight: .bold))
+                            .tracking(0.4)
+                            .foregroundStyle(badgeColor)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 1.5)
+                            .background(badgeColor.opacity(0.15), in: RoundedRectangle(cornerRadius: 3))
+                    }
+                    Text(group.detail)
+                        .font(.system(size: 10))
+                        .foregroundStyle(Color.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 6)
+                Text(QuickCleanService.format(group.bytes))
+                    .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(Color.primary)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(busy)
+        .accessibilityLabel("\(group.title), \(QuickCleanService.format(group.bytes))")
+        .accessibilityValue(selected ? "Selected" : "Not selected")
     }
 
     private var cpuContent: some View {
@@ -1231,6 +1434,10 @@ final class StatsDetailController {
             matching: [.keyDown]
         ) { [weak self] event in
             guard let self, self.isVisible, event.keyCode == 53 else { return event }
+            if QuickCleanMonitor.shared.confirmationShown {
+                QuickCleanMonitor.shared.cancelClean()
+                return nil
+            }
             self.close()
             return nil
         }

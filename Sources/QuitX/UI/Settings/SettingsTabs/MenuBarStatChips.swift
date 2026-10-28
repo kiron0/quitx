@@ -20,12 +20,13 @@ struct MenuBarStatChips: View {
             case .gpu: hasGpu
             case .battery: hasBattery
             case .ports: config.portsEnabled
+            case .cleanup: true
             }
         }
     }
 
     var body: some View {
-        HStack(spacing: 5) {
+        ChipFlowLayout(spacing: 5) {
             ForEach(Self.visibleStats(in: configStore.config), id: \.self) { stat in
                 chip(stat)
             }
@@ -40,6 +41,7 @@ struct MenuBarStatChips: View {
         case .memory: configStore.config.menuBarShowMemory
         case .battery: configStore.config.batteryMenuBarEnabled
         case .ports: configStore.config.portsShowMenuBarCount
+        case .cleanup: configStore.config.menuBarShowCleanup
         }
     }
 
@@ -54,6 +56,7 @@ struct MenuBarStatChips: View {
         case .memory: configStore.config.menuBarShowMemory = value
         case .battery: configStore.config.batteryMenuBarEnabled = value
         case .ports: configStore.config.portsShowMenuBarCount = value
+        case .cleanup: configStore.config.menuBarShowCleanup = value
         }
         if stat != .ports {
             configStore.config.showMenuBarStats = configStore.config.availableMenuBarStatsEnabled
@@ -128,5 +131,58 @@ struct MenuBarStatChips: View {
             .accessibilityValue(on ? "On" : "Off")
             .accessibilityAddTraits(.isButton)
             .accessibilityAction { if enabled { setOn(stat, !on) } }
+    }
+}
+
+struct ChipFlowLayout: Layout {
+    var spacing: CGFloat = 5
+
+    static func rows(widths: [CGFloat], maxWidth: CGFloat, spacing: CGFloat) -> [[Int]] {
+        var rows: [[Int]] = []
+        var current: [Int] = []
+        var used: CGFloat = 0
+        for (index, width) in widths.enumerated() {
+            let needed = current.isEmpty ? width : used + spacing + width
+            if !current.isEmpty && needed > maxWidth {
+                rows.append(current)
+                current = [index]
+                used = width
+            } else {
+                current.append(index)
+                used = needed
+            }
+        }
+        if !current.isEmpty { rows.append(current) }
+        return rows
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        let maxWidth = proposal.width ?? .infinity
+        let rows = Self.rows(widths: sizes.map(\.width), maxWidth: maxWidth, spacing: spacing)
+        var width: CGFloat = 0
+        var height: CGFloat = 0
+        for (rowIndex, row) in rows.enumerated() {
+            let rowWidth = row.reduce(CGFloat(0)) { $0 + sizes[$1].width } + spacing * CGFloat(max(0, row.count - 1))
+            let rowHeight = row.map { sizes[$0].height }.max() ?? 0
+            width = max(width, rowWidth)
+            height += rowHeight + (rowIndex > 0 ? spacing : 0)
+        }
+        return CGSize(width: width, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        let rows = Self.rows(widths: sizes.map(\.width), maxWidth: bounds.width, spacing: spacing)
+        var y = bounds.minY
+        for row in rows {
+            var x = bounds.minX
+            let rowHeight = row.map { sizes[$0].height }.max() ?? 0
+            for index in row {
+                subviews[index].place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(sizes[index]))
+                x += sizes[index].width + spacing
+            }
+            y += rowHeight + spacing
+        }
     }
 }

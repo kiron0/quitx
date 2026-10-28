@@ -77,6 +77,7 @@ struct GeneralTabView: View {
                         configStore.config.menuBarShowMemory = $0
                         configStore.config.menuBarShowGpu = $0 && HardwareCapabilities.hasGpuStatistics
                         configStore.config.batteryMenuBarEnabled = $0 && HardwareCapabilities.hasBattery
+                        configStore.config.menuBarShowCleanup = $0
                         configStore.save()
                         StatusItemController.shared?.updateMenuBarStats()
                     }
@@ -88,7 +89,7 @@ struct GeneralTabView: View {
             row(label: "") {
                 MenuBarStatChips()
             } help: {
-                HelpPopoverButton(text: HardwareCapabilities.hasBattery ? "Assemble your menu bar dream team! Toggle CPU, memory, GPU, or battery independently, and drag them into any order. The master switch commands them all. 🕹️📊" : "Assemble your menu bar dream team! Toggle CPU, memory, or GPU independently, and drag them into any order. The master switch commands them all. 🕹️📊")
+                HelpPopoverButton(text: HardwareCapabilities.hasBattery ? "Assemble your menu bar dream team! Toggle CPU, memory, GPU, battery, or cleanup independently, and drag them into any order. The master switch commands them all. 🕹️📊" : "Assemble your menu bar dream team! Toggle CPU, memory, GPU, or cleanup independently, and drag them into any order. The master switch commands them all. 🕹️📊")
             }
 
             row(label: "") {

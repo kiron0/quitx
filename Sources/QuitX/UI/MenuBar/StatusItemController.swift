@@ -61,6 +61,9 @@ final class StatusItemController: NSObject {
         startWorkspaceObservers()
         observeUpdates()
         observePortSettings()
+        QuickCleanMonitor.shared.onChange = { [weak self] in
+            self?.updateMenuBarStats()
+        }
     }
 
     private func observePortSettings() {
@@ -606,8 +609,13 @@ final class StatusItemController: NSObject {
         let batteryKey = battery.map { "\($0.percent)-\($0.isCharging)-\($0.isACPower)" } ?? "none"
         let gpuKey = gpu.map { "\(Int($0.deviceUtilization.rounded()))-\($0.memoryUsedBytes)" } ?? "none"
         let portKey = portCount.map(String.init) ?? "none"
+        let showCleanup = statsOn && cfg.menuBarShowCleanup
+        if showCleanup {
+            QuickCleanMonitor.shared.refreshIfStale(maxAge: QuickCleanMonitor.menuBarMaxAge)
+        }
+        let cleanupText = showCleanup ? Self.cleanupText(QuickCleanMonitor.shared.reclaimableBytes) : "off"
         let order = cfg.orderedMenuBarStats
-        let titleKey = "\(order.map(\.rawValue).joined(separator: ","))|\(cfg.menuBarStatStyle.rawValue)|\(showCpu)|\(showMemory)|\(cfg.menuBarShowGpu)|\(cpuText)|\(memText)|\(gpuKey)|\(batteryKey)|\(portKey)"
+        let titleKey = "\(order.map(\.rawValue).joined(separator: ","))|\(cleanupText)|\(cfg.menuBarStatStyle.rawValue)|\(showCpu)|\(showMemory)|\(cfg.menuBarShowGpu)|\(cpuText)|\(memText)|\(gpuKey)|\(batteryKey)|\(portKey)"
         if titleKey == lastStatTitleKey {
             return
         }
@@ -676,8 +684,14 @@ final class StatusItemController: NSObject {
                 style: cfg.menuBarStatStyle
             )
         }
+        let cleanupAttr: NSAttributedString? = showCleanup ? Self.statSegmentTitle(
+            symbolNames: ["sparkles", "trash"],
+            fallback: "CLEAN",
+            text: cleanupText,
+            style: cfg.menuBarStatStyle
+        ) : nil
         let candidates: [QuitXConfig.MenuBarStat: NSAttributedString?] = [
-            .cpu: cpuAttr, .gpu: gpuAttr, .memory: memAttr, .battery: batAttr, .ports: portAttr
+            .cpu: cpuAttr, .gpu: gpuAttr, .memory: memAttr, .battery: batAttr, .ports: portAttr, .cleanup: cleanupAttr
         ]
         let attributes = candidates.compactMapValues { $0 }
         let fullTitle = NSMutableAttributedString()
@@ -746,7 +760,13 @@ final class StatusItemController: NSObject {
         case .gpu: .gpu
         case .memory: .memory
         case .battery: .battery
+        case .cleanup: .cleanup
         }
+    }
+
+    static func cleanupText(_ bytes: Int64?) -> String {
+        guard let bytes else { return "…" }
+        return QuickCleanService.format(bytes)
     }
 
     func startMenuBarStats() {
