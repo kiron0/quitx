@@ -453,17 +453,20 @@ struct ChangelogView: View {
     private var detail: some View {
         if let release = selectedRelease {
             VStack(spacing: 0) {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
-                        contentHeader(for: release)
+                contentHeader(for: release)
+                    .padding(.horizontal, 28)
+                    .padding(.top, 40)
+                    .padding(.bottom, 16)
 
+                ScrollView(.vertical, showsIndicators: true) {
+                    VStack(alignment: .leading, spacing: 18) {
                         ForEach(release.sections) { section in
                             sectionCard(section)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 28)
-                    .padding(.top, 40)
+                    .padding(.top, 4)
                     .padding(.bottom, 20)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
