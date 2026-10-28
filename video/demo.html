@@ -185,7 +185,7 @@
       <div id="title" class="abs card inset-0 place-items-center absolute z-[60] grid text-center bg-[radial-gradient(60%_60%_at_50%_40%,#2a1f12_0%,#0e0c0a_70%)]">
         <div class="glow -mt-[260px] mr-0 mb-0 -ml-[260px] absolute left-[50%] top-[40%] w-[520px] h-[520px] rounded-full bg-[radial-gradient(closest-side,rgba(254,188,51,0.35),transparent_70%)]" id="tglow"></div>
         <div>
-          <img class="w-[132px] h-[132px] relative [filter:drop-shadow(0_24px_40px_rgba(0,0,0,0.6))]" id="ticon" src="../site/assets/icon.png" alt="" />
+          <img class="w-[132px] h-[132px] relative [filter:drop-shadow(0_24px_40px_rgba(0,0,0,0.6))]" id="ticon" src="../site/assets/icon.png" alt="" style="display:block;margin:0 auto" />
           <h1 class="mx-0 mt-[26px] mb-[10px] relative font-['Inter_Display','Inter'] text-[76px] tracking-[-.04em] font-bold text-white" id="tword">QuitX</h1>
           <p class="m-0 relative text-[22px] text-[var(--color-muted)]" id="ttag">A fresh start without a restart.</p>
         </div>
@@ -193,7 +193,7 @@
       <div id="end" class="abs card inset-0 place-items-center absolute z-[60] grid text-center bg-[radial-gradient(60%_60%_at_50%_40%,#2a1f12_0%,#0e0c0a_70%)]">
         <div class="glow -mt-[260px] mr-0 mb-0 -ml-[260px] absolute left-[50%] top-[40%] w-[520px] h-[520px] rounded-full bg-[radial-gradient(closest-side,rgba(254,188,51,0.35),transparent_70%)]"></div>
         <div>
-          <img class="w-[132px] h-[132px] relative [filter:drop-shadow(0_24px_40px_rgba(0,0,0,0.6))]" id="eicon" src="../site/assets/icon.png" alt="" />
+          <img class="w-[132px] h-[132px] relative [filter:drop-shadow(0_24px_40px_rgba(0,0,0,0.6))]" id="eicon" src="../site/assets/icon.png" alt="" style="display:block;margin:0 auto" />
           <h1 class="mx-0 mt-[26px] mb-[10px] relative font-['Inter_Display','Inter'] text-[76px] tracking-[-.04em] font-bold text-white">QuitX</h1>
           <p class="m-0 relative text-[22px] text-[var(--color-muted)]">Free and open source for macOS 14 and later.</p>
           <span class="pill py-[14px] px-[24px] mt-[30px] relative inline-flex rounded-[14px] bg-[linear-gradient(var(--color-gold),var(--color-gold-deep))] text-[rgba(0,0,0,.88)] font-bold text-[18px]">Download from GitHub</span>
@@ -704,8 +704,8 @@
         }
         st.o.arrowX = anchorInfo(st.zoom).arrowX;
         if (st.theme) {
-          const g = prog(t, T.thSwap, T.thSwap + 0.5);
-          pop.innerHTML = `<div class="relative"><div class="opacity-[${1 - g}]">${QX.popover(st.o)}</div><div class="absolute inset-0 opacity-[${g}]">${QX.popover(Object.assign({}, st.o, { glass: true }))}</div></div>`;
+          const g = prog(t, T.thSwap, T.thSwap + 0.3, ease);
+          pop.innerHTML = QX.popover(Object.assign({}, st.o, { glass: g }));
         } else if (st.isPorts) {
           pop.innerHTML = QX.ports(st.o);
         } else {

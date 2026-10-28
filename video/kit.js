@@ -42,16 +42,6 @@
     copy: '<svg viewBox="0 0 16 16"><rect x="5" y="5" width="8.5" height="8.5" rx="1.6"/><path d="M11 5V3.6A1.1 1.1 0 0 0 9.9 2.5H3.6a1.1 1.1 0 0 0-1.1 1.1v6.3A1.1 1.1 0 0 0 3.6 11H5"/></svg>',
   };
 
-  const tabIcons = {
-    General: '<svg class="w-[14px] h-[14px] flex-none fill-none [stroke:rgba(235,235,245,.6)] stroke-[1.6] [stroke-linecap:round] [stroke-linejoin:round] [.qx-settings.side_.si.on_&:not(.mq)]:[stroke:var(--qx-gold)]" viewBox="0 0 20 20"><circle cx="10" cy="10" r="2.8"/><path d="M10 2v2.4M10 15.6V18M2 10h2.4M15.6 10H18M4.3 4.3l1.7 1.7M14 14l1.7 1.7M4.3 15.7L6 14M14 6l1.7-1.7"/></svg>',
-    Automation: '<svg class="w-[14px] h-[14px] flex-none fill-none [stroke:rgba(235,235,245,.6)] stroke-[1.6] [stroke-linecap:round] [stroke-linejoin:round] [.qx-settings.side_.si.on_&:not(.mq)]:[stroke:var(--qx-gold)]" viewBox="0 0 20 20"><circle cx="10" cy="11" r="6.5"/><path d="M10 7.5V11l2.4 1.6M8 2.2h4"/></svg>',
-    Advanced: '<svg class="w-[14px] h-[14px] flex-none fill-none [stroke:rgba(235,235,245,.6)] stroke-[1.6] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 20 20"><path d="M3 5h9M15 5h2M3 10h3M9 10h8M3 15h7M13 15h4"/><circle cx="13.5" cy="5" r="1.6"/><circle cx="7.5" cy="10" r="1.6"/><circle cx="11.5" cy="15" r="1.6"/></svg>',
-    Ports: '<svg class="w-[14px] h-[14px] flex-none fill-none [stroke:rgba(235,235,245,.6)] stroke-[1.6] [stroke-linecap:round] [stroke-linejoin:round] [.qx-settings.side_.si.on_&:not(.mq)]:[stroke:var(--qx-gold)]" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7.5"/><path d="M2.5 10h15M10 2.5c2.2 2.3 3.2 4.8 3.2 7.5s-1 5.2-3.2 7.5M10 2.5C7.8 4.8 6.8 7.3 6.8 10s1 5.2 3.2 7.5"/></svg>',
-    Exclude: '<svg class="w-[14px] h-[14px] flex-none fill-none [stroke:rgba(235,235,245,.6)] stroke-[1.6] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/><path d="M5 5l10 10"/></svg>',
-    Shortcuts: '<svg class="w-[14px] h-[14px] flex-none fill-none [stroke:rgba(235,235,245,.6)] stroke-[1.6] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 20 20"><path d="M7 7V5.5A2 2 0 1 0 5.5 7.5H7zm0 0h6m-6 0v6m6-6V5.5a2 2 0 1 1 1.5 2H13zm0 0v6m0 0h-6m6 0v1.5a2 2 0 1 0 1.5-2H13zm-6 0v1.5A2 2 0 1 1 5.5 12.5H7z"/></svg>',
-    About: '<svg class="w-[14px] h-[14px] flex-none fill-none [stroke:rgba(235,235,245,.6)] stroke-[1.6] [stroke-linecap:round] [stroke-linejoin:round] [.qx-settings.side_.si.on_&:not(.mq)]:[stroke:var(--qx-gold)]" viewBox="0 0 20 20"><path d="M11 2L4 11.5h5L8.5 18 16 8.5h-5z"/></svg>',
-  };
-
   const APPS = [
     { n: 'Books', i: 'books', u: '0.0%' },
     { n: 'Calendar', i: 'calendar', u: '1.0%' },
@@ -78,10 +68,6 @@
   const generic = '<svg class="gen [.qx-pop_.row_&]:w-[18px] [.qx-pop_.row_&]:h-[18px] [.qx-pop_.row_&]:flex-none [.qx-rescue_.r_&]:w-[18px] [.qx-rescue_.r_&]:h-[18px]" viewBox="0 0 18 18"><rect x="1" y="1" width="16" height="16" rx="4" fill="#4A494E"/><rect x="1" y="1" width="16" height="16" rx="4" fill="url(#qxg)" opacity=".5"/><path d="M5.5 6.5h7M5.5 9h7M5.5 11.5h4.5" stroke="#C9C8CE" stroke-width="1.3" stroke-linecap="round"/><defs><linearGradient id="qxg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".25"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs></svg>';
   const icon = a => a.i ? `<img class="[.qx-pop_.row_&]:w-[18px] [.qx-pop_.row_&]:h-[18px] [.qx-pop_.row_&]:flex-none [.qx-rescue_.r_&]:w-[18px] [.qx-rescue_.r_&]:h-[18px]" src="${A}icons/${a.i}.png" alt="">` : generic;
 
-  function arrow(x, glass) {
-    const fill = glass ? 'rgba(62,56,52,.7)' : '#2B2A2D';
-    return `<div class="arrow [.qx-pop_&]:-ml-[11px] [.qx-pop_&]:absolute [.qx-pop_&]:top-0 [.qx-pop_&]:w-[22px] [.qx-pop_&]:h-[11px] [.qx-pop_&]:z-[2] [.qx-rescue_&]:-ml-[11px] [.qx-rescue_&]:absolute [.qx-rescue_&]:top-0 [.qx-rescue_&]:w-[22px] [.qx-rescue_&]:h-[11px] [.qx-rescue_&]:z-[2] [.qx-stats-panel_&]:-ml-[11px] [.qx-stats-panel_&]:absolute [.qx-stats-panel_&]:top-0 [.qx-stats-panel_&]:w-[22px] [.qx-stats-panel_&]:h-[11px] [.qx-stats-panel_&]:z-[2]" style="left:${x}px"><svg class="[.qx-pop_.arrow_&]:block [.qx-rescue_.arrow_&]:block [.qx-stats-panel_.arrow_&]:block" width="22" height="11" viewBox="0 0 22 11"><path d="M0 11C5 11 8 1.5 11 1.5S17 11 22 11z" fill="${fill}" stroke="rgba(255,255,255,.16)" stroke-width=".5"/></svg></div>`;
-  }
 
   function row(a, o) {
     const sel = o.selected === 'all' ? !o.unselected.includes(a.n) : o.selected.includes(a.n);
@@ -104,7 +90,7 @@
     const off = o.buttonOff || count === 0;
     const btn = `<div class="quit${off ? ' off' : ''}${o.press ? ' press' : ''} mx-[8px] mt-[7px] mb-[4px] gap-[5px] h-[24px] rounded-[6px] flex items-center justify-center bg-[linear-gradient(var(--qx-gold),var(--qx-gold-deep))] bg-transparent text-[rgba(0,0,0,.88)] text-[12px] font-bold shadow-[0_1px_2px_rgba(254,188,51,.18)] [&.off]:bg-none [&.off]:bg-[rgba(255,255,255,.08)] [&.off]:text-[rgba(255,255,255,.35)] [&.off]:shadow-none [&.press]:[filter:brightness(.86)]" data-role="quit">${o.force && !off ? S.bolt : ''}${title}</div>`;
     const headCb = isAll ? 'on' : (count > 0 ? 'part' : '');
-    return `<div class="qx-pop${o.glass ? ' glass' : ''}${o.tabs ? ' wide' : ''} relative w-[330px] font-['Inter',-apple-system,system-ui,sans-serif] text-[var(--qx-ink)] antialiased tracking-[-.003em] [&.wide]:w-[330px]">${arrow(o.arrowX, o.glass)}<div class="body mt-[10px] overflow-hidden relative rounded-[12px] bg-[var(--qx-panel)] shadow-[0_0_0_.5px_rgba(255,255,255,.16),0_0_0_1px_rgba(0,0,0,.55),0_22px_44px_rgba(0,0,0,.5),0_3px_10px_rgba(0,0,0,.3)] [.qx-pop.glass_&]:bg-[rgba(48,44,42,.42)] [.qx-pop.glass_&]:shadow-[inset_0_1px_0_rgba(255,255,255,.22),inset_0_0_0_.5px_rgba(255,255,255,.22),0_0_0_1px_rgba(0,0,0,.3),0_22px_44px_rgba(0,0,0,.45)] [.qx-pop.glass_&]:[backdrop-filter:blur(22px)_saturate(1.8)] [.qx-pop.glass_&]:[-webkit-backdrop-filter:blur(22px)_saturate(1.8)] [.qx-pop.glass_&]:before:inset-0 [.qx-pop.glass_&]:before:content-[''] [.qx-pop.glass_&]:before:absolute [.qx-pop.glass_&]:before:pointer-events-none [.qx-pop.glass_&]:before:rounded-[12px] [.qx-pop.glass_&]:before:bg-[linear-gradient(160deg,rgba(255,255,255,.16),rgba(255,255,255,0)_28%,rgba(255,255,255,0)_72%,rgba(255,255,255,.08))]"><div style="height:5px"></div>${o.tabs ? tabbar('apps') : ''}${btn}<div class="search mx-[8px] mt-0 mb-[4px] gap-[8px] flex items-center [.pg-install_&]:py-0 [.pg-install_&]:px-[9px]"><span class="qx-cb ${headCb} place-items-center w-[14px] h-[14px] flex-none rounded-[3px] bg-[rgba(255,255,255,.1)] grid [&.on]:bg-[var(--qx-gold)] [&.part]:bg-[var(--qx-gold)] [&.on]:after:[border-bottom:1.8px_solid_rgba(0,0,0,.9)] [&.on]:after:[border-left:1.8px_solid_rgba(0,0,0,.9)] [&.on]:after:content-[''] [&.on]:after:w-[7px] [&.on]:after:h-[3.5px] [&.on]:after:[transform:rotate(-45deg)_translate(.5px,-.8px)] [&.part]:after:content-[''] [&.part]:after:w-[6px] [&.part]:after:h-[2px] [&.part]:after:rounded-[1px] [&.part]:after:bg-[rgba(0,0,0,.9)]"></span><div class="field py-0 px-[7px] gap-[5px] flex-1 h-[24px] rounded-[6px] flex items-center text-[11.5px] text-[var(--qx-sub)] bg-[rgba(0,0,0,.18)] shadow-[inset_0_0_0_.5px_rgba(255,255,255,.08)]">${S.search}Search</div></div><div class="list py-[2px] px-0 gap-[2px] flex flex-col">${list}</div><div class="foot px-[10px] pt-[3px] pb-[7px] flex items-center text-[11px] text-[var(--qx-sub)]"><span>${o.footer}</span><span class="gear${o.gearOn ? ' on' : ''} ml-auto place-items-center w-[18px] h-[18px] grid rounded-[5px] text-[var(--qx-sub)] [&.on]:text-white [&.on]:bg-[rgba(255,255,255,.14)]" data-role="gear">${S.sliders}</span></div>${o.overlay || ''}${o.toast ? `<div class="qx-toast py-[7px] px-[14px] gap-[6px] absolute left-[50%] bottom-[36px] [transform:translateX(-50%)] z-[6] flex items-center rounded-[999px] bg-[rgba(0,0,0,.78)] text-white text-[12px] font-medium whitespace-nowrap">${S.check}${o.toast}</div>` : ''}</div></div>`;
+    return `<div class="qx-pop${o.glass ? ' glass' : ''}${o.tabs ? ' wide' : ''} relative w-[330px] font-['Inter',-apple-system,system-ui,sans-serif] text-[var(--qx-ink)] antialiased tracking-[-.003em] [&.wide]:w-[330px]">${chrome(o.arrowX, o.glass)}<div style="height:12px"></div><div class="body" style="position:relative;z-index:1;border-radius:14px;overflow:hidden"><div style="height:5px"></div>${o.tabs ? tabbar('apps') : ''}${btn}<div class="search mx-[8px] mt-0 mb-[4px] gap-[8px] flex items-center [.pg-install_&]:py-0 [.pg-install_&]:px-[9px]"><span class="qx-cb ${headCb} place-items-center w-[14px] h-[14px] flex-none rounded-[3px] bg-[rgba(255,255,255,.1)] grid [&.on]:bg-[var(--qx-gold)] [&.part]:bg-[var(--qx-gold)] [&.on]:after:[border-bottom:1.8px_solid_rgba(0,0,0,.9)] [&.on]:after:[border-left:1.8px_solid_rgba(0,0,0,.9)] [&.on]:after:content-[''] [&.on]:after:w-[7px] [&.on]:after:h-[3.5px] [&.on]:after:[transform:rotate(-45deg)_translate(.5px,-.8px)] [&.part]:after:content-[''] [&.part]:after:w-[6px] [&.part]:after:h-[2px] [&.part]:after:rounded-[1px] [&.part]:after:bg-[rgba(0,0,0,.9)]"></span><div class="field py-0 px-[7px] gap-[5px] flex-1 h-[24px] rounded-[6px] flex items-center text-[11.5px] text-[var(--qx-sub)] bg-[rgba(0,0,0,.18)] shadow-[inset_0_0_0_.5px_rgba(255,255,255,.08)]">${S.search}Search</div></div><div class="list py-[2px] px-0 gap-[2px] flex flex-col">${list}</div><div class="foot px-[10px] pt-[3px] pb-[7px] flex items-center text-[11px] text-[var(--qx-sub)]"><span>${o.footer}</span><span class="gear${o.gearOn ? ' on' : ''} ml-auto place-items-center w-[18px] h-[18px] grid rounded-[5px] text-[var(--qx-sub)] [&.on]:text-white [&.on]:bg-[rgba(255,255,255,.14)]" data-role="gear">${S.sliders}</span></div>${o.overlay || ''}${o.toast ? `<div class="qx-toast py-[7px] px-[14px] gap-[6px] absolute left-[50%] bottom-[36px] [transform:translateX(-50%)] z-[6] flex items-center rounded-[999px] bg-[rgba(0,0,0,.78)] text-white text-[12px] font-medium whitespace-nowrap">${S.check}${o.toast}</div>` : ''}</div></div>`;
   }
 
   function tabbar(active) {
@@ -140,7 +126,7 @@
     const title = o.force ? (isAll ? 'Force Kill All Ports' : (count ? `Force Kill ${count} ${noun}` : 'Force Kill Selected Ports')) : (isAll ? 'Kill All Ports' : (count ? `Kill ${count} ${noun}` : 'Kill Selected Ports'));
     const btn = `<div class="quit${count === 0 ? ' off' : ''} mx-[8px] mt-[7px] mb-[4px] gap-[5px] h-[24px] rounded-[6px] flex items-center justify-center bg-[linear-gradient(var(--qx-gold),var(--qx-gold-deep))] bg-transparent text-[rgba(0,0,0,.88)] text-[12px] font-bold shadow-[0_1px_2px_rgba(254,188,51,.18)] [&.off]:bg-none [&.off]:bg-[rgba(255,255,255,.08)] [&.off]:text-[rgba(255,255,255,.35)] [&.off]:shadow-none" data-role="quit">${o.force && count ? S.bolt : ''}${title}</div>`;
     const headCb = isAll ? 'on' : (count > 0 ? 'part' : '');
-    return `<div class="qx-pop wide${o.glass ? ' glass' : ''} relative w-[330px] font-['Inter',-apple-system,system-ui,sans-serif] text-[var(--qx-ink)] antialiased tracking-[-.003em]">${arrow(o.arrowX, o.glass)}<div class="body mt-[10px] overflow-hidden relative rounded-[12px] bg-[var(--qx-panel)] shadow-[0_0_0_.5px_rgba(255,255,255,.16),0_0_0_1px_rgba(0,0,0,.55),0_22px_44px_rgba(0,0,0,.5),0_3px_10px_rgba(0,0,0,.3)]"><div style="height:5px"></div>${tabbar('ports')}${btn}<div class="search mx-[8px] mt-0 mb-[4px] gap-[8px] flex items-center"><span class="qx-cb ${headCb} place-items-center w-[14px] h-[14px] flex-none rounded-[3px] bg-[rgba(255,255,255,.1)] grid [&.part]:bg-[var(--qx-gold)] [&.part]:after:content-[''] [&.part]:after:w-[6px] [&.part]:after:h-[2px] [&.part]:after:rounded-[1px] [&.part]:after:bg-[rgba(0,0,0,.9)]"></span><div class="field py-0 px-[7px] gap-[5px] flex-1 h-[24px] rounded-[6px] flex items-center text-[11.5px] text-[var(--qx-sub)] bg-[rgba(0,0,0,.18)] shadow-[inset_0_0_0_.5px_rgba(255,255,255,.08)]">${S.search}Search ports, apps, folders</div></div><div class="list py-[2px] px-0 gap-[2px] flex flex-col">${list}</div><div class="foot px-[10px] pt-[3px] pb-[7px] flex items-center text-[11px] text-[var(--qx-sub)]"><span>${o.footer}</span><span class="gear${o.gearOn ? ' on' : ''} ml-auto place-items-center w-[18px] h-[18px] grid rounded-[5px] text-[var(--qx-sub)]" data-role="gear">${S.sliders}</span></div>${o.overlay || ''}${o.toast ? `<div class="qx-toast py-[7px] px-[14px] gap-[6px] absolute left-[50%] bottom-[36px] [transform:translateX(-50%)] z-[6] flex items-center rounded-[999px] bg-[rgba(0,0,0,.78)] text-white text-[12px] font-medium whitespace-nowrap">${S.check}${o.toast}</div>` : ''}</div></div>`;
+    return `<div class="qx-pop wide${o.glass ? ' glass' : ''} relative w-[330px] font-['Inter',-apple-system,system-ui,sans-serif] text-[var(--qx-ink)] antialiased tracking-[-.003em]">${chrome(o.arrowX, o.glass)}<div style="height:12px"></div><div class="body" style="position:relative;z-index:1;border-radius:14px;overflow:hidden"><div style="height:5px"></div>${tabbar('ports')}${btn}<div class="search mx-[8px] mt-0 mb-[4px] gap-[8px] flex items-center"><span class="qx-cb ${headCb} place-items-center w-[14px] h-[14px] flex-none rounded-[3px] bg-[rgba(255,255,255,.1)] grid [&.part]:bg-[var(--qx-gold)] [&.part]:after:content-[''] [&.part]:after:w-[6px] [&.part]:after:h-[2px] [&.part]:after:rounded-[1px] [&.part]:after:bg-[rgba(0,0,0,.9)]"></span><div class="field py-0 px-[7px] gap-[5px] flex-1 h-[24px] rounded-[6px] flex items-center text-[11.5px] text-[var(--qx-sub)] bg-[rgba(0,0,0,.18)] shadow-[inset_0_0_0_.5px_rgba(255,255,255,.08)]">${S.search}Search ports, apps, folders</div></div><div class="list py-[2px] px-0 gap-[2px] flex flex-col">${list}</div><div class="foot px-[10px] pt-[3px] pb-[7px] flex items-center text-[11px] text-[var(--qx-sub)]"><span>${o.footer}</span><span class="gear${o.gearOn ? ' on' : ''} ml-auto place-items-center w-[18px] h-[18px] grid rounded-[5px] text-[var(--qx-sub)]" data-role="gear">${S.sliders}</span></div>${o.overlay || ''}${o.toast ? `<div class="qx-toast py-[7px] px-[14px] gap-[6px] absolute left-[50%] bottom-[36px] [transform:translateX(-50%)] z-[6] flex items-center rounded-[999px] bg-[rgba(0,0,0,.78)] text-white text-[12px] font-medium whitespace-nowrap">${S.check}${o.toast}</div>` : ''}</div></div>`;
   }
 
   function confirm(o) {
@@ -175,77 +161,383 @@
 
   function rescue(o) {
     const rows = o.targets.map(t => `<div class="r py-0 px-[12px] gap-[7px] h-[25px] flex items-center text-[12.5px]"><span class="qx-cb on place-items-center w-[14px] h-[14px] flex-none rounded-[3px] bg-[var(--qx-gold)] grid after:[border-bottom:1.8px_solid_rgba(0,0,0,.9)] after:[border-left:1.8px_solid_rgba(0,0,0,.9)] after:content-[''] after:w-[7px] after:h-[3.5px] after:[transform:rotate(-45deg)_translate(.5px,-.8px)]"></span>${icon(t)}<span>${t.n}</span><em class="ml-auto [font-style:normal] text-[11px] font-medium text-[#FF9F0A] tabular-nums">${t.v}</em></div>`).join('');
-    return `<div class="qx-rescue relative w-[270px] font-['Inter',-apple-system,system-ui,sans-serif] text-[var(--qx-ink)]">${arrow(o.arrowX || 135)}<div class="body px-0 pt-[14px] pb-[16px] mt-[10px] gap-[12px] rounded-[12px] bg-[var(--qx-panel)] flex flex-col shadow-[0_0_0_.5px_rgba(255,255,255,.16),0_0_0_1px_rgba(0,0,0,.55),0_22px_44px_rgba(0,0,0,.5)]"><div class="h py-0 px-[12px] gap-[7px] flex items-center text-[12.5px] font-semibold">${S.gauge}${o.title}</div><p class="py-0 px-[12px] m-0 text-[11px] text-[var(--qx-sub)] leading-[1.4]">${o.detail}</p><div class="qx-card my-0 mx-[12px] rounded-[7px] bg-[rgba(255,255,255,.035)] shadow-[inset_0_0_0_.5px_rgba(255,255,255,.09)]"><div class="sel py-0 px-[12px] gap-[8px] h-[27px] flex items-center text-[11.5px] font-medium"><span class="qx-cb on place-items-center w-[14px] h-[14px] flex-none rounded-[3px] bg-[var(--qx-gold)] grid after:[border-bottom:1.8px_solid_rgba(0,0,0,.9)] after:[border-left:1.8px_solid_rgba(0,0,0,.9)] after:content-[''] after:w-[7px] after:h-[3.5px] after:[transform:rotate(-45deg)_translate(.5px,-.8px)]"></span>Deselect All<em class="ml-auto [font-style:normal] text-[11px] text-[var(--qx-sub)] font-normal">${o.targets.length} apps</em></div>${rows}</div><div class="btns py-0 px-[12px] gap-[8px] flex"><span class="place-items-center flex-1 h-[24px] rounded-[6px] grid text-[11.5px] font-medium bg-[rgba(255,255,255,.07)] shadow-[inset_0_0_0_.5px_rgba(255,255,255,.12)]">Cancel</span><span class="p place-items-center flex-1 h-[24px] rounded-[6px] grid text-[11.5px] font-bold bg-transparent bg-[linear-gradient(var(--qx-gold),var(--qx-gold-deep))] shadow-none text-[rgba(0,0,0,.88)]">Quit ${o.targets.length} apps</span></div></div></div>`;
+    return `<div class="qx-rescue relative w-[270px] font-['Inter',-apple-system,system-ui,sans-serif] text-[var(--qx-ink)]">${chrome(o.arrowX || 135, o.glass)}<div style="height:12px"></div><div class="body" style="position:relative;z-index:1;border-radius:14px;padding:14px 0 16px;display:flex;flex-direction:column;gap:12px"><div class="h py-0 px-[12px] gap-[7px] flex items-center text-[12.5px] font-semibold">${S.gauge}${o.title}</div><p class="py-0 px-[12px] m-0 text-[11px] text-[var(--qx-sub)] leading-[1.4]">${o.detail}</p><div class="qx-card my-0 mx-[12px] rounded-[7px] bg-[rgba(255,255,255,.035)] shadow-[inset_0_0_0_.5px_rgba(255,255,255,.09)]"><div class="sel py-0 px-[12px] gap-[8px] h-[27px] flex items-center text-[11.5px] font-medium"><span class="qx-cb on place-items-center w-[14px] h-[14px] flex-none rounded-[3px] bg-[var(--qx-gold)] grid after:[border-bottom:1.8px_solid_rgba(0,0,0,.9)] after:[border-left:1.8px_solid_rgba(0,0,0,.9)] after:content-[''] after:w-[7px] after:h-[3.5px] after:[transform:rotate(-45deg)_translate(.5px,-.8px)]"></span>Deselect All<em class="ml-auto [font-style:normal] text-[11px] text-[var(--qx-sub)] font-normal">${o.targets.length} apps</em></div>${rows}</div><div class="btns py-0 px-[12px] gap-[8px] flex"><span class="place-items-center flex-1 h-[24px] rounded-[6px] grid text-[11.5px] font-medium bg-[rgba(255,255,255,.07)] shadow-[inset_0_0_0_.5px_rgba(255,255,255,.12)]">Cancel</span><span class="p place-items-center flex-1 h-[24px] rounded-[6px] grid text-[11.5px] font-bold bg-transparent bg-[linear-gradient(var(--qx-gold),var(--qx-gold-deep))] shadow-none text-[rgba(0,0,0,.88)]">Quit ${o.targets.length} apps</span></div></div></div>`;
   }
 
   function note(o) {
     return `<div class="qx-note py-[11px] px-[13px] gap-[11px] w-[344px] rounded-[16px] flex font-['Inter',-apple-system,system-ui,sans-serif] text-white bg-[rgba(46,43,41,.78)] [backdrop-filter:blur(30px)_saturate(1.6)] [-webkit-backdrop-filter:blur(30px)_saturate(1.6)] shadow-[inset_0_0_0_.5px_rgba(255,255,255,.18),0_10px_30px_rgba(0,0,0,.35)]"><img class="w-[36px] h-[36px] flex-none" src="${A}icon.png" alt=""><div style="flex:1;min-width:0"><div class="t flex justify-between text-[13px] font-semibold"><span>${o.title}</span><small class="font-normal text-[12px] text-[rgba(255,255,255,.55)]">${o.time || 'now'}</small></div><p class="mx-0 mt-[2px] mb-0 text-[12.5px] leading-[1.35] text-[rgba(255,255,255,.85)]">${o.body}</p></div></div>`;
   }
 
-  const sideIcons = Object.assign({
-    Overview: '<svg class="w-[14px] h-[14px] flex-none fill-none [stroke:rgba(235,235,245,.6)] stroke-[1.6] [stroke-linecap:round] [stroke-linejoin:round] [.qx-settings.side_.si.on_&:not(.mq)]:[stroke:var(--qx-gold)]" viewBox="0 0 20 20"><rect x="3" y="3" width="5.5" height="5.5" rx="1.2"/><rect x="11.5" y="3" width="5.5" height="5.5" rx="1.2"/><rect x="3" y="11.5" width="5.5" height="5.5" rx="1.2"/><rect x="11.5" y="11.5" width="5.5" height="5.5" rx="1.2"/></svg>',
-    Marquee: '<svg viewBox="0 0 512 512" class="mq w-[14px] h-[14px] flex-none fill-none [stroke:none] stroke-[1.6] [stroke-linecap:round] [stroke-linejoin:round]"><rect x="16" y="16" width="480" height="480" rx="116" fill="#FFCF1A"/><g fill="none" stroke="#1D1D1F" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"><path d="M112 196V128a16 16 0 0 1 16-16h68"/><path d="M400 316v68a16 16 0 0 1-16 16h-68"/></g><rect x="166" y="166" width="124" height="124" rx="20" fill="none" stroke="#1D1D1F" stroke-width="26"/><rect x="222" y="222" width="124" height="124" rx="20" fill="#1D1D1F"/></svg>',
-  }, tabIcons);
-  const sideIcon = d => `<svg class="w-[14px] h-[14px] flex-none fill-none [stroke:rgba(235,235,245,.6)] stroke-[1.6] [stroke-linecap:round] [stroke-linejoin:round] [.qx-settings.side_.si.on_&:not(.mq)]:[stroke:var(--qx-gold)]" viewBox="0 0 20 20">${d}</svg>`;
-  Object.assign(sideIcons, {
-    'Uninstall Apps': sideIcon('<rect x="3" y="3" width="14" height="14" rx="3.2"/><path d="M7.5 7.5l5 5M12.5 7.5l-5 5"/>'),
-    Leftovers: sideIcon('<path d="M5 2.8h6.5L15 6.3v10.9H5z"/><path d="M8.3 9.2a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1v.4M10 14.6v.1"/>'),
-    'System Junk': sideIcon('<circle cx="7.5" cy="7.5" r="2"/><path d="M7.5 3v1.5M7.5 10.5V12M3 7.5h1.5M10.5 7.5H12"/><circle cx="13.5" cy="13.5" r="1.6"/><path d="M13.5 10.3v1.2M13.5 15.5v1.2M10.3 13.5h1.2M15.5 13.5h1.2"/>'),
-    'User Cache': sideIcon('<path d="M3 11.5l2-6.5h10l2 6.5v3.5H3z"/><path d="M3 11.5h14M6 13.3h.1M8.5 13.3h.1"/>'),
-    'Mail Files': sideIcon('<rect x="2.8" y="4.5" width="14.4" height="11" rx="1.8"/><path d="M3.2 5.5l6.8 5 6.8-5"/>'),
-    'Trash Bins': sideIcon('<path d="M4 5.5h12M8 5.5V3.8h4v1.7M5.5 5.5l.8 11h7.4l.8-11M8.5 8.5v5M11.5 8.5v5"/>'),
-    'Large & Old Files': sideIcon('<circle cx="10" cy="10" r="7"/><path d="M10 6v4.3l2.8 1.7"/>'),
-    'AI Apps': sideIcon('<rect x="5" y="5" width="10" height="10" rx="1.8"/><path d="M8 2.5v2.5M12 2.5v2.5M8 15v2.5M12 15v2.5M2.5 8H5M2.5 12H5M15 8h2.5M15 12h2.5"/>'),
-    'Xcode Junk': sideIcon('<path d="M11.5 3.5l5 5-2 2-5-5zM9.5 5.5L3 12l2.5 2.5L12 8"/>'),
-    'Brew Cache': sideIcon('<path d="M4 6.5h9v6.5a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3z"/><path d="M13 8h1.5a2 2 0 0 1 0 4H13M7 2.5v2M10 2.5v2"/>'),
-    'Node Cache': sideIcon('<path d="M4 16c0-7 4-11.5 12-12-.3 7.8-4.8 12-12 12z"/><path d="M4 16l6.5-6.5"/>'),
-    'Docker Cache': sideIcon('<path d="M10 2.8l6.5 3.5v7.4L10 17.2l-6.5-3.5V6.3z"/><path d="M3.5 6.3L10 9.8l6.5-3.5M10 9.8v7.4M6.8 4.5l6.5 3.5"/>'),
-  });
-  const sideGroups = [['', ['Overview']], ['App', ['General', 'Shortcuts']], ['Quitting', ['Automation', 'Advanced', 'Exclude']], ['Applications', ['Uninstall Apps', 'Leftovers']], ['Cleanup', ['System Junk', 'User Cache', 'Mail Files', 'Trash Bins', 'Large & Old Files', 'AI Apps']], ['Developer Cleanup', ['Xcode Junk', 'Brew Cache', 'Node Cache', 'Docker Cache']], ['Developer', ['Ports']], ['QuitX', ['About']], ['More Apps', ['Marquee']]];
-  const summaries = {
-    General: 'Startup, sounds, updates, menu bar stats and how QuitX looks.',
-    Automation: 'Let QuitX quit apps on sleep, after their last window, or when idle.',
-    Advanced: 'Background apps, music protection, confirmations and extras.',
-    Exclude: 'Apps and ports QuitX never quits, manually or automatically.',
-    Ports: 'Find and free ports held by dev servers, databases and Docker.',
-    Shortcuts: 'Open QuitX or quit apps from anywhere with your own key combos.',
-    About: 'Version, updates and ways to get in touch.',
-    'Uninstall Apps': 'Remove installed apps, support files, caches, preferences and logs.',
-    Leftovers: 'Find files left behind by apps that are no longer installed.',
-    'User Cache': 'Review cache data created by apps in your account.',
+  const P = a => `rgba(255,255,255,${a})`;
+  const AC = a => `rgba(254,188,51,${a})`;
+  const INK = 'rgba(255,255,255,.86)';
+  const SUB = 'rgba(235,235,245,.6)';
+  const GOLD = '#FEBC33';
+  const GOLD2 = '#E89B00';
+  const WIN_BG = '#262527';
+  const SIDE_BG = '#2E2D30';
+
+  const SF = {
+    magnifyingglass: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.3 15.3l5.2 5.2"/>',
+    'square.grid.2x2': '<rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/>',
+    gearshape: '<circle cx="12" cy="12" r="3"/><path d="M12 2.8l1.6 2.3 2.7-.7.5 2.8 2.8.5-.7 2.7 2.3 1.6-2.3 1.6.7 2.7-2.8.5-.5 2.8-2.7-.7L12 21.2l-1.6-2.3-2.7.7-.5-2.8-2.8-.5.7-2.7L2.8 12l2.3-1.6-.7-2.7 2.8-.5.5-2.8 2.7.7z"/>',
+    command: '<path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3"/>',
+    timer: '<path d="M10 2.5h4M12 14l3-3"/><circle cx="12" cy="14" r="8"/>',
+    'slider.horizontal.3': '<path d="M21 5h-7M10 5H3M21 12h-9M8 12H3M21 19h-5M12 19H3M14 3v4M8 10v4M16 17v4"/>',
+    nosign: '<circle cx="12" cy="12" r="9.2"/><path d="M5.5 5.5l13 13"/>',
+    'xmark.app': '<rect x="3" y="3" width="18" height="18" rx="4.2"/><path d="M9 9l6 6M15 9l-6 6"/>',
+    'doc.questionmark': '<path d="M14 2.8H6.5a2 2 0 0 0-2 2v14.4a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V8.3z"/><path d="M10 11.2a2 2 0 1 1 2.7 1.9c-.5.2-.7.6-.7 1.1v.4M12 17.6v.1"/>',
+    'gearshape.2': '<circle cx="9" cy="9" r="2.2"/><path d="M9 3.5v1.6M9 12.9v1.6M3.5 9h1.6M12.9 9h1.6M5.1 5.1l1.1 1.1M11.8 11.8l1.1 1.1M5.1 12.9l1.1-1.1M11.8 6.2l1.1-1.1"/><circle cx="16.5" cy="16.5" r="1.8"/><path d="M16.5 12.6v1.3M16.5 19.1v1.3M12.6 16.5h1.3M19.1 16.5h1.3"/>',
+    internaldrive: '<path d="M3.5 14l2.4-8h12.2l2.4 8v4.5h-17z"/><path d="M3.5 14h17M7.5 16.3h.1M10.5 16.3h.1"/>',
+    envelope: '<rect x="3" y="5.5" width="18" height="13" rx="2.2"/><path d="M3.6 6.6L12 12.6l8.4-6"/>',
+    trash: '<path d="M4 6.5h16M9 6.5V4.3h6v2.2M6 6.5l1 13.2h10l1-13.2M10 10v6M14 10v6"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5.2l3.4 2"/>',
+    cpu: '<rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx=".8"/><path d="M9.5 2.5V6M14.5 2.5V6M9.5 18v3.5M14.5 18v3.5M2.5 9.5H6M2.5 14.5H6M18 9.5h3.5M18 14.5h3.5"/>',
+    hammer: '<path d="M14 4l6 6-2.4 2.4-6-6zM11.6 6.4L3.5 14.5l3 3 8.1-8.1"/>',
+    mug: '<path d="M4.5 8h12v7.5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4z"/><path d="M16.5 10h1.7a2.3 2.3 0 0 1 0 4.6h-1.7M8.5 3.5v2.2M12.5 3.5v2.2"/>',
+    leaf: '<path d="M4.5 19.5C4.5 11 9.5 5.2 19.5 4.5c-.4 9.6-5.9 15-15 15z"/><path d="M4.5 19.5l8-8"/>',
+    shippingbox: '<path d="M12 3l8.5 4.5v9L12 21l-8.5-4.5v-9z"/><path d="M3.5 7.5L12 12l8.5-4.5M12 12v9M7.8 5.2l8.4 4.5"/>',
+    network: '<circle cx="12" cy="12" r="9.2"/><path d="M2.8 12h18.4M12 2.8c2.4 2.5 3.7 5.7 3.7 9.2s-1.3 6.7-3.7 9.2c-2.4-2.5-3.7-5.7-3.7-9.2S9.6 5.3 12 2.8z"/>',
+    'bolt.fill': { f: '<path d="M13.5 2L4.5 13.5h6.6l-1.6 8.5 9-11.5h-6.6z"/>' },
+    bolt: '<path d="M13.5 2.5L4.8 13.4h6.6l-1.4 8.1 8.7-10.9h-6.6z"/>',
+    power: '<path d="M12 3v8.5"/><path d="M17.7 6.5a8 8 0 1 1-11.4 0"/>',
+    'power.circle': '<circle cx="12" cy="12" r="9.2"/><path d="M12 7v5"/><path d="M15.3 8.8a4.6 4.6 0 1 1-6.6 0"/>',
+    'speaker.wave.2': '<path d="M4 9.2h3.2L11.5 5v14l-4.3-4.2H4z"/><path d="M15 9a4.3 4.3 0 0 1 0 6M17.8 6.4a8 8 0 0 1 0 11.2"/>',
+    'arrow.triangle.2.circlepath': '<path d="M20.5 11A8.5 8.5 0 0 0 6 6.3L4 8.4M3.5 13A8.5 8.5 0 0 0 18 17.7l2-2.1"/><path d="M3.8 4v4.6h4.6M20.2 20v-4.6h-4.6"/>',
+    'menubar.rectangle': '<rect x="2.8" y="4.5" width="18.4" height="15" rx="3"/><path d="M2.8 9h18.4"/>',
+    paintpalette: { s: '<path d="M12 2.8c-5.1 0-9.2 4-9.2 9.2s4.1 9.2 9.2 9.2c.9 0 1.5-.7 1.5-1.5 0-.4-.2-.8-.4-1-.3-.3-.4-.6-.4-1 0-.9.7-1.5 1.5-1.5h1.8c2.8 0 5.1-2.3 5.1-5.1-.1-5-4.2-9.3-9.1-9.3z"/>', f: '<circle cx="7.6" cy="11.4" r="1.25"/><circle cx="9.8" cy="7.2" r="1.25"/><circle cx="14.4" cy="7.2" r="1.25"/><circle cx="17" cy="11.2" r="1.25"/>' },
+    'arrow.up.arrow.down': '<path d="M3.5 8L7.5 4l4 4M7.5 4v16M20.5 16l-4 4-4-4M16.5 20V4"/>',
+    'cursorarrow.click.2': '<path d="M9.5 9.5l4.8 11.2 1.6-4.8 4.8-1.6z"/><path d="M7.6 3l.7 2.6M3 7.6l2.6.7M13.6 4.5L11.8 6.3M4.5 13.6l1.8-1.8"/>',
+    'arrow.counterclockwise': '<path d="M3.5 12a8.5 8.5 0 1 0 2.5-6L3.5 8.5"/><path d="M3.5 3.8v4.7h4.7"/>',
+    'moon.zzz': '<path d="M11.2 4.2a7.5 7.5 0 1 0 8.6 9.8 6.2 6.2 0 0 1-8.6-9.8z"/><path d="M15 3.5h4l-4 4h4"/>',
+    macwindow: '<rect x="2.8" y="4.2" width="18.4" height="15.6" rx="2.6"/><path d="M2.8 8.6h18.4M5.8 6.4h.1M8 6.4h.1"/>',
+    'heart.text.square': '<rect x="3.2" y="3.2" width="17.6" height="17.6" rx="4"/><path d="M7.5 15.5h9M7.5 18h6"/><path d="M12 12.4l-2.3-2.2a1.4 1.4 0 0 1 2.3-1.6 1.4 1.4 0 0 1 2.3 1.6z"/>',
+    hourglass: '<path d="M5.5 2.8h13M5.5 21.2h13M7.5 2.8v3.5c0 1.4 4.5 4.3 4.5 5.7 0-1.4 4.5-4.3 4.5-5.7V2.8M7.5 21.2v-3.5c0-1.4 4.5-4.3 4.5-5.7 0 1.4 4.5 4.3 4.5 5.7v3.5"/>',
+    'arrow.clockwise': '<path d="M20.5 12a8.5 8.5 0 1 1-2.5-6l2.5 2.5"/><path d="M20.5 3.8v4.7h-4.7"/>',
+    'dot.radiowaves.left.and.right': '<circle cx="12" cy="12" r="1.8"/><path d="M15.8 8.2a5.4 5.4 0 0 1 0 7.6M8.2 15.8a5.4 5.4 0 0 1 0-7.6M18.6 5.4a9.3 9.3 0 0 1 0 13.2M5.4 18.6a9.3 9.3 0 0 1 0-13.2"/>',
+    'square.stack.3d.up': '<path d="M12 2.8L3 7.4l9 4.6 9-4.6z"/><path d="M3 12l9 4.6 9-4.6M3 16.6l9 4.6 9-4.6"/>',
+    'checkmark.shield': '<path d="M12 21.2s7.8-3.5 7.8-9.5V5.6L12 2.8 4.2 5.6v6.1c0 6 7.8 9.5 7.8 9.5z"/><path d="M8.6 12l2.3 2.3 4.5-4.6"/>',
+    checklist: '<path d="M10.5 6.5h10M10.5 12h10M10.5 17.5h10M3.5 6.5l1.3 1.3 2.5-2.6M3.5 12l1.3 1.3 2.5-2.6M3.5 17.5l1.3 1.3 2.5-2.6"/>',
+    'questionmark.circle': '<circle cx="12" cy="12" r="9.2"/><path d="M9.3 9.3a2.8 2.8 0 0 1 5.4 1c0 1.9-2.7 2.4-2.7 4"/><path d="M12 17.3v.1"/>',
+    hare: '<path d="M4 16.5c0-3.3 3.1-6 7-6 1.4 0 2.6.3 3.7.9l1.5-4.6c.3-1 1.5-1.5 2.4-.9.8.5 1 1.5.6 2.3l-1.8 3.9c1.3 1 2.1 2.6 2.1 4.4H4z"/><path d="M8 16.5v3M15 16.5v3M17 12.8h.1"/>',
+    speedometer: '<path d="M3.5 17.5a8.5 8.5 0 1 1 17 0"/><path d="M12 15.8l4-4.6"/><circle cx="12" cy="16" r="1"/>',
+    'gauge.with.dots.needle.50percent': '<path d="M3.5 17.5a8.5 8.5 0 1 1 17 0"/><path d="M12 16V9.5"/><path d="M6.8 13h.1M8.4 9.6h.1M15.6 9.6h.1M17.2 13h.1"/>',
+    'gauge.with.dots.needle.67percent': '<path d="M3.5 17.5a8.5 8.5 0 1 1 17 0"/><path d="M12 16l3.8-5.4"/><path d="M6.8 13h.1M8.4 9.6h.1M12 8.2h.1M17.2 13h.1"/>',
+    tortoise: '<path d="M3 15.5c0-4 3.6-7 8-7s7.6 3 7.6 6.3v.7z"/><path d="M18.6 13.6h1.7a1.7 1.7 0 0 0 0-3.4h-1.4M6 15.5v2.8M10 15.5v2.8M14.5 15.5v2.8M7.5 9.6l2.3 5.9M14.5 9.6l-2.3 5.9"/>',
+    'rectangle.fill': { f: '<rect x="3" y="5.5" width="18" height="13" rx="2.6"/>' },
+    'drop.fill': { f: '<path d="M12 2.6c-2.7 3.6-6.2 7.8-6.2 11.6a6.2 6.2 0 0 0 12.4 0c0-3.8-3.5-8-6.2-11.6z"/>' },
+    textformat: '<path d="M2.5 18.5L7.6 5.5l5.1 13M4.4 13.8h6.4"/><circle cx="17.4" cy="15.4" r="3.1"/><path d="M20.5 12v6.5"/>',
+    percent: '<path d="M18.5 5.5l-13 13"/><circle cx="7" cy="7" r="2.6"/><circle cx="17" cy="17" r="2.6"/>',
+    'clock.badge': '<path d="M20.5 12A8.5 8.5 0 1 1 12 3.5"/><path d="M12 7.5v4.7l3 1.8"/><circle cx="18.6" cy="5.4" r="2.6"/>',
+    'arrow.down.right.circle': '<circle cx="12" cy="12" r="9.2"/><path d="M8.6 8.6l6.8 6.8M15.4 9.4v6H9.4"/>',
+    'arrow.up.right.circle': '<circle cx="12" cy="12" r="9.2"/><path d="M8.6 15.4l6.8-6.8M9.4 8.6h6v6"/>',
+    'textformat.abc': { t: 'abc' },
+    'list.bullet': '<path d="M9 6h11.5M9 12h11.5M9 18h11.5"/><path d="M4.2 6h.1M4.2 12h.1M4.2 18h.1" stroke-width="2.6"/>',
+    folder: '<path d="M3 6.8a2 2 0 0 1 2-2h4l2 2.2h8a2 2 0 0 1 2 2v8.2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    'folder.fill': { f: '<path d="M2.5 6.6a2.2 2.2 0 0 1 2.2-2.2h4.2l2.1 2.2h8.3a2.2 2.2 0 0 1 2.2 2.2v8.8a2.2 2.2 0 0 1-2.2 2.2H4.7a2.2 2.2 0 0 1-2.2-2.2z"/>' },
+    'doc.fill': { f: '<path d="M6.5 2.5h7l5 5v12a2 2 0 0 1-2 2h-10a2 2 0 0 1-2-2v-15a2 2 0 0 1 2-2z"/>' },
+    'arrow.triangle.branch': '<path d="M7 3.5v10M7 13.5c0-3 2-5 5-5h2.5M7 13.5v7M17 14.5l-3 3M17 14.5h-3.5"/><circle cx="17" cy="8.5" r="2.4"/>',
+    'arrow.up': '<path d="M12 19.5v-15M5.5 11l6.5-6.5 6.5 6.5"/>',
+    'arrow.down': '<path d="M12 4.5v15M5.5 13l6.5 6.5 6.5-6.5"/>',
+    memorychip: '<rect x="2.8" y="7" width="18.4" height="10" rx="1.6"/><path d="M6.5 17v2.8M10 17v2.8M14 17v2.8M17.5 17v2.8M7 10h10v3.5H7z"/>',
+    sparkles: { f: '<path d="M10 3l1.9 5.2L17 10l-5.1 1.9L10 17l-1.9-5.1L3 10l5.1-1.8z"/><path d="M18 3l.8 2.1L21 6l-2.2.8L18 9l-.8-2.2L15 6l2.2-.9zM17.5 15.5l.7 1.7 1.8.8-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.8z"/>' },
+    lifepreserver: '<circle cx="12" cy="12" r="9.2"/><circle cx="12" cy="12" r="4"/><path d="M5.5 5.5l3.7 3.7M14.8 14.8l3.7 3.7M18.5 5.5l-3.7 3.7M9.2 14.8l-3.7 3.7"/>',
+    swift: { f: '<path d="M19.6 15.4c.1-.3.2-.6.2-.9.7-3.3-1.1-7.2-4.2-9.5 1.4 1.9 2 4.2 1.5 6.2l-.2.6-.2-.1C13.7 9.9 10.6 7.6 8 5c2.2 2.6 4.4 4.9 6.6 6.8-1.8-1-4.6-2.9-8.1-6 2.3 3.2 4.9 5.8 7.7 7.7-2.5 1.4-6.4 1.6-10.2-.2 2.4 3.6 6 5.9 9.7 5.9 1.8 0 3.4-.5 4.6-1.1.6-.3 1.2.2 1.7.6.3-.6.1-1.9-.4-3.3z"/>' },
+    'hand.raised.fill': { f: '<path d="M8.2 11V5.4a1.4 1.4 0 0 1 2.8 0V10h.4V3.9a1.4 1.4 0 0 1 2.8 0V10h.4V5.2a1.4 1.4 0 0 1 2.8 0V11h.3V8.3a1.4 1.4 0 0 1 2.8 0v6c0 4.2-3 7.2-7 7.2-2.6 0-4.3-1-5.8-2.9l-3.2-4a1.5 1.5 0 0 1 2.2-2l1.5 1.5z"/>' },
+    'chevron.left.forwardslash.chevron.right': '<path d="M7.5 7l-5 5 5 5M16.5 7l5 5-5 5M14 4.5l-4 15"/>',
+    'ladybug.fill': { f: '<path d="M12 7.2c3.7 0 6.3 3 6.3 6.8 0 3.9-2.8 6.6-6.3 6.6s-6.3-2.7-6.3-6.6c0-3.8 2.6-6.8 6.3-6.8z"/><circle cx="12" cy="5.4" r="2.6"/>', s: '<path d="M5.7 11.4L3 10M18.3 11.4L21 10M5.6 15.5H2.8M18.4 15.5h2.8M6.3 18.8L4 20.5M17.7 18.8l2.3 1.7"/>' },
+    'cup.and.saucer.fill': { f: '<path d="M4.5 7.5h12v5.3a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5z"/>', s: '<path d="M16.5 9h1.4a2.4 2.4 0 0 1 0 4.8h-1.6M3 20.5h16"/>' },
+    'heart.fill': { f: '<path d="M12 20.3l-1.3-1.2C6 14.9 3 12.2 3 8.8 3 6.1 5.1 4 7.8 4c1.5 0 3 .7 4.2 1.9C13.2 4.7 14.7 4 16.2 4 18.9 4 21 6.1 21 8.8c0 3.4-3 6.1-7.7 10.3z"/>' },
+    'checkmark.circle.fill': { f: '<path fill-rule="evenodd" d="M12 2.8a9.2 9.2 0 1 1 0 18.4 9.2 9.2 0 0 1 0-18.4zm4.3 6.1a1 1 0 0 0-1.4 0L10.8 13l-1.7-1.7a1 1 0 1 0-1.4 1.4l2.4 2.4a1 1 0 0 0 1.4 0l4.8-4.8a1 1 0 0 0 0-1.4z"/>' },
+    'chart.bar.xaxis': '<path d="M3 20.5h18"/><rect x="5" y="11" width="3" height="6.5" rx=".6"/><rect x="10.5" y="5" width="3" height="12.5" rx=".6"/><rect x="16" y="8.5" width="3" height="9" rx=".6"/>',
+    'arrow.down.circle': '<circle cx="12" cy="12" r="9.2"/><path d="M12 7.3v9M8.3 12.6l3.7 3.7 3.7-3.7"/>',
+    eye: '<path d="M2.5 12S5.8 5.5 12 5.5 21.5 12 21.5 12 18.2 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
+    'music.note': { s: '<path d="M10.5 18V5.2l8-1.7v4l-8 1.7"/>', f: '<ellipse cx="7.6" cy="18" rx="3" ry="2.5"/>' },
+    'arrow.up.forward.square': '<rect x="3.5" y="3.5" width="17" height="17" rx="3.8"/><path d="M9 15l6-6M10 9h5v5"/>',
+    'chevron.right': '<path d="M9 5.5l6.5 6.5L9 18.5"/>',
+    checkmark: '<path d="M5 12.6l4.4 4.4L19 7.4"/>',
+    'line.3.horizontal': '<path d="M4 7h16M4 12h16M4 17h16"/>',
+    'trash.fill': { f: '<path d="M9 3.2h6l.6 1.8H20v1.9H4V5h4.4z"/><path d="M5.5 8.3h13l-1 12.4H6.5z"/>' },
+    'trash.slash.fill': { f: '<path d="M9 3.2h6l.6 1.8H20v1.9H4V5h4.4z"/><path d="M5.5 8.3h13l-1 12.4H6.5z"/>', s: '<path d="M3.5 3.5l17 17" stroke-width="2.4"/>' },
+    'questionmark.circle.fill': { f: '<circle cx="12" cy="12" r="9.5"/>', k: '<path d="M9.3 9.3a2.8 2.8 0 0 1 5.4 1c0 1.9-2.7 2.4-2.7 4M12 17.3v.1"/>' },
+    viewfinder: '<path d="M4 8.5V5.5a1.5 1.5 0 0 1 1.5-1.5h3M15.5 4h3A1.5 1.5 0 0 1 20 5.5v3M20 15.5v3a1.5 1.5 0 0 1-1.5 1.5h-3M8.5 20h-3A1.5 1.5 0 0 1 4 18.5v-3"/>',
+    'chevron.up.chevron.down': '<path d="M7.5 9.5L12 5l4.5 4.5M7.5 14.5L12 19l4.5-4.5"/>',
+    minus: '<path d="M5 12h14"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    'xmark.circle.fill': { f: '<circle cx="12" cy="12" r="9.2"/>', k: '<path d="M9 9l6 6M15 9l-6 6"/>' },
+    'lock.shield.fill': { f: '<path d="M12 2.5l8 3v6.2c0 5.4-3.6 8.7-8 10.3-4.4-1.6-8-4.9-8-10.3V5.5z"/>' },
   };
 
-  const scanHead = (size, count) => `<div style="display:flex;align-items:center;gap:10px;flex:none"><div style="text-align:right"><div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.95)">${size}</div><div style="font-size:10px;color:var(--qx-sub)">${count}</div></div><span style="height:24px;padding:0 12px;border-radius:6px;display:grid;place-items:center;font-size:11.5px;font-weight:700;color:rgba(0,0,0,.88);background:linear-gradient(#FEBC33,#E89B00)">Scan Again</span></div>`;
-  const pageField = text => `<div style="height:24px;border-radius:7px;display:flex;align-items:center;gap:7px;padding:0 9px;font-size:11.5px;color:var(--qx-sub);background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.08)"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.6"/><path d="M10.4 10.4L14 14" stroke-linecap="round"/></svg>${text}</div>`;
-  const pageMenus = labels => `<div style="display:flex;gap:7px">${labels.map(l => `<span style="flex:1;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:space-between;padding:0 9px;font-size:11px;color:rgba(255,255,255,.88);background:rgba(255,255,255,.07)">${l}<svg width="7" height="10" viewBox="0 0 7 10" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3.5l2.5-2.5L6 3.5M1 6.5L3.5 9 6 6.5"/></svg></span>`).join('')}</div>`;
-  const pageBox = on => `<span style="width:13px;height:13px;border-radius:3.5px;flex:none;display:grid;place-items:center;background:${on ? 'var(--qx-gold)' : 'rgba(255,255,255,.1)'}">${on ? '<svg width="8" height="8" viewBox="0 0 10 10"><path d="M2 5.2l2 2L8.2 3" fill="none" stroke="rgba(0,0,0,.88)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}</span>`;
-  const pageTag = t => `<span style="font-size:8.5px;font-weight:600;color:rgba(235,235,245,.7);padding:1px 4px;border-radius:3px;background:rgba(255,255,255,.08)">${t}</span>`;
-  const pageFoot = (selectAllOn, primary, danger) => `<div style="display:flex;align-items:center;gap:7px;margin-top:auto;padding-top:8px;border-top:1px solid rgba(255,255,255,.08)"><span style="height:22px;padding:0 10px;border-radius:6px;display:grid;place-items:center;font-size:11px;font-weight:600;background:rgba(255,255,255,.07);color:${selectAllOn ? 'rgba(255,255,255,.88)' : 'rgba(255,255,255,.35)'}">Select All</span><span style="height:22px;padding:0 10px;border-radius:6px;display:grid;place-items:center;font-size:11px;font-weight:600;background:rgba(255,255,255,.07);color:${selectAllOn ? 'rgba(255,255,255,.35)' : 'rgba(255,255,255,.88)'}">Deselect All</span><span style="margin-left:auto;height:24px;padding:0 12px;border-radius:6px;display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;${danger ? 'color:#fff;background:linear-gradient(#FF453A,#D22828)' : 'color:rgba(0,0,0,.88);background:linear-gradient(#FEBC33,#E89B00)'}">${danger ? '<svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 1.5h5l.5 1.3H14v1.4H2V2.8h3z"/><path d="M3.2 5h9.6l-.8 9.5H4z"/></svg>' : ''}${primary}</span></div>`;
+  function sf(name, size, color = 'currentColor', o = {}) {
+    const d = SF[name] || SF['questionmark.circle'];
+    const sw = o.w || 1.7;
+    const box = `width="${size}" height="${size}" viewBox="0 0 24 24" style="display:block;flex:none${o.style ? ';' + o.style : ''}"`;
+    if (typeof d === 'string') return `<svg ${box} fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+    if (d.t) return `<svg ${box}><text x="12" y="16.2" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11.5" font-weight="700" fill="${color}">${d.t}</text></svg>`;
+    return `<svg ${box}>${d.f ? `<g fill="${color}">${d.f}</g>` : ''}${d.s ? `<g fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${d.s}</g>` : ''}${d.k ? `<g fill="none" stroke="${o.knock || 'rgba(0,0,0,.75)'}" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">${d.k}</g>` : ''}</svg>`;
+  }
+
+  const MARQUEE = size => `<svg width="${size}" height="${size}" viewBox="0 0 512 512" style="display:block;flex:none"><rect x="16" y="16" width="480" height="480" rx="116" fill="#FFCF1A"/><g fill="none" stroke="#1D1D1F" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"><path d="M112 196V128a16 16 0 0 1 16-16h68"/><path d="M400 316v68a16 16 0 0 1-16 16h-68"/></g><rect x="166" y="166" width="124" height="124" rx="20" fill="none" stroke="#1D1D1F" stroke-width="26"/><rect x="222" y="222" width="124" height="124" rx="20" fill="#1D1D1F"/></svg>`;
+
+  const TABS = [
+    ['', [['Overview', 'square.grid.2x2']]],
+    ['App', [['General', 'gearshape'], ['Shortcuts', 'command']]],
+    ['Quitting', [['Automation', 'timer'], ['Advanced', 'slider.horizontal.3'], ['Exclude', 'nosign']]],
+    ['Applications', [['Uninstall Apps', 'xmark.app'], ['Leftovers', 'doc.questionmark']]],
+    ['Cleanup', [['System Junk', 'gearshape.2'], ['User Cache', 'internaldrive'], ['Mail Files', 'envelope'], ['Trash Bins', 'trash'], ['Large & Old Files', 'clock'], ['AI Apps', 'cpu']]],
+    ['Developer Cleanup', [['Xcode Junk', 'hammer'], ['Brew Cache', 'mug'], ['Node Cache', 'leaf'], ['Docker Cache', 'shippingbox']]],
+    ['Developer', [['Ports', 'network']]],
+    ['QuitX', [['About', 'bolt.fill']]],
+    ['More Apps', [['Marquee', 'viewfinder']]],
+  ];
+
+  const SUMMARY = {
+    Overview: 'Everything QuitX can do. Click a card to jump to its settings.',
+    General: 'Startup, sounds, updates, menu bar stats and how QuitX looks.',
+    Shortcuts: 'Open QuitX or quit apps from anywhere with your own key combos.',
+    Automation: 'Let QuitX quit apps on sleep, after their last window, or when they sit idle.',
+    Advanced: 'Background apps, music protection, confirmations and extra list items.',
+    Exclude: 'Apps and ports QuitX never quits, manually or automatically.',
+    'Uninstall Apps': 'Remove installed apps, support files, caches, preferences and launch items.',
+    Leftovers: 'Find files left behind by apps that are no longer installed.',
+    'System Junk': 'Review system caches, logs and temporary files.',
+    'User Cache': 'Review cache data created by apps in your account.',
+    Ports: 'Find and free ports held by dev servers, databases and Docker.',
+    About: 'Version, updates and ways to get in touch.',
+  };
+
+  const W = 860, H = 600, SIDE_W = 220, PAD = 28, CW = W - SIDE_W - PAD * 2, SCALE = 680 / 860;
+  const SIDE_TOP = 38 + 28 + 8 + 1 + 6 + 8;
+
+  function sideShift(tab) {
+    let y = 0, target = 0, first = true;
+    for (const [g, tabs] of TABS) {
+      if (!first) y += 14;
+      first = false;
+      if (g) y += 14 + 2;
+      tabs.forEach(([t], i) => {
+        if (t === tab) target = y;
+        y += 28 + (i < tabs.length - 1 ? 2 : 0);
+      });
+    }
+    const visible = H - SIDE_TOP - 12 - 8;
+    if (target + 28 <= visible) return 0;
+    return Math.round(Math.min(y - visible, target - visible / 2));
+  }
+
+  function sidebar(tab, shift) {
+    const groups = TABS.map(([g, tabs]) => {
+      const title = g ? `<div style="padding:0 10px 2px;font-size:10px;font-weight:700;color:${SUB};line-height:12px;text-transform:uppercase">${g}</div>` : '';
+      const rows = tabs.map(([t, icon]) => {
+        const on = t === tab;
+        const glyph = t === 'Marquee' ? MARQUEE(16) : sf(icon, 14, on ? GOLD : SUB, { w: 1.7 });
+        return `<div data-tab="${t}" style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;height:28px;box-sizing:border-box;${on ? `background:${AC(0.18)}` : ''}"><span style="width:18px;display:grid;place-items:center">${glyph}</span><span style="font-size:13px;line-height:16px;font-weight:${on ? 500 : 400};color:${INK};white-space:nowrap">${t}</span></div>`;
+      }).join('<div style="height:2px"></div>');
+      return `<div>${title}${g ? '<div style="height:2px"></div>' : ''}${rows}</div>`;
+    }).join('<div style="height:14px"></div>');
+    return `<div style="width:${SIDE_W}px;flex:none;background:${SIDE_BG};display:flex;flex-direction:column;position:relative;box-shadow:inset -1px 0 0 rgba(0,0,0,.32)"><div style="padding:38px 10px 8px"><div style="height:28px;border-radius:7px;background:#1E1E1F;box-shadow:inset 0 0 0 .6px ${P(0.11)};display:flex;align-items:center;gap:6px;padding:0 8px">${sf('magnifyingglass', 12, 'rgba(235,235,245,.5)', { w: 2 })}<span style="font-size:12px;color:rgba(235,235,245,.35)">Search settings…</span></div></div><div style="height:1px;background:${P(0.035)}"></div><div style="flex:1;min-height:0;overflow:hidden;padding:14px 8px 0"><div class="sl"${shift ? ` style="transform:translateY(-${shift}px)"` : ''}>${groups}</div></div><div style="height:12px"></div></div>`;
+  }
+
+  function settings(o) {
+    const shift = o.sideScroll != null ? o.sideScroll : sideShift(o.tab);
+    const title = o.tab === 'Marquee' ? 'More Apps' : o.tab;
+    const header = `<div style="display:flex;align-items:center;gap:12px;width:${CW}px;flex:none"><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px"><div style="font-size:20px;line-height:24px;font-weight:700;color:${INK};letter-spacing:-.01em">${title}</div><div style="font-size:12.5px;line-height:15px;color:${SUB};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${SUMMARY[o.tab] || ''}</div></div>${o.right || ''}</div>`;
+    const scrollTo = o.scrollTo ? ` data-scroll-to="${o.scrollTo}"` : '';
+    const lights = `<span style="position:absolute;left:14px;top:14px;display:flex;gap:8px;z-index:2"><i style="width:12px;height:12px;border-radius:50%;background:#FF5F57;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.2)"></i><i style="width:12px;height:12px;border-radius:50%;background:#FEBC2E;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.2)"></i><i style="width:12px;height:12px;border-radius:50%;background:#28C840;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.2)"></i></span>`;
+    const inner = `<div style="width:${W}px;height:${H}px;zoom:${SCALE};display:flex;position:relative;font-family:'Inter',-apple-system,system-ui,sans-serif;color:${INK};text-align:left;-webkit-font-smoothing:antialiased;letter-spacing:-.005em">${lights}${sidebar(o.tab, shift)}<div style="width:${W - SIDE_W}px;flex:none;box-sizing:border-box;padding:40px ${PAD}px 0;display:flex;flex-direction:column;gap:16px;background:${WIN_BG};position:relative">${header}<div class="qx-page" style="flex:1;min-height:0;overflow:hidden;width:${CW}px"><div class="pane"${scrollTo} style="position:relative;height:100%${o.scroll ? `;transform:translateY(-${o.scroll}px)` : ''}">${o.content}</div></div></div></div>`;
+    return `<div class="qx-win qx-settings" style="width:680px;height:474px;border-radius:12px;overflow:hidden;background:${WIN_BG};box-shadow:0 0 0 .5px ${P(0.16)},0 0 0 1px rgba(0,0,0,.6),0 36px 72px rgba(0,0,0,.5),0 6px 18px rgba(0,0,0,.3)">${inner}</div>`;
+  }
+
+  const help = `<span style="width:20px;height:20px;display:grid;place-items:center;flex:none">${sf('questionmark.circle', 15, SUB, { w: 1.5 })}</span>`;
+
+  const SECTION_ICON = {
+    Startup: 'power', Sounds: 'speaker.wave.2', Updates: 'arrow.triangle.2.circlepath', 'Menu Bar': 'menubar.rectangle', Appearance: 'paintpalette', Sort: 'arrow.up.arrow.down', Default: 'cursorarrow.click.2', Reset: 'arrow.counterclockwise', Sleep: 'moon.zzz', Windows: 'macwindow', Health: 'heart.text.square', 'Auto Quit': 'hourglass', 'Port Killing': 'network', Refresh: 'arrow.clockwise', Discovery: 'dot.radiowaves.left.and.right', 'Group By': 'square.stack.3d.up', Safety: 'checkmark.shield', Selection: 'checklist', Exclude: 'nosign',
+  };
+
+  const sectionHeader = (title, symbol) => `<div style="display:flex;align-items:center;gap:9px"><span style="width:24px;height:24px;border-radius:6px;background:${AC(0.12)};display:grid;place-items:center;flex:none">${sf(symbol, 12.5, GOLD, { w: 2 })}</span><span style="font-size:12.5px;font-weight:600;color:${INK};white-space:nowrap">${title}</span><span style="flex:1;height:.5px;background:${P(0.09)}"></span></div>`;
+
+  function srow(label, content, o = {}) {
+    const head = label ? `<div style="padding-top:14px">${sectionHeader(label, SECTION_ICON[label] || 'slider.horizontal.3')}</div>` : '';
+    const hl = o.hl ? `background:${AC(0.07)};box-shadow:0 0 0 1px ${AC(0.6)};border-radius:10px;` : '';
+    return `<div${o.id ? ` id="${o.id}"` : ''}${o.sec ? ` data-sec="${o.sec}"` : ''} style="display:flex;flex-direction:column;gap:7px">${head}<div style="display:flex;align-items:center;gap:10px;min-height:34px;padding:7px 10px 7px 43px;${hl}${o.dim ? 'opacity:.42;' : ''}"><div style="display:flex;align-items:center;gap:10px;min-width:0">${content}</div><span style="flex:1"></span>${o.help === false ? '' : help}</div></div>`;
+  }
+  const rows = items => `<div style="display:flex;flex-direction:column;gap:5px;width:${CW}px">${items.join('')}</div>`;
+
+  const switchInd = on => `<span class="qx-sw" style="position:relative;width:30px;height:18px;border-radius:9px;flex:none;background:${on ? GOLD : P(0.13)}"><i style="position:absolute;top:2px;left:${on ? 14 : 2}px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 .5px 1px rgba(0,0,0,.16)"></i></span>`;
+  const toggle = (title, on) => `<span style="display:inline-flex;align-items:center;gap:9px;min-height:28px">${switchInd(on)}<span style="font-size:12px;font-weight:500;color:${INK};white-space:nowrap">${title}</span></span>`;
+
+  const RADIO_ICON = { classic: 'rectangle.fill', 'liquid glass': 'drop.fill', icon: 'gauge.with.dots.needle.67percent', text: 'textformat', gb: 'internaldrive', percentage: 'percent', '24-hour': 'clock', '12-hour': 'clock.badge' };
+  const radio = (title, sel) => `<span style="display:inline-flex;flex-direction:column;align-items:center;gap:6px;padding:5px;border-radius:10px;background:${P(0.035)};box-shadow:inset 0 0 0 ${sel ? '2px ' + GOLD : '.5px ' + P(0.08)}"><span style="width:70px;height:34px;border-radius:7px;display:grid;place-items:center;background:linear-gradient(135deg,${AC(sel ? 0.23 : 0.1)},${P(0.025)})">${sf(RADIO_ICON[title.toLowerCase()] || 'checkmark', 18, sel ? GOLD : SUB, { w: 2 })}</span><span style="font-size:10.5px;font-weight:${sel ? 600 : 500};color:${sel ? INK : SUB}">${title}</span></span>`;
+  const radios = (items, gap = 16) => `<span style="display:inline-flex;gap:${gap}px">${items.map(([t, s]) => radio(t, s)).join('')}</span>`;
+  const labeled = (label, inner) => `<span style="display:inline-flex;align-items:center;gap:6px"><span style="width:86px;font-size:11px;color:${INK};flex:none;line-height:13px">${label}</span>${inner}</span>`;
+
+  function tiles(options, sel, width = 500) {
+    const cols = Math.max(1, Math.floor((width + 7) / 79));
+    const w = (width - 7 * (cols - 1)) / cols;
+    return `<span style="display:flex;flex-wrap:wrap;gap:7px;width:${width}px">${options.map(([t, icon]) => {
+      const on = t === sel;
+      return `<span style="width:${w}px;height:48px;box-sizing:border-box;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:${on ? AC(0.09) : P(0.025)};box-shadow:inset 0 0 0 ${on ? '1.5px ' + GOLD : '.5px ' + P(0.08)}"><span style="height:22px;display:grid;place-items:center">${icon === 'docker' ? dockerIcon(on ? GOLD : SUB) : sf(icon, 15, on ? GOLD : SUB, { w: 2 })}</span><span style="font-size:9.5px;font-weight:${on ? 600 : 500};color:${on ? INK : SUB};white-space:nowrap">${t}</span></span>`;
+    }).join('')}</span>`;
+  }
+  const dockerIcon = c => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-linecap="round" stroke-linejoin="round" style="display:block"><g stroke-width="1.35"><rect x="3" y="8" width="4" height="4" rx=".7"/><rect x="8" y="8" width="4" height="4" rx=".7"/><rect x="13" y="8" width="4" height="4" rx=".7"/><rect x="8" y="3" width="4" height="4" rx=".7"/><rect x="13" y="3" width="4" height="4" rx=".7"/></g><path stroke-width="1.5" d="M2 13.5h15.5c-.5 5-3 7.5-7 7.5-4.5 0-7.5-3-8.5-7.5zM17.2 13.5c2.1-.2 3.5-1.5 4.3-4M19.2 10.8l-.7-3.3 3 2 1.5-2.5"/></svg>`;
+
+  const button = (label, o = {}) => `<span style="display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 9px;border-radius:5px;font-size:11.5px;font-weight:500;white-space:nowrap;${o.prominent ? `background:linear-gradient(${GOLD},#F5AE1C);color:#fff;box-shadow:inset 0 .5px 0 rgba(255,255,255,.25),0 .5px 1px rgba(0,0,0,.25)` : `background:${P(0.13)};color:${INK};box-shadow:inset 0 .5px 0 ${P(0.08)},0 .5px 1px rgba(0,0,0,.25)`}">${o.icon ? sf(o.icon, 11, 'currentColor', { w: 2.2 }) : ''}${label}</span>`;
+
+  const popup = (label, o = {}) => `<span style="${o.flex ? 'flex:1;min-width:0;' : ''}${o.width ? `width:${o.width}px;` : ''}display:inline-flex;align-items:center;height:20px;border-radius:5px;background:${P(0.13)};box-shadow:inset 0 .5px 0 ${P(0.08)},0 .5px 1px rgba(0,0,0,.25);padding:0 2px 0 8px;box-sizing:border-box;gap:6px"><span style="flex:1;min-width:0;font-size:11.5px;color:${INK};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${label}</span><span style="width:16px;height:16px;border-radius:4px;background:${GOLD};display:grid;place-items:center;flex:none">${sf('chevron.up.chevron.down', 11, '#fff', { w: 2.6 })}</span></span>`;
+  const menuChrome = (label, width) => `<span style="display:inline-flex;align-items:center;height:30px;padding:0 5px;border-radius:8px;background:${P(0.045)};box-shadow:inset 0 0 0 .5px ${P(0.09)};width:${width}px;box-sizing:border-box">${popup(label, { flex: true })}</span>`;
+  const stepper = () => `<span style="display:inline-flex;flex-direction:column;width:13px;height:22px;border-radius:4px;background:${P(0.13)};box-shadow:inset 0 .5px 0 ${P(0.08)},0 .5px 1px rgba(0,0,0,.25);overflow:hidden"><span style="flex:1;display:grid;place-items:center;border-bottom:.5px solid rgba(0,0,0,.3)"><svg width="7" height="4" viewBox="0 0 7 4"><path d="M.8 3.4L3.5.8l2.7 2.6" fill="none" stroke="${INK}" stroke-width="1.2"/></svg></span><span style="flex:1;display:grid;place-items:center"><svg width="7" height="4" viewBox="0 0 7 4"><path d="M.8.6l2.7 2.6L6.2.6" fill="none" stroke="${INK}" stroke-width="1.2"/></svg></span></span>`;
+  const t11 = s => `<span style="font-size:11px;color:${INK};white-space:nowrap">${s}</span>`;
+
+  const STAT_TITLES = { cpu: 'CPU', gpu: 'GPU', mem: 'Memory', bat: 'Battery', clean: 'Cleanup' };
+  function statChips(order, on, dragging) {
+    return `<span style="display:flex;flex-wrap:wrap;gap:5px;max-width:500px">${order.map(k => `<span data-chip="${k}" style="display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 8px 0 6px;border-radius:7px;background:${P(dragging === k ? 0.1 : 0.045)};box-shadow:inset 0 0 0 1px ${dragging === k ? AC(0.8) : P(0.08)}">${sf('line.3.horizontal', 9, 'rgba(235,235,245,.42)', { w: 3 })}${switchInd(on[k] !== false)}<span style="font-size:11px;font-weight:500;color:${INK}">${STAT_TITLES[k]}</span></span>`).join('')}</span>`;
+  }
+
+  const REFRESH = [['1 sec', 'hare'], ['2 sec', 'speedometer'], ['3 sec', 'speedometer'], ['5 sec', 'gauge.with.dots.needle.50percent'], ['10 sec', 'tortoise']];
+
+  function general(o = {}) {
+    const order = o.order || ['cpu', 'gpu', 'mem', 'bat', 'clean'];
+    return rows([
+      srow('Startup', toggle('Open QuitX at login', true), { sec: 'startup' }),
+      srow('Sounds', toggle('Play cool sounds', true), { hl: o.hl === 'sounds', sec: 'sounds' }),
+      srow('Updates', toggle('Check for updates automatically', true), { sec: 'updates' }),
+      srow('', toggle('Download and prepare updates automatically', true)),
+      srow('Menu Bar', toggle('Show stats in menu bar', true), { hl: o.hl === 'stats', sec: 'menubar' }),
+      srow('', statChips(order, o.on || {}, o.dragging), { hl: o.hl === 'stats' }),
+      srow('', labeled('Style format', radios([['Icon', true], ['Text', false]])), { help: false }),
+      srow('', labeled('Memory format', radios([['GB', true], ['Percentage', false]])), { help: false }),
+      srow('', labeled('Refresh', tiles(REFRESH, '1 sec', 390)), { hl: o.hl === 'stats' }),
+      srow('', labeled('Cleanup scan', tiles([['Always', 'bolt'], ['1 min', 'clock'], ['5 min', 'clock'], ['15 min', 'clock']], '1 min', 390))),
+      srow('', labeled('Background scan', tiles([['5 min', 'speedometer'], ['10 min', 'speedometer'], ['30 min', 'tortoise'], ['1 hr', 'tortoise']], '10 min', 390))),
+      srow('Appearance', radios([['Classic', o.glass === false], ['Liquid Glass', o.glass !== false]], 18), { hl: o.hl === 'theme', sec: 'appearance' }),
+      srow('Sort', tiles([['CPU High', 'arrow.down.right.circle'], ['CPU Low', 'arrow.up.right.circle'], ['Memory High', 'arrow.down.right.circle'], ['Memory Low', 'arrow.up.right.circle'], ['A–Z', 'textformat.abc'], ['Z–A', 'textformat.abc']], 'A–Z')),
+      srow('Default', tiles([['Normal Quit', 'power'], ['Force Quit', 'bolt.fill']], 'Normal Quit')),
+      srow('Reset', button('Reset All Settings', { icon: 'arrow.counterclockwise' })),
+    ]);
+  }
+
+  function automation(o = {}) {
+    const on = !!o.sleep;
+    const time = (h, m) => `<span style="display:inline-flex;align-items:center;gap:4px">${menuChrome(h, 58)}<span style="font-size:11px;font-weight:500;color:${INK}">:</span>${menuChrome(m, 62)}</span>`;
+    return rows([
+      srow('Sleep', toggle('Quit apps after Mac sleeps', on), { id: 'r-sleep', hl: o.hl === 'sleep', sec: 'sleep' }),
+      srow('', labeled('Time format', radios([['24-hour', true], ['12-hour', false]])), { dim: !on, help: false }),
+      srow('', labeled('From:', time('00', '00')), { dim: !on, help: false }),
+      srow('', labeled('To:', time('06', '00')), { dim: !on, help: false }),
+      srow('Windows', toggle('Quit app when its last window closes', true)),
+      srow('', `<span style="display:inline-flex;align-items:center;gap:10px"><span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:${SUB}">${sf('checkmark.circle.fill', 13, SUB)}Accessibility allowed</span>${button('Remove Accessibility')}</span>`, { help: false }),
+      srow('Health', toggle('Warn & rescue CPU hogs', true)),
+      srow('', `<span style="display:inline-flex;align-items:center;gap:6px">${t11('CPU over')}${t11('90')}${stepper()}${t11('%')}</span>`, { help: false }),
+      srow('', toggle('Rescue on memory pressure', false)),
+      srow('', `<span style="display:inline-flex;align-items:center;gap:6px">${t11('Memory over')}${t11('12')}${stepper()}${t11('GB of 16')}</span>`, { dim: true, help: false }),
+      srow('Auto Quit', toggle('Quit inactive apps after', false)),
+      srow('', `<span style="display:inline-flex;align-items:center;gap:6px">${t11('1')}${stepper()}${menuChrome('hours', 90)}</span>`, { dim: true, help: false }),
+    ]);
+  }
+
+  function portSettings(o = {}) {
+    const dim = o.enabled === false;
+    return rows([
+      srow('Port Killing', toggle('Enable port killing', !dim), { hl: o.hl === 'enable' }),
+      srow('Refresh', tiles(REFRESH, '3 sec', 390), { dim }),
+      srow('Discovery', toggle('Include UDP listeners', false), { dim }),
+      srow('Group By', tiles([['None', 'list.bullet'], ['Project', 'folder'], ['Docker', 'docker'], ['Process', 'arrow.triangle.branch']], 'None', 390), { dim }),
+      srow('Sort', tiles([['Port Low', 'arrow.up'], ['Port High', 'arrow.down'], ['Name', 'textformat.abc'], ['Memory', 'memorychip'], ['CPU', 'cpu']], 'Port Low'), { dim }),
+      srow('Default', tiles([['Kill', 'power'], ['Force Kill', 'bolt.fill']], 'Kill'), { dim }),
+      srow('Safety', toggle('Confirm before killing ports', true), { dim }),
+      srow('Selection', toggle('Select all ports by default', false), { dim }),
+      srow('Exclude', button('Manage Excluded Ports…', { icon: 'nosign' }), { dim }),
+    ]);
+  }
+
+  const TINT = { general: '#408FFA', shortcuts: '#8C6BF5', automation: '#FA9433', advanced: '#ED5C8F', exclude: '#F0544F', ports: '#29B5A3' };
+
+  function thumb(symbol, tint, status, symbolColor = '#fff') {
+    const active = status && !['Off', 'Empty'].includes(status);
+    const rgb = hexRgb(tint);
+    const pill = status ? `<span style="position:absolute;top:7px;right:7px;font-size:9.5px;font-weight:600;padding:2px 6px;border-radius:99px;line-height:12px;${active ? `background:${GOLD};color:rgba(0,0,0,.82)` : `background:${P(0.08)};color:${SUB}`}">${status}</span>` : '';
+    return `<div style="position:relative;height:74px;border-radius:8px;overflow:hidden;display:grid;place-items:center;background:linear-gradient(135deg,rgba(${rgb},.30),rgba(${rgb},.07))"><span style="position:absolute;left:50%;top:50%;width:96px;height:96px;margin:-48px 0 0 -48px;border-radius:50%;background:radial-gradient(closest-side,rgba(${rgb},.42) 8%,rgba(${rgb},0))"></span><span style="position:relative;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(rgba(${rgb},.95),rgba(${rgb},.75));box-shadow:0 3px 6px rgba(${rgb},.35)">${sf(symbol, 19, symbolColor, { w: 2.1, knock: tint })}</span>${pill}</div>`;
+  }
+  function hexRgb(h) {
+    const n = parseInt(h.slice(1), 16);
+    return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`;
+  }
+  const featureCard = (symbol, tint, title, detail, status, footer) => `<div style="padding:8px;border-radius:11px;background:${P(0.035)};box-shadow:inset 0 0 0 .5px ${P(0.09)};display:flex;flex-direction:column;gap:9px;box-sizing:border-box;min-width:0">${thumb(symbol, tint, status)}<div style="padding:0 3px;display:flex;flex-direction:column;gap:3px"><div style="font-size:12.5px;font-weight:600;color:${INK};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${title}</div><div style="font-size:11px;line-height:14px;color:${SUB};min-height:28px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${detail}</div>${footer ? `<div style="display:flex;align-items:center;gap:3px;padding-top:3px;font-size:10.5px;font-weight:500;color:rgba(235,235,245,.48)">${footer}${sf('chevron.right', 9, 'currentColor', { w: 3 })}</div>` : ''}</div></div>`;
+  const grid3 = cards => `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">${cards.join('')}</div>`;
+  const groupTitle = t => `<div style="font-size:10px;font-weight:700;color:${SUB};line-height:12px">${t}</div>`;
+
+  const FEATURES = [
+    ['APP', [
+      ['power.circle', 'general', 'Open at Login', 'Start QuitX quietly every time you log in.', 'On', 'General'],
+      ['chart.bar.xaxis', 'general', 'Menu Bar Stats', 'Live CPU, memory, GPU and battery right in the menu bar.', 'On', 'General'],
+      ['paintpalette', 'general', 'Appearance', 'Solid Classic or translucent Liquid Glass on macOS 26.', 'Classic', 'General'],
+      ['speaker.wave.2', 'general', 'Sounds', 'A short arcade laser every time an app goes.', 'On', 'General'],
+      ['arrow.down.circle', 'general', 'Updates', 'New versions straight from GitHub, verified before install.', 'On', 'General'],
+      ['bolt.fill', 'general', 'Quit or Force Quit', 'Quit politely by default, or make Force Quit the default.', 'Normal', 'General'],
+      ['command', 'shortcuts', 'Global Shortcuts', 'Open QuitX, Quit All or Force Quit All from anywhere.', '1 on', 'Shortcuts'],
+    ]],
+    ['QUITTING', [
+      ['moon.zzz', 'automation', 'Quit on Sleep', 'Close apps left open when your Mac wakes from sleep in the hours you pick.', 'On', 'Automation'],
+      ['macwindow', 'automation', 'Last Window Closes', 'Quit an app as soon as you close its last window.', 'On', 'Automation'],
+      ['gauge.with.dots.needle.67percent', 'automation', 'CPU & Memory Rescue', 'Get a heads-up when CPU or memory stays too high.', 'On', 'Automation'],
+      ['hourglass', 'automation', 'Auto Quit', "Quit apps you haven't touched in a while.", 'Off', 'Automation'],
+      ['eye', 'advanced', 'Background Apps', 'Show helpers and agents that never appear in the Dock.', 'Off', 'Advanced'],
+      ['music.note', 'advanced', 'Music Protection', 'Keep music playing through every quit.', 'On', 'Advanced'],
+    ]],
+  ];
+
+  function overview() {
+    const sections = FEATURES.map(([g, list]) => `<div style="display:flex;flex-direction:column;gap:10px">${groupTitle(g)}${grid3(list.map(([s, t, ti, d, st, f]) => featureCard(s, TINT[t], ti, d, st, f)))}</div>`).join('');
+    return `<div style="display:flex;flex-direction:column;gap:22px;width:${CW}px">${sections}</div>`;
+  }
+
+  function aboutTab() {
+    const hl = (symbol, title, detail) => `<div style="flex:1;display:flex;align-items:flex-start;gap:9px;min-width:0"><span style="width:28px;height:28px;border-radius:7px;background:${AC(0.1)};display:grid;place-items:center;flex:none">${sf(symbol, 14, GOLD, { w: 2 })}</span><div style="display:flex;flex-direction:column;gap:2px;min-width:0"><div style="font-size:11.5px;font-weight:600;color:${INK}">${title}</div><div style="font-size:10.5px;line-height:13px;color:${SUB}">${detail}</div></div></div>`;
+    const hero = `<div style="display:flex;align-items:center;gap:16px;padding:14px;border-radius:14px;background:linear-gradient(135deg,${AC(0.12)},${P(0.035)});box-shadow:inset 0 0 0 .5px ${P(0.08)}"><img src="${A}icon.png" style="width:72px;height:72px;display:block;flex:none" alt=""><div style="display:flex;flex-direction:column;gap:5px;flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:21px;font-weight:700;color:${INK};letter-spacing:-.01em">QuitX</span><span style="font-size:9px;font-weight:700;color:${GOLD};padding:3px 7px;border-radius:99px;background:${AC(0.11)};letter-spacing:.02em">VERSION 1.2.3</span></div><div style="font-size:12.5px;font-weight:500;color:${INK}">Quit everything. Keep what matters.</div><div style="display:flex;align-items:center;gap:5px">${sf('checkmark.circle.fill', 11, '#32D74B')}<span style="font-size:10.5px;color:${SUB}">Up to date</span></div></div>${button('Check for Updates', { prominent: true })}</div>`;
+    const why = `<div style="display:flex;flex-direction:column;gap:10px">${sectionHeader('Why QuitX', 'sparkles')}<div style="display:flex;gap:18px;padding-left:33px">${hl('swift', 'Native', 'Fast SwiftUI app with a small footprint.')}${hl('hand.raised.fill', 'Private', 'No account, tracking or analytics.')}${hl('chevron.left.forwardslash.chevron.right', 'Open Source', 'Free forever under the MIT license.')}</div></div>`;
+    const res = `<div style="display:flex;flex-direction:column;gap:10px">${sectionHeader('Resources', 'lifepreserver')}<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-left:33px">${featureCard('ladybug.fill', '#F0615C', 'Report an Issue', 'Share feedback or a bug.', null, 'Open GitHub')}${featureCard('cup.and.saucer.fill', GOLD, 'Buy Me a Coffee', 'Support independent development.', null, 'Open Buy Me a Coffee')}</div></div>`;
+    const link = '#419CFF';
+    const foot = `<div style="display:flex;align-items:center;gap:7px;font-size:10.5px;color:${SUB}">${sf('heart.fill', 11, GOLD)}<span>Designed and built by</span><span style="color:${link}">Toufiq Hasan Kiron</span><span style="color:rgba(235,235,245,.36)">•</span><span style="color:${link}">GitHub</span></div>`;
+    return `<div style="display:flex;flex-direction:column;gap:16px;padding-top:14px;width:${CW}px;min-height:470px;box-sizing:border-box">${hero}${why}${res}<div style="flex:1;min-height:8px"></div>${foot}</div>`;
+  }
+
+  const scanHead = (size, count) => `<div style="display:flex;align-items:center;gap:12px;flex:none"><div style="text-align:right;display:flex;flex-direction:column;gap:2px"><div style="font-size:14px;font-weight:600;color:${INK};font-variant-numeric:tabular-nums">${size}</div><div style="font-size:10px;color:${SUB}">${count}</div></div>${primaryBtn('Scan Again')}</div>`;
+  const primaryBtn = (label, on = true) => `<span style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 14px;border-radius:6px;font-size:12px;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums;${on ? `background:linear-gradient(${GOLD},${GOLD2});color:rgba(0,0,0,.88);box-shadow:0 1px 2px ${AC(0.18)}` : `background:${P(0.08)};color:${P(0.35)}`}">${label}</span>`;
+  const dangerBtn = (label, on = true) => `<span style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 14px;border-radius:6px;font-size:12px;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums;${on ? 'background:linear-gradient(#FF453A,#D22828);color:#fff;box-shadow:0 1px 2px rgba(255,69,58,.18)' : `background:${P(0.08)};color:${P(0.35)}`}">${on ? sf('trash.fill', 12, '#fff') : ''}${label}</span>`;
+  const secondaryBtn = (label, enabled = true) => `<span style="display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:6px;font-size:12px;font-weight:500;white-space:nowrap;background:${P(0.07)};box-shadow:inset 0 0 0 .5px ${P(enabled ? 0.12 : 0.06)};color:${P(enabled ? 0.85 : 0.3)}">${label}</span>`;
+  const checkbox = on => `<span style="width:14px;height:14px;border-radius:3px;flex:none;display:grid;place-items:center;background:${on ? GOLD : P(0.08)}">${on ? sf('checkmark', 10, 'rgba(0,0,0,.9)', { w: 3.4 }) : ''}</span>`;
+  const footerBar = (selAll, deselAll, primary) => `<div style="flex:none"><div style="height:1px;background:${P(0.1)}"></div><div style="display:flex;align-items:center;gap:8px;padding:12px 0">${secondaryBtn('Select All', selAll)}${secondaryBtn('Deselect All', deselAll)}<span style="flex:1"></span>${primary}</div></div>`;
+  const searchField = (text, glass) => `<div style="flex:1;height:28px;border-radius:7px;display:flex;align-items:center;gap:6px;padding:0 8px;box-sizing:border-box;${glass ? `background:#1E1E1F;box-shadow:inset 0 0 0 .6px ${P(0.11)}` : `background:${P(0.045)};box-shadow:inset 0 0 0 .5px ${P(0.08)}`}">${sf('magnifyingglass', 12, SUB, { w: 2 })}<span style="font-size:${glass ? 12 : 11.5}px;color:rgba(235,235,245,.35)">${text}</span></div>`;
+  const smallTag = t => `<span style="font-size:9px;font-weight:600;color:${SUB};padding:1px 5px;border-radius:3px;background:${P(0.08)};line-height:11px">${t}</span>`;
+
+  const UNINSTALL_APPS = [
+    { n: 'Discord', i: 'discord', id: 'com.hnc.Discord', size: '412 MB', tags: ['Running'] },
+    { n: 'Google Chrome', i: 'chrome', id: 'com.google.Chrome', size: '1.31 GB', tags: ['Running'] },
+    { n: 'Maps', i: 'maps', id: 'com.apple.Maps', size: '96 MB', tags: [] },
+    { n: 'Telegram', i: 'telegram', id: 'ru.keepcoder.Telegram', size: '284 MB', tags: ['Running', 'Menu Bar'] },
+    { n: 'Visual Studio Code', i: 'vscode', id: 'com.microsoft.VSCode', size: '604 MB', tags: [] },
+  ];
 
   function uninstallTab(o = {}) {
-    const apps = o.apps || [
-      { n: 'Discord', i: 'discord', id: 'com.hnc.Discord', size: '412 MB', tags: ['Running'] },
-      { n: 'Google Chrome', i: 'chrome', id: 'com.google.Chrome', size: '1.31 GB', tags: ['Running'] },
-      { n: 'Maps', i: 'maps', id: 'com.apple.Maps', size: '96 MB', tags: [] },
-      { n: 'Telegram', i: 'telegram', id: 'ru.keepcoder.Telegram', size: '284 MB', tags: ['Running', 'Menu Bar'] },
-      { n: 'Visual Studio Code', i: 'vscode', id: 'com.microsoft.VSCode', size: '604 MB', tags: [] },
-    ];
     const sel = new Set(o.selected || []);
-    const rows = apps.map(a => `<div data-app="${a.n}" style="display:flex;align-items:center;gap:9px;padding:5px 6px;border-radius:7px;${sel.has(a.n) ? 'background:rgba(254,188,51,.08)' : ''}">${pageBox(sel.has(a.n))}<img src="${A}icons/${a.i}.png" style="width:20px;height:20px" alt=""><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px"><div style="display:flex;align-items:center;gap:5px"><b style="font-size:12px;font-weight:600;color:rgba(255,255,255,.92)">${a.n}</b>${a.tags.map(pageTag).join('')}</div><span style="font-size:10px;color:var(--qx-sub)">${a.id}</span></div><span style="font-size:11px;font-weight:600;color:rgba(255,255,255,.88);font-variant-numeric:tabular-nums">${a.size}</span></div>`).join('');
+    const layout = `<span style="display:inline-flex;gap:2px;padding:2px;border-radius:7px;background:${P(0.05)};box-shadow:inset 0 0 0 .5px ${P(0.08)}"><span style="width:26px;height:24px;border-radius:5px;background:${P(0.12)};display:grid;place-items:center">${sf('list.bullet', 13, INK, { w: 2 })}</span><span style="width:26px;height:24px;border-radius:5px;display:grid;place-items:center">${sf('square.grid.2x2', 13, SUB, { w: 1.9 })}</span></span>`;
+    const list = UNINSTALL_APPS.map(a => {
+      const on = sel.has(a.n);
+      return `<div data-app="${a.n}" style="display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:6px;${on ? `background:${AC(0.1)}` : ''}">${checkbox(on)}<img src="${A}icons/${a.i}.png" style="width:24px;height:24px;display:block;flex:none" alt=""><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px"><div style="display:flex;align-items:center;gap:6px"><span style="font-size:12.5px;font-weight:500;color:${INK}">${a.n}</span>${a.tags.map(smallTag).join('')}</div><span style="font-size:10px;color:${SUB}">${a.id}</span></div><span style="font-size:11px;color:${SUB};font-variant-numeric:tabular-nums">${a.size}</span></div>`;
+    }).join('');
     const count = sel.size;
-    const primary = count ? `Review ${count} ${count === 1 ? 'App' : 'Apps'} (${o.selectedSize || '1.72 GB'})` : 'Choose Apps to Uninstall';
-    return `<div style="display:flex;flex-direction:column;gap:8px;height:100%">${`<div style="display:flex;gap:7px;align-items:center"><div style="flex:1">${pageField('Search apps')}</div><span style="height:24px;padding:0 3px;border-radius:7px;display:flex;align-items:center;gap:2px;background:rgba(255,255,255,.05)"><span style="width:22px;height:18px;border-radius:5px;background:rgba(255,255,255,.12);display:grid;place-items:center"><svg width="10" height="9" viewBox="0 0 10 9" fill="none" stroke="#fff" stroke-width="1.2"><path d="M3 1.5h7M3 4.5h7M3 7.5h7"/><circle cx=".8" cy="1.5" r=".6" fill="#fff"/><circle cx=".8" cy="4.5" r=".6" fill="#fff"/><circle cx=".8" cy="7.5" r=".6" fill="#fff"/></svg></span><span style="width:22px;height:18px;display:grid;place-items:center"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="1.1"><rect x=".6" y=".6" width="3.6" height="3.6" rx=".8"/><rect x="5.8" y=".6" width="3.6" height="3.6" rx=".8"/><rect x=".6" y="5.8" width="3.6" height="3.6" rx=".8"/><rect x="5.8" y="5.8" width="3.6" height="3.6" rx=".8"/></svg></span></span></div>`}${pageMenus(['All apps', 'Any size', 'Name (A–Z)'])}<span style="font-size:10.5px;color:var(--qx-sub)">${apps.length} of ${apps.length} apps shown</span><div style="display:flex;flex-direction:column;gap:2px;flex:1;min-height:0;overflow:hidden">${rows}</div>${pageFoot(true, primary, false)}</div>`;
+    const primary = primaryBtn(count ? `Review ${count} ${count === 1 ? 'App' : 'Apps'} (${o.selectedSize})` : 'Choose Apps to Uninstall', count > 0);
+    return `<div style="display:flex;flex-direction:column;height:100%;width:${CW}px"><div style="display:flex;align-items:center;gap:8px;padding-bottom:8px">${searchField('Search apps', true)}${layout}</div><div style="display:flex;gap:8px;padding-bottom:6px">${popup('All apps', { flex: true })}${popup('Any size', { flex: true })}${popup('Name (A–Z)', { flex: true })}</div><div style="font-size:10.5px;color:${SUB};padding-bottom:8px">${UNINSTALL_APPS.length} of ${UNINSTALL_APPS.length} apps shown</div><div style="flex:1;min-height:0;overflow:hidden">${list}</div>${footerBar(count < UNINSTALL_APPS.length, count > 0, primary)}</div>`;
   }
 
   function filesTab(o = {}) {
     const items = o.items || [];
-    const sel = new Set(o.selected || items.map(i => i.path));
-    const file = '<svg width="16" height="18" viewBox="0 0 16 18"><path d="M3 1h7l4 4v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z" fill="rgba(235,235,245,.62)"/><path d="M10 1v4h4" fill="rgba(235,235,245,.35)"/></svg>';
-    const folder = '<svg width="18" height="15" viewBox="0 0 18 15"><path d="M1 2.6A1.6 1.6 0 0 1 2.6 1h4l1.6 1.8h7.2A1.6 1.6 0 0 1 17 4.4v8A1.6 1.6 0 0 1 15.4 14H2.6A1.6 1.6 0 0 1 1 12.4z" fill="#3B8CF6"/><path d="M1 5h16" stroke="#6DAAF8" stroke-width="1"/></svg>';
-    const rows = items.map(it => `<div style="display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.07)">${pageBox(sel.has(it.path))}<span style="width:20px;display:grid;place-items:center">${it.dir ? folder : file}</span><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px"><div style="display:flex;align-items:center;gap:5px;min-width:0"><b style="font-size:12px;font-weight:600;color:rgba(255,255,255,.92);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.n}</b>${it.tag ? pageTag(it.tag) : ''}</div><span style="font-size:10px;color:var(--qx-sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.path}</span></div><span style="font-size:10px;color:var(--qx-sub);white-space:nowrap">${it.date || '28 Oct 2026'}</span><span style="width:54px;text-align:right;font-size:11px;font-weight:600;color:rgba(255,255,255,.88);font-variant-numeric:tabular-nums">${it.size}</span></div>`).join('');
-    const banner = o.banner ? `<div style="display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;background:rgba(255,159,10,.08);box-shadow:inset 0 0 0 1px rgba(255,159,10,.28)"><svg width="14" height="16" viewBox="0 0 14 16" fill="#FF9F0A"><path d="M7 .5l6 2.4v4.4c0 4-2.6 6.9-6 8.2-3.4-1.3-6-4.2-6-8.2V2.9z"/></svg><div style="flex:1;display:flex;flex-direction:column;gap:1px"><b style="font-size:11px;color:rgba(255,255,255,.92)">${o.banner}</b><span style="font-size:10px;color:var(--qx-sub)">macOS requires Full Disk Access to remove sandbox containers.</span></div><span style="height:20px;padding:0 9px;border-radius:5px;display:grid;place-items:center;font-size:10.5px;font-weight:600;background:rgba(255,255,255,.08)">Grant Access</span></div>` : '';
-    const count = sel.size;
-    return `<div style="display:flex;flex-direction:column;gap:8px;height:100%">${banner}${pageField('Search name or path…')}${pageMenus(['Any size', 'Any age', 'Largest first'])}<span style="font-size:10.5px;color:var(--qx-sub)">${items.length} of ${items.length} items shown</span><div style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden">${rows}</div>${pageFoot(false, count ? `Delete ${count} (${o.selectedSize})` : 'Select Items', true)}</div>`;
+    const sel = new Set(o.selected || items.map(it => it.path));
+    const tint = o.tint || (items === LEFTOVERS ? '#FF9F0A' : '#0A84FF');
+    const list = items.map(it => `<div style="display:flex;align-items:center;gap:10px;padding:8px 0">${checkbox(sel.has(it.path))}<span style="width:22px;display:grid;place-items:center;flex:none">${sf(it.dir ? 'folder.fill' : 'doc.fill', 16, it.dir ? tint : SUB)}</span><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><div style="display:flex;align-items:center;gap:6px;min-width:0"><span style="font-size:12.5px;font-weight:500;color:${INK};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.n}</span>${it.tag ? `<span style="font-size:8.5px;font-weight:600;color:${SUB};padding:1.5px 5px;border-radius:99px;background:${P(0.07)};white-space:nowrap">${it.tag}</span>` : ''}</div><span style="font-size:10px;color:${SUB};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.path}</span></div><span style="width:80px;text-align:right;font-size:10.5px;color:${SUB};flex:none">${it.date || '28 Oct 2026'}</span><span style="min-width:62px;text-align:right;font-size:11px;font-weight:500;color:${SUB};font-variant-numeric:tabular-nums;flex:none">${it.size}</span><span style="width:24px;height:24px;display:grid;place-items:center;flex:none">${sf('arrow.up.forward.square', 14, SUB, { w: 1.7 })}</span></div><div style="height:1px;background:${P(0.08)};margin-left:54px"></div>`).join('');
+    const count = items.filter(it => sel.has(it.path)).length;
+    const filter = `<div style="display:flex;flex-direction:column;gap:8px;padding:4px 0">${searchField('Search name or path…')}<div style="display:flex;gap:8px">${popup('Any size', { flex: true })}${popup('Any age', { flex: true })}${popup('Largest first', { flex: true })}</div><div style="font-size:10.5px;color:${SUB}">${items.length} of ${items.length} items shown</div></div>`;
+    return `<div style="display:flex;flex-direction:column;height:100%;width:${CW}px"><div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:6px">${filter}<div style="flex:1;min-height:0;overflow:hidden">${list}</div></div>${footerBar(count < items.length, count > 0, dangerBtn(count ? `Delete ${count} (${o.selectedSize})` : 'Delete Permanently', count > 0))}</div>`;
   }
 
   const LEFTOVERS = [
@@ -262,184 +554,47 @@
     { n: 'com.apple.siri.bundleservicecache.plist', path: '~/Library/Caches/com.apple.siri.bundleservicecache.plist', size: '12 KB' },
   ];
 
-  function sideShift(tab) {
-    let y = 0, target = 0;
-    for (const [g, tabs] of sideGroups) {
-      if (g) y += 23;
-      for (const t of tabs) {
-        if (t === tab) target = y;
-        y += 24;
-      }
-    }
-    const visible = 474 - 74 - 14;
-    if (target + 24 <= visible) return 0;
-    return Math.round(Math.min(y - visible, target - visible / 2));
+  function fitAll(root) {
+    (root || document).querySelectorAll('[data-scroll-to]').forEach(p => {
+      const t = p.querySelector(`[data-sec="${p.dataset.scrollTo}"]`);
+      if (!t) return;
+      const page = p.parentElement;
+      const max = Math.max(0, p.scrollHeight - page.clientHeight);
+      p.style.transform = `translateY(-${Math.min(max, t.offsetTop)}px)`;
+    });
+    (root || document).querySelectorAll('.qx-chrome').forEach(fitChrome);
   }
 
-  function settings(o) {
-    const shift = o.sideScroll != null ? o.sideScroll : sideShift(o.tab);
-    const side = sideGroups.map(([g, tabs]) => `${g ? `<div class="sg px-[8px] pt-[9px] pb-[3px] text-[9px] font-bold tracking-[.04em] uppercase text-[var(--qx-sub)]">${g}</div>` : ''}${tabs.map(t => `<div class="si${t === o.tab ? ' on' : ''} py-0 px-[8px] gap-[7px] h-[24px] rounded-[5px] flex items-center text-[12px] text-[rgba(255,255,255,.88)] [&.on]:bg-[rgba(254,188,51,.18)] [&.on]:font-semibold" data-tab="${t}">${sideIcons[t]}<span>${t}</span></div>`).join('')}`).join('');
-    return `<div class="qx-win qx-settings side overflow-hidden w-[680px] flex items-stretch h-[474px] rounded-[12px] bg-[#262527] text-[#EDEBE7] font-['Inter',-apple-system,system-ui,sans-serif] shadow-[0_0_0_.5px_rgba(255,255,255,.14),0_0_0_1px_rgba(0,0,0,.6),0_36px_72px_rgba(0,0,0,.5),0_6px_18px_rgba(0,0,0,.3)]"><div class="sb px-[8px] pt-[40px] pb-[14px] [border-right:1px_solid_rgba(0,0,0,.35)] w-[164px] flex-none bg-[#2E2D30] relative" style="display:flex;flex-direction:column"><span class="lights gap-[8px] absolute left-[14px] top-[14px] flex"><i class="w-[12px] h-[12px] rounded-[50%] block shadow-[inset_0_0_0_.5px_rgba(0,0,0,.25)]" style="background:#FF5F57"></i><i class="w-[12px] h-[12px] rounded-[50%] block shadow-[inset_0_0_0_.5px_rgba(0,0,0,.25)]" style="background:#FEBC2E"></i><i class="w-[12px] h-[12px] rounded-[50%] block shadow-[inset_0_0_0_.5px_rgba(0,0,0,.25)]" style="background:#58565A"></i></span><div class="ss py-0 px-[8px] mx-[2px] mt-0 mb-[10px] gap-[6px] h-[24px] rounded-[6px] flex items-center text-[11.5px] text-[var(--qx-sub)] bg-[#3A393C] shadow-[inset_0_0_0_.5px_rgba(255,255,255,.1)]">${S.search}Search settings…</div><div style="flex:1;min-height:0;overflow:hidden;margin:0 -8px;padding:0 8px"><div class="sl"${shift ? ` style="transform:translateY(-${shift}px)"` : ''}>${side}</div></div></div><div class="dt px-[22px] pt-[34px] pb-[20px] overflow-hidden flex-1 min-w-0 bg-[#262527] relative flex flex-col"><div class="dh mb-[12px] gap-[10px] block items-center"${o.right ? ' style="display:flex;align-items:flex-start"' : ''}><div style="flex:1;min-width:0"><div class="h text-[18px] font-bold text-[rgba(255,255,255,.95)]">${o.tab}</div><div class="sum mt-[3px] text-[11.5px] text-[var(--qx-sub)]"${o.right ? ' style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis"' : ''}>${summaries[o.tab] || ''}</div></div>${o.right || ''}</div><div class="pv py-0 px-[10px] my-0 -mx-[10px] overflow-hidden flex-1 min-h-0"><div class="pane text-left h-full"${o.scroll ? ` style="transform:translateY(-${o.scroll}px)"` : ''}>${o.content}</div></div></div></div>`;
+  function shapePath(w, h, ax) {
+    const top = 12, r = 14, hw = 16;
+    const x = Math.max(r + hw, Math.min(ax, w - r - hw));
+    const f = n => +n.toFixed(2);
+    return `M${r} ${top}H${f(x - hw)}C${f(x - 14)} ${top} ${f(x - 12)} ${top - 0.9} ${f(x - 10.4)} ${top - 2.4}L${f(x - 4)} ${top - 9.2}C${f(x - 1.8)} ${top - 11.8} ${f(x + 1.8)} ${top - 11.8} ${f(x + 4)} ${top - 9.2}L${f(x + 10.4)} ${top - 2.4}C${f(x + 12)} ${top - 0.9} ${f(x + 14)} ${top} ${f(x + hw)} ${top}H${w - r}A${r} ${r} 0 0 1 ${w} ${top + r}V${h - r}A${r} ${r} 0 0 1 ${w - r} ${h}H${r}A${r} ${r} 0 0 1 0 ${h - r}V${top + r}A${r} ${r} 0 0 1 ${r} ${top}Z`;
   }
 
-  const cb = (t, on = true) => `<span class="cbl gap-[9px] inline-flex items-center text-[rgba(255,255,255,.9)] relative"><span class="qx-sw${on ? ' on' : ''} w-[26px] h-[15px] rounded-[8px] bg-[rgba(255,255,255,.14)] bg-none relative flex-none inline-block after:content-[''] after:absolute after:left-[2px] after:top-[2px] after:w-[11px] after:h-[11px] after:rounded-[50%] after:bg-[#fff] after:shadow-[0_1px_2px_rgba(0,0,0,.3)] [&.on]:bg-transparent [&.on]:bg-[linear-gradient(var(--qx-gold),var(--qx-gold-deep))] [&.on]:after:left-[13px]"></span>${t}</span>`;
-  const help = '<span class="help ml-auto place-items-center w-[18px] h-[18px] rounded-[50%] grid text-[11px] font-semibold text-[rgba(255,255,255,.55)] shadow-[inset_0_0_0_1px_rgba(255,255,255,.22)]">?</span>';
-  const T = {
-    gauge: '<svg class="py-[4px] px-0 w-full h-[22px] [box-sizing:border-box] rounded-[5px] fill-none stroke-current stroke-[1.4] [stroke-linecap:round] [stroke-linejoin:round] [.qx-settings_.tile.on_&]:bg-transparent [.qx-settings_.tile.on_&]:bg-[linear-gradient(135deg,rgba(254,188,51,.22),rgba(254,188,51,.06))] [.qx-settings_.tiles.sm_.tile_&]:py-[1px] [.qx-settings_.tiles.sm_.tile_&]:px-0 [.qx-settings_.tiles.sm_.tile_&]:h-[16px] [.qx-settings_.tiles.sm_.tile_&]:bg-transparent [.qx-settings_.tiles.sm_.tile_&]:bg-none [.qx-settings_.tiles.sm_.tile.on_&]:bg-transparent [.qx-settings_.tiles.sm_.tile.on_&]:bg-none" viewBox="0 0 16 16"><path d="M2.4 11.6a6 6 0 1 1 11.2 0"/><path d="M8 9l2.6-2.6"/></svg>',
-    text: '<svg class="py-[4px] px-0 w-full h-[22px] [box-sizing:border-box] rounded-[5px] bg-[rgba(255,255,255,.05)] fill-none stroke-current stroke-[1.4] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 22 16"><text x="11" y="12.5" text-anchor="middle" font-size="12" font-family="Inter" font-weight="500" fill="currentColor" stroke="none">Aa</text></svg>',
-    abc: '<svg class="py-[1px] px-0 w-full h-[16px] [box-sizing:border-box] rounded-[5px] bg-transparent bg-none fill-none stroke-current stroke-[1.4] [stroke-linecap:round] [stroke-linejoin:round] [.qx-settings_.tiles.sm_.tile.on_&]:bg-transparent [.qx-settings_.tiles.sm_.tile.on_&]:bg-none" viewBox="0 0 26 16"><text x="13" y="12.5" text-anchor="middle" font-size="11.5" font-family="Inter" font-weight="500" fill="currentColor" stroke="none">Abc</text></svg>',
-    pct: '<svg viewBox="0 0 16 16"><path d="M12.5 3.5l-9 9"/><circle cx="4.5" cy="4.5" r="1.6"/><circle cx="11.5" cy="11.5" r="1.6"/></svg>',
-    mem: '<svg class="py-[1px] px-0 w-full h-[16px] [box-sizing:border-box] rounded-[5px] bg-transparent bg-none fill-none stroke-current stroke-[1.4] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16"><rect x="2" y="5" width="12" height="6" rx="1.2"/><path d="M4.5 11v1.8M7 11v1.8M9.5 11v1.8M12 11v1.8"/></svg>',
-    fast: '<svg class="py-[4px] px-0 w-full h-[22px] [box-sizing:border-box] rounded-[5px] bg-[rgba(255,255,255,.05)] bg-none fill-none stroke-current stroke-[1.4] [stroke-linecap:round] [stroke-linejoin:round] [.qx-settings_.tiles.sm_.tile_&]:py-[1px] [.qx-settings_.tiles.sm_.tile_&]:px-0 [.qx-settings_.tiles.sm_.tile_&]:h-[16px] [.qx-settings_.tiles.sm_.tile_&]:bg-transparent [.qx-settings_.tiles.sm_.tile_&]:bg-none [.qx-settings_.tiles.sm_.tile.on_&]:bg-transparent [.qx-settings_.tiles.sm_.tile.on_&]:bg-none" viewBox="0 0 16 16"><path d="M9 1.5L3 9h4.5L7 14.5 13 7H8.5z"/></svg>',
-    slow: '<svg class="py-[1px] px-0 w-full h-[16px] [box-sizing:border-box] rounded-[5px] bg-transparent bg-none fill-none stroke-current stroke-[1.4] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16"><path d="M2.5 11h11M4 11c0-3 1.8-5 4-5s4 2 4 5"/><circle cx="13" cy="8" r="1.3"/></svg>',
-    clock: '<svg class="[.qx-settings_.tile_&]:py-[4px] [.qx-settings_.tile_&]:px-0 [.qx-settings_.tile_&]:w-full [.qx-settings_.tile_&]:h-[22px] [.qx-settings_.tile_&]:[box-sizing:border-box] [.qx-settings_.tile_&]:rounded-[5px] [.qx-settings_.tile_&]:bg-[rgba(255,255,255,.05)] [.qx-settings_.tile_&]:fill-none [.qx-settings_.tile_&]:stroke-current [.qx-settings_.tile_&]:stroke-[1.4] [.qx-settings_.tile_&]:[stroke-linecap:round] [.qx-settings_.tile_&]:[stroke-linejoin:round] [.qx-overview_.card-icon_&]:w-[16px] [.qx-overview_.card-icon_&]:h-[16px] [.qx-overview_.card-icon_&]:fill-none [.qx-overview_.card-icon_&]:stroke-current [.qx-overview_.card-icon_&]:stroke-[1.6]" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.6"/><path d="M8 4.8V8l2 1.3"/></svg>',
-    clock12: '<svg class="py-[4px] px-0 w-full h-[22px] [box-sizing:border-box] rounded-[5px] bg-transparent bg-[linear-gradient(135deg,rgba(254,188,51,.22),rgba(254,188,51,.06))] fill-none stroke-current stroke-[1.4] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16"><path d="M13.4 7a5.6 5.6 0 1 1-4-4.4"/><path d="M8 4.8V8l2 1.3"/><circle cx="12.4" cy="3.6" r="1.3" fill="currentColor"/></svg>',
-    square: '<svg class="py-[4px] px-0 w-full h-[22px] [box-sizing:border-box] rounded-[5px] bg-[rgba(255,255,255,.05)] fill-none stroke-current stroke-[1.4] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16"><rect x="3" y="4" width="10" height="8" rx="1.6" fill="currentColor"/></svg>',
-    drop: '<svg class="py-[4px] px-0 w-full h-[22px] [box-sizing:border-box] rounded-[5px] bg-transparent bg-[linear-gradient(135deg,rgba(254,188,51,.22),rgba(254,188,51,.06))] fill-none stroke-current stroke-[1.4] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16"><path d="M8 2.2c2.4 3 3.8 5.1 3.8 7a3.8 3.8 0 0 1-7.6 0c0-1.9 1.4-4 3.8-7z" fill="currentColor"/></svg>',
-    down: '<svg class="py-[1px] px-0 w-full h-[16px] [box-sizing:border-box] rounded-[5px] bg-transparent bg-none fill-none stroke-current stroke-[1.4] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.6"/><path d="M6 6l4 4M10 6.6V10H6.6"/></svg>',
-    up: '<svg class="py-[1px] px-0 w-full h-[16px] [box-sizing:border-box] rounded-[5px] bg-transparent bg-none fill-none stroke-current stroke-[1.4] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.6"/><path d="M6 10l4-4M6.6 6H10v3.4"/></svg>',
-    arrowUp: '<svg class="py-[1px] px-0 w-full h-[16px] [box-sizing:border-box] rounded-[5px] bg-transparent bg-none fill-none stroke-current stroke-[1.4] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16"><path d="M8 13V3M4 7l4-4 4 4"/></svg>',
-    arrowDown: '<svg class="py-[1px] px-0 w-full h-[16px] [box-sizing:border-box] rounded-[5px] bg-transparent bg-none fill-none stroke-current stroke-[1.4] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16"><path d="M8 3v10M4 9l4 4 4-4"/></svg>',
-    list: '<svg class="py-[1px] px-0 w-full h-[16px] [box-sizing:border-box] rounded-[5px] bg-transparent bg-none fill-none stroke-current stroke-[1.4] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16"><path d="M6 4h7.5M6 8h7.5M6 12h7.5"/><circle cx="3" cy="4" r=".6" fill="currentColor"/><circle cx="3" cy="8" r=".6" fill="currentColor"/><circle cx="3" cy="12" r=".6" fill="currentColor"/></svg>',
-    folder: '<svg class="py-[1px] px-0 w-full h-[16px] [box-sizing:border-box] rounded-[5px] bg-transparent bg-none fill-none stroke-current stroke-[1.4] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16"><path d="M2 4.5A1.5 1.5 0 0 1 3.5 3H6l1.5 1.5h5A1.5 1.5 0 0 1 14 6v5.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 11.5z"/></svg>',
-    docker: '<svg class="py-[1px] px-0 w-full h-[16px] [box-sizing:border-box] rounded-[5px] bg-transparent bg-none fill-none stroke-current stroke-[1.4] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16"><path d="M1.8 8.5h11.4c.6 0 1-.6 1.6-.8-.3 2.9-2.6 5-6.3 5-3.2 0-5.6-1.6-6.7-4.2z"/><path d="M3.5 8.5V6.5h2v2M5.5 8.5V6.5h2v2M7.5 8.5V6.5h2v2M5.5 6.5v-2h2v2"/></svg>',
-    branch: '<svg class="py-[1px] px-0 w-full h-[16px] [box-sizing:border-box] rounded-[5px] bg-transparent bg-none fill-none stroke-current stroke-[1.4] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16"><path d="M4 2.5v3.2c0 1.6 1.4 2.8 4 3.3 2.6-.5 4-1.7 4-3.3V2.5M8 9v4.5"/></svg>',
-  };
-  const tiles = (items, o = {}) => `<span class="tiles${o.small ? ' sm' : ''} gap-[6px] inline-flex"${o.id ? ` id="${o.id}"` : ''}>${items.map(x => `<span class="tile${x.on ? ' on' : ''} px-[6px] pt-[4px] pb-[5px] gap-[3px] min-w-[62px] rounded-[7px] flex flex-col items-center bg-[rgba(255,255,255,.04)] shadow-[inset_0_0_0_.5px_rgba(255,255,255,.08)] text-[rgba(235,235,245,.6)] text-[9.5px] [&.on]:bg-[rgba(254,188,51,.08)] [&.on]:shadow-[inset_0_0_0_1.4px_var(--qx-gold)] [&.on]:text-[var(--qx-gold)] [.qx-settings_.tiles.sm_&]:px-[7px] [.qx-settings_.tiles.sm_&]:pt-[4px] [.qx-settings_.tiles.sm_&]:pb-[5px] [.qx-settings_.tiles.sm_&]:min-w-[46px] [.qx-settings_.tiles.sm_&]:w-auto">${x.i}<b class="font-medium whitespace-nowrap [.qx-settings_.tile.on_&]:font-semibold [.qx-settings_.tile.on_&]:text-white">${x.t}</b></span>`).join('')}</span>`;
-  const sub = (label, inner, cls = '') => `<span class="sub${cls ? ' ' + cls : ''} gap-[16px] flex items-center relative [&.time]:gap-[6px] [.qx-settings.side_.dt_.r.dim>&:not(.help)]:opacity-[.42]"><span class="small text-[12px] text-[rgba(255,255,255,.9)] w-[92px] [.qx-settings_.sub.time_&]:mr-[10px]">${label}</span>${inner}</span>`;
-  const tstep = v => `<span class="tstep py-0 pr-[7px] pl-[9px] mr-0 gap-[8px] inline-flex items-center h-[21px] rounded-[6px] bg-[rgba(255,255,255,.07)] shadow-[inset_0_0_0_.5px_rgba(255,255,255,.08)] text-[11.5px]">${v}<i class="w-[5px] h-[9px] relative after:[border-top:1.2px_solid_rgba(255,255,255,.7)] after:[border-left:1.2px_solid_rgba(255,255,255,.7)] after:content-[''] after:absolute after:left-0 after:w-[3.5px] after:h-[3.5px] after:bottom-0 after:[transform:rotate(225deg)] before:[border-top:1.2px_solid_rgba(255,255,255,.7)] before:[border-left:1.2px_solid_rgba(255,255,255,.7)] before:content-[''] before:absolute before:left-0 before:w-[3.5px] before:h-[3.5px] before:top-0 before:[transform:rotate(45deg)]"></i></span>`;
-  const sectionSymbols = {
-    Startup: S.power,
-    Sounds: '<svg class="w-[12px] h-[12px] fill-none stroke-current stroke-[1.5] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16"><path d="M3 6.2h2.4L8.5 3.5v9L5.4 9.8H3z"/><path d="M10.6 6a2.6 2.6 0 0 1 0 4M12.4 4.4a5 5 0 0 1 0 7.2"/></svg>',
-    Updates: S.refresh,
-    'Menu Bar': '<svg class="w-[12px] h-[12px] fill-none stroke-current stroke-[1.5] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16"><rect x="2" y="3.5" width="12" height="9" rx="1.8"/><path d="M2 6.3h12"/></svg>',
-    Refresh: S.refresh,
-    Appearance: '<svg class="w-[12px] h-[12px] fill-none stroke-current stroke-[1.5] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16"><path d="M8 2.2a5.8 5.8 0 1 0 0 11.6c1 0 1.2-.8.8-1.5-.5-.9 0-1.9 1.1-1.9h1.6a2.3 2.3 0 0 0 2.3-2.3C13.8 4.6 11.2 2.2 8 2.2z"/><circle cx="5.2" cy="7" r=".8"/><circle cx="7.6" cy="4.9" r=".8"/><circle cx="10.4" cy="5.6" r=".8"/></svg>',
-    Sort: '<svg class="w-[12px] h-[12px] fill-none stroke-current stroke-[1.5] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16"><path d="M5 13V3M2.5 5.5L5 3l2.5 2.5M11 3v10M8.5 10.5L11 13l2.5-2.5"/></svg>',
-    Default: '<svg class="w-[12px] h-[12px] fill-none stroke-current stroke-[1.5] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16"><path d="M8 4.2a3.8 3.8 0 0 0-2.6 6.6M8 2a6 6 0 0 0-4.3 10.2M8 6.4a1.6 1.6 0 0 0-1.6 1.6v1.2l3.4 4.6"/></svg>',
-    Reset: '<svg viewBox="0 0 16 16"><path d="M3.2 6.2A5 5 0 1 1 3 9.5M3 3v3.4h3.4"/></svg>',
-    Sleep: '<svg class="w-[12px] h-[12px] fill-none stroke-current stroke-[1.5] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16"><path d="M10.5 10.8A5.2 5.2 0 0 1 5.2 3.4a5.2 5.2 0 1 0 7.2 6.8 5 5 0 0 1-1.9.6z"/><path d="M10 2.5h2l-2 2.2h2"/></svg>',
-    Windows: '<svg class="w-[12px] h-[12px] fill-none stroke-current stroke-[1.5] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16"><rect x="2" y="3.5" width="12" height="9" rx="1.8"/><path d="M4.5 5.6h.1M6.3 5.6h.1"/></svg>',
-    Health: '<svg class="w-[12px] h-[12px] fill-none stroke-current stroke-[1.5] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16"><rect x="3" y="2.5" width="10" height="11" rx="1.8"/><path d="M5.5 5.5h2M5.5 8h5M5.5 10.5h5"/></svg>',
-    'Auto Quit': '<svg class="w-[12px] h-[12px] fill-none stroke-current stroke-[1.5] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16"><path d="M4.5 2.5h7M4.5 13.5h7M5.5 2.5c0 3 5 3 5 5.5s-5 2.5-5 5.5M10.5 2.5c0 3-5 3-5 5.5s5 2.5 5 5.5"/></svg>',
-    'Port Killing': S.network,
-    Discovery: '<svg class="w-[12px] h-[12px] fill-none stroke-current stroke-[1.5] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16"><circle cx="8" cy="8" r="1.4"/><path d="M5.2 5.2a4 4 0 0 0 0 5.6M10.8 5.2a4 4 0 0 1 0 5.6M3.4 3.4a6.5 6.5 0 0 0 0 9.2M12.6 3.4a6.5 6.5 0 0 1 0 9.2"/></svg>',
-    'Group By': '<svg class="w-[12px] h-[12px] fill-none stroke-current stroke-[1.5] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16"><path d="M8 2.5l5.5 3L8 8.5l-5.5-3z"/><path d="M2.5 8.2L8 11.2l5.5-3M2.5 10.8L8 13.8l5.5-3"/></svg>',
-    Safety: '<svg class="w-[12px] h-[12px] fill-none stroke-current stroke-[1.5] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16"><path d="M8 1.8l5 2v4c0 3-2.2 5.3-5 6.4-2.8-1.1-5-3.4-5-6.4v-4z"/><path d="M5.8 8.2l1.6 1.6 3-3.2"/></svg>',
-    Selection: '<svg class="w-[12px] h-[12px] fill-none stroke-current stroke-[1.5] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 16 16"><circle cx="4" cy="5" r="1.4"/><circle cx="4" cy="11" r="1.4"/><path d="M7.5 5h6M7.5 11h6"/></svg>',
-    Exclude: S.nosign,
-  };
-  const section = (label, dim) => {
-    const title = label.replace(/:$/, '');
-    return `<div class="sec${dim ? ' dim' : ''} mx-0 mt-[14px] mb-[2px] gap-[8px] flex items-center text-[12px] font-semibold text-[rgba(255,255,255,.92)] [&:first-child]:mt-[2px]"><span class="sec-icon place-items-center w-[23px] h-[23px] rounded-[6px] grid text-[var(--qx-gold)] bg-[rgba(254,188,51,.12)] flex-none">${sectionSymbols[title] || S.sliders}</span><b class="whitespace-nowrap">${title}</b><i class="h-[.5px] bg-[rgba(255,255,255,.1)] flex-1"></i></div>`;
-  };
-  const r = (label, inner, o = {}) => `${label ? section(label, o.dim) : ''}<div class="r${o.hl ? ' hl' : ''}${o.dim ? ' dim' : ''} py-[3px] pl-[31px] gap-[10px] h-auto min-h-[26px] flex items-center text-[13px] relative [&.hl]:before:content-[''] [&.hl]:before:absolute [&.hl]:before:left-[-8px] [&.hl]:before:right-[-8px] [&.hl]:before:top-[-2px] [&.hl]:before:bottom-[-2px] [&.hl]:before:rounded-[8px] [&.hl]:before:bg-[rgba(254,188,51,.1)] [&.hl]:before:shadow-[inset_0_0_0_1px_rgba(254,188,51,.35)]"${o.id ? ` id="${o.id}"` : ''}>${inner}${o.help === false ? '' : help}</div>`;
-
-  const grip = '<svg width="8" height="7" viewBox="0 0 8 7"><path d="M0 1h8M0 3.5h8M0 6h8" stroke="rgba(235,235,245,.45)" stroke-width="1.3"/></svg>';
-  const chipSwitch = on => `<span style="position:relative;width:30px;height:18px;border-radius:9px;flex:none;background:${on ? 'var(--qx-gold)' : 'rgba(255,255,255,.13)'}"><i style="position:absolute;top:2px;left:${on ? 14 : 2}px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 .5px 1px rgba(0,0,0,.16)"></i></span>`;
-  function statChips(order, on, dragging) {
-    return `<span class="chips" style="display:inline-flex;flex-wrap:wrap;gap:5px;align-items:center;max-width:440px">${order.map(t => `<span data-chip="${t}" style="display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 8px 0 6px;box-sizing:border-box;border-radius:7px;background:${dragging === t ? 'rgba(255,255,255,.10)' : 'rgba(255,255,255,.045)'};box-shadow:inset 0 0 0 1px ${dragging === t ? 'rgba(254,188,51,.8)' : 'rgba(255,255,255,.08)'};font-size:11px;font-weight:500;color:rgba(255,255,255,.9)${dragging === t ? ';transform:translateY(-2px) scale(1.04);box-shadow:inset 0 0 0 1px rgba(254,188,51,.8),0 8px 18px rgba(0,0,0,.4)' : ''}">${grip}${chipSwitch(on)}${t}</span>`).join('')}</span>`;
+  let chromeSeq = 0;
+  function chrome(ax, glass) {
+    const g = glass === true ? 1 : (+glass || 0);
+    const id = `qxc${++chromeSeq}`;
+    return `<div class="qx-chrome" data-ax="${ax}" style="position:absolute;left:0;top:0;right:0;bottom:0;pointer-events:none;z-index:0"><svg class="qx-shadow" style="position:absolute;left:0;top:0;overflow:visible" width="0" height="0"><defs><filter id="${id}f" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#000" flood-opacity=".5"/><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity=".3"/></filter><mask id="${id}m" maskUnits="userSpaceOnUse" x="-200" y="-200" width="2000" height="2000"><rect x="-200" y="-200" width="2000" height="2000" fill="#fff"/><path class="d" fill="#000"/></mask></defs><g mask="url(#${id}m)"><path class="d" fill="#000" filter="url(#${id}f)"/></g></svg><div class="qx-layer" style="position:absolute;inset:0;background:var(--qx-panel);opacity:${1 - g}"></div><div class="qx-layer" style="position:absolute;inset:0;opacity:${g};background:linear-gradient(160deg,rgba(255,255,255,.16),rgba(255,255,255,0) 28%,rgba(255,255,255,0) 72%,rgba(255,255,255,.08)),rgba(48,44,42,.42);-webkit-backdrop-filter:blur(22px) saturate(1.8);backdrop-filter:blur(22px) saturate(1.8)"></div><svg class="qx-stroke" style="position:absolute;left:0;top:0;overflow:visible" width="0" height="0"><path class="d" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="1" opacity="${1 - g}"/><path class="d" fill="none" stroke="rgba(255,255,255,.26)" stroke-width="1" opacity="${g}"/></svg></div>`;
   }
 
-  const tileIcon = d => `<svg class="${T.gauge.match(/class="([^"]*)"/)[1]}" viewBox="0 0 16 16">${d}</svg>`;
-
-  function general(o = {}) {
-    const st = o.stats !== false;
-    return [
-      r('Startup:', cb('Open QuitX at login')),
-      r('Sounds:', cb('Play cool sounds', o.sounds !== false), { hl: o.hl === 'sounds', id: 'r-sounds' }),
-      r('Updates:', cb('Check for updates automatically'), { hl: o.hl === 'updates' }),
-      r('', cb('Download and prepare updates automatically'), { hl: o.hl === 'updates' }),
-      r('Menu Bar:', cb('Show stats in menu bar', st), { hl: o.hl === 'stats', id: 'r-stats' }),
-      r('', statChips(o.statOrder || ['CPU', 'GPU', 'Memory', 'Battery', 'Cleanup'], st, o.dragging), { hl: o.hl === 'stats' || o.hl === 'order', dim: !st }),
-      r('', sub('Style format', tiles([{ t: 'Icon', i: T.gauge, on: true }, { t: 'Text', i: T.text }])), { help: false, dim: !st }),
-      r('', sub('Memory format', tiles([{ t: 'GB', i: tileIcon('<rect x="2" y="5" width="12" height="6" rx="1.2"/><path d="M4.5 11v1.8M7 11v1.8M9 11v1.8M11.5 11v1.8"/>'), on: true }, { t: 'Percentage', i: tileIcon('<path d="M12.5 3.5l-9 9"/><circle cx="4.5" cy="4.5" r="1.6"/><circle cx="11.5" cy="11.5" r="1.6"/>') }])), { help: false, dim: !st }),
-      r('', sub('Refresh', tiles([{ t: '1 sec', i: T.fast, on: true }, { t: '2 sec', i: T.gauge }, { t: '3 sec', i: T.gauge }, { t: '5 sec', i: T.gauge }, { t: '10 sec', i: T.slow }], { small: true })), { hl: o.hl === 'stats' || o.hl === 'refresh', dim: !st }),
-      r('', sub('Cleanup scan', tiles([{ t: 'Always', i: T.fast }, { t: '1 min', i: T.gauge, on: true }, { t: '5 min', i: T.gauge }, { t: '15 min', i: T.gauge }], { small: true })), { hl: o.hl === 'cleanup', dim: !st }),
-      r('', sub('Background scan', tiles([{ t: '5 min', i: T.gauge }, { t: '10 min', i: T.gauge, on: true }, { t: '30 min', i: T.slow }, { t: '1 hr', i: T.slow }], { small: true })), { hl: o.hl === 'cleanup', dim: !st }),
-      r('Appearance:', tiles([{ t: 'Classic', i: T.square, on: o.glass === false }, { t: 'Liquid Glass', i: T.drop, on: o.glass !== false }], { id: 'appearance' }), { hl: o.hl === 'theme' }),
-      r('Sort:', tiles([{ t: 'CPU High', i: T.down }, { t: 'CPU Low', i: T.up }, { t: 'Memory High', i: T.down }, { t: 'Memory Low', i: T.up }, { t: 'A–Z', i: T.abc, on: true }, { t: 'Z–A', i: T.abc }], { small: true })),
-      r('Default:', tiles([{ t: 'Normal Quit', i: S.power, on: !o.force }, { t: 'Force Quit', i: T.fast, on: !!o.force }], { id: 'default-mode' }), { hl: o.hl === 'default' }),
-    ].join('');
+  function fitChrome(el) {
+    const w = el.offsetWidth, h = el.offsetHeight;
+    if (!w || !h) return;
+    const key = `${w}x${h}x${el.dataset.ax}`;
+    if (el.dataset.fit === key) return;
+    el.dataset.fit = key;
+    const d = shapePath(w, h, +el.dataset.ax);
+    el.querySelectorAll('svg').forEach(s => { s.setAttribute('width', w); s.setAttribute('height', h); });
+    el.querySelectorAll('path.d').forEach(p => p.setAttribute('d', d));
+    el.querySelectorAll('.qx-layer').forEach(l => { l.style.clipPath = `path('${d}')`; });
   }
 
-  function automation(o = {}) {
-    const sleep = o.sleep !== false;
-    const step = '<span class="stepper w-[13px] h-[22px] rounded-[4px] bg-[rgba(255,255,255,.11)] relative after:[border-top:1.2px_solid_rgba(255,255,255,.7)] after:[border-left:1.2px_solid_rgba(255,255,255,.7)] after:content-[\'\'] after:absolute after:left-[4px] after:w-[4px] after:h-[4px] after:bottom-[5px] after:[transform:rotate(225deg)] before:[border-top:1.2px_solid_rgba(255,255,255,.7)] before:[border-left:1.2px_solid_rgba(255,255,255,.7)] before:content-[\'\'] before:absolute before:left-[4px] before:w-[4px] before:h-[4px] before:top-[5px] before:[transform:rotate(45deg)]"></span>';
-    return [
-      r('Sleep:', cb('Quit apps after Mac sleeps', sleep), { hl: o.hl === 'sleep', id: 'r-sleep' }),
-      r('', sub('Time format', tiles([{ t: '24-hour', i: T.clock }, { t: '12-hour', i: T.clock12, on: true }])), { dim: !sleep, help: false, hl: o.hl === 'sleep' }),
-      r('', sub('From:', `${tstep('12')}<span class="colon m-0 text-[12px]">:</span>${tstep('00')}${tstep('AM')}`, 'time'), { dim: !sleep, help: false, hl: o.hl === 'sleep' }),
-      r('', sub('To:', `${tstep('6')}<span class="colon m-0 text-[12px]">:</span>${tstep('00')}${tstep('AM')}`, 'time'), { dim: !sleep, help: false, hl: o.hl === 'sleep' }),
-      r('Windows:', cb('Quit app when its last window closes', o.lastWindow !== false)),
-      r('Health:', cb('Warn &amp; rescue CPU hogs', o.hog !== false), { hl: o.hl === 'health', id: 'r-health' }),
-      r('', `<span class="sub gap-[16px] flex items-center relative" style="gap:7px"><span class="small text-[12px] text-[rgba(255,255,255,.9)] w-[92px]" style="width:auto">CPU over</span><span class="num text-[12px]">80</span>${step}<span class="num text-[12px]">%</span></span>`, { help: false, hl: o.hl === 'health' }),
-      r('', cb('Rescue on memory pressure', o.mem !== false), { hl: o.hl === 'health' }),
-      r('', `<span class="sub gap-[16px] flex items-center relative" style="gap:7px"><span class="small text-[12px] text-[rgba(255,255,255,.9)] w-[92px]" style="width:auto">Memory over</span><span class="num text-[12px]">12</span>${step}<span class="num text-[12px]">GB of 16</span></span>`, { help: false, hl: o.hl === 'health' }),
-      r('Auto Quit:', cb('Quit inactive apps after', false)),
-    ].join('');
-  }
-
-  function portSettings(o = {}) {
-    const on = o.enabled !== false;
-    const d = { dim: !on };
-    return [
-      r('Port Killing:', cb('Enable port killing', on), { hl: o.hl === 'enable' }),
-      r('Refresh:', tiles([{ t: '1 sec', i: T.fast }, { t: '2 sec', i: T.gauge }, { t: '3 sec', i: T.gauge, on: true }, { t: '5 sec', i: T.gauge }, { t: '10 sec', i: T.slow }], { small: true }), d),
-      r('Discovery:', cb('Include UDP listeners', false), d),
-      r('Group By:', tiles([{ t: 'None', i: T.list, on: true }, { t: 'Project', i: T.folder }, { t: 'Docker', i: T.docker }, { t: 'Process', i: T.branch }], { small: true }), d),
-      r('Sort:', tiles([{ t: 'Port Low', i: T.arrowUp, on: true }, { t: 'Port High', i: T.arrowDown }, { t: 'Name', i: T.abc }, { t: 'Memory', i: T.mem }, { t: 'CPU', i: S.cpu }], { small: true }), d),
-      r('Default:', tiles([{ t: 'Kill', i: S.power, on: true }, { t: 'Force Kill', i: T.fast }], { small: true }), d),
-      r('Safety:', cb('Confirm before killing ports'), { dim: !on, hl: o.hl === 'safety' }),
-      r('Selection:', cb('Select all ports by default', false), d),
-      r('Exclude:', `<span class="btn-sm py-0 px-[12px] h-[22px] rounded-[5px] bg-[rgba(255,255,255,.11)] inline-flex items-center text-[12.5px]">${S.nosign.replace('<svg', '<svg style="width:13px;height:13px;margin-right:7px;fill:none;stroke:currentColor;stroke-width:1.5"')}Manage Excluded Ports…</span>`, d),
-    ].join('');
-  }
-
-  function overview(o = {}) {
-    return `<div class="qx-overview gap-[14px] flex flex-col text-left">
-      <div class="hero-greet py-[12px] px-[14px] [border:1px_solid_rgba(254,188,51,.25)] rounded-[10px] bg-[linear-gradient(135deg,rgba(254,188,51,.14),rgba(254,188,51,.04))]">
-        <h3 class="mx-0 mt-0 mb-[4px] text-[15px] font-bold text-white">Welcome to QuitX</h3>
-        <p class="m-0 text-[12px] text-[var(--qx-sub)]">All features, vitals, and quick toggles in one clean view.</p>
-      </div>
-      <div class="stat-row gap-[10px] grid grid-cols-[repeat(3,1fr)]">
-        <div class="stat-tile py-[10px] px-[12px] [border:1px_solid_rgba(255,255,255,.08)] rounded-[9px] bg-[rgba(255,255,255,.04)]"><div class="lbl mb-[5px] text-[11px] text-[var(--qx-sub)]">Smart Rescue</div><div class="val text-[13px] font-semibold text-white flex items-center justify-between"><span>Active</span><span class="pill green py-[2px] px-[6px] text-[9.5px] font-semibold rounded-[999px] uppercase bg-[rgba(48,209,88,.2)] text-[#30D158]">On</span></div></div>
-        <div class="stat-tile py-[10px] px-[12px] [border:1px_solid_rgba(255,255,255,.08)] rounded-[9px] bg-[rgba(255,255,255,.04)]"><div class="lbl mb-[5px] text-[11px] text-[var(--qx-sub)]">Listening Ports</div><div class="val text-[13px] font-semibold text-white flex items-center justify-between"><span>6 Ports</span><span class="pill teal py-[2px] px-[6px] text-[9.5px] font-semibold rounded-[999px] uppercase bg-[rgba(40,199,180,.2)] text-[#28C7B4]">Live</span></div></div>
-        <div class="stat-tile py-[10px] px-[12px] [border:1px_solid_rgba(255,255,255,.08)] rounded-[9px] bg-[rgba(255,255,255,.04)]"><div class="lbl mb-[5px] text-[11px] text-[var(--qx-sub)]">Menu Bar Stats</div><div class="val text-[13px] font-semibold text-white flex items-center justify-between"><span>CPU &amp; Mem</span><span class="pill gold py-[2px] px-[6px] text-[9.5px] font-semibold rounded-[999px] uppercase bg-[rgba(254,188,51,.2)] text-[var(--qx-gold)]">4 Items</span></div></div>
-      </div>
-      <div class="gap-[10px] grid grid-cols-[1fr_1fr]">
-        <div class="card p-[12px] inset-0 gap-[10px] [border:1px_solid_rgba(255,255,255,.07)] z-[60] flex items-start justify-items-center text-center bg-none bg-[rgba(255,255,255,.035)] rounded-[9px]"><div class="card-icon place-items-center w-[32px] h-[32px] rounded-[8px] grid flex-none" style="background:rgba(40,199,180,.15);color:#28C7B4">${S.network}</div><div class="card-info"><b class="mb-[2px] text-[12.5px] block">Port Killing</b><span class="text-[11px] text-[var(--qx-sub)] leading-[1.35] block">Free occupied ports held by Node, Vite, Docker and Postgres.</span></div></div>
-        <div class="card p-[12px] inset-0 gap-[10px] [border:1px_solid_rgba(255,255,255,.07)] z-[60] flex items-start justify-items-center text-center bg-none bg-[rgba(255,255,255,.035)] rounded-[9px]"><div class="card-icon place-items-center w-[32px] h-[32px] rounded-[8px] grid flex-none" style="background:rgba(255,159,10,.15);color:#FF9F0A">${T.clock}</div><div class="card-info"><b class="mb-[2px] text-[12.5px] block">Quit on Sleep</b><span class="text-[11px] text-[var(--qx-sub)] leading-[1.35] block">Close open apps when your Mac sleeps, between hours you pick.</span></div></div>
-        <div class="card p-[12px] inset-0 gap-[10px] [border:1px_solid_rgba(255,255,255,.07)] z-[60] flex items-start justify-items-center text-center bg-none bg-[rgba(255,255,255,.035)] rounded-[9px]"><div class="card-icon place-items-center w-[32px] h-[32px] rounded-[8px] grid flex-none" style="background:rgba(10,132,255,.15);color:#0A84FF">${S.cpu}</div><div class="card-info"><b class="mb-[2px] text-[12.5px] block">Menu Bar Stats</b><span class="text-[11px] text-[var(--qx-sub)] leading-[1.35] block">Real-time CPU, memory, GPU and battery vitals in your menu bar.</span></div></div>
-        <div class="card p-[12px] inset-0 gap-[10px] [border:1px_solid_rgba(255,255,255,.07)] z-[60] flex items-start justify-items-center text-center bg-none bg-[rgba(255,255,255,.035)] rounded-[9px]"><div class="card-icon place-items-center w-[32px] h-[32px] rounded-[8px] grid flex-none" style="background:rgba(191,90,242,.15);color:#BF5AF2">${S.windows}</div><div class="card-info"><b class="mb-[2px] text-[12.5px] block">Last Window Quit</b><span class="text-[11px] text-[var(--qx-sub)] leading-[1.35] block">Quit applications automatically when their last window closes.</span></div></div>
-      </div>
-    </div>`;
-  }
-
-  function aboutTab(o = {}) {
-    return `<div class="qx-about gap-[14px] flex flex-col text-left">
-      <div class="hero p-[14px] gap-[14px] [border:1px_solid_rgba(255,255,255,.08)] flex items-center rounded-[12px] bg-[linear-gradient(135deg,rgba(254,188,51,.12),rgba(255,255,255,.02))]">
-        <img class="w-[64px] h-[64px] rounded-[14px] flex-none" src="${A}icon.png" alt="">
-        <div class="hero-text">
-          <h2 class="mx-0 mt-0 mb-[3px] gap-[8px] text-[18px] font-bold flex items-center">QuitX <span class="ver py-[2px] px-[6px] text-[9px] font-bold rounded-[999px] bg-[rgba(254,188,51,.15)] text-[var(--qx-gold)]">VERSION 1.2.3</span></h2>
-          <div class="tagline mb-[4px] text-[12px] font-medium text-[rgba(255,255,255,.9)]">Quit everything. Keep what matters.</div>
-          <div class="status gap-[5px] text-[11px] text-[#30D158] flex items-center"><svg width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="6" fill="#30D158"/><path d="M3.2 6.2l2 2 3.8-4" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Up to date</div>
-        </div>
-        <span class="hero-btn py-0 px-[12px] ml-auto h-[26px] rounded-[6px] bg-[var(--qx-gold)] text-[#000] font-semibold text-[11.5px] inline-flex items-center">Check for Updates</span>
-      </div>
-      <div class="sec mx-0 mt-[14px] mb-[2px] gap-[8px] flex items-center text-[12px] font-semibold text-[rgba(255,255,255,.92)]"><span class="sec-icon place-items-center w-[23px] h-[23px] rounded-[6px] grid text-[var(--qx-gold)] bg-[rgba(254,188,51,.12)] flex-none">${S.sparkles}</span><b class="whitespace-nowrap">Why QuitX</b><i class="h-[.5px] bg-[rgba(255,255,255,.1)] flex-1"></i></div>
-      <div class="highlights gap-[10px] grid grid-cols-[repeat(3,1fr)]">
-        <div class="hi-card p-[10px] gap-[8px] [border:1px_solid_rgba(255,255,255,.06)] rounded-[8px] bg-[rgba(255,255,255,.03)] flex"><div class="hi-icon place-items-center w-[26px] h-[26px] rounded-[6px] bg-[rgba(254,188,51,.12)] text-[var(--qx-gold)] grid flex-none text-[12px]"><svg class="w-[14px] h-[14px] [fill:currentColor]" viewBox="0 0 16 16" fill="currentColor"><path d="M12.8 1.6C9.6 4.8 8.8 8 8.8 8s-2.4-2.4-5.6-2.4C1.6 8 2.4 12 4.8 14.4c1.6 1.6 4 1.6 5.6 0 2.4-2.4 4-5.6 2.4-12.8z"/></svg></div><div><b class="mb-[2px] text-[11.5px] block">Native</b><span class="text-[10.5px] text-[var(--qx-sub)] leading-[1.3] block">Fast SwiftUI app with a small footprint.</span></div></div>
-        <div class="hi-card p-[10px] gap-[8px] [border:1px_solid_rgba(255,255,255,.06)] rounded-[8px] bg-[rgba(255,255,255,.03)] flex"><div class="hi-icon place-items-center w-[26px] h-[26px] rounded-[6px] bg-[rgba(254,188,51,.12)] text-[var(--qx-gold)] grid flex-none text-[12px]"><svg class="w-[14px] h-[14px] [fill:currentColor]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 1.8l5 2v4c0 3-2.2 5.3-5 6.4-2.8-1.1-5-3.4-5-6.4v-4z"/><path d="M6 7.8l1.6 1.6 3-3"/></svg></div><div><b class="mb-[2px] text-[11.5px] block">Private</b><span class="text-[10.5px] text-[var(--qx-sub)] leading-[1.3] block">No account, tracking or analytics.</span></div></div>
-        <div class="hi-card p-[10px] gap-[8px] [border:1px_solid_rgba(255,255,255,.06)] rounded-[8px] bg-[rgba(255,255,255,.03)] flex"><div class="hi-icon place-items-center w-[26px] h-[26px] rounded-[6px] bg-[rgba(254,188,51,.12)] text-[var(--qx-gold)] grid flex-none text-[12px]"><svg class="w-[14px] h-[14px] [fill:currentColor]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M5 4.5L1.5 8 5 11.5M11 4.5l3.5 3.5L11 11.5M9.5 2.5l-3 11"/></svg></div><div><b class="mb-[2px] text-[11.5px] block">Open Source</b><span class="text-[10.5px] text-[var(--qx-sub)] leading-[1.3] block">Free forever under the MIT license.</span></div></div>
-      </div>
-      <div class="sec mx-0 mt-[14px] mb-[2px] gap-[8px] flex items-center text-[12px] font-semibold text-[rgba(255,255,255,.92)]"><span class="sec-icon place-items-center w-[23px] h-[23px] rounded-[6px] grid text-[var(--qx-gold)] bg-[rgba(254,188,51,.12)] flex-none">${S.help}</span><b class="whitespace-nowrap">Resources</b><i class="h-[.5px] bg-[rgba(255,255,255,.1)] flex-1"></i></div>
-      <div class="resources gap-[10px] grid grid-cols-[repeat(3,1fr)]">
-        <div class="res-card py-[10px] px-[12px] [border:1px_solid_rgba(255,255,255,.07)] rounded-[8px] bg-[rgba(255,255,255,.04)]"><div class="ricon mb-[6px] place-items-center w-[28px] h-[28px] rounded-[7px] grid" style="background:rgba(10,132,255,.15);color:#0A84FF"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.3"/><path d="M6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4M8 11.6v.2"/></svg></div><b class="mb-[2px] text-[12px] block">Help Center</b><p class="mx-0 mt-0 mb-[8px] text-[10.5px] text-[var(--qx-sub)]">Guides for every feature.</p><span class="link gap-[4px] text-[11px] font-semibold text-[var(--qx-gold)] flex items-center">Open Help &rarr;</span></div>
-        <div class="res-card py-[10px] px-[12px] [border:1px_solid_rgba(255,255,255,.07)] rounded-[8px] bg-[rgba(255,255,255,.04)]"><div class="ricon mb-[6px] place-items-center w-[28px] h-[28px] rounded-[7px] grid" style="background:rgba(191,90,242,.15);color:#BF5AF2"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.8l1.4 3.6 3.6 1.4-3.6 1.4L8 11.8 6.6 8.2 3 6.8l3.6-1.4z"/></svg></div><b class="mb-[2px] text-[12px] block">What’s New</b><p class="mx-0 mt-0 mb-[8px] text-[10.5px] text-[var(--qx-sub)]">Recent features and fixes.</p><span class="link gap-[4px] text-[11px] font-semibold text-[var(--qx-gold)] flex items-center">View Updates &rarr;</span></div>
-        <div class="res-card py-[10px] px-[12px] [border:1px_solid_rgba(255,255,255,.07)] rounded-[8px] bg-[rgba(255,255,255,.04)]"><div class="ricon mb-[6px] place-items-center w-[28px] h-[28px] rounded-[7px] grid" style="background:rgba(255,69,58,.15);color:#FF453A">${S.warn}</div><b class="mb-[2px] text-[12px] block">Report an Issue</b><p class="mx-0 mt-0 mb-[8px] text-[10.5px] text-[var(--qx-sub)]">Share feedback or a bug.</p><span class="link gap-[4px] text-[11px] font-semibold text-[var(--qx-gold)] flex items-center">Open GitHub &rarr;</span></div>
-      </div>
-    </div>`;
+  if (typeof MutationObserver !== 'undefined') {
+    const mo = new MutationObserver(() => fitAll());
+    const start = () => { mo.observe(document.body, { childList: true, subtree: true }); fitAll(); };
+    if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
   }
 
   const SD = {
@@ -522,9 +677,9 @@
         `<div data-role="qc-clean" style="height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;font-weight:700;${enabled ? 'color:rgba(0,0,0,.88);background:linear-gradient(#FEBC33,#E89B00)' : `color:${SD.sub};background:rgba(255,255,255,.07)`}">${sdIcons.trash}${c.button}</div>`,
         sdFooter('Open Cleanup Settings', sdIcons.sliders),
       ];
-      const overlay = c.confirm ? `<div style="position:absolute;inset:0;border-radius:12px;background:rgba(0,0,0,.42);display:grid;place-items:center;z-index:3"><div style="width:296px;box-sizing:border-box;padding:12px 14px;border-radius:12px;background:#262527;box-shadow:inset 0 0 0 .8px rgba(255,255,255,.12),0 3px 8px rgba(0,0,0,.4);display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center"><svg width="22" height="26" viewBox="0 0 16 18" fill="#FF453A"><path d="M5.5 1h5l.6 1.6H15v1.6H1V2.6h3.9z"/><path d="M2.4 5.6h11.2l-.9 11.4H3.3z"/></svg><div style="display:flex;flex-direction:column;gap:3px"><b style="font-size:13px;color:${SD.ink}">${c.confirm.title}</b><span style="font-size:11px;line-height:1.4;color:${SD.sub}">${c.confirm.sub}</span></div><div style="display:flex;gap:8px;width:100%"><span style="flex:1;height:24px;border-radius:6px;display:grid;place-items:center;font-size:11.5px;font-weight:500;background:rgba(255,255,255,.07);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.12)">Cancel</span><span data-role="qc-ok" style="flex:1;height:24px;border-radius:6px;display:grid;place-items:center;font-size:11.5px;font-weight:700;color:#fff;background:linear-gradient(#FF3B30,#D22828)">Clean</span></div></div></div>` : '';
+      const overlay = c.confirm ? `<div style="position:absolute;inset:0;border-radius:14px;background:rgba(0,0,0,.42);display:grid;place-items:center;z-index:3"><div style="width:296px;box-sizing:border-box;padding:12px 14px;border-radius:12px;background:#262527;box-shadow:inset 0 0 0 .8px rgba(255,255,255,.12),0 3px 8px rgba(0,0,0,.4);display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center"><svg width="22" height="26" viewBox="0 0 16 18" fill="#FF453A"><path d="M5.5 1h5l.6 1.6H15v1.6H1V2.6h3.9z"/><path d="M2.4 5.6h11.2l-.9 11.4H3.3z"/></svg><div style="display:flex;flex-direction:column;gap:3px"><b style="font-size:13px;color:${SD.ink}">${c.confirm.title}</b><span style="font-size:11px;line-height:1.4;color:${SD.sub}">${c.confirm.sub}</span></div><div style="display:flex;gap:8px;width:100%"><span style="flex:1;height:24px;border-radius:6px;display:grid;place-items:center;font-size:11.5px;font-weight:500;background:rgba(255,255,255,.07);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.12)">Cancel</span><span data-role="qc-ok" style="flex:1;height:24px;border-radius:6px;display:grid;place-items:center;font-size:11.5px;font-weight:700;color:#fff;background:linear-gradient(#FF3B30,#D22828)">Clean</span></div></div></div>` : '';
       const toast = c.toast ? `<div style="position:absolute;left:50%;bottom:20px;transform:translateX(-50%);z-index:4;display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;background:rgba(0,0,0,.78);color:#fff;font-size:12px;font-weight:500;white-space:nowrap">${S.check}${c.toast}</div>` : '';
-      return `<div class="qx-stats-panel" style="position:relative;width:330px;font-family:'Inter',-apple-system,system-ui,sans-serif;color:${SD.ink};text-align:left;-webkit-font-smoothing:antialiased">${arrow(o.arrowX || 165)}<div style="position:relative;margin-top:10px;padding:12px 10px 10px;border-radius:12px;background:var(--qx-panel);display:flex;flex-direction:column;gap:10px;box-shadow:0 0 0 .5px rgba(255,255,255,.16),0 0 0 1px rgba(0,0,0,.55),0 22px 44px rgba(0,0,0,.5),0 3px 10px rgba(0,0,0,.3)">${body.join('')}${overlay}${toast}</div></div>`;
+      return `<div class="qx-stats-panel" style="position:relative;width:330px;font-family:'Inter',-apple-system,system-ui,sans-serif;color:${SD.ink};text-align:left;-webkit-font-smoothing:antialiased">${chrome(o.arrowX || 165, o.glass)}<div style="height:12px"></div><div style="position:relative;z-index:1;padding:12px 10px 10px;border-radius:14px;display:flex;flex-direction:column;gap:10px">${body.join('')}${overlay}${toast}</div></div>`;
     } else if (mode === 'memory') {
       const used = d.memApp + d.memWired + d.memComp, frac = used / d.memTotal;
       const gaugeR = 39, gx = 45, gy = 66, ang = Math.PI * (1 + frac);
@@ -564,8 +719,8 @@
         sdFooter('Open Activity Monitor', sdIcons.activity),
       ];
     }
-    return `<div class="qx-stats-panel" style="position:relative;width:270px;font-family:'Inter',-apple-system,system-ui,sans-serif;color:${SD.ink};text-align:left;-webkit-font-smoothing:antialiased">${arrow(o.arrowX || 135)}<div style="margin-top:10px;padding:12px 10px 10px;border-radius:12px;background:var(--qx-panel);display:flex;flex-direction:column;gap:10px;box-shadow:0 0 0 .5px rgba(255,255,255,.16),0 0 0 1px rgba(0,0,0,.55),0 22px 44px rgba(0,0,0,.5),0 3px 10px rgba(0,0,0,.3)">${body.join('')}</div></div>`;
+    return `<div class="qx-stats-panel" style="position:relative;width:270px;font-family:'Inter',-apple-system,system-ui,sans-serif;color:${SD.ink};text-align:left;-webkit-font-smoothing:antialiased">${chrome(o.arrowX || 135, o.glass)}<div style="height:12px"></div><div style="position:relative;z-index:1;padding:12px 10px 10px;border-radius:14px;display:flex;flex-direction:column;gap:10px">${body.join('')}</div></div>`;
   }
 
-  window.QX = { S, APPS, BACKGROUND, PORTS, icon, popover, ports, confirm, menu, stats, rescue, note, settings, general, automation, portSettings, overview, aboutTab, statsDetail, sideShift, uninstallTab, filesTab, scanHead, LEFTOVERS, CACHES };
+  window.QX = { S, APPS, BACKGROUND, PORTS, icon, popover, ports, confirm, menu, stats, rescue, note, settings, general, automation, portSettings, overview, aboutTab, statsDetail, sideShift, uninstallTab, filesTab, scanHead, LEFTOVERS, CACHES, fitAll };
 })();

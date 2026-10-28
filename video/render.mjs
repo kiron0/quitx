@@ -39,6 +39,8 @@ await page.waitForFunction(() => window.READY && [...document.images].every(i =>
 await page.waitForFunction(() => [...document.images].every(i => i.complete));
 const total = await page.evaluate(() => window.TOTAL);
 const sfx = await page.evaluate(() => window.SFX || []);
+for (let t = 0; t < total; t += 0.1) await page.evaluate(t => window.render(t), t);
+await page.waitForTimeout(600);
 
 if (stills) {
   mkdirSync(resolve(here, 'stills'), { recursive: true });
