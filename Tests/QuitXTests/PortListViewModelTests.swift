@@ -85,7 +85,9 @@ struct PortListViewModelTests {
 
     @Test("Last popover tab is remembered")
     func tabPersistence() {
-        let defaults = UserDefaults(suiteName: "QuitXTests.tab.\(UUID())")!
+        let suite = "QuitXTests.tab.\(UUID())"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { TestDefaults.discard(suite) }
         #expect(PopoverTab.stored(defaults: defaults) == .apps)
         PopoverTab.ports.store(defaults: defaults)
         #expect(PopoverTab.stored(defaults: defaults) == .ports)

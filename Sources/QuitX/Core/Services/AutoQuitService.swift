@@ -6,6 +6,7 @@ final class AutoQuitService {
     private var timer: Timer?
     private var lastActiveTimestamps: [pid_t: Date] = [:]
     private var quittingPids: Set<pid_t> = []
+    private var sleptAt: Date?
 
     private init() {}
 
@@ -34,6 +35,18 @@ final class AutoQuitService {
             self,
             selector: #selector(appDidTerminate(_:)),
             name: NSWorkspace.didTerminateApplicationNotification,
+            object: nil
+        )
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(systemWillSleep(_:)),
+            name: NSWorkspace.willSleepNotification,
+            object: nil
+        )
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(systemDidWake(_:)),
+            name: NSWorkspace.didWakeNotification,
             object: nil
         )
 
@@ -83,6 +96,22 @@ final class AutoQuitService {
                 self?.lastActiveTimestamps[pid] = Date()
             }
         }
+    }
+
+    @objc private func systemWillSleep(_ notification: Notification) {
+        sleptAt = Date()
+    }
+
+    @objc private func systemDidWake(_ notification: Notification) {
+        guard let sleptAt else { return }
+        self.sleptAt = nil
+        lastActiveTimestamps = Self.excludingSleep(lastActiveTimestamps, sleptAt: sleptAt, wokeAt: Date())
+    }
+
+    nonisolated static func excludingSleep(_ timestamps: [pid_t: Date], sleptAt: Date, wokeAt: Date) -> [pid_t: Date] {
+        let slept = wokeAt.timeIntervalSince(sleptAt)
+        guard slept > 0 else { return timestamps }
+        return timestamps.mapValues { min($0.addingTimeInterval(slept), wokeAt) }
     }
 
     @objc private func appDidLaunch(_ notification: Notification) {
@@ -224,7 +253,7 @@ final class AutoQuitService {
         for app in appsToQuit {
             if let pid = app.pid { quittingPids.insert(pid) }
         }
-        let results = await QuitService.shared.quit(apps: appsToQuit, force: false)
+        let results = await QuitService.shared.quit(apps: appsToQuit, force: config.prefersForceQuit)
         let afterQuit = Date()
         let successful = results.filter(\.success).map(\.app)
         RecentlyQuitService.shared.record(apps: successful)

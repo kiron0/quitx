@@ -62,7 +62,7 @@ struct ChangelogTests {
     func testShowIfUpdatedLogic() {
         let suiteName = "test_changelog_\(UUID().uuidString)"
         guard let defaults = UserDefaults(suiteName: suiteName) else { return }
-        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defer { TestDefaults.discard(suiteName) }
 
         let currentVersion = UpdateChecker.shared.currentVersion
         let controller = ChangelogWindowController.shared
@@ -117,7 +117,7 @@ struct ChangelogTests {
     func upgradeFromLegacyBuild() {
         let suiteName = "test_changelog_legacy_\(UUID().uuidString)"
         guard let defaults = UserDefaults(suiteName: suiteName) else { return }
-        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defer { TestDefaults.discard(suiteName) }
         let controller = ChangelogWindowController.shared
         controller.close()
 

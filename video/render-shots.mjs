@@ -20,7 +20,7 @@ const site = resolve(root, 'site/assets/shots');
 mkdirSync(readme, { recursive: true });
 mkdirSync(site, { recursive: true });
 
-const scenes = ['hero', 'force', 'confirm', 'background', 'exclude', 'stats', 'health', 'sleep', 'theme', 'sounds', 'updates', 'ports', 'portsSettings'];
+const scenes = (process.env.SHOTS ? process.env.SHOTS.split(',') : ['hero', 'force', 'confirm', 'background', 'exclude', 'stats', 'quickclean', 'uninstall', 'cleanup', 'health', 'sleep', 'theme', 'sounds', 'updates', 'ports', 'portsSettings']);
 const readmeOnly = new Set(['portsSettings']);
 let browser;
 try {
@@ -66,8 +66,10 @@ for (const id of scenes) {
   await tab.close();
 }
 
-const og = await open('hero');
-await og.screenshot({ path: resolve(root, 'site/assets/og.jpg'), type: 'jpeg', quality: 86, clip: { x: 0, y: 45, width: 1440, height: 756 }, scale: 'css' });
-await og.close();
+if (!process.env.SHOTS || process.env.SHOTS.split(',').includes('hero')) {
+  const og = await open('hero');
+  await og.screenshot({ path: resolve(root, 'site/assets/og.jpg'), type: 'jpeg', quality: 86, clip: { x: 0, y: 45, width: 1440, height: 756 }, scale: 'css' });
+  await og.close();
+}
 await browser.close();
 console.log('Wrote Support/Screenshots/*.jpg, site/assets/shots/*.jpg and site/assets/og.jpg');

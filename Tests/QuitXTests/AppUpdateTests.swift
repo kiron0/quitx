@@ -114,7 +114,7 @@ struct AppUpdateTests {
     func testUpdateNotifierDedup() throws {
         let suite = "quitx-notifier-\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suite))
-        defer { defaults.removePersistentDomain(forName: suite) }
+        defer { TestDefaults.discard(suite) }
         #expect(UpdateNotifier.shouldNotify(version: "2.0.0", kind: "available", defaults: defaults))
         defaults.set("available:2.0.0", forKey: "quitx_update_notified_version")
         #expect(!UpdateNotifier.shouldNotify(version: "2.0.0", kind: "available", defaults: defaults))
@@ -341,7 +341,7 @@ struct AppUpdateTests {
     func testSettingsPersistenceAcrossUpdate() throws {
         let testDefaults = UserDefaults(suiteName: "io.coreify.quitx.test.persistence")!
         defer {
-            testDefaults.removePersistentDomain(forName: "io.coreify.quitx.test.persistence")
+            TestDefaults.discard("io.coreify.quitx.test.persistence")
         }
 
         let customExclude = ["com.apple.Safari", "com.google.Chrome", "com.tinyspeck.slackmacgap"]

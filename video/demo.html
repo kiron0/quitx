@@ -266,35 +266,44 @@
         sIn: 24.0,
         sdClick: 24.9,
         sdClose: 27.8,
-        sHot: 28.5,
-        nIn: 29.1,
-        rIn: 29.8,
-        rClose: 32.2,
-        stOpen: 32.8,
-        stPorts: 35.2,
-        stAbout: 37.8,
-        stClose: 41.0,
-        slWin: 41.5,
-        slToggle: 42.4,
-        slSleep: 43.4,
-        slWake: 45.4,
-        slEnd: 46.6,
-        lwIn: 47.0,
-        lwClose: 48.0,
-        lwGone: 48.4,
-        lwEnd: 49.0,
-        thOpen: 49.4,
-        thSwap: 50.8,
-        thClose: 52.6,
-        uDot: 53.0,
-        uMenu: 53.8,
-        uClick: 54.6,
-        uDl0: 54.9,
-        uDl1: 56.5,
-        uReady: 57.1,
-        uRestart: 57.9,
-        end: 58.6,
-        total: 62.0,
+        qcClick: 28.4,
+        qcConfirm: 29.9,
+        qcClean: 30.8,
+        qcClose: 32.4,
+        sHot: 32.9,
+        nIn: 33.5,
+        rIn: 34.2,
+        rClose: 36.6,
+        stOpen: 37.2,
+        stUninstall: 39.6,
+        unSel1: 40.3,
+        unSel2: 40.9,
+        stLeftovers: 42.0,
+        stCleanup: 44.4,
+        stPorts: 46.8,
+        stAbout: 49.4,
+        stClose: 52.6,
+        slWin: 53.1,
+        slToggle: 54.0,
+        slSleep: 55.0,
+        slWake: 57.0,
+        slEnd: 58.2,
+        lwIn: 58.6,
+        lwClose: 59.6,
+        lwGone: 60.0,
+        lwEnd: 60.6,
+        thOpen: 61.0,
+        thSwap: 62.4,
+        thClose: 64.2,
+        uDot: 64.6,
+        uMenu: 65.4,
+        uClick: 66.2,
+        uDl0: 66.5,
+        uDl1: 68.1,
+        uReady: 68.7,
+        uRestart: 69.5,
+        end: 70.2,
+        total: 73.6,
       };
 
       const SFX = [
@@ -350,12 +359,29 @@
         [T.sdClick, "click"],
         [T.sdClick + 0.02, "whoosh"],
         [T.sdClose, "swoosh"],
+        [T.qcClick, "click"],
+        [T.qcClick + 0.02, "whoosh"],
+        [T.qcConfirm, "click"],
+        [T.qcClean, "click"],
+        [T.qcClean + 0.05, "laser"],
+        [T.qcClean + 0.35, "success"],
+        [T.qcClose, "swoosh"],
         [T.sHot, "alarm"],
         [T.nIn, "notify"],
         [T.rIn, "whoosh"],
         [T.rClose, "swoosh"],
         [T.stOpen, "click"],
         [T.stOpen + 0.02, "whoosh"],
+        [T.stUninstall, "click"],
+        [T.stUninstall + 0.02, "tick"],
+        [T.unSel1, "click"],
+        [T.unSel1 + 0.01, "tick"],
+        [T.unSel2, "click"],
+        [T.unSel2 + 0.01, "tick"],
+        [T.stLeftovers, "click"],
+        [T.stLeftovers + 0.02, "tick"],
+        [T.stCleanup, "click"],
+        [T.stCleanup + 0.02, "tick"],
         [T.stPorts, "click"],
         [T.stPorts + 0.02, "tick"],
         [T.stAbout, "click"],
@@ -365,6 +391,7 @@
         [T.slToggle, "click"],
         [T.slSleep, "sleep"],
         [T.slWake, "wake"],
+        [T.slWake + 0.7, "laser"],
         [T.lwClose, "click"],
         [T.lwGone, "laser"],
         [T.thOpen, "click"],
@@ -440,44 +467,51 @@
           "CPU, memory, GPU, ports & per-core meters.",
         ],
         [
+          T.qcClick - 0.2,
+          T.qcClose + 0.2,
+          "09",
+          "Quick Clean",
+          "Caches gone in two clicks.",
+        ],
+        [
           T.sHot - 0.1,
           T.rClose + 0.2,
-          "09",
+          "10",
           "CPU & memory warnings",
           "Too hot? Smart Rescue steps in.",
         ],
         [
           T.stOpen - 0.2,
           T.stClose + 0.2,
-          "10",
+          "11",
           "All-new Settings dashboard",
-          "Overview, ports, automation & about.",
+          "Uninstall apps, clean up, free ports.",
         ],
         [
           T.slWin - 0.2,
           T.slEnd + 0.1,
-          "11",
-          "Quit apps when Mac sleeps",
+          "12",
+          "Quit apps after Mac sleeps",
           "Wake up to a clean slate.",
         ],
         [
           T.lwIn - 0.1,
           T.lwEnd + 0.1,
-          "12",
+          "13",
           "Quit when the last window closes",
           "Close it, and it’s gone.",
         ],
         [
           T.thOpen - 0.2,
           T.thClose + 0.2,
-          "13",
+          "14",
           "Classic or Liquid Glass",
           "Your Mac, your look.",
         ],
         [
           T.uDot - 0.1,
           T.end,
-          "14",
+          "15",
           "Updates from GitHub",
           "Verified, then swapped in.",
         ],
@@ -796,11 +830,12 @@
           mem: `${mem} GB`,
           gpu: `${Math.round(8 + 4 * Math.sin(t * 3))}%`,
           bat: "82%",
+          clean: t >= T.qcClean + 0.35 ? "Zero KB" : "5.1 GB",
         });
         const s = $("stats").firstElementChild;
         if (s && t >= T.sHot - 0.3)
           s.querySelector('[data-k="cpu"]').style.color = "#FF9F0A";
-        $("stats").style.background = between(t, T.sdClick, T.sdClose + 0.2)
+        $("stats").style.background = between(t, T.sdClick, T.sdClose + 0.2) || between(t, T.qcClick, T.qcClose + 0.2)
           ? "rgba(255,255,255,.18)"
           : "transparent";
         $("stats").style.borderRadius = "5px";
@@ -813,6 +848,37 @@
 
       function renderStatsDetail(t) {
         const sd = $("statsDetailWin");
+        if (between(t, T.qcClick, T.qcClose + 0.25)) {
+          const rCam = $("cam").getBoundingClientRect();
+          const rStats = $("stats").getBoundingClientRect();
+          const rSeg = ($("stats").querySelector('[data-k="clean"]') || $("stats")).getBoundingClientRect();
+          const scale = rCam.width / 1440;
+          const unscaledBottom = (rStats.bottom - rCam.top) / scale;
+          const cx = (rSeg.left + rSeg.width / 2 - rCam.left) / scale;
+          const left = Math.min(cx - 165, 1440 - 330 - 8);
+          const cleaned = t >= T.qcClean + 0.35;
+          const clean = cleaned
+            ? {
+                groups: [{ t: "Trash", badge: "caution", detail: "Files already in your Trash. They can't be recovered afterwards.", size: "412.7 MB", on: false }],
+                headline: "Zero KB",
+                sub: "of 412.7 MB across 1 category",
+                button: "Select caches to clean",
+                toast: t < T.qcClose ? "Freed 5.07 GB" : null,
+              }
+            : {
+                confirm: between(t, T.qcConfirm + 0.05, T.qcClean)
+                  ? { title: "Clean 5.07 GB?", sub: "24 items from User Caches, User Logs, Developer Caches will be deleted permanently. This can't be undone." }
+                  : null,
+              };
+          sd.innerHTML = QX.statsDetail({ mode: "cleanup", arrowX: cx - left, clean });
+          sd.style.zoom = 1;
+          sd.style.left = left + "px";
+          sd.style.top = unscaledBottom + 3 + "px";
+          show(sd, win(t, T.qcClick, T.qcClose + 0.2, 0.2));
+          sd.firstElementChild.style.transformOrigin = "50% 0";
+          sd.firstElementChild.style.transform = `scale(${lerp(0.95, 1, prog(t, T.qcClick, T.qcClick + 0.35, spring))})`;
+          return;
+        }
         if (!between(t, T.sdClick, T.sdClose + 0.25)) {
           show(sd, 0);
           sd.innerHTML = "";
@@ -894,19 +960,33 @@
         if (between(t, T.stOpen, T.stClose + 0.25)) {
           let tab = "Overview";
           let content = QX.overview();
+          let right = null;
           if (t >= T.stAbout) {
             tab = "About";
             content = QX.aboutTab();
           } else if (t >= T.stPorts) {
             tab = "Ports";
             content = QX.portSettings({ enabled: true });
+          } else if (t >= T.stCleanup) {
+            tab = "User Cache";
+            right = QX.scanHead("3.01 GB", "5 items");
+            content = QX.filesTab({ items: QX.CACHES, selectedSize: "3.01 GB" });
+          } else if (t >= T.stLeftovers) {
+            tab = "Leftovers";
+            right = QX.scanHead("186.1 MB", "4 items");
+            content = QX.filesTab({ items: QX.LEFTOVERS, selectedSize: "186.1 MB" });
+          } else if (t >= T.stUninstall) {
+            tab = "Uninstall Apps";
+            right = QX.scanHead("2.71 GB", "5 apps");
+            const picked = [t >= T.unSel1 ? "Discord" : null, t >= T.unSel2 ? "Google Chrome" : null].filter(Boolean);
+            content = QX.uninstallTab({ selected: picked, selectedSize: picked.length === 2 ? "1.72 GB" : "412 MB" });
           }
           const sideScroll = lerp(
             lerp(0, QX.sideShift("Ports"), prog(t, T.stPorts - 0.9, T.stPorts - 0.3, ease)),
             QX.sideShift("About"),
             prog(t, T.stAbout - 0.9, T.stAbout - 0.3, ease),
           );
-          s.innerHTML = QX.settings({ tab, content, sideScroll: Math.round(sideScroll) });
+          s.innerHTML = QX.settings({ tab, content, right, sideScroll: Math.round(sideScroll) });
           s.style.zoom = 1.15;
           s.style.left = (720 - 340 * 1.15) / 1.15 + "px";
           s.style.top = 130 / 1.15 + "px";
@@ -982,7 +1062,15 @@
         measure("eMore", T.eMore - 0.1, '#pop [data-app="Music"] .more');
         measure("eItem", T.ePick - 0.1, "#mEx", 0.3);
         measure("stats", T.sdClick - 0.1, '#stats [data-k="cpu"]');
+        measure("qcSeg", T.qcClick - 0.1, '#stats [data-k="clean"]');
+        measure("qcBtn", T.qcConfirm - 0.1, '#statsDetailWin [data-role="qc-clean"]');
+        measure("qcOk", T.qcClean - 0.1, '#statsDetailWin [data-role="qc-ok"]');
         measure("rBtn", T.rIn + 1, "#rescue .btns span");
+        measure("stUnTab", T.stUninstall - 0.1, '#settingsWin [data-tab="Uninstall Apps"]');
+        measure("unRow1", T.unSel1 - 0.1, '#settingsWin [data-app="Discord"]', 0.06);
+        measure("unRow2", T.unSel2 - 0.1, '#settingsWin [data-app="Google Chrome"]', 0.06);
+        measure("stLoTab", T.stLeftovers - 0.1, '#settingsWin [data-tab="Leftovers"]');
+        measure("stUcTab", T.stCleanup - 0.1, '#settingsWin [data-tab="User Cache"]');
         measure(
           "stPortsTab",
           T.stPorts - 0.1,
@@ -1039,10 +1127,27 @@
           [T.sdClick - 0.05, ...L.stats],
           [T.sdClick + 0.3, ...L.stats],
           [T.sdClose - 0.3, L.stats[0] - 80, L.stats[1] + 240],
+          [T.qcClick - 0.05, ...L.qcSeg],
+          [T.qcClick + 0.3, ...L.qcSeg],
+          [T.qcConfirm - 0.05, ...L.qcBtn],
+          [T.qcConfirm + 0.3, ...L.qcBtn],
+          [T.qcClean - 0.05, ...L.qcOk],
+          [T.qcClean + 0.4, ...L.qcOk],
+          [T.qcClose - 0.3, L.qcOk[0] - 200, L.qcOk[1] + 200],
           [T.sHot + 0.2, 900, 420],
           [T.rIn + 0.9, 900, 420],
           [T.rClose - 0.05, ...L.rBtn],
           [T.stOpen + 0.3, 600, 360],
+          [T.stUninstall - 0.05, ...L.stUnTab],
+          [T.stUninstall + 0.3, ...L.stUnTab],
+          [T.unSel1 - 0.05, ...L.unRow1],
+          [T.unSel1 + 0.2, ...L.unRow1],
+          [T.unSel2 - 0.05, ...L.unRow2],
+          [T.unSel2 + 0.4, ...L.unRow2],
+          [T.stLeftovers - 0.05, ...L.stLoTab],
+          [T.stLeftovers + 0.4, ...L.stLoTab],
+          [T.stCleanup - 0.05, ...L.stUcTab],
+          [T.stCleanup + 0.4, ...L.stUcTab],
           [T.stPorts - 0.05, ...L.stPortsTab],
           [T.stPorts + 0.4, ...L.stPortsTab],
           [T.stAbout - 0.05, ...L.stAboutTab],
@@ -1085,8 +1190,16 @@
         T.eMore,
         T.ePick,
         T.sdClick,
+        T.qcClick,
+        T.qcConfirm,
+        T.qcClean,
         T.rClose,
         T.stOpen,
+        T.stUninstall,
+        T.unSel1,
+        T.unSel2,
+        T.stLeftovers,
+        T.stCleanup,
         T.stPorts,
         T.stAbout,
         T.slToggle,
@@ -1131,7 +1244,7 @@
 
         const pre =
           prog(t, T.slWin - 0.5, T.slWin, out) *
-          (1 - prog(t, T.slSleep - 0.1, T.slSleep + 0.1, lin));
+          (1 - prog(t, T.slWake + 0.7, T.slWake + 1.1, lin));
         const lw =
           t >= T.lwIn
             ? prog(t, T.lwIn, T.lwIn + 0.4, out) *
@@ -1252,7 +1365,7 @@
 
         const statsZoom =
           prog(t, T.sIn - 0.3, T.sIn + 0.6) *
-          (1 - prog(t, T.sdClose + 0.1, T.sdClose + 0.5));
+          (1 - prog(t, T.qcClose + 0.1, T.qcClose + 0.5));
         css($("cam"), {
           transformOrigin: "86% 0%",
           transform: `scale(${1 + 0.25 * statsZoom})`,

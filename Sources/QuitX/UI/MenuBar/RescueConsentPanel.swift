@@ -73,7 +73,7 @@ final class RescueConsentController {
         close()
         guard !selected.isEmpty else { return }
         Task {
-            await AppListViewModel.shared.quitSilently(targets: selected, force: true)
+            await AppListViewModel.shared.quitSilently(targets: selected, force: ConfigStore.shared.config.prefersForceQuit)
         }
     }
 

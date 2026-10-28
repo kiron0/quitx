@@ -16,6 +16,8 @@ extension ChangelogProvider {
                 "**Permanent Removal**: Confirmed uninstall, leftover, and cleanup selections are deleted permanently instead of being moved to Trash.",
                 "**Safer Leftovers**: Containers, launch items, Application Support folders, and files from vendors you still have apps from now need your review before removal.",
                 "**Quit After Sleep Works Properly**: When your Mac wakes after sleeping through your scheduled hours, QuitX quits the apps left open with your Force Quit setting, including helpers and apps that try to stay in the background.",
+                "**Your Quit Mode Everywhere**: Auto Quit, quit timers, and CPU or memory rescues now follow your Normal or Force Quit setting.",
+                "**Auto Quit After Sleep**: Time your Mac spends asleep no longer counts as inactivity, so apps aren't quit the moment it wakes.",
                 "**Lighter in the Background**: Quit When Last Window Closes does far less work each second, and cleanup scans stop as soon as you leave them and use less memory.",
                 "**Faster Lists**: The app list, cleanup pages, and leftovers filter and sort only when something changes, and app sizes arrive in batches."
             ])

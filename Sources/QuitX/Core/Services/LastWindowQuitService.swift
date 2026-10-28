@@ -846,7 +846,7 @@ final class LastWindowQuitService: ObservableObject {
         }
 
         let isOptionPressed = NSEvent.modifierFlags.contains(.option)
-        let forceConfig = ConfigStore.shared.config.force == .force
+        let forceConfig = ConfigStore.shared.config.prefersForceQuit
         let force = isOptionPressed ? !forceConfig : forceConfig
         let targets = Self.quitTargets(identity: identity, members: members.map(\.app))
         quitRequests.append(targets.compactMap(\.pid))

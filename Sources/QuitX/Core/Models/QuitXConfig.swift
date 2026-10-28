@@ -369,6 +369,10 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         }
     }
 
+    var prefersForceQuit: Bool {
+        force == .force
+    }
+
     var quickCleanOpenMaxAge: TimeInterval {
         TimeInterval(max(0, quickCleanOpenRefreshSeconds))
     }

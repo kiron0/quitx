@@ -173,12 +173,12 @@
           ],
         }),
         stats: () => ({
-          mb: { stats: { cpu: "12%", mem: "9.4 GB", gpu: "8%", bat: "82%" } },
+          mb: { stats: { cpu: "12%", mem: "9.4 GB", gpu: "8%", bat: "82%", clean: "5.1 GB" } },
           copy: copy(
             "Menu bar stats",
             "Your Mac’s vitals,<br><span class='text-[var(--color-gold)]'>always in view.</span>",
-            "Live CPU, memory, GPU and battery right in the menu bar. Show any mix in the order you drag them, as icons or text, and click a stat for its own detailed window.",
-            ["CPU", "Memory", "GPU", "Battery"],
+            "Live CPU, memory, GPU, battery and cleanable space right in the menu bar. Show any mix in the order you drag them, as icons or text, and click a stat for its own detailed window.",
+            ["CPU", "Memory", "GPU", "Battery", "Cleanup"],
           ),
           ui: [
             {
@@ -192,10 +192,10 @@
               }),
             },
             {
-              x: 700,
+              x: 560,
               y: 92,
               zoom: 2,
-              html: `<div class="py-[5px] px-[10px] gap-[6px] flex items-center rounded-[12px] bg-[rgba(18,14,10,.55)] [backdrop-filter:blur(20px)] shadow-[inset_0_0_0_.5px_rgba(255,255,255,.2),0_12px_30px_rgba(0,0,0,.4)]">${QX.stats({ cpu: "12%", mem: "9.4 GB", gpu: "8%", bat: "82%" })}<span class="w-[22px] h-[20px] grid place-items-center"><img src="${A}status-icon.png" class="w-[15px] h-[15px] invert" alt=""></span></div>`,
+              html: `<div class="py-[5px] px-[10px] gap-[6px] flex items-center rounded-[12px] bg-[rgba(18,14,10,.55)] [backdrop-filter:blur(20px)] shadow-[inset_0_0_0_.5px_rgba(255,255,255,.2),0_12px_30px_rgba(0,0,0,.4)]">${QX.stats({ cpu: "12%", mem: "9.4 GB", gpu: "8%", bat: "82%", clean: "5.1 GB" })}<span class="w-[22px] h-[20px] grid place-items-center"><img src="${A}status-icon.png" class="w-[15px] h-[15px] invert" alt=""></span></div>`,
             },
           ],
           ring: "statsItem",
@@ -228,9 +228,9 @@
         sleep: () => ({
           mb: {},
           copy: copy(
-            "Quit on sleep",
+            "Quit after sleep",
             "Wake up to<br><span class='text-[var(--color-gold)]'>a clean slate.</span>",
-            "Quit open apps when your Mac goes to sleep, only between the hours you choose. Daytime naps leave everything as it was.",
+            "When your Mac wakes after sleeping through the hours you choose, QuitX quits the apps left open. Daytime naps leave everything as it was.",
             ["12 AM to 6 AM by default", "12 or 24-hour clock"],
           ),
           ui: [
@@ -351,12 +351,73 @@
           ],
           ring: "statsItem",
         }),
+        quickclean: () => ({
+          mb: { stats: { cpu: "12%", mem: "9.4 GB", bat: "82%", clean: "5.1 GB" } },
+          copy: copy(
+            "Quick Clean",
+            "Caches piling up?<br><span class='text-[var(--color-gold)]'>Clean in two clicks.</span>",
+            "Turn on the Cleanup stat to see reclaimable space in the menu bar. Click it, tick what to clear, and confirm. Safe caches are ticked for you; Trash waits for your say-so.",
+            ["Safe or Caution labels", "Confirm before delete", "Rescans on your schedule"],
+          ),
+          ui: [
+            {
+              anchor: "stat",
+              seg: "clean",
+              w: 330,
+              html: QX.statsDetail({ mode: "cleanup" }),
+              zoom: 1.5,
+            },
+          ],
+          ring: "statsItem",
+        }),
+        uninstall: () => ({
+          mb: {},
+          copy: copy(
+            "Uninstall apps",
+            "Remove apps<br><span class='text-[var(--color-gold)]'>and what they leave.</span>",
+            "Pick apps in Settings and review every support file, cache, preference and log before they go. Leftovers finds files from apps you already deleted.",
+            ["Review before removal", "Leftovers scanner", "Never touches Apple apps"],
+          ),
+          ui: [
+            {
+              x: 680,
+              y: 150,
+              zoom: 1.1,
+              html: QX.settings({
+                tab: "Uninstall Apps",
+                right: QX.scanHead("2.71 GB", "5 apps"),
+                content: QX.uninstallTab({ selected: ["Discord", "Google Chrome"], selectedSize: "1.72 GB" }),
+              }),
+            },
+          ],
+        }),
+        cleanup: () => ({
+          mb: {},
+          copy: copy(
+            "Cleanup",
+            "Review first,<br><span class='text-[var(--color-gold)]'>then reclaim space.</span>",
+            "System Junk, User Cache, Mail Files, Trash, Large & Old Files, AI apps, Xcode, Homebrew, Node and Docker caches, each on its own page. Search, filter, sort, and nothing is deleted without a confirmation.",
+            ["10 cleanup pages", "Search & filter", "Confirm before delete"],
+          ),
+          ui: [
+            {
+              x: 680,
+              y: 150,
+              zoom: 1.1,
+              html: QX.settings({
+                tab: "User Cache",
+                right: QX.scanHead("3.01 GB", "5 items"),
+                content: QX.filesTab({ items: QX.CACHES, selectedSize: "3.01 GB" }),
+              }),
+            },
+          ],
+        }),
         portsSettings: () => ({
           mb: { stats: { ports: 6, cpu: "12%", mem: "9.4 GB" } },
           copy: copy(
             "Ports settings",
             "Off until<br><span class='text-[var(--color-gold)]'>you want it.</span>",
-            "Port killing stays off until you switch it on. Then pick how often the list refreshes, show the port count in the menu bar, and exclude ports that must never be touched.",
+            "Port killing stays off until you switch it on. Then pick how often the list refreshes, group listeners, and exclude ports that must never be touched.",
             ["Off by default", "Exclude ports", "Confirm before kill"],
           ),
           ui: [
@@ -402,7 +463,16 @@
           if (u.zoom) el.style.zoom = u.zoom;
           root.appendChild(el);
           const z = u.zoom || 1;
-          if (u.anchor === "qx" && !u.menu) {
+          if (u.anchor === "stat") {
+            const seg = document.querySelector(`#statsItem [data-k="${u.seg}"]`).getBoundingClientRect();
+            const sx = seg.left + seg.width / 2;
+            const pw = u.w || 270;
+            const left = Math.min(sx - (pw / 2) * z, 1440 - pw * z - 8);
+            const arrow = el.querySelector(".arrow");
+            if (arrow) arrow.style.left = (sx - left) / z + "px";
+            el.style.left = left / z + "px";
+            el.style.top = (seg.bottom + 4) / z + "px";
+          } else if (u.anchor === "qx" && !u.menu) {
             qx.classList.add("active");
             const pw = u.w || 330;
             const left = Math.min(cx - (pw / 2) * z, 1440 - pw * z - 8);

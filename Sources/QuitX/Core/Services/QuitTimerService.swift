@@ -114,6 +114,6 @@ final class QuitTimerService {
         ConfigStore.shared.save()
         ensureTimer()
 
-        await vm.quitSilently(targets: targets, force: false)
+        await vm.quitSilently(targets: targets, force: ConfigStore.shared.config.prefersForceQuit)
     }
 }

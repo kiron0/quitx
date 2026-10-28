@@ -134,7 +134,7 @@ final class SleepService {
     }
 
     static func forceMode(_ config: QuitXConfig) -> Bool {
-        config.force == .force
+        config.prefersForceQuit
     }
 
     static func shouldQuitOnWake(sleepStart: Date?, wakeDate: Date, config: QuitXConfig) -> Bool {

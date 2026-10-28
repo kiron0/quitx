@@ -855,7 +855,7 @@ struct LastWindowQuitTests {
 
         let suite = "test_ax_trust_\(UUID().uuidString)"
         guard let defaults = UserDefaults(suiteName: suite) else { return }
-        defer { defaults.removePersistentDomain(forName: suite) }
+        defer { TestDefaults.discard(suite) }
 
         var trusted = true
         let permission = AccessibilityPermission(trustCheck: { trusted }, defaults: defaults, currentVersion: "2.0.0")
@@ -873,7 +873,7 @@ struct LastWindowQuitTests {
 
         let freshSuite = suite + ".fresh"
         if let freshDefaults = UserDefaults(suiteName: freshSuite) {
-            defer { freshDefaults.removePersistentDomain(forName: freshSuite) }
+            defer { TestDefaults.discard(freshSuite) }
             let fresh = AccessibilityPermission(trustCheck: { false }, defaults: freshDefaults, currentVersion: "2.1.0")
             #expect(!fresh.needsRepair, "never granted: normal Allow flow, not Repair")
         }
@@ -883,7 +883,9 @@ struct LastWindowQuitTests {
     @MainActor
     func testAccessibilityObservation() async {
         var trusted = false
-        let permission = AccessibilityPermission(trustCheck: { trusted }, defaults: UserDefaults(suiteName: "test_ax_obs_\(UUID().uuidString)") ?? .standard, currentVersion: "2.0.0")
+        let suite = "test_ax_obs_\(UUID().uuidString)"
+        defer { TestDefaults.discard(suite) }
+        let permission = AccessibilityPermission(trustCheck: { trusted }, defaults: UserDefaults(suiteName: suite) ?? .standard, currentVersion: "2.0.0")
         permission.startObserving()
         defer { permission.stopObserving() }
         #expect(!permission.isTrusted)

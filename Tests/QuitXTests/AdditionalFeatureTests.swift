@@ -488,7 +488,7 @@ struct WelcomeGuideLaunchTests {
             return
         }
         defer {
-            testDefaults.removePersistentDomain(forName: suiteName)
+            TestDefaults.discard(suiteName)
             WelcomeWindowController.shared.close()
         }
 
