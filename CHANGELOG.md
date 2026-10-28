@@ -15,6 +15,7 @@ All notable changes to QuitX macOS App will be documented in this file.
 
 ### Fixed
 
+- **Quit After Sleep**: Apps often stayed open or "running in background" after sleep. The quit path called a plain `terminate()` on each app, ignored the Force Quit setting (the wake quit was hard-coded to `force: false`), skipped helper processes and the background-app retry that manual quits use, and also fired while macOS was already going to sleep. Sleeping now only records the time; when the Mac wakes and the sleep overlapped the scheduled hours, QuitX runs the same `QuitService` quit as Quit All with the configured Normal or Force Quit mode.
 - **Battery Temperature**: macOS 27 no longer publishes `Temperature` on `AppleSmartBattery`, so the Battery window showed "—". QuitX now falls back to the SMC battery sensors (`TB0T`, then `TB1T`/`TB2T`) and reads IORegistry temperatures as centi-Celsius.
 - **Quick Clean Window**: As wide as the main menu; the confirmation dimming stays inside the rounded window. Rescans keep the categories you ticked instead of resetting them.
 - **Scans Stop When Cancelled**: Cleanup, Quick Clean, Leftovers and uninstall scans now stop when you leave the page, close Settings, or rescan. Cancellation used to stop at a detached task, so long scans like Large & Old Files kept running.

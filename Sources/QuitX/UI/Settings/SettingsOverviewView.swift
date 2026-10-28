@@ -100,7 +100,7 @@ enum SettingsFeature: String, CaseIterable, Identifiable {
         case .updates: return "New versions straight from GitHub, verified before install."
         case .quitMode: return "Quit politely by default, or make Force Quit the default."
         case .shortcuts: return "Open QuitX, Quit All or Force Quit All from anywhere."
-        case .quitOnSleep: return "Close apps when your Mac sleeps, only in the hours you pick."
+        case .quitOnSleep: return "Close apps left open when your Mac wakes from sleep in the hours you pick."
         case .lastWindow: return "Quit an app as soon as you close its last window."
         case .rescue: return "Get a heads-up when CPU or memory stays too high."
         case .autoQuit: return "Quit apps you haven't touched in a while."

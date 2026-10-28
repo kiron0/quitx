@@ -235,7 +235,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Sleep quit schedule",
-                    body: "Settings > Automation offers unattended quitting: automatically and gracefully terminate safe apps when your Mac sleeps. Configure your custom active hours with start and end time pickers (default 12 AM to 6 AM), and toggle between 12-hour AM/PM and 24-hour display formats. Outside the range, sleep leaves apps running."
+                    body: "Settings > Automation offers unattended quitting: when your Mac wakes up after sleeping through your active hours, QuitX quits the safe apps left open, using the Normal or Force Quit mode you chose. Configure your custom active hours with start and end time pickers (default 12 AM to 6 AM), and toggle between 12-hour AM/PM and 24-hour display formats. If the sleep never touched the range, apps keep running. Nothing is quit while the Mac is going to sleep."
                 ),
                 QuitXHelpSection(
                     title: "Quit when the last window closes",

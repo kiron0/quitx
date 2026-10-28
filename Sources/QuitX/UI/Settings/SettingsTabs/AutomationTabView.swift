@@ -72,7 +72,7 @@ struct AutomationTabView: View {
 
             let sleepOn = configStore.config.quitOnSleep
             row(label: "Sleep:") {
-                toggle("Quit apps when Mac sleeps", isOn: Binding(
+                toggle("Quit apps after Mac sleeps", isOn: Binding(
                     get: { configStore.config.quitOnSleep },
                     set: { enabled in
                         let wasOn = configStore.config.quitOnSleep
@@ -86,7 +86,7 @@ struct AutomationTabView: View {
                     }
                 ))
             } help: {
-                HelpPopoverButton(text: "Night-shift janitor for your Mac! Only kicks apps out when your Mac sleeps between scheduled hours (defaults 12 AM to 6 AM). Sneak naps during the day guilt-free. 🌙😴")
+                HelpPopoverButton(text: "Night-shift janitor for your Mac! When your Mac wakes up after sleeping through your scheduled hours (defaults 12 AM to 6 AM), QuitX clears out the apps left open, using your Force Quit setting. Sneak naps during the day guilt-free. 🌙😴")
             }
 
             let subsOn = sleepOn

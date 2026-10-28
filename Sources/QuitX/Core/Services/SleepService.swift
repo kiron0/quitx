@@ -1,6 +1,5 @@
 import AppKit
 import Foundation
-import IOKit.pwr_mgt
 
 enum SleepQuitTargets {
     static func select(apps: [AppInfo], config: QuitXConfig) -> [AppInfo] {
@@ -81,12 +80,25 @@ enum SleepLockRange {
 final class SleepService {
     static let shared = SleepService()
 
+    typealias Quitter = @MainActor ([AppInfo], Bool) async -> Void
+    typealias AppSource = @MainActor () async -> [AppInfo]
+
     private var sleepObserver: NSObjectProtocol?
     private var wakeObserver: NSObjectProtocol?
     private(set) var sleepStartDate: Date?
-    private(set) var didQuitOnCurrentSleep = false
 
-    private init() {}
+    var appSource: AppSource = {
+        let vm = AppListViewModel.shared
+        if Date().timeIntervalSince(vm.lastRefreshDate) > 2.0 {
+            await vm.refresh()
+        }
+        return vm.apps
+    }
+    var quitter: Quitter = { apps, force in
+        await AppListViewModel.shared.quitSilently(targets: apps, force: force)
+    }
+
+    init() {}
 
     func start() {
         stop()
@@ -121,115 +133,32 @@ final class SleepService {
         }
     }
 
-    func handleSleep(now: Date = Date()) {
-        guard ConfigStore.shared.config.quitOnSleep else { return }
-        sleepStartDate = now
-        didQuitOnCurrentSleep = false
-
-        let config = ConfigStore.shared.config
-        if SleepLockRange.active(
-            now: now,
-            startMinutes: config.sleepLockStartMinutes,
-            endMinutes: config.sleepLockEndMinutes
-        ) {
-            didQuitOnCurrentSleep = executeQuitBeforeSleep(config: config)
-        }
+    static func forceMode(_ config: QuitXConfig) -> Bool {
+        config.force == .force
     }
 
-    func handleWake(wakeDate: Date = Date()) async {
-        guard ConfigStore.shared.config.quitOnSleep else {
-            sleepStartDate = nil
-            didQuitOnCurrentSleep = false
-            return
-        }
-        defer {
-            sleepStartDate = nil
-            didQuitOnCurrentSleep = false
-        }
-
-        guard !didQuitOnCurrentSleep, let sleepStart = sleepStartDate else { return }
-        let config = ConfigStore.shared.config
-        if SleepLockRange.overlaps(
+    static func shouldQuitOnWake(sleepStart: Date?, wakeDate: Date, config: QuitXConfig) -> Bool {
+        guard config.quitOnSleep, let sleepStart else { return false }
+        return SleepLockRange.overlaps(
             sleepStart: sleepStart,
             sleepEnd: wakeDate,
             startMinutes: config.sleepLockStartMinutes,
             endMinutes: config.sleepLockEndMinutes
-        ) {
-            await executeQuit(config: config)
-        }
-    }
-
-    private func executeQuitBeforeSleep(config: QuitXConfig) -> Bool {
-        StatusItemController.shared?.closePopover()
-
-        var assertionID = IOPMAssertionID(0)
-        let assertionProps = [
-            kIOPMAssertionTypeKey: kIOPMAssertionTypePreventUserIdleSystemSleep,
-            kIOPMAssertionNameKey: "QuitX quitting apps on sleep"
-        ] as CFDictionary
-        let assertOK = IOPMAssertionCreateWithProperties(assertionProps, &assertionID) == kIOReturnSuccess
-        defer {
-            if assertOK {
-                IOPMAssertionRelease(assertionID)
-            }
-        }
-
-        let ownPid = ProcessInfo.processInfo.processIdentifier
-        let snapshot = AppListService.shared.fetchAppsSynchronously(config: config)
-        AppListViewModel.shared.apps = snapshot
-        let targets = SleepQuitTargets.select(
-            apps: snapshot,
-            config: config
         )
-        var pending: [pid_t] = []
-        for app in targets {
-            if app.bundleId == QuitXConstants.SystemBundleIds.finder {
-                QuitService.closeFinderWindowsSynchronously()
-                continue
-            }
-            if app.bundleId == QuitXConstants.SystemBundleIds.trash {
-                QuitService.emptyTrashSynchronously()
-                continue
-            }
-            for pid in app.pids where pid > 0 && pid != ownPid {
-                guard let running = NSRunningApplication(processIdentifier: pid) else { continue }
-                if running.terminate() {
-                    pending.append(pid)
-                }
-            }
-        }
-        guard !pending.isEmpty else { return true }
-
-        let deadline = Date().addingTimeInterval(2.0)
-        while Date() < deadline {
-            let stillRunning = pending.filter { QuitService.processIsRunning($0) }
-            if stillRunning.isEmpty { return true }
-            pending = stillRunning
-            usleep(50_000)
-        }
-        return pending.isEmpty
     }
 
-    private func executeQuit(config: QuitXConfig) async {
+    func handleSleep(now: Date = Date()) {
+        sleepStartDate = ConfigStore.shared.config.quitOnSleep ? now : nil
+    }
+
+    func handleWake(wakeDate: Date = Date()) async {
+        let sleepStart = sleepStartDate
+        sleepStartDate = nil
+        let config = ConfigStore.shared.config
+        guard Self.shouldQuitOnWake(sleepStart: sleepStart, wakeDate: wakeDate, config: config) else { return }
         StatusItemController.shared?.closePopover()
-        let vm = AppListViewModel.shared
-
-        var assertionID = IOPMAssertionID(0)
-        let assertionProps = [
-            kIOPMAssertionTypeKey: kIOPMAssertionTypePreventUserIdleSystemSleep,
-            kIOPMAssertionNameKey: "QuitX quitting apps on sleep"
-        ] as CFDictionary
-        let assertOK = IOPMAssertionCreateWithProperties(assertionProps, &assertionID) == kIOReturnSuccess
-        defer {
-            if assertOK {
-                IOPMAssertionRelease(assertionID)
-            }
-        }
-
-        if Date().timeIntervalSince(vm.lastRefreshDate) > 2.0 {
-            await vm.refresh()
-        }
-        let targets = SleepQuitTargets.select(apps: vm.apps, config: config)
-        await vm.quitSilently(targets: targets, force: false)
+        let targets = SleepQuitTargets.select(apps: await appSource(), config: config)
+        guard !targets.isEmpty else { return }
+        await quitter(targets, Self.forceMode(config))
     }
 }
