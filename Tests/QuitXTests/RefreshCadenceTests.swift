@@ -39,11 +39,11 @@ struct RefreshCadenceTests {
 
     @Test("Port auto refresh keeps scanning and updates the count")
     func portAutoRefreshRuns() async {
-        let saved = ConfigStore.shared.config
-        defer { ConfigStore.shared.config = saved }
-        ConfigStore.shared.config.portsEnabled = true
+        var config = QuitXConfig.default
+        config.portsEnabled = true
+        let store = ConfigStore(isolated: config)
         let service = SlowPortService(delay: 200_000_000)
-        let vm = PortListViewModel(portService: service, optionKeyPressed: { false })
+        let vm = PortListViewModel(portService: service, configStore: store, optionKeyPressed: { false })
         vm.startAutoRefresh(interval: 1)
         let deadline = Date().addingTimeInterval(15)
         while service.calls < 3, Date() < deadline {

@@ -16,7 +16,18 @@ final class ConfigStore: ObservableObject {
 
     private static let userDefaultsKey = QuitXConstants.UserDefaultsKeys.config
 
-    private init() { load() }
+    private let persists: Bool
+
+    private init() {
+        persists = true
+        load()
+    }
+
+    init(isolated config: QuitXConfig) {
+        persists = false
+        self.config = config
+        normalizedExcludedSet = Set(config.exclude.map { $0.lowercased() })
+    }
 
     deinit {
         saveWorkItem?.perform()
@@ -84,12 +95,14 @@ final class ConfigStore: ObservableObject {
         saveWorkItem = nil
         refreshWorkItem?.cancel()
         refreshWorkItem = nil
+        guard persists else { return }
         if let json = try? JSONEncoder().encode(config) {
             UserDefaults.standard.set(json, forKey: Self.userDefaultsKey)
         }
     }
 
     func save(refreshAppList: Bool = false, immediate: Bool = false) {
+        guard persists else { return }
         saveGeneration += 1
         let generation = saveGeneration
         saveWorkItem?.cancel()
