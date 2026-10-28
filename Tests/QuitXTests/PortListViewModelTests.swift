@@ -81,16 +81,16 @@ struct PortListViewModelTests {
         #expect(PortEntryParser.message(for: .outOfRange("0")).contains("1–65535"))
     }
 
-    @Test("Last popover tab is remembered")
-    func tabPersistence() {
-        let suite = "QuitXTests.tab.\(UUID())"
-        let defaults = UserDefaults(suiteName: suite)!
-        defer { TestDefaults.discard(suite) }
-        #expect(PopoverTab.stored(defaults: defaults) == .apps)
-        PopoverTab.ports.store(defaults: defaults)
-        #expect(PopoverTab.stored(defaults: defaults) == .ports)
-        defaults.set("bogus", forKey: PopoverTab.defaultsKey)
-        #expect(PopoverTab.stored(defaults: defaults) == .apps)
+    @Test("QuitX icon opens Apps with tabs, Ports stat opens Ports alone")
+    func openingTabs() {
+        let vm = AppListViewModel.shared
+        defer { vm.open(.apps) }
+        vm.open(.ports)
+        #expect(vm.activeTab == .ports)
+        #expect(vm.isPortsOnly)
+        vm.open(.apps)
+        #expect(vm.activeTab == .apps)
+        #expect(!vm.isPortsOnly)
     }
 
     @Test("Search, exclusions and selection")

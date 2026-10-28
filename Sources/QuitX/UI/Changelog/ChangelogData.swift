@@ -2,6 +2,15 @@ import Foundation
 
 extension ChangelogProvider {
     static let appReleases: [ReleaseChangelog] = [
+        ReleaseChangelog("1.2.4", "Dedicated Ports popover, single-box changelog & playful tooltips", [
+            ("Improvements", [
+                "**Popover Opens Where You Clicked**: The QuitX icon always opens Apps, and the Ports menu bar stat opens just your ports right below it. Click it again to close.",
+                "**Single-Box Changelog**: Release notes in What's New now live in a single unified box with fixed header and footer navigation.",
+                "**Playful Settings Tooltips**: Added humorous tooltips and emoji icons across Shortcuts, Ports, and Exclusions tabs.",
+                "**Quick Clean Icon**: Quick Clean now uses bubbles and sparkles, keeping sparkles reserved for What's New."
+            ])
+        ]),
+
         ReleaseChangelog("1.2.3", "Applications & cleanup in Settings, reorderable stats", [
             ("New Features", [
                 "**Applications in Settings**: Uninstall Apps now lives in the Settings sidebar instead of a separate window, with a Leftovers scanner for files left behind by apps that are no longer installed.",

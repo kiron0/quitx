@@ -57,29 +57,6 @@ struct GpuAndCpuSamplerTests {
         #expect(cfg.menuBarStatsEnabled == false)
     }
 
-    @Test("Legacy menu bar config migrates to the per-stat flags")
-    func legacyConfigMigrates() throws {
-        let legacy = """
-        {"exclude":[],"force":"normal","includeFinder":false,"includeTrash":false,
-        "includeBackground":false,"groupBackground":true,"defaultSelectAll":true,
-        "neverQuitMusic":false,"musicApps":[],"autoUpdate":true,"confirmQuitAll":true,
-        "confirmIndividualAction":false,"playSounds":true,"quitInactiveAfterMinutes":0,
-        "disableQuitTips":false,"sortBy":"name","perAppQuitRules":{},"quitOnSleep":false,
-        "quitOnScreenLock":false,"sleepLockStartMinutes":0,"sleepLockEndMinutes":360,
-        "sleepLockUse24Hour":true,"showMenuBarStats":true,"batteryMenuBarEnabled":false,
-        "menuBarStatStyle":"Icon","menuBarMemoryUnit":"GB","hogAlertEnabled":false,
-        "hogCpuThreshold":80,"memoryPressureQuitEnabled":false,
-        "memoryPressureThresholdMB":1024,"batterySaverEnabled":false,"quitTimers":{},
-        "liquidGlassEnabled":true}
-        """
-        let decoded = try JSONDecoder().decode(QuitXConfig.self, from: Data(legacy.utf8))
-        #expect(decoded.menuBarShowCpu == true)
-        #expect(decoded.menuBarShowMemory == true)
-        #expect(decoded.menuBarShowGpu == true)
-        #expect(decoded.batteryMenuBarEnabled == false)
-        #expect(decoded.menuBarStatsEnabled == true)
-    }
-
     @Test("Malformed per-app rule entries do not wipe the whole map")
     func malformedRuleEntriesAreDroppedIndividually() throws {
         let json = """
@@ -89,11 +66,11 @@ struct GpuAndCpuSamplerTests {
         "confirmIndividualAction":false,"playSounds":true,"quitInactiveAfterMinutes":0,
         "disableQuitTips":false,"sortBy":"name",
         "perAppQuitRules":{"com.good.app":120,"com.bad.app":"nonsense"},
-        "quitOnSleep":false,"quitOnScreenLock":false,"sleepLockStartMinutes":0,
+        "quitOnSleep":false,"sleepLockStartMinutes":0,
         "sleepLockEndMinutes":360,"sleepLockUse24Hour":true,"showMenuBarStats":false,
         "batteryMenuBarEnabled":false,"menuBarStatStyle":"Icon","menuBarMemoryUnit":"GB",
         "hogAlertEnabled":false,"hogCpuThreshold":80,"memoryPressureQuitEnabled":false,
-        "memoryPressureThresholdMB":1024,"batterySaverEnabled":false,"quitTimers":{},
+        "memoryPressureThresholdMB":1024,"quitTimers":{},
         "liquidGlassEnabled":true}
         """
         let decoded = try JSONDecoder().decode(QuitXConfig.self, from: Data(json.utf8))

@@ -26,6 +26,15 @@ final class StatusItemController: NSObject {
             }
             return nil
         }
+
+        func midX(of stat: QuitXConfig.MenuBarStat) -> CGFloat? {
+            var cursor: CGFloat = 0
+            for segment in segments {
+                if segment.stat == stat { return cursor + segment.width / 2 }
+                cursor += segment.width + sepWidth
+            }
+            return nil
+        }
     }
     private var segmentMetrics = SegmentMetrics()
     private var window: ArrowPopoverWindow?
@@ -312,7 +321,7 @@ final class StatusItemController: NSObject {
     func updatePopoverSize() {
         let vm = AppListViewModel.shared
         let portsEnabled = ConfigStore.shared.config.portsEnabled
-        let tabBarHeight: CGFloat = portsEnabled ? 29 : 0
+        let tabBarHeight: CGFloat = portsEnabled && !vm.isPortsOnly ? 29 : 0
         let count: Int
         let groupHeaders: Int
         if isPortsTabActive {
@@ -357,7 +366,8 @@ final class StatusItemController: NSObject {
 
         if let button = statusItem.button, let btnWindow = button.window {
             let buttonScreenRect = btnWindow.convertToScreen(button.bounds)
-            originX = buttonScreenRect.midX - (newSize.width / 2)
+            let anchorX = AppListViewModel.shared.isPortsOnly ? (portsSegmentScreenMidX() ?? buttonScreenRect.midX) : buttonScreenRect.midX
+            originX = anchorX - (newSize.width / 2)
             originY = buttonScreenRect.minY - totalHeight - 2
 
             if let scr = screen {
@@ -365,7 +375,7 @@ final class StatusItemController: NSObject {
                 let screenMaxX = scr.visibleFrame.maxX
                 originX = max(screenMinX + 4, min(originX, screenMaxX - newSize.width - 4))
             }
-            arrowX = buttonScreenRect.midX - originX
+            arrowX = anchorX - originX
         } else if let scr = screen ?? NSScreen.main {
             originX = scr.visibleFrame.midX - (newSize.width / 2)
             originY = scr.visibleFrame.maxY - totalHeight - 2
@@ -379,6 +389,15 @@ final class StatusItemController: NSObject {
         guard frame != win.frame else { return }
         win.setFrame(frame, display: win.isVisible, animate: false)
         win.invalidateShadow()
+    }
+
+    private func portsSegmentScreenMidX() -> CGFloat? {
+        guard let button = statsStatusItem?.button, let buttonWindow = button.window,
+              let midX = segmentMetrics.midX(of: .ports) else { return nil }
+        let buttonScreenRect = buttonWindow.convertToScreen(button.bounds)
+        let fullWidth = button.attributedTitle.size().width
+        let titleInsetX = max(0, (button.bounds.width - fullWidth) / 2)
+        return buttonScreenRect.minX + titleInsetX + midX
     }
 
     private func startWorkspaceObservers() {
@@ -414,6 +433,8 @@ final class StatusItemController: NSObject {
 
         if event.type == .rightMouseDown || event.type == .rightMouseUp {
             showContextMenu()
+        } else if isShown && AppListViewModel.shared.isPortsOnly {
+            showPopover(tab: .apps)
         } else {
             togglePopover()
         }
@@ -433,11 +454,12 @@ final class StatusItemController: NSObject {
     }
 
     @MainActor
-    func showPopover() {
+    func showPopover(tab: PopoverTab = .apps) {
         lastCloseTimestamp = .distantPast
         if !isShown {
-            togglePopover()
+            togglePopover(tab: tab)
         } else {
+            AppListViewModel.shared.open(tab)
             if !NSApp.isActive {
                 NSApp.activate(ignoringOtherApps: true)
             }
@@ -446,7 +468,7 @@ final class StatusItemController: NSObject {
     }
 
     @MainActor
-    func togglePopover() {
+    func togglePopover(tab: PopoverTab = .apps) {
         if isShown {
             closePopover()
         } else {
@@ -454,6 +476,7 @@ final class StatusItemController: NSObject {
                 return
             }
             StatsDetailController.shared.close()
+            AppListViewModel.shared.open(tab)
             guard let win = window else { return }
             openTimestamp = Date()
             updatePopoverSize()
@@ -745,8 +768,11 @@ final class StatusItemController: NSObject {
         let hit = segmentMetrics.hit(atOffset: NSEvent.mouseLocation.x - contentStartX)
         if hit?.stat == .ports {
             StatsDetailController.shared.close()
-            AppListViewModel.shared.selectTab(.ports)
-            showPopover()
+            if isShown && AppListViewModel.shared.isPortsOnly {
+                closePopover()
+            } else {
+                showPopover(tab: .ports)
+            }
             return
         }
         let mode = hit.map { Self.detailMode(for: $0.stat) } ?? .cpu
@@ -1023,7 +1049,8 @@ final class StatusItemController: NSObject {
 
             let popupWindow = self.window
             let statusWindow = self.statusItem.button?.window
-            if event.window !== popupWindow, event.window !== statusWindow {
+            let statsWindow = self.statsButton?.window
+            if event.window !== popupWindow, event.window !== statusWindow, event.window !== statsWindow {
                 if Date().timeIntervalSince(self.openTimestamp) >= 0.25 {
                     self.closePopover()
                 }

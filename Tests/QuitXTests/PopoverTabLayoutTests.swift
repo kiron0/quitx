@@ -9,10 +9,9 @@ extension PortListViewModelTests {
         _ = NSApplication.shared
         let store = ConfigStore.shared
         let saved = store.config
-        let savedTab = PopoverTab.stored()
         defer {
             store.config = saved
-            savedTab.store()
+            AppListViewModel.shared.open(.apps)
         }
         store.config.portsEnabled = true
 
@@ -38,7 +37,6 @@ extension PortListViewModelTests {
             window.displayIfNeeded()
             try await Task.sleep(nanoseconds: 120_000_000)
         }
-        #expect(PopoverTab.stored() == .ports)
 
         store.config.portsEnabled = false
         window.updateConstraintsIfNeeded()

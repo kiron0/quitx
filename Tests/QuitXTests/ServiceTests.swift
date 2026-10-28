@@ -414,8 +414,8 @@ struct UpdateCheckerVersionTests {
     @Test("Auto install defaults off and survives decoding")
     func testAutoInstallUpdatesConfig() throws {
         #expect(!QuitXConfig.default.autoInstallUpdates)
-        let legacy = try JSONDecoder().decode(QuitXConfig.self, from: Data("{\"autoUpdate\": true}".utf8))
-        #expect(!legacy.autoInstallUpdates)
+        let partial = try JSONDecoder().decode(QuitXConfig.self, from: Data("{\"autoUpdate\": true}".utf8))
+        #expect(!partial.autoInstallUpdates)
         var cfg = QuitXConfig.default
         cfg.autoInstallUpdates = true
         let decoded = try JSONDecoder().decode(QuitXConfig.self, from: JSONEncoder().encode(cfg))

@@ -2,6 +2,19 @@
 
 All notable changes to QuitX macOS App will be documented in this file.
 
+## 1.2.4
+
+### Changed
+
+- **Popover Opens Where You Clicked**: The QuitX menu bar icon always opens the Apps tab, and the Ports menu bar stat opens Ports on its own, without the tab bar, right below the Ports stat. Clicking the Ports stat again closes it. The last selected tab is no longer remembered.
+- **Single-Box Changelog**: Release notes in What's New now live in a single unified container box with fixed header and footer navigation, and scrolling scoped strictly to the boxed content.
+- **Playful Settings Tooltips**: Converted plain, technical descriptions across Shortcuts, Ports, and Exclusions into engaging, humorous tooltips with emoji icons.
+- **Quick Clean Icon**: Quick Clean uses `bubbles.and.sparkles` instead of `sparkles`, keeping sparkles reserved for What's New.
+
+### Removed
+
+- **Legacy Settings**: Dropped the unused `quitOnScreenLock` option and the old fallback that turned on CPU, Memory and GPU menu bar stats from `showMenuBarStats` when a saved config had no per-stat flags. Missing flags now use their defaults.
+
 ## 1.2.3
 
 ### Added

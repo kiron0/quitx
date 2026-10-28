@@ -25,7 +25,7 @@ struct MainPopoverView: View {
             Color.clear
                 .frame(height: 12)
 
-            if configStore.config.portsEnabled {
+            if configStore.config.portsEnabled && !vm.isPortsOnly {
                 PopoverTabBar(selection: Binding(
                     get: { vm.activeTab },
                     set: { vm.selectTab($0) }

@@ -180,11 +180,11 @@ struct QuickCleanTests {
 extension QuickCleanTests {
     @Test("Cleanup scan intervals default, round-trip and clamp")
     func scanIntervals() throws {
-        let legacy = try JSONDecoder().decode(QuitXConfig.self, from: Data("{}".utf8))
-        #expect(legacy.quickCleanOpenRefreshSeconds == 60)
-        #expect(legacy.quickCleanBackgroundRefreshMinutes == 10)
-        #expect(legacy.quickCleanOpenMaxAge == 60)
-        #expect(legacy.quickCleanBackgroundMaxAge == 600)
+        let empty = try JSONDecoder().decode(QuitXConfig.self, from: Data("{}".utf8))
+        #expect(empty.quickCleanOpenRefreshSeconds == 60)
+        #expect(empty.quickCleanBackgroundRefreshMinutes == 10)
+        #expect(empty.quickCleanOpenMaxAge == 60)
+        #expect(empty.quickCleanBackgroundMaxAge == 600)
 
         var config = QuitXConfig.default
         config.quickCleanOpenRefreshSeconds = 0
@@ -198,8 +198,8 @@ extension QuickCleanTests {
         #expect(clamped.quickCleanOpenRefreshSeconds == 0)
         #expect(clamped.quickCleanBackgroundRefreshMinutes == 1)
 
-        #expect(QuitXConfig.quickCleanOpenRefreshChoices.contains(legacy.quickCleanOpenRefreshSeconds))
-        #expect(QuitXConfig.quickCleanBackgroundRefreshChoices.contains(legacy.quickCleanBackgroundRefreshMinutes))
+        #expect(QuitXConfig.quickCleanOpenRefreshChoices.contains(empty.quickCleanOpenRefreshSeconds))
+        #expect(QuitXConfig.quickCleanBackgroundRefreshChoices.contains(empty.quickCleanBackgroundRefreshMinutes))
         #expect(GeneralTabView.quickCleanOpenTitle(0) == "Always")
         #expect(GeneralTabView.quickCleanOpenTitle(300) == "5 min")
         #expect(GeneralTabView.quickCleanBackgroundTitle(30) == "30 min")

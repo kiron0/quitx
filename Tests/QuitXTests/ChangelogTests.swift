@@ -114,8 +114,8 @@ struct ChangelogTests {
     }
 
     @Test("Upgrading from a build without the last-seen key opens What's New once")
-    func upgradeFromLegacyBuild() {
-        let suiteName = "test_changelog_legacy_\(UUID().uuidString)"
+    func upgradeWithoutLastSeenVersion() {
+        let suiteName = "test_changelog_upgrade_\(UUID().uuidString)"
         guard let defaults = UserDefaults(suiteName: suiteName) else { return }
         defer { TestDefaults.discard(suiteName) }
         let controller = ChangelogWindowController.shared

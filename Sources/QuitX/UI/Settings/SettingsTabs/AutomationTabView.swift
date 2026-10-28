@@ -77,7 +77,6 @@ struct AutomationTabView: View {
                     set: { enabled in
                         let wasOn = configStore.config.quitOnSleep
                         configStore.config.quitOnSleep = enabled
-                        configStore.config.quitOnScreenLock = false
                         if enabled && !wasOn {
                             configStore.config.sleepLockStartMinutes = 0
                             configStore.config.sleepLockEndMinutes = 360

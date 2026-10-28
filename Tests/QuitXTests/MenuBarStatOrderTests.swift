@@ -47,9 +47,9 @@ struct MenuBarStatOrderTests {
         let fallback = try JSONDecoder().decode(QuitXConfig.self, from: Data(wrongType.utf8))
         #expect(fallback.menuBarStatOrder == Stat.defaultOrder)
 
-        let legacy = try JSONDecoder().decode(QuitXConfig.self, from: Data("{}".utf8))
-        #expect(legacy.menuBarStatOrder == Stat.defaultOrder)
-        #expect(!legacy.menuBarShowCleanup)
+        let empty = try JSONDecoder().decode(QuitXConfig.self, from: Data("{}".utf8))
+        #expect(empty.menuBarStatOrder == Stat.defaultOrder)
+        #expect(!empty.menuBarShowCleanup)
     }
 
     @Test("Settings chips hide stats this Mac can't show")
@@ -77,6 +77,9 @@ struct MenuBarStatOrderTests {
         #expect(metrics.hit(atOffset: 500)?.stat == .ports)
         #expect(metrics.hit(atOffset: -50)?.stat == .battery)
         #expect(StatusItemController.SegmentMetrics().hit(atOffset: 0) == nil)
+        #expect(metrics.midX(of: .ports) == 100)
+        #expect(metrics.midX(of: .battery) == 20)
+        #expect(metrics.midX(of: .gpu) == nil)
         #expect(StatusItemController.detailMode(for: .battery) == .battery)
         #expect(StatusItemController.detailMode(for: .gpu) == .gpu)
         #expect(StatusItemController.detailMode(for: .memory) == .memory)

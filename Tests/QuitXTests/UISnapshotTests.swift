@@ -41,10 +41,9 @@ extension PortListViewModelTests {
         _ = NSApplication.shared
         let store = ConfigStore.shared
         let saved = store.config
-        let savedTab = PopoverTab.stored()
         defer {
             store.config = saved
-            savedTab.store()
+            AppListViewModel.shared.open(.apps)
             PortListViewModel.shared.ports = []
             PortListViewModel.shared.hasLoadedOnce = false
         }

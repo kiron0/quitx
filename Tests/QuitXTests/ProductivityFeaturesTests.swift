@@ -419,31 +419,6 @@ struct ProductivityFeaturesTests {
         #expect(!cfg.menuBarStatsEnabled)
     }
 
-    @Test("Legacy config decoding falls back to showMenuBarStats for granular toggles")
-    func testMenuBarLegacyConfigDecoding() throws {
-        let legacyJsonEnabled = """
-        {
-            "showMenuBarStats": true
-        }
-        """.data(using: .utf8)!
-        let decodedEnabled = try JSONDecoder().decode(QuitXConfig.self, from: legacyJsonEnabled)
-        #expect(decodedEnabled.showMenuBarStats)
-        #expect(decodedEnabled.menuBarShowCpu)
-        #expect(decodedEnabled.menuBarShowMemory)
-        #expect(decodedEnabled.menuBarStatsEnabled)
-
-        let legacyJsonDisabled = """
-        {
-            "showMenuBarStats": false
-        }
-        """.data(using: .utf8)!
-        let decodedDisabled = try JSONDecoder().decode(QuitXConfig.self, from: legacyJsonDisabled)
-        #expect(!decodedDisabled.showMenuBarStats)
-        #expect(!decodedDisabled.menuBarShowCpu)
-        #expect(!decodedDisabled.menuBarShowMemory)
-        #expect(!decodedDisabled.menuBarStatsEnabled)
-    }
-
     @Test("Sleep lock range gates by time window")
     func testSleepLockRange() {
         #expect(SleepLockRange.active(nowMinutes: 600, startMinutes: 540, endMinutes: 1020))
@@ -476,9 +451,9 @@ struct ProductivityFeaturesTests {
         #expect(decoded.sleepLockEndMinutes == 300)
         #expect(!decoded.sleepLockUse24Hour)
 
-        let legacy = try JSONDecoder().decode(QuitXConfig.self, from: Data("{}".utf8))
-        #expect(legacy.sleepLockStartMinutes == 0)
-        #expect(legacy.sleepLockEndMinutes == 360)
+        let empty = try JSONDecoder().decode(QuitXConfig.self, from: Data("{}".utf8))
+        #expect(empty.sleepLockStartMinutes == 0)
+        #expect(empty.sleepLockEndMinutes == 360)
     }
 
     @Test("Config decode survives malformed key and clamps minutes")
@@ -516,7 +491,6 @@ struct ProductivityFeaturesTests {
         cfg.sortBy = .cpuDesc
         cfg.perAppQuitRules = ["com.example.app": 120]
         cfg.quitOnSleep = true
-        cfg.quitOnScreenLock = true
         cfg.quitWhenLastWindowClosed = true
         cfg.sleepLockStartMinutes = 1320
         cfg.sleepLockEndMinutes = 420
@@ -555,7 +529,6 @@ struct ProductivityFeaturesTests {
         #expect(decoded.sortBy == cfg.sortBy)
         #expect(decoded.perAppQuitRules == cfg.perAppQuitRules)
         #expect(decoded.quitOnSleep == cfg.quitOnSleep)
-        #expect(decoded.quitOnScreenLock == cfg.quitOnScreenLock)
         #expect(decoded.quitWhenLastWindowClosed == cfg.quitWhenLastWindowClosed)
         #expect(decoded.sleepLockStartMinutes == cfg.sleepLockStartMinutes)
         #expect(decoded.sleepLockEndMinutes == cfg.sleepLockEndMinutes)
@@ -760,8 +733,8 @@ struct LastWindowQuitTests {
     func testConfigDefaultAndRoundTrip() throws {
         #expect(!QuitXConfig.default.quitWhenLastWindowClosed)
 
-        let legacy = try JSONDecoder().decode(QuitXConfig.self, from: Data("{}".utf8))
-        #expect(!legacy.quitWhenLastWindowClosed)
+        let empty = try JSONDecoder().decode(QuitXConfig.self, from: Data("{}".utf8))
+        #expect(!empty.quitWhenLastWindowClosed)
 
         var cfg = QuitXConfig.default
         cfg.quitWhenLastWindowClosed = true

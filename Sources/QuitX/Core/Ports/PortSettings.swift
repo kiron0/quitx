@@ -30,14 +30,4 @@ enum PortSortBy: String, Codable, Equatable, CaseIterable, Sendable {
 enum PopoverTab: String, CaseIterable, Sendable {
     case apps
     case ports
-
-    static let defaultsKey = "QuitXPopoverTab"
-
-    static func stored(defaults: UserDefaults = .standard) -> PopoverTab {
-        defaults.string(forKey: defaultsKey).flatMap(PopoverTab.init(rawValue:)) ?? .apps
-    }
-
-    func store(defaults: UserDefaults = .standard) {
-        defaults.set(rawValue, forKey: Self.defaultsKey)
-    }
 }

@@ -38,7 +38,8 @@ final class AppListViewModel: ObservableObject {
     @Published private(set) var selectedVisibleCount: Int = 0
     @Published private(set) var selectedTotalCount: Int = 0
     @Published var isOptionKeyPressed: Bool = false
-    @Published private(set) var activeTab: PopoverTab = PopoverTab.stored()
+    @Published private(set) var activeTab: PopoverTab = .apps
+    @Published private(set) var isPortsOnly = false
     private var resistantPids = [String: pid_t]()
 
     static func flagResistantApps(
@@ -571,10 +572,14 @@ final class AppListViewModel: ObservableObject {
         }
     }
 
+    func open(_ tab: PopoverTab) {
+        isPortsOnly = tab == .ports
+        selectTab(tab)
+    }
+
     func selectTab(_ tab: PopoverTab) {
         guard tab != activeTab else { return }
         activeTab = tab
-        tab.store()
         cancelConfirmQuitAll()
         cancelIndividualAction()
         if PortListViewModel.shared.pendingKillConfirmation != nil {

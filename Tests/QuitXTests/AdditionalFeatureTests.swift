@@ -362,9 +362,9 @@ struct ConfigStoreTests {
         #expect(decoded == nil)
     }
 
-    @Test("Legacy config keeps saved values and defaults new fields")
-    func testLegacyConfigMigration() throws {
-        let legacyJSON = """
+    @Test("Partial config keeps saved values and defaults missing fields")
+    func testPartialConfigDecoding() throws {
+        let partialJSON = """
         {
           "exclude": ["Safari"],
           "force": "force",
@@ -379,7 +379,7 @@ struct ConfigStoreTests {
         }
         """.data(using: .utf8)!
 
-        let decoded = try JSONDecoder().decode(QuitXConfig.self, from: legacyJSON)
+        let decoded = try JSONDecoder().decode(QuitXConfig.self, from: partialJSON)
         #expect(decoded.exclude == ["Safari"])
         #expect(decoded.force == .force)
         #expect(decoded.includeFinder)
