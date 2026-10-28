@@ -456,20 +456,10 @@ struct ChangelogView: View {
                 contentHeader(for: release)
                     .padding(.horizontal, 28)
                     .padding(.top, 40)
-                    .padding(.bottom, 16)
+                    .padding(.bottom, 14)
 
-                ScrollView(.vertical, showsIndicators: true) {
-                    VStack(alignment: .leading, spacing: 18) {
-                        ForEach(release.sections) { section in
-                            sectionCard(section)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                detailBox(for: release)
                     .padding(.horizontal, 28)
-                    .padding(.top, 4)
-                    .padding(.bottom, 20)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 footerLinks(for: release)
                     .padding(.horizontal, 28)
@@ -490,6 +480,25 @@ struct ChangelogView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(QuitXTheme.paneBackground)
         }
+    }
+
+    private func detailBox(for release: ReleaseChangelog) -> some View {
+        ScrollView(.vertical, showsIndicators: true) {
+            VStack(alignment: .leading, spacing: 16) {
+                ForEach(release.sections) { section in
+                    sectionBlock(section)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(14)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(QuitXTheme.cardBackground, in: RoundedRectangle(cornerRadius: 8))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.primary.opacity(0.09), lineWidth: 0.5)
+        )
     }
 
     private func contentHeader(for release: ReleaseChangelog) -> some View {
@@ -534,7 +543,7 @@ struct ChangelogView: View {
         return (try? AttributedString(markdown: item, options: options)) ?? AttributedString(item)
     }
 
-    private func sectionCard(_ section: ChangelogSection) -> some View {
+    private func sectionBlock(_ section: ChangelogSection) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 Image(systemName: sectionSymbol(for: section.title))
@@ -565,12 +574,6 @@ struct ChangelogView: View {
             .padding(.leading, 4)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(QuitXTheme.cardBackground, in: RoundedRectangle(cornerRadius: 8))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.primary.opacity(0.09), lineWidth: 0.5)
-        )
     }
 
     @ViewBuilder
