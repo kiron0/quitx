@@ -11,7 +11,9 @@ final class LeftoversViewModel: ObservableObject {
     }
 
     @Published private(set) var phase: Phase = .idle
-    @Published private(set) var items: [LeftoverItem] = []
+    @Published private(set) var items: [LeftoverItem] = [] {
+        didSet { refilter() }
+    }
     @Published var selected: Set<String> = []
     @Published var confirmationShown = false
     @Published var errorMessage: String?
@@ -43,7 +45,7 @@ final class LeftoversViewModel: ObservableObject {
             let found = await LeftoverScanner.scan(installedBundleIdentifiers: identifiers)
             guard !Task.isCancelled else { return }
             items = found
-            selected = Set(found.map(\.id))
+            selected = Set(found.filter(\.selectedByDefault).map(\.id))
             phase = .ready
         }
     }
@@ -58,13 +60,22 @@ final class LeftoversViewModel: ObservableObject {
 
     // Selection handled by visible items below
 
-    @Published var searchText: String = ""
-    @Published var sizeFilter: ItemSizeFilter = .any
-    @Published var ageFilter: ItemAgeFilter = .any
-    @Published var sortOrder: ItemSortOrder = .largest
+    @Published var searchText: String = "" {
+        didSet { if searchText != oldValue { refilter() } }
+    }
+    @Published var sizeFilter: ItemSizeFilter = .any {
+        didSet { if sizeFilter != oldValue { refilter() } }
+    }
+    @Published var ageFilter: ItemAgeFilter = .any {
+        didSet { if ageFilter != oldValue { refilter() } }
+    }
+    @Published var sortOrder: ItemSortOrder = .largest {
+        didSet { if sortOrder != oldValue { refilter() } }
+    }
+    @Published private(set) var filteredItems: [LeftoverItem] = []
 
-    var filteredItems: [LeftoverItem] {
-        ItemFilterHelper.filterAndSort(
+    private func refilter() {
+        filteredItems = ItemFilterHelper.filterAndSort(
             items: items,
             query: searchText,
             size: sizeFilter,
@@ -118,7 +129,11 @@ final class LeftoversViewModel: ObservableObject {
             if result.failed.isEmpty {
                 resultMessage = "Permanently removed \(result.trashed.count) \(result.trashed.count == 1 ? "leftover" : "leftovers")."
             } else {
-                let hasFDAIssue = result.failed.contains { $0.message.contains("Full Disk Access") } || !FullDiskAccessManager.checkFullDiskAccess()
+                let hasFDAIssue = result.failed.contains { failure in
+                    failure.message.contains("Full Disk Access")
+                        || failure.url.path.contains("/Library/Containers/")
+                        || failure.url.path.contains("/Library/Group Containers/")
+                } && !FullDiskAccessManager.checkFullDiskAccess()
                 if hasFDAIssue {
                     errorMessage = "\(result.failed.count) \(result.failed.count == 1 ? "leftover couldn't" : "leftovers couldn't") be removed. Full Disk Access is required for sandbox containers."
                 } else {
@@ -321,6 +336,16 @@ struct LeftoversTabView: View {
             }
 
             Spacer(minLength: 8)
+
+            if !item.selectedByDefault {
+                Text("Review")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 2)
+                    .background(Color.primary.opacity(0.07), in: Capsule())
+                    .help("Not selected by default. It may hold app data or belong to a vendor whose apps are still installed.")
+            }
 
             if let date = item.lastModified {
                 Text(date, style: .date)

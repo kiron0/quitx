@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 
 enum CleanupCategory: String, CaseIterable, Identifiable, Sendable {
@@ -56,16 +57,23 @@ enum CleanupService {
         switch category {
         case .systemJunk:
             items = topLevelItems(
+                roots: [home.appendingPathComponent("Library/Logs")],
+                category: category
+            ) + topLevelItems(
                 roots: [
                     URL(fileURLWithPath: "/Library/Caches"),
-                    URL(fileURLWithPath: "/Library/Logs"),
-                    URL(fileURLWithPath: "/private/var/tmp"),
-                    home.appendingPathComponent("Library/Logs")
+                    URL(fileURLWithPath: "/Library/Logs")
                 ],
-                category: category
+                category: category,
+                ownedByCurrentUserOnly: true
             )
         case .userCache:
-            let excluded = ["Homebrew", "npm", "Yarn", "ollama", "com.electron.ollama", "com.docker.docker"]
+            let excluded = [
+                "Homebrew", "npm", "Yarn", "ollama", "com.electron.ollama", "com.docker.docker",
+                "com.apple.dt.Xcode", "org.swift.swiftpm",
+                "com.apple.bird", "CloudKit", "com.apple.cloudd", "com.apple.homed", "FamilyCircle",
+                Bundle.main.bundleIdentifier ?? "com.quitx.app"
+            ]
             items = topLevelItems(
                 roots: [home.appendingPathComponent("Library/Caches")],
                 category: category,
@@ -105,8 +113,7 @@ enum CleanupService {
                 Target(home.appendingPathComponent("Library/Developer/Xcode/tvOS DeviceSupport").path),
                 Target(home.appendingPathComponent("Library/Developer/XCTestDevices").path),
                 Target(home.appendingPathComponent("Library/Developer/Xcode/UserData/Previews").path),
-                Target(home.appendingPathComponent("Library/Caches/org.swift.swiftpm").path),
-                Target(home.appendingPathComponent("Library/org.swift.swiftpm").path)
+                Target(home.appendingPathComponent("Library/Caches/org.swift.swiftpm").path)
             ], category: category)
         case .brewCache:
             items = targetedItems([
@@ -141,7 +148,8 @@ enum CleanupService {
     static func topLevelItems(
         roots: [URL],
         category: CleanupCategory,
-        excludingNames: Set<String> = []
+        excludingNames: Set<String> = [],
+        ownedByCurrentUserOnly: Bool = false
     ) -> [CleanupItem] {
         let fileManager = FileManager.default
         var items: [CleanupItem] = []
@@ -154,12 +162,19 @@ enum CleanupService {
             ) else { continue }
             for child in children where !excludingNames.contains(child.lastPathComponent.lowercased()) {
                 if Task.isCancelled { break }
+                if ownedByCurrentUserOnly && !isOwnedByCurrentUser(child) { continue }
                 if let item = makeItem(child, category: category, selected: true, minimumBytes: 1) {
                     items.append(item)
                 }
             }
         }
         return items
+    }
+
+    static func isOwnedByCurrentUser(_ url: URL) -> Bool {
+        guard FileManager.default.isDeletableFile(atPath: url.path),
+              let owner = (try? FileManager.default.attributesOfItem(atPath: url.path))?[.ownerAccountID] as? NSNumber else { return false }
+        return owner.uint32Value == getuid()
     }
 
     private static func targetedItems(_ targets: [Target], category: CleanupCategory) -> [CleanupItem] {

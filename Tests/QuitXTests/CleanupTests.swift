@@ -88,6 +88,18 @@ struct CleanupTests {
         #expect(LeftoverScanner.candidateBundleIdentifier(from: "com.apple.mail.plist", rule: .bundleOnly) == nil)
         #expect(LeftoverScanner.belongsToInstalledApp("com.example.keep.helper", installed: ["com.example.keep"]))
         #expect(!LeftoverScanner.belongsToInstalledApp("com.example.gone", installed: ["com.example.keep"]))
+        #expect(LeftoverScanner.candidateBundleIdentifier(from: "ABCDE12345.com.example.shared", rule: .bundleOnly) == "com.example.shared")
+        #expect(LeftoverScanner.candidateBundleIdentifier(from: "homebrew.mxcl.postgresql.plist", rule: .bundleOnly) == nil)
+        #expect(LeftoverScanner.candidateBundleIdentifier(from: "group.com.apple.notes", rule: .groupContainer) == nil)
+    }
+
+    @Test("Risky leftovers are not preselected")
+    func leftoverDefaults() {
+        let vendors: Set<String> = ["com.example"]
+        #expect(!LeftoverScanner.isSelectedByDefault(identifier: "com.other.gone", category: .containers, installedVendors: vendors))
+        #expect(!LeftoverScanner.isSelectedByDefault(identifier: "com.other.gone", category: .applicationSupport, installedVendors: vendors))
+        #expect(!LeftoverScanner.isSelectedByDefault(identifier: "com.example.gone", category: .preferences, installedVendors: vendors))
+        #expect(LeftoverScanner.isSelectedByDefault(identifier: "com.other.gone", category: .caches, installedVendors: vendors))
     }
 
     @Test("Leftover scan finds missing identifiers and skips installed ones")
@@ -104,5 +116,6 @@ struct CleanupTests {
         let items = await LeftoverScanner.scan(installedBundleIdentifiers: ["com.example.keep"], home: home)
 
         #expect(items.map(\.name) == ["com.example.gone.plist"])
+        #expect(items.allSatisfy { !$0.selectedByDefault })
     }
 }

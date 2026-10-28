@@ -64,6 +64,7 @@ struct LeftoverItem: Identifiable, Hashable, Sendable {
     var isDirectory: Bool = false
     var targetID: String = ""
     var lastModified: Date? = nil
+    var selectedByDefault = true
 
     var id: String { url.path }
     var name: String { url.lastPathComponent }
@@ -627,6 +628,7 @@ enum AppUninstaller {
             return result
         }
 
+        lazy var hasFullDiskAccess = FullDiskAccessManager.checkFullDiskAccess()
         for url in urls {
             let path = url.path
             if !FileManager.default.fileExists(atPath: path) {
@@ -636,7 +638,7 @@ enum AppUninstaller {
                       nowInode != preInode {
                 result.trashed.append(url)
             } else {
-                let isFDA = (path.contains("/Library/Containers/") || path.contains("/Library/Group Containers/") || path.contains("/Library/Mail") || path.contains("/Library/Safari")) && !FullDiskAccessManager.checkFullDiskAccess()
+                let isFDA = (path.contains("/Library/Containers/") || path.contains("/Library/Group Containers/") || path.contains("/Library/Mail") || path.contains("/Library/Safari")) && !hasFullDiskAccess
                 let message = isFDA ? "Full Disk Access required" : ((errorInfo?[NSAppleScript.errorMessage] as? String) ?? "Permission denied")
                 result.failed.append(RemovalFailure(url: url, message: message))
             }

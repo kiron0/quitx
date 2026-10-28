@@ -107,11 +107,14 @@ final class FullDiskAccessManager: ObservableObject {
 
     func startPolling() {
         stopPolling()
+        var ticks = 0
         pollTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            ticks += 1
+            let expired = ticks >= 180
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 let granted = self.refresh()
-                if granted {
+                if granted || expired {
                     self.stopPolling()
                 }
             }

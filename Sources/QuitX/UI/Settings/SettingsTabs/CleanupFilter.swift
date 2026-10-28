@@ -54,59 +54,25 @@ enum ItemSortOrder: String, CaseIterable, Identifiable, Sendable {
     var id: String { rawValue }
 }
 
+protocol FilterableCleanupItem {
+    var name: String { get }
+    var url: URL { get }
+    var bytes: Int64 { get }
+    var lastModified: Date? { get }
+}
+
+extension CleanupItem: FilterableCleanupItem {}
+extension LeftoverItem: FilterableCleanupItem {}
+
 enum ItemFilterHelper {
-    static func filterAndSort(
-        items: [CleanupItem],
+    static func filterAndSort<Item: FilterableCleanupItem>(
+        items: [Item],
         query: String,
         size: ItemSizeFilter,
         age: ItemAgeFilter,
         sort: ItemSortOrder,
         now: Date = Date()
-    ) -> [CleanupItem] {
-        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        let cutoff = age.cutoff(relativeTo: now)
-
-        return items.filter { item in
-            guard item.bytes >= size.minimumBytes else { return false }
-            if let cutoff {
-                guard let modified = item.lastModified, modified < cutoff else { return false }
-            }
-            guard !trimmed.isEmpty else { return true }
-            return item.name.localizedCaseInsensitiveContains(trimmed)
-                || item.url.path.localizedCaseInsensitiveContains(trimmed)
-        }.sorted { left, right in
-            switch sort {
-            case .largest:
-                if left.bytes != right.bytes { return left.bytes > right.bytes }
-            case .smallest:
-                if left.bytes != right.bytes { return left.bytes < right.bytes }
-            case .newest:
-                let lDate = left.lastModified ?? .distantPast
-                let rDate = right.lastModified ?? .distantPast
-                if lDate != rDate { return lDate > rDate }
-            case .oldest:
-                let lDate = left.lastModified ?? .distantFuture
-                let rDate = right.lastModified ?? .distantFuture
-                if lDate != rDate { return lDate < rDate }
-            case .nameAsc:
-                let comp = left.name.localizedStandardCompare(right.name)
-                if comp != .orderedSame { return comp == .orderedAscending }
-            case .nameDesc:
-                let comp = left.name.localizedStandardCompare(right.name)
-                if comp != .orderedSame { return comp == .orderedDescending }
-            }
-            return left.name.localizedStandardCompare(right.name) == .orderedAscending
-        }
-    }
-
-    static func filterAndSort(
-        items: [LeftoverItem],
-        query: String,
-        size: ItemSizeFilter,
-        age: ItemAgeFilter,
-        sort: ItemSortOrder,
-        now: Date = Date()
-    ) -> [LeftoverItem] {
+    ) -> [Item] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         let cutoff = age.cutoff(relativeTo: now)
 

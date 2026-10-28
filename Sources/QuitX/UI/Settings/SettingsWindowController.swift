@@ -95,6 +95,8 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) {
         HelpPopoverState.closeAll()
+        let uninstallModel = UninstallWindowController.shared.model
+        if uninstallModel.phase != .removing { uninstallModel.cancelWork() }
         window = nil
         WindowActivationCoordinator.update()
     }

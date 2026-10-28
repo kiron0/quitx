@@ -338,7 +338,10 @@ struct SettingsRootView: View {
             UninstallView(
                 model: uninstallModel,
                 embedded: true,
-                onDismiss: { navigation.select(.overview) }
+                onDismiss: {
+                    uninstallModel.showPicker()
+                    navigation.select(.overview)
+                }
             )
         case .leftovers:
             LeftoversTabView(model: leftoversModel)

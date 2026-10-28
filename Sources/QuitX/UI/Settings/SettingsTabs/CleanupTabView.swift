@@ -12,7 +12,9 @@ final class CleanupViewModel: ObservableObject {
 
     let category: CleanupCategory
     @Published private(set) var phase: Phase = .idle
-    @Published private(set) var items: [CleanupItem] = []
+    @Published private(set) var items: [CleanupItem] = [] {
+        didSet { refilter() }
+    }
     @Published var selected: Set<String> = []
     @Published var confirmationShown = false
     @Published var errorMessage: String?
@@ -55,13 +57,22 @@ final class CleanupViewModel: ObservableObject {
         }
     }
 
-    @Published var searchText: String = ""
-    @Published var sizeFilter: ItemSizeFilter = .any
-    @Published var ageFilter: ItemAgeFilter = .any
-    @Published var sortOrder: ItemSortOrder = .largest
+    @Published var searchText: String = "" {
+        didSet { if searchText != oldValue { refilter() } }
+    }
+    @Published var sizeFilter: ItemSizeFilter = .any {
+        didSet { if sizeFilter != oldValue { refilter() } }
+    }
+    @Published var ageFilter: ItemAgeFilter = .any {
+        didSet { if ageFilter != oldValue { refilter() } }
+    }
+    @Published var sortOrder: ItemSortOrder = .largest {
+        didSet { if sortOrder != oldValue { refilter() } }
+    }
+    @Published private(set) var filteredItems: [CleanupItem] = []
 
-    var filteredItems: [CleanupItem] {
-        ItemFilterHelper.filterAndSort(
+    private func refilter() {
+        filteredItems = ItemFilterHelper.filterAndSort(
             items: items,
             query: searchText,
             size: sizeFilter,
@@ -142,7 +153,7 @@ struct CleanupTabView: View {
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
-                if category == .mailFiles && !fdaManager.hasFullDiskAccess {
+                if category.needsFullDiskAccess && !fdaManager.hasFullDiskAccess {
                     fullDiskAccessBanner
                         .padding(.bottom, 12)
                 }
@@ -196,9 +207,9 @@ struct CleanupTabView: View {
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(.orange)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Full Disk Access Required to Clean Mail Files")
+                Text(category == .trashBins ? "Full Disk Access Required to See the Trash" : "Full Disk Access Required to Clean Mail Files")
                     .font(.system(size: 11.5, weight: .semibold))
-                Text("macOS requires Full Disk Access permission to remove protected mail attachments.")
+                Text(category == .trashBins ? "macOS hides Trash contents from apps without Full Disk Access." : "macOS requires Full Disk Access permission to remove protected mail attachments.")
                     .font(.system(size: 10.5))
                     .foregroundStyle(.secondary)
             }
@@ -243,7 +254,9 @@ struct CleanupTabView: View {
                 emptyState(
                     symbol: "checkmark.circle.fill",
                     title: model.resultMessage == nil ? "Nothing to Clean" : "Cleanup Complete",
-                    detail: model.resultMessage ?? "No removable items were found in this category.",
+                    detail: model.resultMessage ?? (category.needsFullDiskAccess && !fdaManager.hasFullDiskAccess
+                        ? "QuitX can't look inside this location until you grant Full Disk Access."
+                        : "No removable items were found in this category."),
                     tint: Color(nsColor: .systemGreen),
                     actionTitle: "Scan Again",
                     action: model.scan
@@ -452,6 +465,10 @@ struct CleanupTabView: View {
 }
 
 private extension CleanupCategory {
+    var needsFullDiskAccess: Bool {
+        self == .mailFiles || self == .trashBins
+    }
+
     var symbol: String {
         switch self {
         case .systemJunk: return "gearshape.2"

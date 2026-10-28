@@ -50,14 +50,25 @@ final class UninstallViewModel: ObservableObject {
     @Published private(set) var screen: Screen = .picker
     @Published private(set) var cameFromPicker = false
 
-    @Published private(set) var pickerApps: [PickerApp] = []
+    @Published private(set) var pickerApps: [PickerApp] = [] {
+        didSet { refilterPicker() }
+    }
     @Published private(set) var isLoadingApps = false
     private(set) var hasLoadedApps = false
     @Published var pickerSelection: Set<String> = []
-    @Published var searchText = ""
-    @Published var sizeFilter: ItemSizeFilter = .any
-    @Published var statusFilter: AppStatusFilter = .all
-    @Published var sortOrder: AppSortOrder = .nameAsc
+    @Published var searchText = "" {
+        didSet { if searchText != oldValue { refilterPicker() } }
+    }
+    @Published var sizeFilter: ItemSizeFilter = .any {
+        didSet { if sizeFilter != oldValue { refilterPicker() } }
+    }
+    @Published var statusFilter: AppStatusFilter = .all {
+        didSet { if statusFilter != oldValue { refilterPicker() } }
+    }
+    @Published var sortOrder: AppSortOrder = .nameAsc {
+        didSet { if sortOrder != oldValue { refilterPicker() } }
+    }
+    @Published private(set) var filteredPickerApps: [PickerApp] = []
     var isFiltered: Bool {
         !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             || sizeFilter != .any
@@ -69,8 +80,12 @@ final class UninstallViewModel: ObservableObject {
         statusFilter = .all
         sortOrder = .nameAsc
     }
-    @Published private(set) var bundleSizes: [String: Int64] = [:]
-    @Published private(set) var runningIDs: Set<String> = []
+    @Published private(set) var bundleSizes: [String: Int64] = [:] {
+        didSet { if sizeFilter != .any || sortOrder == .largest || sortOrder == .smallest { refilterPicker() } }
+    }
+    @Published private(set) var runningIDs: Set<String> = [] {
+        didSet { if runningIDs != oldValue && statusFilter == .running { refilterPicker() } }
+    }
     @Published var layoutMode: LayoutMode = {
         if let saved = UserDefaults.standard.string(forKey: "QuitXUninstallLayoutMode"),
            let mode = LayoutMode(rawValue: saved) {
@@ -111,9 +126,9 @@ final class UninstallViewModel: ObservableObject {
         return image
     }
 
-    var filteredPickerApps: [PickerApp] {
+    private func refilterPicker() {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        return pickerApps.filter { app in
+        filteredPickerApps = pickerApps.filter { app in
             if sizeFilter != .any {
                 let size = bundleSizes[app.id] ?? 0
                 guard size >= sizeFilter.minimumBytes else { return false }
@@ -169,7 +184,11 @@ final class UninstallViewModel: ObservableObject {
     }
 
     func loadAppsIfNeeded() {
-        guard (!hasLoadedApps || pickerApps.isEmpty), !isLoadingApps else { return }
+        guard !isLoadingApps else { return }
+        guard !hasLoadedApps || pickerApps.isEmpty else {
+            measureBundles(pickerApps.map(\.target))
+            return
+        }
         loadApps(forceRefresh: false)
     }
 
@@ -201,14 +220,22 @@ final class UninstallViewModel: ObservableObject {
         let pending = targets.filter { bundleSizes[$0.id] == nil }
         guard !pending.isEmpty else { return }
         sizeTask = Task { [weak self] in
+            var batch: [String: Int64] = [:]
+            var lastFlush = Date()
             for target in pending {
-                if Task.isCancelled { return }
+                if Task.isCancelled { break }
                 let bytes = await Task.detached(priority: .utility) {
                     AppUninstaller.measure(target.bundleURL).bytes
                 }.value
-                guard let self, !Task.isCancelled else { return }
-                self.bundleSizes[target.id] = bytes
+                guard !Task.isCancelled else { break }
+                batch[target.id] = bytes
+                if Date().timeIntervalSince(lastFlush) >= 0.3 {
+                    self?.bundleSizes.merge(batch) { $1 }
+                    batch.removeAll()
+                    lastFlush = Date()
+                }
             }
+            if !batch.isEmpty { self?.bundleSizes.merge(batch) { $1 } }
         }
     }
 
