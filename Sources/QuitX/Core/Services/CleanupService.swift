@@ -47,9 +47,9 @@ enum CleanupService {
         home: URL = FileManager.default.homeDirectoryForCurrentUser,
         now: Date = Date()
     ) async -> [CleanupItem] {
-        await Task.detached(priority: .userInitiated) {
+        await detachedCancellable(priority: .userInitiated) {
             scanSynchronously(category, home: home.standardizedFileURL, now: now)
-        }.value
+        }
     }
 
     static func scanSynchronously(_ category: CleanupCategory, home: URL, now: Date) -> [CleanupItem] {
@@ -221,23 +221,28 @@ enum CleanupService {
                 includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileAllocatedSizeKey, .totalFileAllocatedSizeKey, .contentModificationDateKey],
                 options: [.skipsHiddenFiles, .skipsPackageDescendants]
             ) else { continue }
-            for case let url as URL in enumerator {
+            var finished = false
+            while !finished {
                 if Task.isCancelled { return items }
-                guard let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileAllocatedSizeKey, .totalFileAllocatedSizeKey, .contentModificationDateKey]),
-                      values.isRegularFile == true,
-                      values.isSymbolicLink != true else { continue }
-                let bytes = Int64(values.totalFileAllocatedSize ?? values.fileAllocatedSize ?? 0)
-                let date = values.contentModificationDate
-                guard bytes >= minimumLargeBytes || (bytes >= minimumOldBytes && (date ?? now) < oldDate) else { continue }
-                items.append(CleanupItem(
-                    url: url.standardizedFileURL,
-                    category: .largeOldFiles,
-                    bytes: bytes,
-                    fileCount: 1,
-                    isDirectory: false,
-                    lastModified: date,
-                    isSelectedByDefault: false
-                ))
+                finished = autoreleasepool {
+                    guard let url = enumerator.nextObject() as? URL else { return true }
+                    guard let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileAllocatedSizeKey, .totalFileAllocatedSizeKey, .contentModificationDateKey]),
+                          values.isRegularFile == true,
+                          values.isSymbolicLink != true else { return false }
+                    let bytes = Int64(values.totalFileAllocatedSize ?? values.fileAllocatedSize ?? 0)
+                    let date = values.contentModificationDate
+                    guard bytes >= minimumLargeBytes || (bytes >= minimumOldBytes && (date ?? now) < oldDate) else { return false }
+                    items.append(CleanupItem(
+                        url: url.standardizedFileURL,
+                        category: .largeOldFiles,
+                        bytes: bytes,
+                        fileCount: 1,
+                        isDirectory: false,
+                        lastModified: date,
+                        isSelectedByDefault: false
+                    ))
+                    return false
+                }
             }
         }
         return items

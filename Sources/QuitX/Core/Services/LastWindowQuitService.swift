@@ -80,6 +80,16 @@ enum LastWindowQuitWindowState {
         return allSpacesIDs.count
     }
 
+    static func openOnScreenWindows(
+        owners: Set<pid_t>,
+        visible: [pid_t: Set<CGWindowID>],
+        closedIDs: Set<CGWindowID>
+    ) -> Int {
+        owners.reduce(into: Set<CGWindowID>()) { $0.formUnion(visible[$1] ?? []) }
+            .subtracting(closedIDs)
+            .count
+    }
+
     static func isCloseButtonRegion(point: CGPoint, windowBounds: CGRect) -> Bool {
         guard windowBounds.contains(point) else { return false }
         return point.x - windowBounds.minX <= 96 && point.y - windowBounds.minY <= 44
@@ -92,7 +102,9 @@ final class AXWindowCloseObserver {
     private let observer: AXObserver
     private let application: AXUIElement
     private(set) var windows: [AXUIElement] = []
+    private(set) var lastRefresh: TimeInterval?
     var onClosed: ((pid_t) -> Void)?
+    nonisolated static let refreshInterval: TimeInterval = 5
 
     init?(pid: pid_t) {
         var created: AXObserver?
@@ -115,7 +127,18 @@ final class AXWindowCloseObserver {
         onClosed = nil
     }
 
-    func refresh() {
+    nonisolated static func isRefreshDue(lastRefresh: TimeInterval?, now: TimeInterval, interval: TimeInterval = refreshInterval) -> Bool {
+        guard let lastRefresh else { return true }
+        return now - lastRefresh >= interval
+    }
+
+    func refreshIfDue(now: TimeInterval = ProcessInfo.processInfo.systemUptime) {
+        guard Self.isRefreshDue(lastRefresh: lastRefresh, now: now) else { return }
+        refresh(now: now)
+    }
+
+    func refresh(now: TimeInterval = ProcessInfo.processInfo.systemUptime) {
+        lastRefresh = now
         var value: CFTypeRef?
         guard AXUIElementCopyAttributeValue(application, kAXWindowsAttribute as CFString, &value) == .success,
               let current = value as? [AXUIElement] else { return }
@@ -573,7 +596,7 @@ final class LastWindowQuitService: ObservableObject {
         guard requiresAccessibilityTrust, AXIsProcessTrusted() else { return }
         for pid in owners where QuitService.processIsRunning(pid) {
             if let observer = closeObservers[pid] {
-                observer.refresh()
+                observer.refreshIfDue()
                 continue
             }
             guard let observer = AXWindowCloseObserver(pid: pid) else { continue }
@@ -748,7 +771,12 @@ final class LastWindowQuitService: ObservableObject {
 
         for key in Array(tracked.keys) {
             guard var entry = tracked[key] else { continue }
-            let remaining = remainingWindows(entry)
+            let onScreen = LastWindowQuitWindowState.openOnScreenWindows(
+                owners: entry.owners,
+                visible: visible,
+                closedIDs: Set(entry.closedWindowIDs.keys)
+            )
+            let remaining = onScreen > 0 ? onScreen : remainingWindows(entry)
             if let remaining, remaining > 0 { entry.closedByUser = false }
             entry.emptySamples = LastWindowQuitWindowState.nextEmptySamples(
                 windowCount: remaining,

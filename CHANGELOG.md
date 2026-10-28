@@ -16,6 +16,10 @@ All notable changes to QuitX macOS App will be documented in this file.
 ### Fixed
 
 - **Battery Temperature**: macOS 27 no longer publishes `Temperature` on `AppleSmartBattery`, so the Battery window showed "—". QuitX now falls back to the SMC battery sensors (`TB0T`, then `TB1T`/`TB2T`) and reads IORegistry temperatures as centi-Celsius.
+- **Quick Clean Window**: As wide as the main menu; the confirmation dimming stays inside the rounded window. Rescans keep the categories you ticked instead of resetting them.
+- **Scans Stop When Cancelled**: Cleanup, Quick Clean, Leftovers and uninstall scans now stop when you leave the page, close Settings, or rescan. Cancellation used to stop at a detached task, so long scans like Large & Old Files kept running.
+- **Lower Memory During Scans**: Measuring big folders drains temporary objects per file instead of holding them until the scan ends.
+- **Quieter Last Window Watching**: Window observers re-read an app's window list at most every 5 seconds (new windows still arrive instantly by notification), and apps with windows visibly on screen skip the accessibility window count. The poll loop's sampled time dropped about 5x.
 
 ### Changed
 

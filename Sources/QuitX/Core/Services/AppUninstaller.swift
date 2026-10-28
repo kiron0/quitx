@@ -281,7 +281,7 @@ enum AppUninstaller {
 
     static func scan(target: UninstallTarget, home: URL = FileManager.default.homeDirectoryForCurrentUser, temporaryDirectory: URL = URL(fileURLWithPath: NSTemporaryDirectory())) async -> [LeftoverItem] {
         let copies = await MainActor.run { appCopies(for: target) }
-        return await Task.detached(priority: .userInitiated) {
+        return await detachedCancellable(priority: .userInitiated) {
             var found: [(URL, LeftoverCategory)] = copies.map { ($0, .application) }
             let names = matchNames(for: target)
             let fm = FileManager.default
@@ -303,7 +303,7 @@ enum AppUninstaller {
                 let date = values?.contentModificationDate
                 return LeftoverItem(url: url, category: category, bytes: measured.bytes, fileCount: measured.files, isDirectory: isDirectory, targetID: target.id, lastModified: date)
             }
-        }.value
+        }
     }
 
     static func scan(targets: [UninstallTarget]) async -> [LeftoverItem] {
@@ -333,13 +333,17 @@ enum AppUninstaller {
         }
         var bytes: Int64 = 0
         var files = 0
-        for case let child as URL in enumerator {
-            if Task.isCancelled { break }
-            let values = try? child.resourceValues(forKeys: keys)
-            if values?.isRegularFile == true || values?.isSymbolicLink == true {
-                bytes += size(values)
-                files += 1
+        while !Task.isCancelled {
+            let done: Bool = autoreleasepool {
+                guard let child = enumerator.nextObject() as? URL else { return true }
+                let values = try? child.resourceValues(forKeys: keys)
+                if values?.isRegularFile == true || values?.isSymbolicLink == true {
+                    bytes += size(values)
+                    files += 1
+                }
+                return false
             }
+            if done { break }
         }
         return (bytes, max(files, 1))
     }

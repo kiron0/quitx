@@ -236,6 +236,42 @@ extension QuickCleanTests {
     }
 }
 
+extension QuickCleanTests {
+    @Test("Cancelling the caller stops detached scan work")
+    func cancellationReachesDetachedWork() async {
+        let outer = Task {
+            await detachedCancellable(priority: .utility) { () -> Bool in
+                let start = Date()
+                while !Task.isCancelled && Date().timeIntervalSince(start) < 5 {
+                    try? await Task.sleep(nanoseconds: 10_000_000)
+                }
+                return Task.isCancelled
+            }
+        }
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        outer.cancel()
+        let cancelled = await outer.value
+        #expect(cancelled)
+    }
+
+    @Test("Measuring a large tree counts every file")
+    func measureLargeTree() throws {
+        let fileManager = FileManager.default
+        let root = fileManager.temporaryDirectory.appendingPathComponent("quitx-measure-\(UUID().uuidString)")
+        defer { try? fileManager.removeItem(at: root) }
+        for folder in 0..<20 {
+            let dir = root.appendingPathComponent("d\(folder)")
+            try fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
+            for file in 0..<25 {
+                try Data(count: 10).write(to: dir.appendingPathComponent("f\(file)"))
+            }
+        }
+        let measured = AppUninstaller.measure(root)
+        #expect(measured.files == 500)
+        #expect(measured.bytes >= 500 * 10)
+    }
+}
+
 actor ScanCounter {
     private(set) var count = 0
 

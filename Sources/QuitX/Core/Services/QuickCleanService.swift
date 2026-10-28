@@ -51,9 +51,9 @@ enum QuickCleanService {
         home: URL = FileManager.default.homeDirectoryForCurrentUser,
         now: Date = Date()
     ) async -> [QuickCleanGroup] {
-        await Task.detached(priority: .utility) {
+        await detachedCancellable(priority: .utility) {
             scanSynchronously(home: home.standardizedFileURL, now: now)
-        }.value
+        }
     }
 
     static func scanSynchronously(home: URL, now: Date) -> [QuickCleanGroup] {

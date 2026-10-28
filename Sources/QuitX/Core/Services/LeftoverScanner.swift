@@ -48,7 +48,7 @@ enum LeftoverScanner {
         home: URL = FileManager.default.homeDirectoryForCurrentUser
     ) async -> [LeftoverItem] {
         let normalizedInstalled = Set(installedBundleIdentifiers.map { $0.lowercased() })
-        let candidates = await Task.detached(priority: .userInitiated) { () -> [(url: URL, identifier: String, category: LeftoverCategory)] in
+        let candidates = await detachedCancellable(priority: .userInitiated) { () -> [(url: URL, identifier: String, category: LeftoverCategory)] in
             let library = home.standardizedFileURL.appendingPathComponent("Library").path + "/"
             let roots = AppUninstaller.searchRoots(
                 home: home,
@@ -72,7 +72,7 @@ enum LeftoverScanner {
                 }
             }
             return found
-        }.value
+        }
         guard !Task.isCancelled, !candidates.isEmpty else { return [] }
 
         let registered = await MainActor.run { () -> Set<String> in
@@ -86,7 +86,7 @@ enum LeftoverScanner {
         }
         let vendors = Set(normalizedInstalled.map(vendor(of:)))
 
-        return await Task.detached(priority: .userInitiated) { () -> [LeftoverItem] in
+        return await detachedCancellable(priority: .userInitiated) { () -> [LeftoverItem] in
             var items: [LeftoverItem] = []
             for candidate in candidates where !registered.contains(candidate.identifier) {
                 if Task.isCancelled { break }
@@ -108,6 +108,6 @@ enum LeftoverScanner {
                 if $0.bytes != $1.bytes { return $0.bytes > $1.bytes }
                 return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
             }
-        }.value
+        }
     }
 }

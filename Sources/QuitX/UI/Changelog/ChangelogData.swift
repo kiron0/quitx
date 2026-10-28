@@ -15,6 +15,7 @@ extension ChangelogProvider {
                 "**Battery Temperature**: The Battery window shows temperature again on Macs where macOS stopped reporting it, read straight from the battery sensors.",
                 "**Permanent Removal**: Confirmed uninstall, leftover, and cleanup selections are deleted permanently instead of being moved to Trash.",
                 "**Safer Leftovers**: Containers, launch items, Application Support folders, and files from vendors you still have apps from now need your review before removal.",
+                "**Lighter in the Background**: Quit When Last Window Closes does far less work each second, and cleanup scans stop as soon as you leave them and use less memory.",
                 "**Faster Lists**: The app list, cleanup pages, and leftovers filter and sort only when something changes, and app sizes arrive in batches."
             ])
         ]),

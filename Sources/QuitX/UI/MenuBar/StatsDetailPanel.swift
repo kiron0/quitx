@@ -427,7 +427,13 @@ struct StatsDetailView: View {
     @ObservedObject private var configStore: ConfigStore = ConfigStore.shared
     @ObservedObject private var quickClean: QuickCleanMonitor = QuickCleanMonitor.shared
 
-    private let panelWidth: CGFloat = 270
+    static func panelWidth(for mode: StatsDetailModel.Mode) -> CGFloat {
+        mode == .cleanup ? StatusItemController.popoverWidth : 270
+    }
+
+    private var panelWidth: CGFloat {
+        Self.panelWidth(for: model.mode)
+    }
     private let headerHeight: CGFloat = 12
     private var maxHeight: CGFloat {
         model.maxContentHeight
@@ -563,7 +569,7 @@ struct StatsDetailView: View {
                     confirmTitle: "Clean",
                     systemImage: "trash.fill",
                     isForced: true,
-                    cardWidth: 236,
+                    cardWidth: panelWidth - 34,
                     onConfirm: { runQuickClean() },
                     onCancel: { quickClean.cancelClean() }
                 )

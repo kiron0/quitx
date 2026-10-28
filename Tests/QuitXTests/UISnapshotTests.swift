@@ -163,16 +163,18 @@ extension PortListViewModelTests {
             for mode in StatsDetailModel.Mode.allCases {
                 model.mode = mode
                 let name = "stats-\(mode.rawValue.lowercased())"
-                try await snapshot(StatsDetailView(model: model), size: NSSize(width: 270, height: 700), name: name, dark: dark)
-                try await snapshot(StatsDetailView(model: model), size: NSSize(width: 270, height: 12 + model.contentHeight), name: name, dark: dark)
+                try await snapshot(StatsDetailView(model: model), size: NSSize(width: StatsDetailView.panelWidth(for: mode), height: 700), name: name, dark: dark)
+                try await snapshot(StatsDetailView(model: model), size: NSSize(width: StatsDetailView.panelWidth(for: mode), height: 12 + model.contentHeight), name: name, dark: dark)
             }
         }
         for dark in [true, false] {
             model.mode = .cleanup
             QuickCleanMonitor.shared.requestClean()
-            try await snapshot(StatsDetailView(model: model), size: NSSize(width: 270, height: 12 + model.contentHeight), name: "stats-cleanup-confirm", dark: dark)
+            try await snapshot(StatsDetailView(model: model), size: NSSize(width: StatsDetailView.panelWidth(for: .cleanup), height: 12 + model.contentHeight), name: "stats-cleanup-confirm", dark: dark)
         }
         #expect(QuickCleanMonitor.shared.confirmationShown)
+        #expect(StatsDetailView.panelWidth(for: .cleanup) == StatusItemController.popoverWidth)
+        #expect(StatsDetailView.panelWidth(for: .cpu) == 270)
         QuickCleanMonitor.shared.cancelClean()
         #expect(model.contentHeight > 200)
     }

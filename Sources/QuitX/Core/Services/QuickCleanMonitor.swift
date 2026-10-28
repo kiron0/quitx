@@ -88,11 +88,26 @@ final class QuickCleanMonitor: ObservableObject {
     }
 
     func apply(_ found: [QuickCleanGroup]) {
+        selection = Self.carriedSelection(
+            previous: selection,
+            previousKinds: lastScan == nil ? nil : Set(groups.map(\.kind)),
+            found: found
+        )
         groups = found
-        selection = QuickCleanService.defaultSelection(for: found)
         lastScan = Date()
         phase = .idle
         onChange?()
+    }
+
+    nonisolated static func carriedSelection(
+        previous: Set<QuickCleanGroup.Kind>,
+        previousKinds: Set<QuickCleanGroup.Kind>?,
+        found: [QuickCleanGroup]
+    ) -> Set<QuickCleanGroup.Kind> {
+        let defaults = QuickCleanService.defaultSelection(for: found)
+        guard let previousKinds else { return defaults }
+        let foundKinds = Set(found.map(\.kind))
+        return previous.intersection(foundKinds).union(defaults.subtracting(previousKinds))
     }
 
     func toggle(_ kind: QuickCleanGroup.Kind) {

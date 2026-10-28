@@ -224,9 +224,9 @@ final class UninstallViewModel: ObservableObject {
             var lastFlush = Date()
             for target in pending {
                 if Task.isCancelled { break }
-                let bytes = await Task.detached(priority: .utility) {
+                let bytes = await detachedCancellable(priority: .utility) {
                     AppUninstaller.measure(target.bundleURL).bytes
-                }.value
+                }
                 guard !Task.isCancelled else { break }
                 batch[target.id] = bytes
                 if Date().timeIntervalSince(lastFlush) >= 0.3 {
