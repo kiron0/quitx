@@ -72,7 +72,7 @@ final class StatsDetailModel: ObservableObject {
         stop()
         cpuLevels = SystemUsage.cpuTopology().levels
         if mode == .cleanup {
-            QuickCleanMonitor.shared.refreshIfStale(maxAge: QuickCleanMonitor.panelMaxAge)
+            QuickCleanMonitor.shared.refreshIfStale(maxAge: ConfigStore.shared.config.quickCleanOpenMaxAge)
         }
         tick()
         startLoop()
@@ -555,14 +555,6 @@ struct StatsDetailView: View {
             }
         }
         .frame(width: panelWidth, height: headerHeight + model.contentHeight, alignment: .top)
-        .arrowPopoverChrome(arrowX: model.arrowX, classicBackground: AnyView(QuitXTheme.popoverBackground))
-        .overlay(alignment: .bottom) {
-            if model.showToast {
-                ToastView(message: model.toastMessage, isError: model.toastIsError)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .padding(.bottom, 10)
-            }
-        }
         .overlay {
             if model.mode == .cleanup && quickClean.confirmationShown {
                 QuitConfirmationOverlay(
@@ -576,6 +568,14 @@ struct StatsDetailView: View {
                     onCancel: { quickClean.cancelClean() }
                 )
                 .transition(.opacity.combined(with: .scale(scale: 0.95)))
+            }
+        }
+        .arrowPopoverChrome(arrowX: model.arrowX, classicBackground: AnyView(QuitXTheme.popoverBackground))
+        .overlay(alignment: .bottom) {
+            if model.showToast {
+                ToastView(message: model.toastMessage, isError: model.toastIsError)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .padding(.bottom, 10)
             }
         }
         .animation(.easeInOut(duration: 0.2), value: model.showToast)

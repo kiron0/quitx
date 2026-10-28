@@ -167,6 +167,13 @@ extension PortListViewModelTests {
                 try await snapshot(StatsDetailView(model: model), size: NSSize(width: 270, height: 12 + model.contentHeight), name: name, dark: dark)
             }
         }
+        for dark in [true, false] {
+            model.mode = .cleanup
+            QuickCleanMonitor.shared.requestClean()
+            try await snapshot(StatsDetailView(model: model), size: NSSize(width: 270, height: 12 + model.contentHeight), name: "stats-cleanup-confirm", dark: dark)
+        }
+        #expect(QuickCleanMonitor.shared.confirmationShown)
+        QuickCleanMonitor.shared.cancelClean()
         #expect(model.contentHeight > 200)
     }
 

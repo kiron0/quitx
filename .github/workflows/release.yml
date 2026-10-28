@@ -115,12 +115,7 @@ jobs:
         run: |
           TAG="${{ steps.meta.outputs.tag }}"
           echo "Packaging QuitX-${TAG}.dmg..."
-          DMG_STAGE=".build/dmg-staging"
-          rm -rf "$DMG_STAGE"
-          mkdir -p "$DMG_STAGE"
-          cp -R .build/QuitX.app "$DMG_STAGE/"
-          ln -s /Applications "$DMG_STAGE/Applications"
-          hdiutil create -volname "QuitX" -srcfolder "$DMG_STAGE" -ov -format ULFO ".build/QuitX-${TAG}.dmg"
+          ./Scripts/make-dmg.sh .build/QuitX.app ".build/QuitX-${TAG}.dmg"
 
       - name: Create ZIP Archive
         run: |

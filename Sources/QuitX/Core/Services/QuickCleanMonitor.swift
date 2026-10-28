@@ -24,8 +24,6 @@ final class QuickCleanMonitor: ObservableObject {
     typealias Remover = @Sendable ([URL]) async -> AppUninstaller.RemovalResult
 
     static let shared = QuickCleanMonitor()
-    static let menuBarMaxAge: TimeInterval = 600
-    static let panelMaxAge: TimeInterval = 60
 
     @Published private(set) var groups: [QuickCleanGroup] = []
     @Published private(set) var selection: Set<QuickCleanGroup.Kind> = []

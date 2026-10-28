@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Testing
 @testable import QuitX
@@ -166,6 +167,80 @@ struct QuickCleanTests {
         #expect(result.trashed.isEmpty)
         #expect(result.failed.map(\.url) == [locked])
         #expect(fileManager.fileExists(atPath: locked.path))
+    }
+}
+
+extension QuickCleanTests {
+    @Test("Cleanup scan intervals default, round-trip and clamp")
+    func scanIntervals() throws {
+        let legacy = try JSONDecoder().decode(QuitXConfig.self, from: Data("{}".utf8))
+        #expect(legacy.quickCleanOpenRefreshSeconds == 60)
+        #expect(legacy.quickCleanBackgroundRefreshMinutes == 10)
+        #expect(legacy.quickCleanOpenMaxAge == 60)
+        #expect(legacy.quickCleanBackgroundMaxAge == 600)
+
+        var config = QuitXConfig.default
+        config.quickCleanOpenRefreshSeconds = 0
+        config.quickCleanBackgroundRefreshMinutes = 60
+        let decoded = try JSONDecoder().decode(QuitXConfig.self, from: JSONEncoder().encode(config))
+        #expect(decoded.quickCleanOpenMaxAge == 0)
+        #expect(decoded.quickCleanBackgroundMaxAge == 3_600)
+
+        let wild = #"{"quickCleanOpenRefreshSeconds": -5, "quickCleanBackgroundRefreshMinutes": 0}"#
+        let clamped = try JSONDecoder().decode(QuitXConfig.self, from: Data(wild.utf8))
+        #expect(clamped.quickCleanOpenRefreshSeconds == 0)
+        #expect(clamped.quickCleanBackgroundRefreshMinutes == 1)
+
+        #expect(QuitXConfig.quickCleanOpenRefreshChoices.contains(legacy.quickCleanOpenRefreshSeconds))
+        #expect(QuitXConfig.quickCleanBackgroundRefreshChoices.contains(legacy.quickCleanBackgroundRefreshMinutes))
+        #expect(GeneralTabView.quickCleanOpenTitle(0) == "Always")
+        #expect(GeneralTabView.quickCleanOpenTitle(300) == "5 min")
+        #expect(GeneralTabView.quickCleanBackgroundTitle(30) == "30 min")
+        #expect(GeneralTabView.quickCleanBackgroundTitle(60) == "1 hr")
+    }
+
+    @Test("A zero open interval rescans every time the window opens")
+    @MainActor
+    func zeroIntervalAlwaysRescans() async {
+        let scans = ScanCounter()
+        let monitor = QuickCleanMonitor(scanner: { await scans.bump(); return [] }, remover: { _ in AppUninstaller.RemovalResult() })
+        monitor.refreshIfStale(maxAge: 0)
+        await monitor.waitForWork()
+        monitor.refreshIfStale(maxAge: 0)
+        await monitor.waitForWork()
+        monitor.refreshIfStale(maxAge: 3_600)
+        await monitor.waitForWork()
+        #expect(await scans.count == 2)
+    }
+
+    @Test("Installer DMG assets match the Finder layout")
+    func dmgAssets() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let assets = root.appendingPathComponent("Support/DMG")
+        let small = try #require(NSImage(contentsOf: assets.appendingPathComponent("background.png")))
+        let large = try #require(NSImage(contentsOf: assets.appendingPathComponent("background@2x.png")))
+        let smallRep = try #require(small.representations.first)
+        let largeRep = try #require(large.representations.first)
+        #expect(smallRep.pixelsWide == 640 && smallRep.pixelsHigh == 380)
+        #expect(largeRep.pixelsWide == 1280 && largeRep.pixelsHigh == 760)
+        let settings = try String(contentsOf: assets.appendingPathComponent("dmg-settings.py"), encoding: .utf8)
+        #expect(settings.contains("window_rect = ((200, 160), (640, 380))"))
+        #expect(settings.contains("\"Applications\": (470, 215)"))
+        #expect(settings.contains("symlinks = {\"Applications\": \"/Applications\"}"))
+        let script = try String(contentsOf: root.appendingPathComponent("Scripts/make-dmg.sh"), encoding: .utf8)
+        #expect(script.contains("hdiutil create"))
+        #expect(FileManager.default.isExecutableFile(atPath: root.appendingPathComponent("Scripts/make-dmg.sh").path))
+    }
+}
+
+actor ScanCounter {
+    private(set) var count = 0
+
+    func bump() {
+        count += 1
     }
 }
 

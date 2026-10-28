@@ -611,7 +611,7 @@ final class StatusItemController: NSObject {
         let portKey = portCount.map(String.init) ?? "none"
         let showCleanup = statsOn && cfg.menuBarShowCleanup
         if showCleanup {
-            QuickCleanMonitor.shared.refreshIfStale(maxAge: QuickCleanMonitor.menuBarMaxAge)
+            QuickCleanMonitor.shared.refreshIfStale(maxAge: cfg.quickCleanBackgroundMaxAge)
         }
         let cleanupText = showCleanup ? Self.cleanupText(QuickCleanMonitor.shared.reclaimableBytes) : "off"
         let order = cfg.orderedMenuBarStats

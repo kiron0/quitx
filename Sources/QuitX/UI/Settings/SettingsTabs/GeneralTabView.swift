@@ -164,6 +164,54 @@ struct GeneralTabView: View {
                 HelpPopoverButton(text: "How often the menu bar stats and the stats window update, so both always show the same numbers. Slower means less work for your Mac. In Low Power Mode QuitX waits at least 5 seconds. 🐢⚡")
             }
 
+            row(label: "") {
+                HStack(spacing: 6) {
+                    Text("Cleanup scan")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.primary)
+                        .frame(width: 86, alignment: .leading)
+
+                    SettingsChoiceTiles(selection: Binding(
+                        get: { configStore.config.quickCleanOpenRefreshSeconds },
+                        set: {
+                            configStore.config.quickCleanOpenRefreshSeconds = $0
+                            configStore.save()
+                        }
+                    ), options: QuitXConfig.quickCleanOpenRefreshChoices.map {
+                        SettingsChoiceOption(value: $0, title: Self.quickCleanOpenTitle($0), symbol: $0 == 0 ? "bolt" : "clock")
+                    }, width: 390)
+                }
+                .disabled(!cleanupStatOn)
+                .opacity(cleanupStatOn ? 1.0 : 0.42)
+            } help: {
+                HelpPopoverButton(text: "When you open the Cleanup window, QuitX measures your caches again if the last scan is older than this. Always rescans on every open. 🧹🔍")
+            }
+
+            row(label: "") {
+                HStack(spacing: 6) {
+                    Text("Background scan")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.primary)
+                        .frame(width: 86, alignment: .leading)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    SettingsChoiceTiles(selection: Binding(
+                        get: { configStore.config.quickCleanBackgroundRefreshMinutes },
+                        set: {
+                            configStore.config.quickCleanBackgroundRefreshMinutes = $0
+                            configStore.save()
+                            StatusItemController.shared?.updateMenuBarStats()
+                        }
+                    ), options: QuitXConfig.quickCleanBackgroundRefreshChoices.map {
+                        SettingsChoiceOption(value: $0, title: Self.quickCleanBackgroundTitle($0), symbol: $0 <= 10 ? "speedometer" : "tortoise")
+                    }, width: 390)
+                }
+                .disabled(!cleanupStatOn)
+                .opacity(cleanupStatOn ? 1.0 : 0.42)
+            } help: {
+                HelpPopoverButton(text: "How often QuitX re-measures caches for the Cleanup size in the menu bar. Measuring reads a lot of small files, so a longer interval saves battery. 🔋🧹")
+            }
+
             if #available(macOS 26.0, *) {
                 row(label: "Appearance:") {
                     HStack(spacing: 18) {
@@ -253,6 +301,18 @@ struct GeneralTabView: View {
             }
         }
         .animation(.easeInOut(duration: 0.18), value: presentationState.showResetConfirmation)
+    }
+
+    private var cleanupStatOn: Bool {
+        configStore.config.showMenuBarStats && configStore.config.menuBarShowCleanup
+    }
+
+    static func quickCleanOpenTitle(_ seconds: Int) -> String {
+        seconds <= 0 ? "Always" : "\(seconds / 60) min"
+    }
+
+    static func quickCleanBackgroundTitle(_ minutes: Int) -> String {
+        minutes >= 60 ? "\(minutes / 60) hr" : "\(minutes) min"
     }
 
     private func refreshSymbol(_ seconds: Int) -> String {
