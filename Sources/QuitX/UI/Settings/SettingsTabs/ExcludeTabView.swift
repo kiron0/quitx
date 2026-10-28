@@ -64,7 +64,7 @@ struct ExcludeTabView: View {
 
                 HelpPopoverButton(text: section == .apps
                     ? "VIP velvet rope immunity! Apps on this list get total immunity from all manual quits, hotkeys, and automated sweeps. 🎟️🛡️"
-                    : "Keep your database, proxy or anything else safe from Kill. Add ports from the ones listening now, or type numbers and ranges like 8000-8010. 🔌🛡️")
+                    : "Sacred territory! Keep your database, dev server, or proxy safe from the guillotine. Add active ports or type ranges like 8000-8010. ⛩️🛡️")
             }
 
             Group {

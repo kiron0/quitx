@@ -90,7 +90,7 @@ struct ShortcutsTabView: View {
                     detail: "Bring the menu forward from anywhere.",
                     isEnabled: $sm.activateMenuEnabled,
                     keys: $sm.activateMenuKeys,
-                    help: "Opens the QuitX menu without reaching for the menu bar."
+                    help: "Summon QuitX like a wizard! Pops open the menu instantly so you don't have to haul your mouse all the way to the top menu bar. 🪄🎩"
                 )
             }
 
@@ -104,7 +104,7 @@ struct ShortcutsTabView: View {
                     detail: "Run the normal Quit action immediately.",
                     isEnabled: $sm.quitAllEnabled,
                     keys: $sm.quitAllKeys,
-                    help: "Quits the apps selected by QuitX using the normal macOS quit request."
+                    help: "Polite eviction notice! Gently asks selected apps to save their work, pack their bags, and exit gracefully. 🚪👋"
                 )
 
                 Divider()
@@ -118,7 +118,7 @@ struct ShortcutsTabView: View {
                     detail: "Stop unresponsive apps without waiting.",
                     isEnabled: $sm.forceQuitAllEnabled,
                     keys: $sm.forceQuitAllKeys,
-                    help: "Force quits the apps selected by QuitX. Use this when normal Quit cannot close an app."
+                    help: "No more Mr. Nice Guy. Instantly vaporizes frozen or rebellious apps that refuse to take a hint. ⚡️💥"
                 )
             }
 
@@ -132,7 +132,7 @@ struct ShortcutsTabView: View {
                     detail: "Jump straight to QuitX settings.",
                     isEnabled: $sm.openSettingsEnabled,
                     keys: $sm.openSettingsKeys,
-                    help: "Opens the QuitX Settings window from any app."
+                    help: "Beam straight to mission control! Jump into QuitX preferences from anywhere without clicking around. 🛸🎛️"
                 )
 
                 shortcutDivider
@@ -144,7 +144,7 @@ struct ShortcutsTabView: View {
                     detail: "Rescan running apps immediately.",
                     isEnabled: $sm.refreshAppsEnabled,
                     keys: $sm.refreshAppsKeys,
-                    help: "Refreshes QuitX's running app list without opening the menu."
+                    help: "Radar sweep! Forces QuitX to recount all your running apps in a flash so you always see what's actually running. 📡👀"
                 )
             }
 
@@ -158,7 +158,7 @@ struct ShortcutsTabView: View {
                     detail: "Open guides and feature explanations.",
                     isEnabled: $sm.openHelpEnabled,
                     keys: $sm.openHelpKeys,
-                    help: "Opens QuitX Help from anywhere."
+                    help: "SOS distress beacon! Pulls up guides, secrets, and answers right when you're scratching your head. 🆘📖"
                 )
 
                 shortcutDivider
@@ -170,7 +170,7 @@ struct ShortcutsTabView: View {
                     detail: "See the latest improvements and fixes.",
                     isEnabled: $sm.openChangelogEnabled,
                     keys: $sm.openChangelogKeys,
-                    help: "Opens the QuitX changelog."
+                    help: "Catch up on the gossip! Spills all the juicy details on new features, speedups, and bug fixes fresh out of the oven. 🗞️✨"
                 )
 
                 shortcutDivider
@@ -182,7 +182,7 @@ struct ShortcutsTabView: View {
                     detail: "Choose an app and remove its leftovers.",
                     isEnabled: $sm.openUninstallerEnabled,
                     keys: $sm.openUninstallerKeys,
-                    help: "Opens the app uninstaller picker."
+                    help: "The spring cleaning shortcut! Jumps straight to uninstaller so you can purge unwanted apps and their sneaky leftover files. 🧹🗑️"
                 )
             }
 
