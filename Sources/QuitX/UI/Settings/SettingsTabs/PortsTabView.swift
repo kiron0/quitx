@@ -41,12 +41,6 @@ struct PortsTabView: View {
                     HelpPopoverButton(text: "Show UDP sockets next to TCP listeners. UDP adds system and local network services, so the list gets longer.")
                 }
 
-                row(label: "Menu Bar:") {
-                    toggle("Show listening port count", isOn: binding(\.portsShowMenuBarCount))
-                } help: {
-                    HelpPopoverButton(text: "Shows how many ports are listening next to the QuitX icon, kept current in the background.")
-                }
-
                 row(label: "Group By:") {
                     SettingsChoiceTiles(selection: binding(\.portsGrouping), options: [
                         SettingsChoiceOption(value: .none, title: "None", symbol: "list.bullet"),

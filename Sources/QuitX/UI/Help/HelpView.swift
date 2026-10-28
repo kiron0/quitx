@@ -185,7 +185,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Menu bar count and diagnostics",
-                    body: "Show listening port count adds the number of listening ports to the menu bar stats, next to CPU, memory and battery, kept current in the background. Click it to open the Ports tab. Settings > Exclude has a Ports tab while port killing is on: Add Ports… excludes ports picked from the ones listening now or typed by hand, like 3000, 5173 or 8000-8010. The gear menu can export redacted diagnostics or copy recent listener history; tokens and passwords in commands are removed."
+                    body: "The Ports chip in Settings > General adds the number of listening ports to the menu bar stats, next to CPU, memory and battery, kept current in the background. It appears while port killing is on. Click it to open the Ports tab. Settings > Exclude has a Ports tab while port killing is on: Add Ports… excludes ports picked from the ones listening now or typed by hand, like 3000, 5173 or 8000-8010. The gear menu can export redacted diagnostics or copy recent listener history; tokens and passwords in commands are removed."
                 )
             ]
         ),

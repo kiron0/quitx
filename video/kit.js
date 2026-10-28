@@ -334,7 +334,6 @@
       r('Port Killing:', cb('Enable port killing', on), { hl: o.hl === 'enable' }),
       r('Refresh:', tiles([{ t: '1 sec', i: T.fast }, { t: '2 sec', i: T.gauge }, { t: '3 sec', i: T.gauge, on: true }, { t: '5 sec', i: T.gauge }, { t: '10 sec', i: T.slow }], { small: true }), d),
       r('Discovery:', cb('Include UDP listeners', false), d),
-      r('Menu Bar:', cb('Show listening port count', o.count !== false), { dim: !on, hl: o.hl === 'count' }),
       r('Group By:', tiles([{ t: 'None', i: T.list, on: true }, { t: 'Project', i: T.folder }, { t: 'Docker', i: T.docker }, { t: 'Process', i: T.branch }], { small: true }), d),
       r('Sort:', tiles([{ t: 'Port Low', i: T.arrowUp, on: true }, { t: 'Port High', i: T.arrowDown }, { t: 'Name', i: T.abc }, { t: 'Memory', i: T.mem }, { t: 'CPU', i: S.cpu }], { small: true }), d),
       r('Default:', tiles([{ t: 'Kill', i: S.power, on: true }, { t: 'Force Kill', i: T.fast }], { small: true }), d),

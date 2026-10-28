@@ -899,7 +899,7 @@
             content = QX.aboutTab();
           } else if (t >= T.stPorts) {
             tab = "Ports";
-            content = QX.portSettings({ enabled: true, count: true });
+            content = QX.portSettings({ enabled: true });
           }
           const sideScroll = lerp(
             lerp(0, QX.sideShift("Ports"), prog(t, T.stPorts - 0.9, T.stPorts - 0.3, ease)),
