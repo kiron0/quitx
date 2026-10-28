@@ -685,7 +685,7 @@ final class StatusItemController: NSObject {
             )
         }
         let cleanupAttr: NSAttributedString? = showCleanup ? Self.statSegmentTitle(
-            symbolNames: ["sparkles", "trash"],
+            symbolNames: [QuickCleanService.symbolName, "trash"],
             fallback: "CLEAN",
             text: cleanupText,
             style: cfg.menuBarStatStyle

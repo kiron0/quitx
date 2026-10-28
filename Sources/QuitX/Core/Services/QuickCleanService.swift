@@ -47,6 +47,9 @@ struct QuickCleanGroup: Identifiable, Equatable, Sendable {
 }
 
 enum QuickCleanService {
+    static let symbolName = "bubbles.and.sparkles"
+    static let filledSymbolName = "bubbles.and.sparkles.fill"
+
     static func scan(
         home: URL = FileManager.default.homeDirectoryForCurrentUser,
         now: Date = Date()

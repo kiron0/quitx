@@ -5,6 +5,13 @@ import Testing
 
 @Suite("Quick clean")
 struct QuickCleanTests {
+    @Test("Quick Clean symbols exist and differ from What's New")
+    func symbolsResolve() {
+        #expect(NSImage(systemSymbolName: QuickCleanService.symbolName, accessibilityDescription: nil) != nil)
+        #expect(NSImage(systemSymbolName: QuickCleanService.filledSymbolName, accessibilityDescription: nil) != nil)
+        #expect(QuickCleanService.symbolName != "sparkles")
+    }
+
     private static func makeHome() throws -> URL {
         let fileManager = FileManager.default
         let home = fileManager.temporaryDirectory.appendingPathComponent("quitx-quick-\(UUID().uuidString)")

@@ -613,7 +613,7 @@ struct StatsDetailView: View {
         let busy = quickClean.phase != .idle
         let canClean = !busy && quickClean.selectedBytes > 0
         return VStack(alignment: .leading, spacing: 10) {
-            windowTitleHeader(title: "Quick Clean", symbol: "sparkles")
+            windowTitleHeader(title: "Quick Clean", symbol: QuickCleanService.symbolName)
 
             card {
                 HStack(spacing: 11) {
@@ -625,7 +625,7 @@ struct StatsDetailView: View {
                             ProgressView()
                                 .controlSize(.small)
                         } else {
-                            Image(systemName: "sparkles")
+                            Image(systemName: QuickCleanService.filledSymbolName)
                                 .font(.system(size: 19, weight: .semibold))
                                 .foregroundStyle(QuitXTheme.accent)
                         }
