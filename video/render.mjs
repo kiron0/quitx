@@ -23,14 +23,14 @@ const fps = 30;
 
 let browser;
 try {
-  browser = await playwright.chromium.launch();
+  browser = await playwright.chromium.launch({ args: ['--disable-partial-raster', '--disable-gpu-rasterization'] });
 } catch (error) {
   const systemBrowser = [
     '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
     '/Applications/Chromium.app/Contents/MacOS/Chromium',
   ].find(existsSync);
   if (!systemBrowser) throw error;
-  browser = await playwright.chromium.launch({ executablePath: systemBrowser });
+  browser = await playwright.chromium.launch({ executablePath: systemBrowser, args: ['--disable-partial-raster', '--disable-gpu-rasterization'] });
 }
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 4 / 3 });
 await page.goto('file://' + resolve(here, 'demo.html'));
@@ -46,6 +46,7 @@ if (stills) {
   mkdirSync(resolve(here, 'stills'), { recursive: true });
   for (const t of stills) {
     await page.evaluate(t => window.render(t), t);
+    await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
     writeFileSync(resolve(here, `stills/t${t}.png`), await page.screenshot());
   }
   await browser.close();
@@ -66,6 +67,7 @@ const ffmpeg = spawn('ffmpeg', [
 const frames = Math.round(total * fps);
 for (let i = 0; i < frames; i++) {
   await page.evaluate(t => window.render(t), i / fps);
+  await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
   const buf = await page.screenshot({ type: 'jpeg', quality: 92 });
   if (!ffmpeg.stdin.write(buf)) await new Promise(r => ffmpeg.stdin.once('drain', r));
   if (i % 60 === 0) process.stdout.write(`frame ${i}/${frames}\r`);
