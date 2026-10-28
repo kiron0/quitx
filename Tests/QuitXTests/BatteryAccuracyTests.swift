@@ -300,8 +300,7 @@ struct BatteryAccuracyTests {
     @Test("SMC values decode flt, sp78 and fpe2")
     func smcDecoding() {
         #expect(SMCReader.fourCharCode("TB0T") == 0x5442_3054)
-        let float = Float(41.5).bitPattern
-        let floatBytes = [UInt8(float & 0xFF), UInt8((float >> 8) & 0xFF), UInt8((float >> 16) & 0xFF), UInt8(float >> 24)]
+        let floatBytes: [UInt8] = withUnsafeBytes(of: Float(41.5).bitPattern.littleEndian) { Array($0) }
         #expect(SMCReader.decode(type: "flt ", bytes: floatBytes) == 41.5)
         #expect(SMCReader.decode(type: "sp78", bytes: [0x1E, 0x80]) == 30.5)
         #expect(SMCReader.decode(type: "fpe2", bytes: [0x00, 0x08]) == 2)

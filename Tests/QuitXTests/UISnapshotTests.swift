@@ -78,6 +78,18 @@ extension PortListViewModelTests {
         #expect(ports.hasLoadedOnce)
     }
 
+    private static func wave(base: Double, amplitude: Double, period: Double, step: Double) -> [Double] {
+        var values: [Double] = []
+        values.reserveCapacity(90)
+        for index in 0..<90 {
+            let position = Double(index)
+            let swing: Double = amplitude * sin(position / period)
+            let ripple: Double = step * Double(index % 7)
+            values.append(base + swing + ripple)
+        }
+        return values
+    }
+
     @Test("Render every stats window mode for marketing mockups")
     func renderStatsPanels() async throws {
         guard Self.snapshotDirectory != nil else { return }
@@ -100,7 +112,7 @@ extension PortListViewModelTests {
         ]
         model.load1 = 2.41
         model.uptime = "3 days, 4 hrs"
-        model.cpuHistory = (0..<90).map { 18 + 9 * sin(Double($0) / 6) + Double($0 % 7) }
+        model.cpuHistory = Self.wave(base: 18, amplitude: 9, period: 6, step: 1)
         model.memTotal = 8 * gib
         model.memApp = 3 * gib + gib / 4
         model.memWired = gib + gib / 5
@@ -108,7 +120,7 @@ extension PortListViewModelTests {
         model.memCached = 2 * gib
         model.memFree = gib / 3
         model.swapUsed = gib / 4
-        model.memHistory = (0..<90).map { 62 + 4 * sin(Double($0) / 9) }
+        model.memHistory = Self.wave(base: 62, amplitude: 4, period: 9, step: 0)
         model.gpu = GpuUsageService.Snapshot(
             deviceUtilization: 18,
             rendererUtilization: 15,
@@ -119,7 +131,7 @@ extension PortListViewModelTests {
             deviceName: "Apple M1",
             isAvailable: true
         )
-        model.gpuHistory = (0..<90).map { 14 + 6 * sin(Double($0) / 5) }
+        model.gpuHistory = Self.wave(base: 14, amplitude: 6, period: 5, step: 0)
         model.battery = BatterySnapshot(
             percent: 82,
             isCharging: false,

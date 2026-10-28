@@ -60,14 +60,19 @@ enum SMCReader {
         switch type {
         case "flt ":
             guard bytes.count >= 4 else { return nil }
-            let bits = UInt32(bytes[0]) | UInt32(bytes[1]) << 8 | UInt32(bytes[2]) << 16 | UInt32(bytes[3]) << 24
+            var bits: UInt32 = 0
+            for (offset, byte) in bytes.prefix(4).enumerated() {
+                bits |= UInt32(byte) << UInt32(offset * 8)
+            }
             return Double(Float(bitPattern: bits))
         case "sp78":
             guard bytes.count >= 2 else { return nil }
-            return Double(Int16(bitPattern: UInt16(bytes[0]) << 8 | UInt16(bytes[1]))) / 256
+            let raw: UInt16 = (UInt16(bytes[0]) << 8) | UInt16(bytes[1])
+            return Double(Int16(bitPattern: raw)) / 256
         case "fpe2":
             guard bytes.count >= 2 else { return nil }
-            return Double(UInt16(bytes[0]) << 8 | UInt16(bytes[1])) / 4
+            let raw: UInt16 = (UInt16(bytes[0]) << 8) | UInt16(bytes[1])
+            return Double(raw) / 4
         default:
             return nil
         }
