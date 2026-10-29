@@ -88,7 +88,14 @@ enum CleanupService {
                 category: category
             )
         case .trashBins:
-            items = topLevelItems(roots: [home.appendingPathComponent(".Trash")], category: category)
+            let volumes = home.path == FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL.path ? volumeTrashRoots() : []
+            items = topLevelItems(
+                roots: trashRoots(home: home, volumeTrashes: volumes),
+                category: category,
+                excludingNames: trashIgnoredNames,
+                includeHidden: true,
+                minimumBytes: 0
+            )
         case .largeOldFiles:
             items = largeAndOldFiles(home: home, now: now)
         case .aiApps:
@@ -145,11 +152,32 @@ enum CleanupService {
             }
     }
 
+    static let trashIgnoredNames: Set<String> = [".ds_store", ".localized"]
+
+    static func trashRoots(home: URL, volumeTrashes: [URL]) -> [URL] {
+        let roots = [
+            home.appendingPathComponent(".Trash"),
+            home.appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs/.Trash")
+        ] + volumeTrashes
+        var seen = Set<String>()
+        return roots.filter { seen.insert($0.standardizedFileURL.path).inserted }
+    }
+
+    static func volumeTrashRoots(fileManager: FileManager = .default) -> [URL] {
+        let volumes = fileManager.mountedVolumeURLs(includingResourceValuesForKeys: nil, options: [.skipHiddenVolumes]) ?? []
+        return volumes
+            .map(\.standardizedFileURL)
+            .filter { $0.path.hasPrefix("/Volumes/") }
+            .map { $0.appendingPathComponent(".Trashes/\(getuid())", isDirectory: true) }
+    }
+
     static func topLevelItems(
         roots: [URL],
         category: CleanupCategory,
         excludingNames: Set<String> = [],
-        ownedByCurrentUserOnly: Bool = false
+        ownedByCurrentUserOnly: Bool = false,
+        includeHidden: Bool = false,
+        minimumBytes: Int64 = 1
     ) -> [CleanupItem] {
         let fileManager = FileManager.default
         var items: [CleanupItem] = []
@@ -158,12 +186,12 @@ enum CleanupService {
             guard let children = try? fileManager.contentsOfDirectory(
                 at: root,
                 includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey, .contentModificationDateKey],
-                options: [.skipsHiddenFiles]
+                options: includeHidden ? [] : [.skipsHiddenFiles]
             ) else { continue }
             for child in children where !excludingNames.contains(child.lastPathComponent.lowercased()) {
                 if Task.isCancelled { break }
                 if ownedByCurrentUserOnly && !isOwnedByCurrentUser(child) { continue }
-                if let item = makeItem(child, category: category, selected: true, minimumBytes: 1) {
+                if let item = makeItem(child, category: category, selected: true, minimumBytes: minimumBytes) {
                     items.append(item)
                 }
             }

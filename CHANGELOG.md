@@ -11,6 +11,10 @@ All notable changes to QuitX macOS App will be documented in this file.
 - **Playful Settings Tooltips**: Converted plain, technical descriptions across Shortcuts, Ports, and Exclusions into engaging, humorous tooltips with emoji icons.
 - **Quick Clean Icon**: Quick Clean uses `bubbles.and.sparkles` instead of `sparkles`, keeping sparkles reserved for What's New.
 
+### Fixed
+
+- **Complete Trash List**: Trash Bins and Quick Clean missed items that Finder's Trash shows: empty files and folders (anything under 1 byte was skipped), hidden files, items deleted from iCloud Drive (`~/Library/Mobile Documents/com~apple~CloudDocs/.Trash`), and items deleted from external drives (`/Volumes/<drive>/.Trashes/<uid>`). Removal from a drive's Trash is allowed only inside your own `.Trashes/<uid>` folder. The Trash page also rescans every time you open it instead of showing an old scan, and other cleanup pages rescan when their last scan is over a minute old.
+
 ### Removed
 
 - **Legacy Settings**: Dropped the unused `quitOnScreenLock` option and the old fallback that turned on CPU, Memory and GPU menu bar stats from `showMenuBarStats` when a saved config had no per-stat flags. Missing flags now use their defaults.

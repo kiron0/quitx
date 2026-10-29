@@ -20,6 +20,7 @@ final class CleanupViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var resultMessage: String?
     private var task: Task<Void, Never>?
+    private(set) var scannedAt: Date?
 
     init(category: CleanupCategory) {
         self.category = category
@@ -45,7 +46,22 @@ final class CleanupViewModel: ObservableObject {
             guard !Task.isCancelled else { return }
             items = found
             selected = Set(found.filter(\.isSelectedByDefault).map(\.id))
+            scannedAt = Date()
             phase = .ready
+        }
+    }
+
+    func refreshIfStale(now: Date = Date()) {
+        switch phase {
+        case .idle:
+            scan()
+        case .ready:
+            guard !confirmationShown else { return }
+            let maxAge: TimeInterval = category == .trashBins ? 0 : 60
+            if let scannedAt, now.timeIntervalSince(scannedAt) < maxAge { return }
+            scan()
+        case .scanning, .removing:
+            return
         }
     }
 
@@ -197,7 +213,7 @@ struct CleanupTabView: View {
         .animation(.easeInOut(duration: 0.18), value: model.confirmationShown)
         .animation(.easeInOut(duration: 0.18), value: model.phase == .removing)
         .onAppear {
-            if model.phase == .idle { model.scan() }
+            model.refreshIfStale()
         }
     }
 

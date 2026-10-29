@@ -485,7 +485,15 @@ enum AppUninstaller {
             homePath + "/",
             rawHomePath + "/"
         ]
-        return allowedPrefixes.contains(where: path.hasPrefix) || allowedPrefixes.contains(where: rawPath.hasPrefix)
+        return allowedPrefixes.contains(where: path.hasPrefix)
+            || allowedPrefixes.contains(where: rawPath.hasPrefix)
+            || isInsideVolumeTrash(path)
+    }
+
+    static func isInsideVolumeTrash(_ path: String, uid: uid_t = getuid()) -> Bool {
+        let parts = path.split(separator: "/", omittingEmptySubsequences: true)
+        guard parts.count >= 5, parts[0] == "Volumes", parts[2] == ".Trashes", parts[3] == "\(uid)" else { return false }
+        return !parts[4...].contains("..")
     }
 
     static func removePermanently(_ urls: [URL], allowAdministrator: Bool = true) async -> RemovalResult {

@@ -7,7 +7,8 @@ extension ChangelogProvider {
                 "**Popover Opens Where You Clicked**: The QuitX icon always opens Apps, and the Ports menu bar stat opens just your ports right below it. Click it again to close.",
                 "**Single-Box Changelog**: Release notes in What's New now live in a single unified box with fixed header and footer navigation.",
                 "**Playful Settings Tooltips**: Added humorous tooltips and emoji icons across Shortcuts, Ports, and Exclusions tabs.",
-                "**Quick Clean Icon**: Quick Clean now uses bubbles and sparkles, keeping sparkles reserved for What's New."
+                "**Quick Clean Icon**: Quick Clean now uses bubbles and sparkles, keeping sparkles reserved for What's New.",
+                "**Complete Trash List**: Trash Bins and Quick Clean now show everything in your Trash, including empty items, hidden files, and files deleted from iCloud Drive or external drives."
             ])
         ]),
 
