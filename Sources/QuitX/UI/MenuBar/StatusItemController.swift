@@ -45,6 +45,7 @@ final class StatusItemController: NSObject {
     private var refreshTask: Task<Void, Never>?
     private var liveMonitoringTask: Task<Void, Never>?
     private var lastCloseTimestamp: Date = .distantPast
+    private var lastClosedPortsOnly: Bool = false
     private var openTimestamp: Date = .distantPast
     private var workspaceObservers: [NSObjectProtocol] = []
     private var backgroundRefreshTask: Task<Void, Never>?
@@ -433,10 +434,17 @@ final class StatusItemController: NSObject {
 
         if event.type == .rightMouseDown || event.type == .rightMouseUp {
             showContextMenu()
-        } else if isShown && AppListViewModel.shared.isPortsOnly {
+            return
+        }
+
+        let wasShowingPorts = (isShown && AppListViewModel.shared.isPortsOnly)
+            || (lastClosedPortsOnly && Date().timeIntervalSince(lastCloseTimestamp) < 0.25)
+
+        if wasShowingPorts {
+            lastClosedPortsOnly = false
             showPopover(tab: .apps)
         } else {
-            togglePopover()
+            togglePopover(tab: .apps)
         }
     }
 
@@ -446,6 +454,7 @@ final class StatusItemController: NSObject {
         PortListViewModel.shared.pendingKillConfirmation = nil
         if isShown {
             lastCloseTimestamp = Date()
+            lastClosedPortsOnly = AppListViewModel.shared.isPortsOnly
         }
         stopLiveMonitoring()
         removeOutsideClickMonitor()
@@ -456,10 +465,12 @@ final class StatusItemController: NSObject {
     @MainActor
     func showPopover(tab: PopoverTab = .apps) {
         lastCloseTimestamp = .distantPast
+        lastClosedPortsOnly = false
         if !isShown {
             togglePopover(tab: tab)
         } else {
             AppListViewModel.shared.open(tab)
+            openTimestamp = Date()
             if !NSApp.isActive {
                 NSApp.activate(ignoringOtherApps: true)
             }
@@ -768,7 +779,11 @@ final class StatusItemController: NSObject {
         let hit = segmentMetrics.hit(atOffset: NSEvent.mouseLocation.x - contentStartX)
         if hit?.stat == .ports {
             StatsDetailController.shared.close()
-            if isShown && AppListViewModel.shared.isPortsOnly {
+            let wasShowingPorts = (isShown && AppListViewModel.shared.isPortsOnly)
+                || (lastClosedPortsOnly && Date().timeIntervalSince(lastCloseTimestamp) < 0.25)
+
+            if wasShowingPorts {
+                lastClosedPortsOnly = false
                 closePopover()
             } else {
                 showPopover(tab: .ports)
@@ -1048,14 +1063,19 @@ final class StatusItemController: NSObject {
             }
 
             let popupWindow = self.window
-            let statusWindow = self.statusItem.button?.window
-            let statsWindow = self.statsButton?.window
-            if event.window !== popupWindow, event.window !== statusWindow, event.window !== statsWindow {
+            if event.window !== popupWindow, !self.isOnStatusButton(NSEvent.mouseLocation) {
                 if Date().timeIntervalSince(self.openTimestamp) >= 0.25 {
                     self.closePopover()
                 }
             }
             return event
+        }
+    }
+
+    private func isOnStatusButton(_ point: NSPoint) -> Bool {
+        [statusItem.button, statsButton].contains { button in
+            guard let button, let buttonWindow = button.window else { return false }
+            return buttonWindow.convertToScreen(button.bounds).contains(point)
         }
     }
 
@@ -1087,19 +1107,8 @@ final class StatusItemController: NSObject {
                 return
             }
 
-            if let button = self.statusItem.button, let buttonWindow = button.window {
-                let mouseLoc = NSEvent.mouseLocation
-                let buttonScreenFrame = buttonWindow.convertToScreen(button.bounds)
-                if buttonScreenFrame.contains(mouseLoc) {
-                    return
-                }
-            }
-            if let statsButton = self.statsButton, let buttonWindow = statsButton.window {
-                let mouseLoc = NSEvent.mouseLocation
-                let buttonScreenFrame = buttonWindow.convertToScreen(statsButton.bounds)
-                if buttonScreenFrame.contains(mouseLoc) {
-                    return
-                }
+            if self.isOnStatusButton(NSEvent.mouseLocation) {
+                return
             }
 
             Task { @MainActor in
