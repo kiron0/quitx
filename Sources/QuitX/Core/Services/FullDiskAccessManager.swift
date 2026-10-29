@@ -15,9 +15,6 @@ final class FullDiskAccessManager: ObservableObject {
         startObserving()
     }
 
-    /// Check if Full Disk Access is granted by attempting a real read of a TCC-protected file.
-    /// Uses FileHandle/Data and contentsOfDirectory rather than fileExists/isReadableFile,
-    /// because metadata lookups short-circuit before macOS TCC evaluates the request.
     nonisolated static func checkFullDiskAccess() -> Bool {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         let probes = [
@@ -54,7 +51,6 @@ final class FullDiskAccessManager: ObservableObject {
         }
     }
 
-    /// Touches TCC-gated paths on launch so macOS registers QuitX in the Privacy & Security > Full Disk Access list.
     nonisolated func triggerRegistration() {
         Task.detached(priority: .utility) {
             let home = FileManager.default.homeDirectoryForCurrentUser.path
@@ -126,7 +122,6 @@ final class FullDiskAccessManager: ObservableObject {
         pollTimer = nil
     }
 
-    /// Opens System Settings directly to Privacy & Security -> Full Disk Access pane.
     func openFullDiskAccessSettings() {
         startPolling()
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") {
@@ -134,13 +129,11 @@ final class FullDiskAccessManager: ObservableObject {
         }
     }
 
-    /// Reveals QuitX.app in Finder so user can easily drag the bundle into System Settings if not auto-listed.
     func revealAppInFinder() {
         let bundleURL = Bundle.main.bundleURL
         NSWorkspace.shared.activateFileViewerSelecting([bundleURL])
     }
 
-    /// Opens System Settings and reveals QuitX in Finder side-by-side.
     func openSettingsAndReveal() {
         openFullDiskAccessSettings()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in

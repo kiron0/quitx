@@ -58,8 +58,6 @@ final class LeftoversViewModel: ObservableObject {
         }
     }
 
-    // Selection handled by visible items below
-
     @Published var searchText: String = "" {
         didSet { if searchText != oldValue { refilter() } }
     }

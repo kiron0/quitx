@@ -67,21 +67,17 @@ struct ChangelogTests {
         let currentVersion = UpdateChecker.shared.currentVersion
         let controller = ChangelogWindowController.shared
 
-        // 1. Brand new first launch: firstLaunchSeen is false
         defaults.set(false, forKey: QuitXConstants.UserDefaultsKeys.firstLaunchSeen)
         defaults.removeObject(forKey: QuitXConstants.UserDefaultsKeys.lastSeenVersion)
         controller.showIfUpdated(defaults: defaults)
 
-        // Must record current version so it won't pop over welcome window
         #expect(defaults.string(forKey: QuitXConstants.UserDefaultsKeys.lastSeenVersion) == currentVersion)
 
-        // 2. Already on same version: no update
         defaults.set(true, forKey: QuitXConstants.UserDefaultsKeys.firstLaunchSeen)
         defaults.set(currentVersion, forKey: QuitXConstants.UserDefaultsKeys.lastSeenVersion)
         controller.showIfUpdated(defaults: defaults)
         #expect(defaults.string(forKey: QuitXConstants.UserDefaultsKeys.lastSeenVersion) == currentVersion)
 
-        // 3. User updated from older version
         defaults.set("1.0.0", forKey: QuitXConstants.UserDefaultsKeys.lastSeenVersion)
         controller.showIfUpdated(defaults: defaults)
         #expect(defaults.string(forKey: QuitXConstants.UserDefaultsKeys.lastSeenVersion) == currentVersion)
