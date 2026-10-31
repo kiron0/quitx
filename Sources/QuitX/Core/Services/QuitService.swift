@@ -58,7 +58,7 @@ final class QuitService {
         )
         let rootURL = Self.rootBundleURL(for: app)
 
-        var helperPids: Set<pid_t> = []
+        var helperPaths: [pid_t: String] = [:]
         if let bundleId = app.bundleId, let rootURL {
             let workspaceApps = NSWorkspace.shared.runningApplications
             let siblingInstances = Set(workspaceApps.compactMap { running -> pid_t? in
@@ -71,27 +71,16 @@ final class QuitService {
                       url == rootURL else { return nil }
                 return running.processIdentifier
             })
-            for running in workspaceApps {
-                guard !running.isTerminated else { continue }
-                guard let path = running.executableURL?.path ?? running.bundleURL?.path,
-                      Self.isExecutablePath(path, insideContentsOf: rootURL) else { continue }
-                let pid = running.processIdentifier
-                guard Self.processIsRunning(pid) else { continue }
-                guard !knownPids.contains(pid) else { continue }
-                guard Self.helperBelongsToTarget(
-                    pid: pid,
-                    targetPids: knownPids,
-                    siblingInstancePids: siblingInstances
-                ) else { continue }
-                helperPids.insert(pid)
-            }
-            for (pid, path) in AppListService.runningProcessPaths() where pid > 0 {
-                guard !knownPids.contains(pid), !helperPids.contains(pid), !siblingInstances.contains(pid) else { continue }
-                guard Self.isExecutablePath(path, insideContentsOf: rootURL) else { continue }
-                guard ProcessTree.isDescendant(pid, ofAny: knownPids) else { continue }
-                helperPids.insert(pid)
-            }
+            helperPaths = Self.helperProcesses(
+                targetPids: knownPids,
+                siblingInstancePids: siblingInstances,
+                rootURL: rootURL,
+                processPaths: AppListService.runningProcessPaths().filter { Self.processIsRunning($0.key) },
+                includeOutsideBundle: force,
+                ownPid: getpid()
+            )
         }
+        let helperPids = Set(helperPaths.keys)
 
         guard !knownPids.isEmpty || !helperPids.isEmpty else {
             return QuitResult(app: app, success: false, forced: false, error: "App not found")
@@ -103,11 +92,15 @@ final class QuitService {
         var pendingApps: [(pid: pid_t, isHelper: Bool)] = []
         var pendingRawPids: [(pid: pid_t, isHelper: Bool)] = []
 
+        func helperIdentityMatches(_ pid: pid_t) -> Bool {
+            guard let expected = helperPaths[pid], let path = Self.executablePath(pid: pid) else { return false }
+            return path == expected
+        }
+
         func targetIsRunning(_ pid: pid_t, isHelper: Bool) -> Bool {
             guard Self.processIsRunning(pid) else { return false }
             if isHelper {
-                guard let rootURL, let path = Self.executablePath(pid: pid) else { return false }
-                return Self.isExecutablePath(path, insideContentsOf: rootURL)
+                return helperIdentityMatches(pid)
             }
             if let running = NSRunningApplication(processIdentifier: pid) {
                 return Self.matches(running: running, app: app)
@@ -125,9 +118,7 @@ final class QuitService {
                         return
                     }
                 } else {
-                    guard let rootURL,
-                          let path = running.executableURL?.path ?? running.bundleURL?.path,
-                          Self.isExecutablePath(path, insideContentsOf: rootURL) else { return }
+                    guard helperIdentityMatches(pid) else { return }
                 }
                 guard Self.processIsRunning(pid) else { return }
                 let accepted = force ? running.forceTerminate() : running.terminate()
@@ -148,8 +139,15 @@ final class QuitService {
                     pendingRawPids.append((pid, isHelper))
                 }
             } else if Self.processIsRunning(pid) {
-                if let rootURL, let path = Self.executablePath(pid: pid),
-                   Self.isExecutablePath(path, insideContentsOf: rootURL) {
+                let identityMatches: Bool
+                if isHelper {
+                    identityMatches = helperIdentityMatches(pid)
+                } else if let rootURL, let path = Self.executablePath(pid: pid) {
+                    identityMatches = Self.isExecutablePath(path, insideContentsOf: rootURL)
+                } else {
+                    identityMatches = false
+                }
+                if identityMatches {
                     if force {
                         Darwin.kill(pid, SIGKILL)
                     } else {
@@ -268,6 +266,31 @@ final class QuitService {
     }
 
     static let backgroundRetryAttempts: Set<Int> = [15, 30]
+
+    static func helperProcesses(
+        targetPids: Set<pid_t>,
+        siblingInstancePids: Set<pid_t>,
+        rootURL: URL,
+        processPaths: [pid_t: String],
+        includeOutsideBundle: Bool,
+        ownPid: pid_t,
+        isDescendant: (pid_t, Set<pid_t>) -> Bool = { ProcessTree.isDescendant($0, ofAny: $1) }
+    ) -> [pid_t: String] {
+        guard !targetPids.isEmpty else { return [:] }
+        var helpers: [pid_t: String] = [:]
+        for (pid, path) in processPaths where pid > 1 && pid != ownPid {
+            guard !targetPids.contains(pid), !siblingInstancePids.contains(pid) else { continue }
+            let insideBundle = isExecutablePath(path, insideContentsOf: rootURL)
+            if isDescendant(pid, targetPids) {
+                guard insideBundle || includeOutsideBundle else { continue }
+                helpers[pid] = path
+            } else if insideBundle,
+                      helperBelongsToTarget(pid: pid, targetPids: targetPids, siblingInstancePids: siblingInstancePids, isDescendant: isDescendant) {
+                helpers[pid] = path
+            }
+        }
+        return helpers
+    }
 
     static func helperBelongsToTarget(
         pid: pid_t,

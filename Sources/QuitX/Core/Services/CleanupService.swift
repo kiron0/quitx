@@ -88,14 +88,18 @@ enum CleanupService {
                 category: category
             )
         case .trashBins:
-            let volumes = home.path == FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL.path ? volumeTrashRoots() : []
+            let isCurrentUserHome = home.path == FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL.path
+            let volumes = isCurrentUserHome ? volumeTrashRoots() : []
+            let roots = trashRoots(home: home, volumeTrashes: volumes)
             items = topLevelItems(
-                roots: trashRoots(home: home, volumeTrashes: volumes),
+                roots: roots,
                 category: category,
                 excludingNames: trashIgnoredNames,
                 includeHidden: true,
                 minimumBytes: 0
-            )
+            ) + (isCurrentUserHome && !canListDirectory(home.appendingPathComponent(".Trash"))
+                ? finderTrashItems(roots: roots, category: category)
+                : [])
         case .largeOldFiles:
             items = largeAndOldFiles(home: home, now: now)
         case .aiApps:
@@ -161,6 +165,49 @@ enum CleanupService {
         ] + volumeTrashes
         var seen = Set<String>()
         return roots.filter { seen.insert($0.standardizedFileURL.path).inserted }
+    }
+
+    static func canListDirectory(_ url: URL) -> Bool {
+        do {
+            _ = try FileManager.default.contentsOfDirectory(atPath: url.path)
+            return true
+        } catch {
+            return !FileManager.default.fileExists(atPath: url.path)
+        }
+    }
+
+    static func finderTrashItems(roots: [URL], category: CleanupCategory) -> [CleanupItem] {
+        guard !Task.isCancelled, let paths = finderTrashPaths() else { return [] }
+        return trashURLs(fromFinderPaths: paths, roots: roots)
+            .compactMap { makeItem($0, category: category, selected: true, minimumBytes: 0) }
+    }
+
+    static func trashURLs(fromFinderPaths paths: [String], roots: [URL]) -> [URL] {
+        let rootPaths = Set(roots.map { $0.standardizedFileURL.path })
+        return paths.compactMap { path in
+            let url = URL(fileURLWithPath: path).standardizedFileURL
+            guard rootPaths.contains(url.deletingLastPathComponent().path),
+                  !trashIgnoredNames.contains(url.lastPathComponent.lowercased()) else { return nil }
+            return url
+        }
+    }
+
+    private static let finderTrashScript = """
+    tell application "Finder" to set urls to URL of every item of trash
+    set AppleScript's text item delimiters to linefeed
+    return urls as text
+    """
+
+    private static func finderTrashPaths() -> [String]? {
+        guard let output = ProcessRunner.runSync(
+            executable: "/usr/bin/osascript",
+            arguments: ["-e", finderTrashScript],
+            timeout: 30
+        ), output.status == 0, !output.timedOut else { return nil }
+        return output.text
+            .split(whereSeparator: \.isNewline)
+            .compactMap { URL(string: String($0))?.path }
+            .filter { !$0.isEmpty }
     }
 
     static func volumeTrashRoots(fileManager: FileManager = .default) -> [URL] {
