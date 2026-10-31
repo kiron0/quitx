@@ -171,6 +171,48 @@ struct AppInstanceTests {
         #expect(!QuitService.helperBelongsToTarget(pid: 600, targetPids: [500], siblingInstancePids: [600], isDescendant: descendant))
     }
 
+    @Test("Quitting collects orphaned bundle helpers and, when forced, every spawned process")
+    func helperProcessCollection() {
+        let root = URL(fileURLWithPath: "/Applications/Editor.app")
+        let parents: [pid_t: pid_t] = [501: 500, 502: 501, 503: 500, 700: 1, 800: 1, 900: 1]
+        let paths: [pid_t: String] = [
+            500: "/Applications/Editor.app/Contents/MacOS/Editor",
+            501: "/Applications/Editor.app/Contents/Frameworks/Editor Helper (Plugin).app/Contents/MacOS/Editor Helper (Plugin)",
+            502: "/Users/me/.editor/extensions/tool/bin/language-server",
+            503: "/Users/me/Library/Application Support/Editor/EditorServer",
+            700: "/Applications/Editor.app/Contents/Frameworks/Electron Framework.framework/Helpers/chrome_crashpad_handler",
+            800: "/Applications/Other.app/Contents/MacOS/Other",
+            900: "/Applications/Editor.app/Contents/MacOS/Editor"
+        ]
+        let descendant: (pid_t, Set<pid_t>) -> Bool = { pid, roots in
+            ProcessTree.isDescendant(pid, ofAny: roots, parent: { parents[$0] })
+        }
+        let forced = QuitService.helperProcesses(
+            targetPids: [500], siblingInstancePids: [], rootURL: root, processPaths: paths,
+            includeOutsideBundle: true, ownPid: 999, isDescendant: descendant
+        )
+        #expect(Set(forced.keys) == [501, 502, 503, 700, 900])
+        #expect(forced[502] == paths[502])
+
+        let graceful = QuitService.helperProcesses(
+            targetPids: [500], siblingInstancePids: [], rootURL: root, processPaths: paths,
+            includeOutsideBundle: false, ownPid: 999, isDescendant: descendant
+        )
+        #expect(Set(graceful.keys) == [501, 700, 900])
+
+        let withSibling = QuitService.helperProcesses(
+            targetPids: [500], siblingInstancePids: [900], rootURL: root, processPaths: paths,
+            includeOutsideBundle: true, ownPid: 999, isDescendant: descendant
+        )
+        #expect(Set(withSibling.keys) == [501, 502, 503])
+
+        let skipsSelf = QuitService.helperProcesses(
+            targetPids: [500], siblingInstancePids: [], rootURL: root, processPaths: paths,
+            includeOutsideBundle: true, ownPid: 503, isDescendant: descendant
+        )
+        #expect(skipsSelf[503] == nil)
+    }
+
     @Test("Restart keeps launch arguments without executable and psn flags")
     func relaunchArguments() {
         #expect(RestartService.relaunchArguments(from: ["/x/Chrome", "--user-data-dir=/d", "-psn_0_42"]) == ["--user-data-dir=/d"])

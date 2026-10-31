@@ -38,6 +38,32 @@ struct TrashScanTests {
         #expect(CleanupService.volumeTrashRoots().allSatisfy { $0.path.hasPrefix("/Volumes/") && $0.path.hasSuffix("/.Trashes/\(getuid())") })
     }
 
+    @Test("Finder trash listing keeps only top-level items of known Trash roots")
+    func finderListing() throws {
+        let home = URL(fileURLWithPath: "/Users/me")
+        let roots = CleanupService.trashRoots(home: home, volumeTrashes: [URL(fileURLWithPath: "/Volumes/Disk/.Trashes/501")])
+        let urls = CleanupService.trashURLs(fromFinderPaths: [
+            "/Users/me/.Trash/Folder/",
+            "/Users/me/.Trash/movie.mp4",
+            "/Users/me/.Trash/.DS_Store",
+            "/Volumes/Disk/.Trashes/501/old.zip",
+            "/Users/me/.Trash/Folder/nested.txt",
+            "/Users/me/Documents/secret.txt",
+            "/Users/me/.Trash/../Documents/secret.txt"
+        ], roots: roots).map(\.path)
+        #expect(urls == [
+            "/Users/me/.Trash/Folder",
+            "/Users/me/.Trash/movie.mp4",
+            "/Volumes/Disk/.Trashes/501/old.zip"
+        ])
+
+        let readable = FileManager.default.temporaryDirectory.appendingPathComponent("quitx-list-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: readable, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: readable) }
+        #expect(CleanupService.canListDirectory(readable))
+        #expect(CleanupService.canListDirectory(readable.appendingPathComponent("missing")))
+    }
+
     @Test("Only items inside your own volume Trash can be removed")
     func volumeTrashSafety() {
         let uid = getuid()
