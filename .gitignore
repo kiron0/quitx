@@ -110,3 +110,6 @@ NOTES.md
 video/stills/
 video/tmp/
 video/node_modules/
+
+## Static site generated artifacts
+site/downloads.json
