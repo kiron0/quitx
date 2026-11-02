@@ -17,20 +17,23 @@ final class FullDiskAccessManager: ObservableObject {
 
     nonisolated static func checkFullDiskAccess() -> Bool {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
-        let probes = [
-            "/Library/Application Support/com.apple.TCC/TCC.db",
-            "\(home)/Library/Safari/CloudTabs.db",
-            "\(home)/Library/Safari/Bookmarks.plist",
-            "\(home)/Library/Mail",
-        ]
-
-        for path in probes {
+        for path in accessProbePaths(home: home) {
             if canActuallyRead(path: path) { return true }
         }
         return false
     }
 
-    nonisolated private static func canActuallyRead(path: String) -> Bool {
+    nonisolated static func accessProbePaths(home: String) -> [String] {
+        [
+            "\(home)/.Trash",
+            "\(home)/Library/Mail",
+            "\(home)/Library/Safari",
+            "\(home)/Library/Messages",
+            "\(home)/Library/Application Support/com.apple.TCC/TCC.db",
+        ]
+    }
+
+    nonisolated static func canActuallyRead(path: String) -> Bool {
         var isDir: ObjCBool = false
         guard FileManager.default.fileExists(atPath: path, isDirectory: &isDir) else {
             return false

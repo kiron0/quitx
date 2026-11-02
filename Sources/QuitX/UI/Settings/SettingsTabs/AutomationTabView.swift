@@ -152,49 +152,27 @@ struct AutomationTabView: View {
                 .disabled(!lastWindowQuitService.accessibilityTrusted)
                 .opacity(lastWindowQuitService.accessibilityTrusted ? 1.0 : 0.42)
             } help: {
-                HelpPopoverButton(text: "Grant Accessibility below, then enable this option. QuitX quits an app, with all its instances and background services, once you close its last window with the red close button (x) or ⌘W. Minimized, hidden, full-screen and off-Space windows never trigger it. 🪟🔴")
+                HelpPopoverButton(text: "Allow Accessibility in Settings > Permissions, then enable this option. QuitX quits an app, with all its instances and background services, once you close its last window with the red close button (x) or ⌘W. Minimized, hidden, full-screen and off-Space windows never trigger it. 🪟🔴")
             }
 
-            row(label: "") {
-                if lastWindowQuitService.accessibilityTrusted {
+            if !lastWindowQuitService.accessibilityTrusted {
+                row(label: "") {
                     HStack(spacing: 10) {
-                        Label("Accessibility allowed", systemImage: "checkmark.circle.fill")
-                            .font(.system(size: 11))
-                            .foregroundStyle(Color.secondary)
+                        Label(
+                            accessibilityPermission.needsRepair ? "Accessibility needs repair after the update" : "Needs Accessibility permission",
+                            systemImage: accessibilityPermission.needsRepair ? "exclamationmark.triangle.fill" : "lock.shield"
+                        )
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.secondary)
 
-                        Button("Remove Accessibility") {
-                            configStore.config.quitWhenLastWindowClosed = false
-                            configStore.save()
-                            AccessibilityPermission.openSystemSettings()
-                        }
-                        .font(.system(size: 11.5))
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                        .help("Disables this automation and opens macOS Accessibility settings. Turn off QuitX there to remove the system permission.")
-                    }
-                } else if accessibilityPermission.needsRepair {
-                    HStack(spacing: 10) {
-                        Label("macOS reset access after the update", systemImage: "exclamationmark.triangle.fill")
-                            .font(.system(size: 11))
-                            .foregroundStyle(Color.secondary)
-
-                        Button("Repair Accessibility") {
-                            accessibilityPermission.repair()
+                        Button("Open Permissions") {
+                            SettingsWindowController.shared.navigation.select(.permissions)
                         }
                         .font(.system(size: 11.5))
                         .buttonStyle(.borderedProminent)
                         .controlSize(.small)
                         .tint(QuitXTheme.accent)
-                        .help("Clears the outdated QuitX entry in macOS Accessibility settings and asks again. Then turn QuitX on in the list.")
                     }
-                } else {
-                    Button("Allow Accessibility") {
-                        accessibilityPermission.requestAccess()
-                    }
-                    .font(.system(size: 11.5))
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
-                    .tint(QuitXTheme.accent)
                 }
             }
 

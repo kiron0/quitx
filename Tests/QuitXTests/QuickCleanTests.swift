@@ -136,7 +136,7 @@ struct QuickCleanTests {
         await monitor.waitForWork()
         #expect(await removed.all.map(\.path).sorted() == ["/tmp/qx-a", "/tmp/qx-b"])
         #expect(outcome == QuickCleanMonitor.Outcome(freedBytes: 3_000, removed: 1, skipped: 1))
-        #expect(outcome?.message.contains("1 in use") == true)
+        #expect(outcome?.message.contains("1 couldn't be removed") == true)
         #expect(monitor.phase == .idle)
     }
 

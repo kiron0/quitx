@@ -16,7 +16,7 @@ final class QuickCleanMonitor: ObservableObject {
         var message: String {
             let freed = QuickCleanService.format(freedBytes)
             guard skipped > 0 else { return "Freed \(freed)" }
-            return "Freed \(freed), \(skipped) in use"
+            return "Freed \(freed), \(skipped) couldn't be removed"
         }
     }
 

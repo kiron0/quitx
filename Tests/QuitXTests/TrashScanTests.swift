@@ -38,6 +38,16 @@ struct TrashScanTests {
         #expect(CleanupService.volumeTrashRoots().allSatisfy { $0.path.hasPrefix("/Volumes/") && $0.path.hasSuffix("/.Trashes/\(getuid())") })
     }
 
+    @Test("Empty Trash script reads the warning setting from the Trash, not Finder")
+    func emptyTrashScriptTargetsTrashProperty() {
+        let lines = CleanupService.finderEmptyTrashScript
+            .split(whereSeparator: \.isNewline)
+            .filter { $0.contains("warns before emptying") }
+        #expect(lines.count == 3)
+        #expect(lines.allSatisfy { $0.contains("warns before emptying of trash") })
+        #expect(CleanupService.finderEmptyTrashScript.contains("empty the trash"))
+    }
+
     @Test("Finder trash listing keeps only top-level items of known Trash roots")
     func finderListing() throws {
         let home = URL(fileURLWithPath: "/Users/me")

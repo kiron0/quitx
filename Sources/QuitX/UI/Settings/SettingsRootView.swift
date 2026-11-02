@@ -16,6 +16,7 @@ struct SettingsRootView: View {
     @StateObject private var nodeCacheModel = CleanupViewModel(category: .nodeCache)
     @StateObject private var dockerCacheModel = CleanupViewModel(category: .dockerCache)
     @ObservedObject private var uninstallModel = UninstallWindowController.shared.model
+    @ObservedObject private var permissionCenter = PermissionCenter.shared
 
     private var trimmedQuery: String {
         navigation.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -172,6 +173,17 @@ struct SettingsRootView: View {
                         .padding(.vertical, 1.5)
                         .background(Color.primary.opacity(0.07), in: Capsule())
                 }
+
+                if tab == .permissions && permissionCenter.attentionCount > 0 {
+                    Text("\(permissionCenter.attentionCount)")
+                        .font(.system(size: 9.5, weight: .bold))
+                        .monospacedDigit()
+                        .foregroundStyle(Color.white)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1.5)
+                        .background(Color.orange, in: Capsule())
+                        .accessibilityLabel("\(permissionCenter.attentionCount) permissions need attention")
+                }
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
@@ -245,6 +257,7 @@ struct SettingsRootView: View {
         case .dockerCache: cleanupHeaderAccessory(dockerCacheModel)
         case .leftovers: leftoversHeaderAccessory(leftoversModel)
         case .uninstallApps: uninstallHeaderAccessory(uninstallModel)
+        case .permissions: permissionsHeaderAccessory
         default: EmptyView()
         }
     }
@@ -290,6 +303,24 @@ struct SettingsRootView: View {
             }
             .buttonStyle(UninstallPrimaryButtonStyle(isEnabled: model.phase != .scanning && model.phase != .removing))
             .disabled(model.phase == .scanning || model.phase == .removing)
+        }
+    }
+
+    private var permissionsHeaderAccessory: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("\(permissionCenter.grantedCount) of \(PermissionKind.allCases.count)")
+                    .font(.system(size: 14, weight: .semibold))
+                    .monospacedDigit()
+                Text("allowed")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+            }
+
+            Button("Refresh") {
+                permissionCenter.refresh()
+            }
+            .buttonStyle(UninstallPrimaryButtonStyle(isEnabled: true))
         }
     }
 
@@ -367,6 +398,8 @@ struct SettingsRootView: View {
             CleanupTabView(model: dockerCacheModel)
         case .shortcuts:
             scrolling(ShortcutsTabView())
+        case .permissions:
+            scrolling(PermissionsTabView())
         case .about:
             scrolling(AboutTabView())
         }

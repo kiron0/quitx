@@ -239,7 +239,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Quit when the last window closes",
-                    body: "In Settings > Automation, grant Accessibility, then enable Quit app when its last window closes. QuitX never asks at launch. Once allowed, it directly force-quits regular apps after their last window closes via the red close button (x) or ⌘W. Minimized windows, hidden apps, and windows on other Spaces do not count as closed. Remove Access disables the option and opens macOS Accessibility settings for native permission removal. Finder, background daemons, music apps, and excluded apps remain protected. Quit apps appear in Recently Quit."
+                    body: "Allow Accessibility in Settings > Permissions, then enable Quit app when its last window closes in Settings > Automation. QuitX never asks at launch. Once allowed, it directly force-quits regular apps after their last window closes via the red close button (x) or ⌘W. Minimized windows, hidden apps, and windows on other Spaces do not count as closed. Remove Access disables the option and opens macOS Accessibility settings for native permission removal. Finder, background daemons, music apps, and excluded apps remain protected. Quit apps appear in Recently Quit."
                 )
             ]
         ),
@@ -385,7 +385,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Quit or shortcut fails",
-                    body: "Check macOS permissions under System Settings > Privacy & Security > Accessibility and Input Monitoring. Restart QuitX after granting permissions."
+                    body: "Open Settings > Permissions to see which macOS permissions QuitX has, then allow, repair or reset the missing ones. Restart QuitX after granting permissions."
                 )
             ]
         ),

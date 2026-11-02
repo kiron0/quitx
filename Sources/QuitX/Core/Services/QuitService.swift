@@ -28,12 +28,12 @@ final class QuitService {
             with timeout of 15 seconds
                 ignoring application responses
                     tell application "Finder"
-                        set previousWarn to warns before emptying
+                        set previousWarn to warns before emptying of trash
                         try
-                            set warns before emptying to false
+                            set warns before emptying of trash to false
                             empty the trash
                         end try
-                        set warns before emptying to previousWarn
+                        set warns before emptying of trash to previousWarn
                     end tell
                 end ignoring
             end timeout
@@ -357,12 +357,12 @@ final class QuitService {
         with timeout of 10 seconds
             ignoring application responses
                 tell application "Finder"
-                    set previousWarn to warns before emptying
+                    set previousWarn to warns before emptying of trash
                     try
-                        set warns before emptying to false
+                        set warns before emptying of trash to false
                         empty the trash
                     end try
-                    set warns before emptying to previousWarn
+                    set warns before emptying of trash to previousWarn
                 end tell
             end ignoring
         end timeout

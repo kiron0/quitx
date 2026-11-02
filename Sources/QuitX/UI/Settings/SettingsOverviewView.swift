@@ -9,6 +9,7 @@ enum SettingsFeature: String, CaseIterable, Identifiable {
     case updates
     case quitMode
     case shortcuts
+    case permissions
     case quitOnSleep
     case lastWindow
     case rescue
@@ -38,6 +39,7 @@ enum SettingsFeature: String, CaseIterable, Identifiable {
         switch self {
         case .openAtLogin, .menuBarStats, .appearance, .sounds, .updates, .quitMode: return .general
         case .shortcuts: return .shortcuts
+        case .permissions: return .permissions
         case .quitOnSleep, .lastWindow, .rescue, .autoQuit: return .automation
         case .backgroundApps, .musicProtection, .confirmations, .finderTrash: return .advanced
         case .exclude: return .exclude
@@ -66,6 +68,7 @@ enum SettingsFeature: String, CaseIterable, Identifiable {
         case .updates: return "Updates"
         case .quitMode: return "Quit or Force Quit"
         case .shortcuts: return "Global Shortcuts"
+        case .permissions: return "Permissions"
         case .quitOnSleep: return "Quit on Sleep"
         case .lastWindow: return "Last Window Closes"
         case .rescue: return "CPU & Memory Rescue"
@@ -100,6 +103,7 @@ enum SettingsFeature: String, CaseIterable, Identifiable {
         case .updates: return "New versions straight from GitHub, verified before install."
         case .quitMode: return "Quit politely by default, or make Force Quit the default."
         case .shortcuts: return "Open QuitX, Quit All or Force Quit All from anywhere."
+        case .permissions: return "Check, allow and repair the macOS permissions QuitX uses."
         case .quitOnSleep: return "Close apps left open when your Mac wakes from sleep in the hours you pick."
         case .lastWindow: return "Quit an app as soon as you close its last window."
         case .rescue: return "Get a heads-up when CPU or memory stays too high."
@@ -134,6 +138,7 @@ enum SettingsFeature: String, CaseIterable, Identifiable {
         case .updates: return "arrow.down.circle"
         case .quitMode: return "bolt.fill"
         case .shortcuts: return "command"
+        case .permissions: return "lock.shield"
         case .quitOnSleep: return "moon.zzz"
         case .lastWindow: return "macwindow"
         case .rescue: return "gauge.with.dots.needle.67percent"
@@ -163,6 +168,7 @@ enum SettingsFeature: String, CaseIterable, Identifiable {
         switch tab {
         case .general: return Color(red: 0.25, green: 0.56, blue: 0.98)
         case .shortcuts: return Color(red: 0.55, green: 0.42, blue: 0.96)
+        case .permissions: return Color(red: 0.20, green: 0.70, blue: 0.45)
         case .automation: return Color(red: 0.98, green: 0.58, blue: 0.20)
         case .advanced: return Color(red: 0.93, green: 0.36, blue: 0.56)
         case .exclude: return Color(red: 0.94, green: 0.33, blue: 0.31)
@@ -187,6 +193,9 @@ enum SettingsFeature: String, CaseIterable, Identifiable {
             let manager = ShortcutManager.shared
             let count = ShortcutManager.Slot.allCases.filter { manager.isEnabled($0) }.count
             return count == 0 ? "Off" : "\(count) on"
+        case .permissions:
+            let center = PermissionCenter.shared
+            return "\(center.grantedCount)/\(PermissionKind.allCases.count)"
         case .quitOnSleep: return onOff(config.quitOnSleep)
         case .lastWindow: return onOff(config.quitWhenLastWindowClosed)
         case .rescue: return onOff(config.hogAlertEnabled || config.memoryPressureQuitEnabled)

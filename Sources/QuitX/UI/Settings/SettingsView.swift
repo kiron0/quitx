@@ -20,6 +20,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     case overview = "Overview"
     case general = "General"
     case shortcuts = "Shortcuts"
+    case permissions = "Permissions"
     case automation = "Automation"
     case advanced = "Advanced"
     case exclude = "Exclude"
@@ -52,7 +53,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     var category: SettingsCategory {
         switch self {
         case .overview: return .start
-        case .general, .shortcuts: return .app
+        case .general, .shortcuts, .permissions: return .app
         case .automation, .advanced, .exclude: return .quitting
         case .uninstallApps, .leftovers: return .applications
         case .systemJunk, .userCache, .mailFiles, .trashBins, .largeOldFiles, .aiApps: return .cleanup
@@ -68,6 +69,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .overview:   return "square.grid.2x2"
         case .general:    return "gearshape"
         case .shortcuts:  return "command"
+        case .permissions: return "lock.shield"
         case .automation: return "timer"
         case .advanced:   return "slider.horizontal.3"
         case .exclude:    return "nosign"
@@ -94,6 +96,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .overview:   return "Everything QuitX can do. Click a card to jump to its settings."
         case .general:    return "Startup, sounds, updates, menu bar stats and how QuitX looks."
         case .shortcuts:  return "Open QuitX or quit apps from anywhere with your own key combos."
+        case .permissions: return "See and manage every macOS permission QuitX uses."
         case .automation: return "Let QuitX quit apps on sleep, after their last window, or when they sit idle."
         case .advanced:   return "Background apps, music protection, confirmations and extra list items."
         case .exclude:    return "Apps and ports QuitX never quits, manually or automatically."
@@ -120,6 +123,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .overview:   return "features cards everything help uninstall apps what's new changelog tools"
         case .general:    return "login startup sounds updates download menu bar stats cpu memory gpu battery cleanup cache quick clean order drag refresh appearance liquid glass classic sort default normal force quit"
         case .shortcuts:  return "keyboard hotkey key combo activate menu quit all force quit all settings refresh help what's new changelog uninstall apps"
+        case .permissions: return "permissions privacy security accessibility full disk access automation apple events finder notifications login items approval repair reset tcc"
         case .automation: return "sleep schedule last window close accessibility cpu hog memory pressure rescue auto quit inactive idle timer"
         case .advanced:   return "background helpers group instances music protection select by default tips confirm finder windows empty trash"
         case .exclude:    return "exclude exclusion list never quit protect immune ports"
