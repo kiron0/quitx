@@ -1883,8 +1883,17 @@
         document
           .querySelectorAll('a[href]:not([href^="#"])')
           .forEach((link) => {
-            link.target = "_blank";
-            link.rel = "noopener noreferrer";
+            const isDownload =
+              link.classList.contains("dl") ||
+              /\.(dmg|zip|pkg|tar\.gz)$/i.test(link.href) ||
+              link.href.includes("/releases/download/");
+            if (isDownload) {
+              link.removeAttribute("target");
+              link.removeAttribute("rel");
+            } else {
+              link.target = "_blank";
+              link.rel = "noopener noreferrer";
+            }
           });
 
         const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -2062,6 +2071,8 @@
             if (dmg && dmg.browser_download_url.startsWith("https://"))
               document.querySelectorAll("a.dl").forEach((a) => {
                 a.href = dmg.browser_download_url;
+                a.removeAttribute("target");
+                a.removeAttribute("rel");
               });
             if (release.tag_name) {
               document.querySelectorAll(".ver").forEach((el) => {
@@ -2121,27 +2132,21 @@
           } catch {}
         };
         const fetchDownloads = async () => {
-          let total = 0;
-          for (let page = 1; page <= 10; page++) {
-            const r = await fetch(
-              `https://api.github.com/repos/kiron0/quitx/releases?per_page=100&page=${page}`,
-              { headers: { Accept: "application/vnd.github+json" } },
+          try {
+            const res = await fetch(
+              "./downloads.json?t=" + Math.floor(Date.now() / 3600000),
             );
-            if (!r.ok) return null;
-            const releases = await r.json();
-            for (const release of releases) {
-              for (const asset of release.assets || []) {
-                if (/\.(dmg|zip)$/i.test(asset.name))
-                  total += asset.download_count || 0;
-              }
+            if (res.ok) {
+              const data = await res.json();
+              if (typeof data.total === "number" && data.total > 0)
+                return data.total;
             }
-            if (releases.length < 100) break;
-          }
-          return total;
+          } catch {}
+          return null;
         };
         const refreshDownloads = async () => {
           const cached = readCache();
-          if (cached && Date.now() - cached.at < 4 * 60 * 1000) {
+          if (cached && Date.now() - cached.at < 60 * 60 * 1000) {
             render(cached.total, shown === 0);
             return;
           }

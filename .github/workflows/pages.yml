@@ -1,6 +1,8 @@
 name: Website
 
 on:
+  schedule:
+    - cron: "0 0,12 * * *"
   push:
     branches: [main]
     paths: ["site/**", ".github/workflows/pages.yml"]
@@ -23,6 +25,50 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v5
+
+      - name: Precompute download count
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node -e '
+          const fs = require("fs");
+          async function main() {
+            let total = 0;
+            let page = 1;
+            while (page <= 10) {
+              const url = `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY || "kiron0/quitx"}/releases?per_page=100&page=${page}`;
+              const res = await fetch(url, {
+                headers: {
+                  Accept: "application/vnd.github+json",
+                  ...(process.env.GH_TOKEN ? { Authorization: `Bearer ${process.env.GH_TOKEN}` } : {})
+                }
+              });
+              if (!res.ok) {
+                console.warn("GitHub API fetch warning:", res.status);
+                break;
+              }
+              const list = await res.json();
+              if (!Array.isArray(list) || list.length === 0) break;
+              for (const rel of list) {
+                for (const asset of rel.assets || []) {
+                  if (/\.(dmg|zip)$/i.test(asset.name)) total += asset.download_count || 0;
+                }
+              }
+              if (list.length < 100) break;
+              page++;
+            }
+            if (total > 0) {
+              const out = { total, updated_at: new Date().toISOString() };
+              fs.writeFileSync("site/downloads.json", JSON.stringify(out, null, 2) + "\n");
+              console.log("Generated site/downloads.json:", out);
+            }
+          }
+          main().catch(err => {
+            console.error("Non-fatal downloads count error:", err);
+            process.exit(0);
+          });
+          '
+
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
