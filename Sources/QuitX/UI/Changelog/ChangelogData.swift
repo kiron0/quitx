@@ -2,6 +2,18 @@ import Foundation
 
 extension ChangelogProvider {
     static let appReleases: [ReleaseChangelog] = [
+        ReleaseChangelog("1.2.6", "Permissions Center, reliable Trash emptying & Port grouping fixes", [
+            ("New Features", [
+                "**Permissions Center in Settings**: A dedicated Permissions page in Settings and Overview monitors Accessibility, Full Disk Access, Finder Automation, Login Items, and Notifications with one-click setup and repair actions."
+            ]),
+            ("Improvements", [
+                "**Accurate Removal Verification**: Switched post-deletion checks to POSIX lstat so permission errors aren't misreported as successfully deleted files.",
+                "**Finder Trash Emptying**: When direct deletion of Trash items is blocked by macOS security, QuitX falls back to emptying through Finder without warning dialog errors.",
+                "**Port Grouping & Sorting**: Fixed missing group headers in Ports when processes have root or empty working directories, and neatly placed 'Other' at the bottom of the list.",
+                "**Clearer Cleanup Feedback**: Quick Clean clearly distinguishes between freed space and files that couldn't be removed due to locks or permissions."
+            ])
+        ]),
+
         ReleaseChangelog("1.2.5", "Helper process termination, robust Trash scan & popover polish", [
             ("Improvements", [
                 "**Cleaner Popover Navigation**: The popover tab bar is automatically hidden when the Ports menu bar count is enabled, keeping navigation focused.",

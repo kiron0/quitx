@@ -2,6 +2,24 @@
 
 All notable changes to QuitX macOS App will be documented in this file.
 
+## 1.2.6
+
+### Added
+
+- **Permissions Center in Settings**: A dedicated Permissions page in the Settings sidebar and an Overview status card unify monitoring for Accessibility, Full Disk Access, Finder Automation, Login Items, and Notifications with direct grant, reveal, and repair actions.
+
+### Fixed
+
+- **Accurate File Removal Verification**: Deletion verification now uses POSIX `lstat()` so permission-denied errors are no longer misidentified as successful removals.
+- **Finder Trash Emptying**: When direct deletion of items in Trash is blocked without Full Disk Access, QuitX delegates removal to Finder via AppleScript, correctly targeting the `warns before emptying of trash` property to avoid dialog popups and AppleScript errors.
+- **Port Grouping Headers**: Project grouping in the Ports tab no longer leaves missing header titles when a process has an empty, whitespace, or root working directory, cleanly falling back to "Other".
+- **Port Group Ordering**: Groups in the Ports tab sort alphabetically in natural case-insensitive order, keeping catch-all groups ("Other" and "Local processes") neatly at the bottom.
+
+### Changed
+
+- **Targeted Full Disk Access Probes**: Access checks now probe only user directories guarded by macOS privacy controls (`~/.Trash`, `~/Library/Mail`, `~/Library/Safari`, `~/Library/Messages`, TCC database), eliminating unnecessary filesystem scans.
+- **Clearer Cleanup Reporting**: Quick Clean summaries explicitly report when locked or permission-restricted files couldn't be removed instead of ambiguously reporting them as in use.
+
 ## 1.2.5
 
 ### Changed
