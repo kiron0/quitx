@@ -39,6 +39,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     case ports = "Ports"
     case about = "About"
     case marquee = "Marquee"
+    case hopilo = "Hopilo"
 
     static let windowSize = NSSize(width: 860, height: 600)
     static let sidebarWidth: CGFloat = 220
@@ -60,7 +61,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .xcodeJunk, .brewCache, .nodeCache, .dockerCache: return .developerCleanup
         case .ports: return .developer
         case .about: return .quitx
-        case .marquee: return .moreApps
+        case .marquee, .hopilo: return .moreApps
         }
     }
 
@@ -88,6 +89,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .ports:      return "network"
         case .about:      return "bolt.fill"
         case .marquee:    return "viewfinder"
+        case .hopilo:     return "arrow.triangle.branch"
         }
     }
 
@@ -115,6 +117,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .ports:      return "Find and free ports held by dev servers, databases and Docker."
         case .about:      return "Version, updates and ways to get in touch."
         case .marquee:    return "Capture the screen. Keep the clipboard."
+        case .hopilo:     return "Every AI session, ready to continue."
         }
     }
 
@@ -142,6 +145,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .ports:      return "port kill listener tcp udp docker refresh menu bar count group sort sigterm sigkill confirm"
         case .about:      return "version update check github contact support website"
         case .marquee:    return "more apps screenshot recording screen capture clipboard color picker measure ocr"
+        case .hopilo:     return "more apps ai sessions chat handoff claude codex gemini cursor chatgpt agents export backup offline"
         }
     }
 
@@ -150,14 +154,14 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     var headerTitle: String {
         switch self {
         case .overview: return "Overview"
-        case .marquee: return "More Apps"
+        case .marquee, .hopilo: return "More Apps"
         default: return title
         }
     }
 
     var headerSummary: String {
         switch self {
-        case .marquee: return "Another free, open-source Mac app worth a look."
+        case .marquee, .hopilo: return "Another free, open-source Mac app worth a look."
         default: return summary
         }
     }

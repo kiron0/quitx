@@ -416,6 +416,7 @@ struct SettingsOverviewView: View {
                         .foregroundStyle(Color.secondary)
 
                     marqueeBanner
+                    hopiloBanner
                 }
             }
             .padding(.bottom, 24)
@@ -545,6 +546,74 @@ struct SettingsOverviewView: View {
             if hovering {
                 navigation.hoveredCard = "marquee"
             } else if navigation.hoveredCard == "marquee" {
+                navigation.hoveredCard = nil
+            }
+        }
+    }
+
+    private var hopiloBanner: some View {
+        let hovered = navigation.hoveredCard == "hopilo"
+        return Button {
+            navigation.select(.hopilo)
+        } label: {
+            HStack(spacing: 14) {
+                HopiloIconView(size: 48)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text("Hopilo")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(Color.primary)
+                        Text("FREE")
+                            .font(.system(size: 9, weight: .heavy))
+                            .foregroundStyle(Color.white)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1.5)
+                            .background(HopiloPromo.indigo, in: Capsule())
+                    }
+                    Text(HopiloPromo.tagline)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(Color.primary.opacity(0.85))
+                    Text("Every AI coding session and its files, ready to continue in another AI.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 8)
+
+                HStack(spacing: 4) {
+                    Text("Take a look")
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 9, weight: .bold))
+                }
+                .font(.system(size: 11.5, weight: .semibold))
+                .foregroundStyle(Color.white)
+                .padding(.horizontal, 11)
+                .padding(.vertical, 6)
+                .background(HopiloPromo.indigo.opacity(hovered ? 1 : 0.9), in: RoundedRectangle(cornerRadius: 7))
+            }
+            .padding(14)
+            .background(
+                LinearGradient(
+                    colors: [HopiloPromo.indigo.opacity(0.20), HopiloPromo.indigo.opacity(0.04)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                ),
+                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(HopiloPromo.indigo.opacity(hovered ? 0.8 : 0.35), lineWidth: hovered ? 1 : 0.6)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Hopilo. \(HopiloPromo.tagline)")
+        .onHover { hovering in
+            if hovering {
+                navigation.hoveredCard = "hopilo"
+            } else if navigation.hoveredCard == "hopilo" {
                 navigation.hoveredCard = nil
             }
         }

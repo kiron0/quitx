@@ -65,7 +65,8 @@ enum QuitXConstants {
     }
 
     static let lastWindowProtectedBundleIds: Set<String> = [
-        "io.github.treposting.marquee"
+        "io.github.treposting.marquee",
+        "io.coreify.hopilo"
     ]
 
     static let supportEmail = "hello@kiron.dev"

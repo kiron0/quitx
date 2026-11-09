@@ -2,6 +2,19 @@
 
 All notable changes to QuitX macOS App will be documented in this file.
 
+## 1.2.7
+
+### Added
+
+- **More Apps ▸ Hopilo**: Discover Hopilo in Settings, a free and open-source local AI session manager that keeps your coding chats and touched files ready to continue across AI agents.
+- **Hopilo Window Protection**: Hopilo (`io.coreify.hopilo`) is now protected from accidental termination when its last window closes, keeping its background daemon running.
+
+### Changed
+
+- **In-Place Site Downloads**: Download buttons on the website now start file downloads directly in the same tab instead of opening empty browser tabs, while repository and documentation links open in new tabs.
+- **Precomputed Download Metrics**: Website download metrics are now precomputed twice daily via a scheduled GitHub Actions workflow, eliminating visitor GitHub API rate limits.
+- **Optimized CI Workflows**: GitHub Actions CI now ignores website assets, documentation, and markdown changes to prevent redundant macOS Xcode builds.
+
 ## 1.2.6
 
 ### Added

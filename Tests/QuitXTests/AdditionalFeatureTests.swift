@@ -163,12 +163,12 @@ struct ExcludeTabStateTests {
 
 @Suite("Settings Tab Tests")
 struct SettingsTabTests {
-    @Test("SettingsTab all cases, overview first and Marquee last")
+    @Test("SettingsTab all cases, overview first and Hopilo last")
     func testSettingsTabCases() {
         let all = SettingsTab.allCases
-        #expect(all.count == 22)
+        #expect(all.count == 23)
         #expect(all.first == .overview)
-        #expect(all.last == .marquee)
+        #expect(all.last == .hopilo)
         for tab in [SettingsTab.general, .automation, .advanced, .exclude, .ports, .shortcuts, .about] {
             #expect(all.contains(tab))
         }
@@ -180,7 +180,7 @@ struct SettingsTabTests {
         #expect(groups.first?.category == .start)
         #expect(groups.first?.tabs == [.overview])
         #expect(groups.last?.category == .moreApps)
-        #expect(groups.last?.tabs == [.marquee])
+        #expect(groups.last?.tabs == [.marquee, .hopilo])
         let flattened = groups.flatMap(\.tabs)
         #expect(Set(flattened) == Set(SettingsTab.allCases))
         #expect(flattened.count == SettingsTab.allCases.count)
@@ -216,6 +216,7 @@ struct SettingsTabTests {
         #expect(ExcludeTabView.contentHeight + 40 + 46 + 16 + 20 <= SettingsTab.windowSize.height)
         #expect(SettingsTab.overview.headerTitle == "Overview")
         #expect(SettingsTab.marquee.headerTitle == "More Apps")
+        #expect(SettingsTab.hopilo.headerTitle == "More Apps")
         #expect(SettingsTab.general.headerTitle == "General")
     }
 
@@ -225,6 +226,7 @@ struct SettingsTabTests {
         #expect(SettingsTab.automation.matches("sleep"))
         #expect(SettingsTab.ports.matches("docker"))
         #expect(SettingsTab.marquee.matches("clipboard"))
+        #expect(SettingsTab.hopilo.matches("codex"))
         #expect(!SettingsTab.about.matches("docker"))
         #expect(SettingsTab.allCases.allSatisfy { $0.matches("  ") })
     }
@@ -233,7 +235,7 @@ struct SettingsTabTests {
     @MainActor
     func testSettingsFeatures() {
         let pages = Set(SettingsFeature.allCases.map(\.tab))
-        for tab in SettingsTab.allCases where ![.overview, .about, .marquee].contains(tab) {
+        for tab in SettingsTab.allCases where ![.overview, .about, .marquee, .hopilo].contains(tab) {
             #expect(pages.contains(tab))
         }
         var config = QuitXConfig.default
@@ -259,6 +261,16 @@ struct SettingsTabTests {
         #expect(MarqueePromo.downloadURL.absoluteString.hasPrefix(MarqueePromo.repositoryURL.absoluteString))
         #expect(MarqueePromo.features.count >= 6)
         for feature in MarqueePromo.features {
+            #expect(NSImage(systemSymbolName: feature.symbol, accessibilityDescription: nil) != nil)
+        }
+    }
+
+    @Test("Hopilo promo links point at the GitHub project")
+    func testHopiloPromo() {
+        #expect(HopiloPromo.repositoryURL.absoluteString == "https://github.com/kiron0/hopilo")
+        #expect(HopiloPromo.downloadURL.absoluteString.hasPrefix(HopiloPromo.repositoryURL.absoluteString))
+        #expect(HopiloPromo.features.count >= 6)
+        for feature in HopiloPromo.features {
             #expect(NSImage(systemSymbolName: feature.symbol, accessibilityDescription: nil) != nil)
         }
     }

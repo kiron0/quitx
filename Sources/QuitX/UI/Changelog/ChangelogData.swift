@@ -2,6 +2,17 @@ import Foundation
 
 extension ChangelogProvider {
     static let appReleases: [ReleaseChangelog] = [
+        ReleaseChangelog("1.2.7", "Hopilo integration, last-window protection & workflow improvements", [
+            ("New Features", [
+                "**More Apps ▸ Hopilo**: Explore Hopilo, a free, local-first companion app for AI coding sessions and files, directly in Settings."
+            ]),
+            ("Improvements", [
+                "**Hopilo Window Protection**: Added Hopilo (`io.coreify.hopilo`) to protected apps so it remains active in the background when its window closes.",
+                "**In-Place Website Downloads**: Download buttons on the site now download directly in the same tab without opening empty tabs.",
+                "**Precomputed Download Metrics**: Website download counts are now precomputed twice daily in CI, eliminating visitor API rate limits."
+            ])
+        ]),
+
         ReleaseChangelog("1.2.6", "Permissions Center, reliable Trash emptying & Port grouping fixes", [
             ("New Features", [
                 "**Permissions Center in Settings**: A dedicated Permissions page in Settings and Overview monitors Accessibility, Full Disk Access, Finder Automation, Login Items, and Notifications with one-click setup and repair actions."
