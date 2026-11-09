@@ -52,16 +52,14 @@ final class QuitService {
             return await Self.runAppleScript(script, app: app, label: "Finder")
         }
 
-        let knownPids: Set<pid_t> = Set(
-            (app.pids.isEmpty ? (app.pid.map { [$0] } ?? []) : app.pids)
-                .filter { $0 > 0 }
-        )
-        let rootURL = Self.rootBundleURL(for: app)
+        let knownPids = Self.targetPids(for: app)
+        let rootURL = Self.rootBundleURL(pids: knownPids)
+        let ownPid = getpid()
+        let reapsOutsideBundle = force || !Self.keepsDetachedChildren(bundleId: app.bundleId)
 
-        var helperPaths: [pid_t: String] = [:]
+        var siblingInstances = Set<pid_t>()
         if let bundleId = app.bundleId, let rootURL {
-            let workspaceApps = NSWorkspace.shared.runningApplications
-            let siblingInstances = Set(workspaceApps.compactMap { running -> pid_t? in
+            siblingInstances = Set(NSWorkspace.shared.runningApplications.compactMap { running -> pid_t? in
                 guard !running.isTerminated,
                       running.bundleIdentifier == bundleId,
                       running.activationPolicy == .regular,
@@ -71,18 +69,34 @@ final class QuitService {
                       url == rootURL else { return nil }
                 return running.processIdentifier
             })
-            helperPaths = Self.helperProcesses(
+        }
+
+        var helperPaths: [pid_t: String] = [:]
+        func collectHelpers() {
+            guard app.bundleId != nil, let rootURL else { return }
+            let snapshot = ProcessSnapshot.capture()
+            let descendants = snapshot.descendants(of: knownPids)
+            let found = Self.helperProcesses(
                 targetPids: knownPids,
                 siblingInstancePids: siblingInstances,
                 rootURL: rootURL,
-                processPaths: AppListService.runningProcessPaths().filter { Self.processIsRunning($0.key) },
-                includeOutsideBundle: force,
-                ownPid: getpid()
+                processPaths: snapshot.paths,
+                includeOutsideBundle: reapsOutsideBundle,
+                ownPid: ownPid,
+                isDescendant: { pid, _ in descendants.contains(pid) }
             )
+            for (pid, path) in found where helperPaths[pid] == nil {
+                if !force,
+                   !Self.isExecutablePath(path, insideContentsOf: rootURL),
+                   NSRunningApplication(processIdentifier: pid)?.activationPolicy == .regular {
+                    continue
+                }
+                helperPaths[pid] = path
+            }
         }
-        let helperPids = Set(helperPaths.keys)
+        collectHelpers()
 
-        guard !knownPids.isEmpty || !helperPids.isEmpty else {
+        guard !knownPids.isEmpty || !helperPaths.isEmpty else {
             return QuitResult(app: app, success: false, forced: false, error: "App not found")
         }
 
@@ -91,6 +105,7 @@ final class QuitService {
 
         var pendingApps: [(pid: pid_t, isHelper: Bool)] = []
         var pendingRawPids: [(pid: pid_t, isHelper: Bool)] = []
+        var signaledHelpers = Set<pid_t>()
 
         func helperIdentityMatches(_ pid: pid_t) -> Bool {
             guard let expected = helperPaths[pid], let path = Self.executablePath(pid: pid) else { return false }
@@ -110,6 +125,9 @@ final class QuitService {
         }
 
         func terminatePid(_ pid: pid_t, isHelper: Bool) {
+            if isHelper {
+                signaledHelpers.insert(pid)
+            }
             if let running = NSRunningApplication(processIdentifier: pid) {
                 if !isHelper {
                     guard Self.matches(running: running, app: app) else {
@@ -130,11 +148,7 @@ final class QuitService {
                     }
                 } else {
                     if targetIsRunning(pid, isHelper: isHelper) {
-                        if force {
-                            Darwin.kill(pid, SIGKILL)
-                        } else {
-                            Darwin.kill(pid, SIGTERM)
-                        }
+                        Darwin.kill(pid, force ? SIGKILL : SIGTERM)
                     }
                     pendingRawPids.append((pid, isHelper))
                 }
@@ -148,11 +162,7 @@ final class QuitService {
                     identityMatches = false
                 }
                 if identityMatches {
-                    if force {
-                        Darwin.kill(pid, SIGKILL)
-                    } else {
-                        Darwin.kill(pid, SIGTERM)
-                    }
+                    Darwin.kill(pid, force ? SIGKILL : SIGTERM)
                     pendingRawPids.append((pid, isHelper))
                 } else if !isHelper {
                     allSucceeded = false
@@ -161,9 +171,13 @@ final class QuitService {
             }
         }
 
+        func mainProcessesAlive() -> Bool {
+            knownPids.contains { targetIsRunning($0, isHelper: false) }
+        }
+
         for pid in knownPids { terminatePid(pid, isHelper: false) }
         if force {
-            for pid in helperPids { terminatePid(pid, isHelper: true) }
+            for pid in Array(helperPaths.keys) { terminatePid(pid, isHelper: true) }
         }
 
         let pollNs: UInt64 = 100_000_000
@@ -176,6 +190,14 @@ final class QuitService {
             let appsDone = pendingApps.allSatisfy { !targetIsRunning($0.pid, isHelper: $0.isHelper) }
             let pidsDone = pendingRawPids.allSatisfy { !targetIsRunning($0.pid, isHelper: $0.isHelper) }
             if appsDone && pidsDone { break }
+            if attempt % Self.helperRescanInterval == Self.helperRescanInterval - 1, mainProcessesAlive() {
+                collectHelpers()
+                if force {
+                    for pid in Array(helperPaths.keys) where !signaledHelpers.contains(pid) {
+                        terminatePid(pid, isHelper: true)
+                    }
+                }
+            }
             if !force, Self.backgroundRetryAttempts.contains(attempt) {
                 let visible = LastWindowQuitWindowCounter.visibleWindowIDs() ?? [:]
                 for pid in knownPids where targetIsRunning(pid, isHelper: false) && (visible[pid] ?? []).isEmpty {
@@ -201,12 +223,21 @@ final class QuitService {
                 firstError = firstError ?? "Process did not quit gracefully"
             }
             if allSucceeded {
-                let remaining = helperPids.filter { targetIsRunning($0, isHelper: true) }
+                collectHelpers()
+                let remaining = helperPaths.keys.filter { targetIsRunning($0, isHelper: true) }
                 for pid in remaining { terminatePid(pid, isHelper: true) }
                 if !remaining.isEmpty {
                     for _ in 0..<20 where !Task.isCancelled {
                         if remaining.allSatisfy({ !targetIsRunning($0, isHelper: true) }) { break }
                         try? await Task.sleep(nanoseconds: pollNs)
+                    }
+                    let stubborn = remaining.filter { targetIsRunning($0, isHelper: true) }
+                    for pid in stubborn { Darwin.kill(pid, SIGKILL) }
+                    if !stubborn.isEmpty {
+                        for _ in 0..<10 where !Task.isCancelled {
+                            if stubborn.allSatisfy({ !targetIsRunning($0, isHelper: true) }) { break }
+                            try? await Task.sleep(nanoseconds: pollNs)
+                        }
                     }
                 }
             }
@@ -216,6 +247,11 @@ final class QuitService {
                 forced: false,
                 error: firstError
             )
+        }
+
+        collectHelpers()
+        for pid in Array(helperPaths.keys) where !signaledHelpers.contains(pid) {
+            terminatePid(pid, isHelper: true)
         }
 
         var forceApps: [(pid: pid_t, isHelper: Bool)] = []
@@ -265,6 +301,48 @@ final class QuitService {
         )
     }
 
+    static let helperRescanInterval = 5
+
+    static let detachedChildrenOwners: Set<String> = [
+        "com.apple.terminal",
+        "com.googlecode.iterm2",
+        "dev.warp.warp-stable",
+        "dev.warp.warp",
+        "com.mitchellh.ghostty",
+        "org.alacritty",
+        "net.kovidgoyal.kitty",
+        "com.github.wez.wezterm",
+        "co.zeit.hyper",
+        "org.tabby",
+        "com.raphaelamorim.rio"
+    ]
+
+    static func keepsDetachedChildren(bundleId: String?) -> Bool {
+        guard let bundleId else { return false }
+        return detachedChildrenOwners.contains(bundleId.lowercased())
+    }
+
+    static func targetPids(for app: AppInfo) -> Set<pid_t> {
+        var pids = Set((app.pids.isEmpty ? (app.pid.map { [$0] } ?? []) : app.pids).filter { $0 > 0 })
+        guard let bundleId = app.bundleId?.lowercased(), !bundleId.isEmpty else { return pids }
+        let isGroupedForeground = app.id.hasPrefix("app:")
+        let isGroupedBackground = app.id.hasPrefix("background:")
+        guard isGroupedForeground || isGroupedBackground else { return pids }
+        let ownPid = getpid()
+        for running in NSWorkspace.shared.runningApplications {
+            let pid = running.processIdentifier
+            guard pid > 0, pid != ownPid, !running.isTerminated,
+                  running.bundleIdentifier?.lowercased() == bundleId else { continue }
+            let policyMatches = isGroupedForeground
+                ? running.activationPolicy == .regular
+                : running.activationPolicy == .accessory
+            if policyMatches && processIsRunning(pid) {
+                pids.insert(pid)
+            }
+        }
+        return pids
+    }
+
     static let backgroundRetryAttempts: Set<Int> = [15, 30]
 
     static func helperProcesses(
@@ -303,10 +381,8 @@ final class QuitService {
         return isDescendant(pid, targetPids)
     }
 
-    private static func rootBundleURL(for app: AppInfo) -> URL? {
-        let pids = (app.pids.isEmpty ? (app.pid.map { [$0] } ?? []) : app.pids)
-            .filter { $0 > 0 }
-        for pid in pids {
+    private static func rootBundleURL(pids: Set<pid_t>) -> URL? {
+        for pid in pids.sorted() {
             if let url = NSRunningApplication(processIdentifier: pid)?.bundleURL {
                 return url.standardizedFileURL
             }
@@ -340,46 +416,6 @@ final class QuitService {
     }
 
     private static let scriptQueue = DispatchQueue(label: "quitx.applescript", qos: .userInitiated)
-
-    static func closeFinderWindowsSynchronously() {
-        let script = """
-        with timeout of 1 seconds
-            tell application "Finder"
-                close every window
-            end tell
-        end timeout
-        """
-        _ = runAppleScriptSynchronously(script)
-    }
-
-    static func emptyTrashSynchronously() {
-        let script = """
-        with timeout of 10 seconds
-            ignoring application responses
-                tell application "Finder"
-                    set previousWarn to warns before emptying of trash
-                    try
-                        set warns before emptying of trash to false
-                        empty the trash
-                    end try
-                    set warns before emptying of trash to previousWarn
-                end tell
-            end ignoring
-        end timeout
-        """
-        _ = runAppleScriptSynchronously(script)
-    }
-
-    private static func runAppleScriptSynchronously(_ source: String) -> (success: Bool, error: String?) {
-        scriptQueue.sync {
-            var error: NSDictionary?
-            guard let appleScript = NSAppleScript(source: source) else {
-                return (false, "Could not create AppleScript")
-            }
-            appleScript.executeAndReturnError(&error)
-            return (error == nil, error?.description)
-        }
-    }
 
     private static func runAppleScript(_ source: String, app: AppInfo, label: String) async -> QuitResult {
         await withCheckedContinuation { continuation in

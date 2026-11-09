@@ -213,6 +213,45 @@ struct AppInstanceTests {
         #expect(skipsSelf[503] == nil)
     }
 
+    @Test("Process snapshot finds every descendant, including grandchildren")
+    func snapshotDescendants() {
+        let snapshot = ProcessSnapshot(
+            parents: [500: 1, 501: 500, 502: 501, 503: 502, 600: 1, 601: 600, 700: 1],
+            paths: [:]
+        )
+        #expect(snapshot.descendants(of: [500]) == [501, 502, 503])
+        #expect(snapshot.descendants(of: [500, 600]) == [501, 502, 503, 601])
+        #expect(snapshot.descendants(of: [700]).isEmpty)
+        #expect(snapshot.descendants(of: []).isEmpty)
+        #expect(snapshot.descendants(of: [1]).isEmpty)
+    }
+
+    @Test("Live process snapshot sees this test process as a child of its parent")
+    func liveSnapshot() {
+        let snapshot = ProcessSnapshot.capture()
+        #expect(snapshot.parents[getpid()] == getppid())
+        #expect(snapshot.paths[getpid()] != nil)
+        #expect(snapshot.descendants(of: [getppid()]).contains(getpid()))
+    }
+
+    @Test("Terminal apps keep detached jobs on a normal quit")
+    func terminalKeepsDetachedChildren() {
+        #expect(QuitService.keepsDetachedChildren(bundleId: "com.apple.Terminal"))
+        #expect(QuitService.keepsDetachedChildren(bundleId: "com.googlecode.iTerm2"))
+        #expect(!QuitService.keepsDetachedChildren(bundleId: "com.microsoft.VSCode"))
+        #expect(!QuitService.keepsDetachedChildren(bundleId: nil))
+    }
+
+    @Test("Quit targets keep listed pids and only expand grouped rows")
+    func quitTargetPids() {
+        let single = AppInfo(name: "Ghost", bundleId: "com.example.ghost", pid: 4242)
+        #expect(QuitService.targetPids(for: single) == [4242])
+        let grouped = AppInfo(id: "app:com.example.ghost", name: "Ghost", bundleId: "com.example.ghost", pid: 4242, pids: [4242, 4243])
+        #expect(QuitService.targetPids(for: grouped) == [4242, 4243])
+        let nameless = AppInfo(id: "app:x", name: "X", bundleId: nil, pid: nil, pids: [0, -1])
+        #expect(QuitService.targetPids(for: nameless).isEmpty)
+    }
+
     @Test("Restart keeps launch arguments without executable and psn flags")
     func relaunchArguments() {
         #expect(RestartService.relaunchArguments(from: ["/x/Chrome", "--user-data-dir=/d", "-psn_0_42"]) == ["--user-data-dir=/d"])

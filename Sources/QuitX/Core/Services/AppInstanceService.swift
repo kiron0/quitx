@@ -69,6 +69,54 @@ enum ProcessTree {
     }
 }
 
+struct ProcessSnapshot {
+    let parents: [pid_t: pid_t]
+    let paths: [pid_t: String]
+
+    static func capture() -> ProcessSnapshot {
+        let estimatedCount = max(0, Int(proc_listallpids(nil, 0)))
+        guard estimatedCount > 0 else { return ProcessSnapshot(parents: [:], paths: [:]) }
+        var pids = [pid_t](repeating: 0, count: estimatedCount + 128)
+        let byteCount = Int32(pids.count * MemoryLayout<pid_t>.stride)
+        let actualCount = Int(proc_listallpids(&pids, byteCount))
+        guard actualCount > 0 else { return ProcessSnapshot(parents: [:], paths: [:]) }
+
+        var parents: [pid_t: pid_t] = [:]
+        var paths: [pid_t: String] = [:]
+        parents.reserveCapacity(actualCount)
+        paths.reserveCapacity(actualCount)
+        var buffer = [CChar](repeating: 0, count: 4096)
+        var info = proc_bsdshortinfo()
+        let infoSize = Int32(MemoryLayout<proc_bsdshortinfo>.size)
+        for pid in pids.prefix(actualCount) where pid > 0 {
+            if proc_pidinfo(pid, PROC_PIDT_SHORTBSDINFO, 0, &info, infoSize) == infoSize {
+                parents[pid] = pid_t(truncatingIfNeeded: info.pbsi_ppid)
+            }
+            let length = proc_pidpath(pid, &buffer, UInt32(buffer.count))
+            if length > 0 {
+                paths[pid] = String(cString: buffer)
+            }
+        }
+        return ProcessSnapshot(parents: parents, paths: paths)
+    }
+
+    func descendants(of roots: Set<pid_t>) -> Set<pid_t> {
+        guard !roots.isEmpty else { return [] }
+        var children: [pid_t: [pid_t]] = [:]
+        for (pid, parent) in parents where pid > 1 && parent != pid {
+            children[parent, default: []].append(pid)
+        }
+        var result = Set<pid_t>()
+        var queue = Array(roots.filter { $0 > 1 })
+        while let next = queue.popLast() {
+            for child in children[next] ?? [] where !roots.contains(child) && result.insert(child).inserted {
+                queue.append(child)
+            }
+        }
+        return result
+    }
+}
+
 enum AppInstanceLabel {
     static func flagValue(_ arguments: [String], names: [String]) -> String? {
         for (index, argument) in arguments.enumerated() {

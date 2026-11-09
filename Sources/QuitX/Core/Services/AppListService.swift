@@ -32,14 +32,6 @@ final class AppListService {
     }
 
     @MainActor
-    func fetchAppsSynchronously(config: QuitXConfig) -> [AppInfo] {
-        let pidsByPath = Self.pidRecoveryIndexSynchronously()
-        let running = Self.runningSnapshots(pidsByPath: pidsByPath)
-        let windowCounts = Self.visibleWindowCounts()
-        return Self.buildApps(from: running, windowCounts: windowCounts, config: config)
-    }
-
-    @MainActor
     private static func pidRecoveryIndex() async -> [String: pid_t] {
         let workspaceApps = NSWorkspace.shared.runningApplications
         let needsRecovery = workspaceApps.contains {
@@ -49,16 +41,6 @@ final class AppListService {
         return await Task.detached(priority: .utility) {
             Self.pidsByNormalizedPath(Self.runningProcessPaths())
         }.value
-    }
-
-    @MainActor
-    private static func pidRecoveryIndexSynchronously() -> [String: pid_t] {
-        let workspaceApps = NSWorkspace.shared.runningApplications
-        let needsRecovery = workspaceApps.contains {
-            $0.processIdentifier <= 0 && $0.executableURL != nil && !$0.isTerminated
-        }
-        guard needsRecovery else { return [:] }
-        return pidsByNormalizedPath(runningProcessPaths())
     }
 
     @MainActor
