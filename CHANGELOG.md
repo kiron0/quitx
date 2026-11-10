@@ -11,6 +11,9 @@ All notable changes to QuitX macOS App will be documented in this file.
 
 ### Changed
 
+- **Helper Process Resource Aggregation**: The app list and popover now roll up CPU and memory usage from descendant helper daemons, workers, and renderers into their parent app, displaying a true picture of total system footprint without double-counting top-level apps.
+- **Deep Child Process Termination**: App quit logic now captures full BSD process tree snapshots to track and terminate all nested child and grandchild processes, preventing orphaned background helpers.
+- **Terminal Session Protection**: Normal quit commands on terminal emulators (such as Apple Terminal and iTerm2) leave detached shell background jobs running safely.
 - **In-Place Site Downloads**: Download buttons on the website now start file downloads directly in the same tab instead of opening empty browser tabs, while repository and documentation links open in new tabs.
 - **Precomputed Download Metrics**: Website download metrics are now precomputed twice daily via a scheduled GitHub Actions workflow, eliminating visitor GitHub API rate limits.
 - **Optimized CI Workflows**: GitHub Actions CI now ignores website assets, documentation, and markdown changes to prevent redundant macOS Xcode builds.

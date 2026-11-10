@@ -2,11 +2,14 @@ import Foundation
 
 extension ChangelogProvider {
     static let appReleases: [ReleaseChangelog] = [
-        ReleaseChangelog("1.2.7", "Hopilo integration, last-window protection & workflow improvements", [
+        ReleaseChangelog("1.2.7", "Helper resource aggregation, thorough quit cleanup & Hopilo integration", [
             ("New Features", [
                 "**More Apps ▸ Hopilo**: Explore Hopilo, a free, local-first companion app for AI coding sessions and files, directly in Settings."
             ]),
             ("Improvements", [
+                "**Helper Process Usage**: Rolls up memory and CPU consumption from helper processes and renderers into parent apps for accurate total stats.",
+                "**Deep Child Process Termination**: Uses full process snapshots to terminate all nested helper descendants on quit without leaving orphaned processes.",
+                "**Terminal Session Protection**: Quitting terminal emulators safely preserves detached shell jobs and background tasks.",
                 "**Hopilo Window Protection**: Added Hopilo (`io.coreify.hopilo`) to protected apps so it remains active in the background when its window closes.",
                 "**In-Place Website Downloads**: Download buttons on the site now download directly in the same tab without opening empty tabs.",
                 "**Precomputed Download Metrics**: Website download counts are now precomputed twice daily in CI, eliminating visitor API rate limits."
