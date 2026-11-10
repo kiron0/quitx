@@ -234,6 +234,39 @@ struct AppInstanceTests {
         #expect(snapshot.descendants(of: [getppid()]).contains(getpid()))
     }
 
+    @Test("Memory and CPU include helper processes without double counting listed apps")
+    func helperUsage() {
+        let snapshot = ProcessSnapshot(
+            parents: [500: 1, 501: 500, 502: 501, 600: 500, 601: 600, 700: 1, 701: 700, 800: 1, 801: 800],
+            paths: [:]
+        )
+        let apps = [
+            AppInfo(id: "app:editor", name: "Editor", bundleId: "com.example.editor", pid: 500, pids: [500], memoryBytes: 100),
+            AppInfo(name: "Child App", bundleId: "com.example.child", pid: 600, memoryBytes: 50),
+            AppInfo(name: "Terminal", bundleId: "com.apple.Terminal", pid: 700, memoryBytes: 30),
+            AppInfo(name: "Trash", bundleId: "com.apple.trash", pid: nil, pids: []),
+            AppInfo(name: "Solo", bundleId: "com.example.solo", pid: 900, memoryBytes: 5)
+        ]
+        let result = AppListService.addingHelperUsage(
+            apps,
+            snapshot: snapshot,
+            hogPids: [502],
+            memory: { _ in 10 },
+            cpu: { _ in 1.5 }
+        )
+        #expect(result[0].memoryBytes == 120)
+        #expect(result[1].memoryBytes == 60)
+        #expect(result[2].memoryBytes == 30)
+        #expect(result[3].memoryBytes == 0)
+        #expect(result[4].memoryBytes == 5)
+        #expect(result.map(\.id) == apps.map(\.id))
+        #expect(result[0].cpuUsage == 3)
+        #expect(result[1].cpuUsage == 1.5)
+        #expect(result[2].cpuUsage == 0)
+        #expect(result[0].isCpuHog)
+        #expect(!result[1].isCpuHog)
+    }
+
     @Test("Terminal apps keep detached jobs on a normal quit")
     func terminalKeepsDetachedChildren() {
         #expect(QuitService.keepsDetachedChildren(bundleId: "com.apple.Terminal"))

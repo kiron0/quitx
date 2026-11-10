@@ -73,7 +73,7 @@ struct ProcessSnapshot {
     let parents: [pid_t: pid_t]
     let paths: [pid_t: String]
 
-    static func capture() -> ProcessSnapshot {
+    static func capture(includePaths: Bool = true) -> ProcessSnapshot {
         let estimatedCount = max(0, Int(proc_listallpids(nil, 0)))
         guard estimatedCount > 0 else { return ProcessSnapshot(parents: [:], paths: [:]) }
         var pids = [pid_t](repeating: 0, count: estimatedCount + 128)
@@ -92,6 +92,7 @@ struct ProcessSnapshot {
             if proc_pidinfo(pid, PROC_PIDT_SHORTBSDINFO, 0, &info, infoSize) == infoSize {
                 parents[pid] = pid_t(truncatingIfNeeded: info.pbsi_ppid)
             }
+            guard includePaths else { continue }
             let length = proc_pidpath(pid, &buffer, UInt32(buffer.count))
             if length > 0 {
                 paths[pid] = String(cString: buffer)
@@ -100,16 +101,24 @@ struct ProcessSnapshot {
         return ProcessSnapshot(parents: parents, paths: paths)
     }
 
-    func descendants(of roots: Set<pid_t>) -> Set<pid_t> {
-        guard !roots.isEmpty else { return [] }
+    func childrenByParent() -> [pid_t: [pid_t]] {
         var children: [pid_t: [pid_t]] = [:]
         for (pid, parent) in parents where pid > 1 && parent != pid {
             children[parent, default: []].append(pid)
         }
+        return children
+    }
+
+    func descendants(of roots: Set<pid_t>, stoppingAt stops: Set<pid_t> = []) -> Set<pid_t> {
+        Self.descendants(of: roots, stoppingAt: stops, children: childrenByParent())
+    }
+
+    static func descendants(of roots: Set<pid_t>, stoppingAt stops: Set<pid_t> = [], children: [pid_t: [pid_t]]) -> Set<pid_t> {
+        guard !roots.isEmpty else { return [] }
         var result = Set<pid_t>()
         var queue = Array(roots.filter { $0 > 1 })
         while let next = queue.popLast() {
-            for child in children[next] ?? [] where !roots.contains(child) && result.insert(child).inserted {
+            for child in children[next] ?? [] where !roots.contains(child) && !stops.contains(child) && result.insert(child).inserted {
                 queue.append(child)
             }
         }

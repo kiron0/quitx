@@ -60,6 +60,23 @@ struct AppInfo: Identifiable, Hashable, Sendable {
         self.isCpuHog = isCpuHog
     }
 
+    func addingUsage(memory bytes: UInt64, cpu percent: Double, isCpuHog helperIsHog: Bool = false) -> AppInfo {
+        guard bytes > 0 || percent > 0 || helperIsHog else { return self }
+        return AppInfo(
+            id: id,
+            name: name,
+            bundleId: bundleId,
+            pid: pid,
+            pids: pids,
+            isBackground: isBackground,
+            windowCount: windowCount,
+            memoryBytes: memoryBytes &+ bytes,
+            cpuUsage: cpuUsage + percent,
+            isUnresponsive: isUnresponsive,
+            isCpuHog: isCpuHog || helperIsHog
+        )
+    }
+
     func settingUnresponsive(_ value: Bool) -> AppInfo {
         AppInfo(
             id: id,

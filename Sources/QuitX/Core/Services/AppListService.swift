@@ -187,7 +187,36 @@ final class AppListService {
             }
         }
 
+        results = addingHelperUsage(results, snapshot: .capture(includePaths: false), memory: memoryUsage, cpu: { cpuUsages[$0, default: 0.0] })
         return sortApps(results, sortBy: config.sortBy)
+    }
+
+    static func addingHelperUsage(
+        _ apps: [AppInfo],
+        snapshot: ProcessSnapshot,
+        hogPids: Set<pid_t> = [],
+        memory: (pid_t) -> UInt64,
+        cpu: (pid_t) -> Double
+    ) -> [AppInfo] {
+        let listed = Set(apps.flatMap(\.pids).filter { $0 > 1 })
+        guard !listed.isEmpty else { return apps }
+        let children = snapshot.childrenByParent()
+        let ownPid = getpid()
+        return apps.map { app in
+            guard !app.pids.isEmpty, !QuitService.keepsDetachedChildren(bundleId: app.bundleId) else { return app }
+            let helpers = ProcessSnapshot.descendants(of: Set(app.pids), stoppingAt: listed, children: children)
+            var bytes: UInt64 = 0
+            var percent = 0.0
+            for pid in helpers where pid != ownPid {
+                bytes &+= memory(pid)
+                percent += cpu(pid)
+            }
+            return app.addingUsage(
+                memory: bytes,
+                cpu: percent,
+                isCpuHog: !hogPids.isEmpty && !helpers.isDisjoint(with: hogPids)
+            )
+        }
     }
 
     func fetchLiveStats(currentApps: [AppInfo], config: QuitXConfig, hogPids: Set<pid_t> = [], cpuUsages providedUsages: [pid_t: Double]? = nil) async -> [AppInfo] {
@@ -217,7 +246,14 @@ final class AppListService {
                     isCpuHog: !Set(livePids).isDisjoint(with: hogPids)
                 )
             }
-            return Self.sortApps(updated, sortBy: config.sortBy)
+            let withHelpers = Self.addingHelperUsage(
+                updated,
+                snapshot: .capture(includePaths: false),
+                hogPids: hogPids,
+                memory: Self.memoryUsage,
+                cpu: { cpuUsages[$0, default: 0.0] }
+            )
+            return Self.sortApps(withHelpers, sortBy: config.sortBy)
         }
         return await withTaskCancellationHandler {
             await scanTask.value
@@ -362,11 +398,11 @@ final class AppListService {
 
         let now = Date()
         memoryCache.withLock { cache in
-            if cache.count >= 256 {
+            if cache.count >= 4096 {
                 let cutoff = now.addingTimeInterval(-5)
                 cache = cache.filter { $0.value.timestamp >= cutoff }
-                if cache.count >= 256 {
-                    let newest = cache.sorted { $0.value.timestamp > $1.value.timestamp }.prefix(128)
+                if cache.count >= 4096 {
+                    let newest = cache.sorted { $0.value.timestamp > $1.value.timestamp }.prefix(2048)
                     cache = Dictionary(uniqueKeysWithValues: newest.map { ($0.key, $0.value) })
                 }
             }
