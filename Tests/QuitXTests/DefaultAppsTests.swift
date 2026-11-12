@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 import Foundation
 import Testing
 import UniformTypeIdentifiers
@@ -232,6 +233,103 @@ struct DefaultAppsTests {
         #expect(reloaded.customTargets == [.fileExtension("ts"), .urlScheme("vscode")])
         reloaded.removeCustom(.fileExtension("ts"))
         #expect(DefaultAppsModel.loadCustomTargets(from: defaults) == [.urlScheme("vscode")])
+    }
+
+    @Test("Validator explains each problem and offers a fix where it can")
+    func validator() {
+        let checks = DefaultAppsInputValidator.checks(
+            for: ".ts, vscode:, public.folder, https://example.com/path, .TS",
+            existing: [],
+            categories: []
+        )
+        #expect(checks.map(\.level) == [.ok, .ok, .error, .error, .error])
+        #expect(checks[0].target == .fileExtension("ts"))
+        #expect(checks[1].target == .urlScheme("vscode"))
+        #expect(checks[2].detail.contains("won't change"))
+        #expect(checks[3].suggestion == "https:")
+        #expect(checks[4].detail.contains("twice"))
+
+        #expect(DefaultAppsInputValidator.check("1abc:").detail.contains("start with a letter"))
+        #expect(DefaultAppsInputValidator.check(":").detail.contains("before the colon"))
+        #expect(DefaultAppsInputValidator.check(".ts$").detail.contains("\u{201C}$\u{201D}"))
+        #expect(DefaultAppsInputValidator.check(".").detail.contains("after the dot"))
+        #expect(DefaultAppsInputValidator.check("my ext").suggestion == "myext")
+        #expect(DefaultAppsInputValidator.check("com.example.json").suggestion == ".json")
+        #expect(DefaultAppsInputValidator.check(".qxzzunknown").level == .warning)
+        #expect(DefaultAppsInputValidator.check(".pdf", existing: [.contentType("com.adobe.pdf")]).level == .ok)
+        #expect(DefaultAppsInputValidator.check(".pdf", existing: [.fileExtension("pdf")]).level == .error)
+
+        let pdf = DefaultAppCategory(id: "pdf", title: "PDF Viewer", symbol: "doc", detail: "", targets: [.contentType("com.adobe.pdf")])
+        #expect(DefaultAppsInputValidator.check(".pdf", categories: [pdf]).detail.contains("Also under PDF Viewer"))
+
+        let many = (0..<25).map { ".x\($0)" }.joined(separator: ",")
+        let limited = DefaultAppsInputValidator.checks(for: many, existing: [], categories: [])
+        #expect(limited.filter { $0.level == .error }.count == 5)
+        #expect(DefaultAppsInputValidator.tokens(" .a ;\n.b,, ") == [".a", ".b"])
+    }
+
+    @Test("Field adds ready entries, keeps broken ones, applies fixes and looks up apps")
+    @MainActor
+    func inputFlow() async {
+        let backend = FakeDefaultAppsBackend(
+            defaults: ["ext:md": URL(fileURLWithPath: "/System/Applications/TextEdit.app")],
+            candidates: ["ext:md": [URL(fileURLWithPath: "/System/Applications/TextEdit.app"), Self.chrome]]
+        )
+        let model = DefaultAppsModel(backend: backend, defaults: Self.freshDefaults(), categories: [])
+        model.customInput = ".md, bad$, https://example.com"
+        #expect(model.inputChecks.count == 3)
+        #expect(model.addableInputCount == 1)
+        #expect(model.hasInputErrors)
+
+        await Self.waitUntil { model.inputHandlers["ext:md"] != nil }
+        #expect(model.inputHandlers["ext:md"]?.count == 2)
+        #expect(model.inputHandlers["ext:md"]?.current?.name == "TextEdit")
+
+        model.applySuggestion(model.inputChecks[2])
+        #expect(model.customInput == ".md, bad$, https:")
+
+        model.addCustomFromInput()
+        #expect(model.customTargets == [.fileExtension("md"), .urlScheme("https")])
+        #expect(model.customInput == "bad$")
+        #expect(model.message?.isError == false)
+
+        model.appendExample(".json")
+        #expect(model.customInput == "bad$, .json")
+        #expect(!model.isExampleAvailable(".md"))
+        #expect(model.isExampleAvailable(".json"))
+    }
+
+    @Test("Render the Custom page with live validation")
+    @MainActor
+    func renderCustom() async throws {
+        let qa = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent(".qa")
+        guard FileManager.default.fileExists(atPath: qa.path) else { return }
+        let dir = qa.appendingPathComponent("snapshots")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let model = DefaultAppsModel.shared
+        let previousMode = model.mode
+        let previousInput = model.customInput
+        model.mode = .custom
+        model.customInput = ".ts, vscode:, https://example.com, .bad$, public.folder"
+        defer {
+            model.customInput = previousInput
+            model.mode = previousMode
+        }
+        for dark in [true, false] {
+            let hosting = NSHostingView(rootView: ScrollView { DefaultAppsTabView() }.frame(width: SettingsTab.contentWidth, height: 620))
+            hosting.frame = NSRect(x: 0, y: 0, width: SettingsTab.contentWidth, height: 620)
+            let window = NSWindow(contentRect: hosting.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+            window.backgroundColor = dark ? NSColor(white: 0.16, alpha: 1) : NSColor(white: 0.93, alpha: 1)
+            window.contentView = hosting
+            try await Task.sleep(nanoseconds: 900_000_000)
+            hosting.layoutSubtreeIfNeeded()
+            guard let rep = hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds) else { return }
+            hosting.cacheDisplay(in: hosting.bounds, to: rep)
+            try rep.representation(using: .png, properties: [:])?.write(to: dir.appendingPathComponent("default-apps-custom-\(dark ? "dark" : "light").png"))
+            window.contentView = nil
+        }
     }
 
     @Test("Default Apps lives under Applications and is searchable")

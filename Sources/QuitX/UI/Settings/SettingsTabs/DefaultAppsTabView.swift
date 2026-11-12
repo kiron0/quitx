@@ -233,8 +233,14 @@ private struct DefaultAppsPickerMenu: View {
                 Text("No apps found for this type")
             }
             ForEach(choices, id: \.app.id) { choice in
-                Button(label(for: choice)) {
-                    model.setDefault(choice.app, for: targets)
+                let isCurrent = !isMixed && choice.app.matches(current)
+                Toggle(isOn: Binding(
+                    get: { isCurrent },
+                    set: { _ in
+                        if !isCurrent { model.setDefault(choice.app, for: targets) }
+                    }
+                )) {
+                    DefaultAppsMenuItemLabel(text: label(for: choice), icon: model.menuIcon(for: choice.app))
                 }
             }
             Divider()
@@ -298,12 +304,28 @@ private struct DefaultAppsPickerMenu: View {
     }
 
     private func label(for choice: (app: HandlerApp, count: Int)) -> String {
-        let isCurrent = !isMixed && choice.app.matches(current)
         var text = choice.app.name
         if targets.count > 1, choice.count < targets.count {
             text += " (\(choice.count) of \(targets.count))"
         }
-        return isCurrent ? "✓ \(text)" : text
+        return text
+    }
+}
+
+private struct DefaultAppsMenuItemLabel: View {
+    let text: String
+    let icon: NSImage?
+
+    var body: some View {
+        Label {
+            Text(text)
+        } icon: {
+            if let icon {
+                Image(nsImage: icon)
+            } else {
+                Image(systemName: "app.dashed")
+            }
+        }
     }
 }
 
@@ -334,7 +356,11 @@ private struct DefaultAppsByAppView: View {
                         Text("Loading apps…")
                     }
                     ForEach(model.knownApps) { app in
-                        Button(app.name) { model.selectApp(app) }
+                        Button {
+                            model.selectApp(app)
+                        } label: {
+                            DefaultAppsMenuItemLabel(text: app.name, icon: model.menuIcon(for: app))
+                        }
                     }
                     Divider()
                     Button("Other App…") {
@@ -460,17 +486,32 @@ private struct DefaultAppsCustomView: View {
                 detail: "Type an extension like .ts, a link scheme like vscode: or slack:, or a type identifier like public.json."
             )
 
-            HStack(spacing: 8) {
-                TextField(".ts, vscode:, public.json", text: $model.customInput)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 12, design: .monospaced))
-                    .onSubmit(add)
-                    .disableInitialFocus()
-                    .accessibilityLabel("File extension, link scheme or type identifier")
-                Button("Add", action: add)
-                    .buttonStyle(UninstallPrimaryButtonStyle(isEnabled: !trimmed.isEmpty))
-                    .disabled(trimmed.isEmpty)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    inputField
+                    Button(addTitle, action: add)
+                        .buttonStyle(UninstallPrimaryButtonStyle(isEnabled: model.addableInputCount > 0))
+                        .disabled(model.addableInputCount == 0)
+                        .help(addHelp)
+                }
+
+                if model.inputChecks.isEmpty {
+                    examples
+                } else {
+                    VStack(spacing: 6) {
+                        ForEach(model.inputChecks) { check in
+                            DefaultAppInputCheckRow(model: model, check: check)
+                        }
+                    }
+                    if model.inputChecks.count > 1 {
+                        Text(summaryText)
+                            .font(.system(size: 10.5, weight: .medium))
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                }
             }
+            .animation(.easeOut(duration: 0.15), value: model.inputChecks)
 
             if model.customTargets.isEmpty {
                 DefaultAppsEmptyRow(text: "Nothing added yet. Added types stay here so you can change them later.")
@@ -490,13 +531,221 @@ private struct DefaultAppsCustomView: View {
         }
     }
 
-    private var trimmed: String {
-        model.customInput.trimmingCharacters(in: .whitespacesAndNewlines)
+    private var level: DefaultAppInputCheck.Level? {
+        if model.inputChecks.isEmpty { return nil }
+        if model.hasInputErrors { return .error }
+        if model.inputChecks.contains(where: { $0.level == .warning }) { return .warning }
+        return .ok
+    }
+
+    private var inputField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: level?.symbol ?? "plus.circle")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(level?.color ?? Color.secondary)
+                .frame(width: 16)
+                .accessibilityHidden(true)
+
+            TextField(
+                "File extension, link scheme or type identifier",
+                text: $model.customInput,
+                prompt: Text(".ts, vscode:, public.json")
+            )
+            .textFieldStyle(.plain)
+            .font(.system(size: 12.5, design: .monospaced))
+            .onSubmit(add)
+            .disableInitialFocus()
+
+            if !model.customInput.isEmpty {
+                Button {
+                    model.customInput = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.tertiary)
+                }
+                .buttonStyle(.plain)
+                .help("Clear")
+                .accessibilityLabel("Clear")
+            }
+        }
+        .padding(.leading, 10)
+        .padding(.trailing, 8)
+        .frame(height: 30)
+        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .stroke(level.map { $0.color.opacity(0.65) } ?? Color.primary.opacity(0.14), lineWidth: level == nil ? 0.5 : 1)
+        )
+    }
+
+    private var examples: some View {
+        let available = DefaultAppsModel.inputExamples.filter { model.isExampleAvailable($0) }.prefix(6)
+        return HStack(spacing: 6) {
+            Text("Try")
+                .font(.system(size: 10.5, weight: .medium))
+                .foregroundStyle(.secondary)
+            ForEach(Array(available), id: \.self) { example in
+                Button {
+                    model.appendExample(example)
+                } label: {
+                    Text(example)
+                        .font(.system(size: 10.5, design: .monospaced))
+                        .padding(.horizontal, 7)
+                        .frame(height: 20)
+                        .background(Color.primary.opacity(0.06), in: Capsule())
+                        .overlay(Capsule().stroke(Color.primary.opacity(0.1), lineWidth: 0.5))
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .help("Add \(example) to the field")
+            }
+            Spacer(minLength: 0)
+            Text("Separate several with commas")
+                .font(.system(size: 10.5))
+                .foregroundStyle(.tertiary)
+        }
+    }
+
+    private var addTitle: String {
+        let count = model.addableInputCount
+        return count > 1 ? "Add \(count)" : "Add"
+    }
+
+    private var addHelp: String {
+        if model.inputChecks.isEmpty { return "Type something to add." }
+        if model.addableInputCount == 0 { return "Fix the highlighted entries first." }
+        if model.hasInputErrors { return "Adds the entries marked ready. The others stay in the field." }
+        return "Add to your list."
+    }
+
+    private var summaryText: String {
+        let ready = model.addableInputCount
+        let broken = model.inputChecks.count - ready
+        if broken == 0 { return "\(ready) ready to add" }
+        return "\(ready) ready, \(broken) \(broken == 1 ? "needs" : "need") a fix"
     }
 
     private func add() {
-        guard !trimmed.isEmpty else { return }
-        if model.addCustom(trimmed) { model.customInput = "" }
+        guard model.addableInputCount > 0 else { return }
+        model.addCustomFromInput()
+    }
+}
+
+private extension DefaultAppInputCheck.Level {
+    var symbol: String {
+        switch self {
+        case .ok: return "checkmark.circle.fill"
+        case .warning: return "exclamationmark.triangle.fill"
+        case .error: return "xmark.octagon.fill"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .ok: return .green
+        case .warning: return .orange
+        case .error: return .red
+        }
+    }
+}
+
+private struct DefaultAppInputCheckRow: View {
+    @ObservedObject var model: DefaultAppsModel
+    let check: DefaultAppInputCheck
+
+    private var kind: String? {
+        switch check.target {
+        case .fileExtension: return "Extension"
+        case .urlScheme: return "Link"
+        case .contentType: return "Type"
+        case nil: return nil
+        }
+    }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 9) {
+            Image(systemName: check.level.symbol)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(check.level.color)
+                .frame(width: 16, height: 16)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 6) {
+                    Text(check.title)
+                        .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    if let kind {
+                        Text(kind)
+                            .font(.system(size: 9.5, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1)
+                            .background(Color.primary.opacity(0.07), in: Capsule())
+                    }
+                }
+                Text(check.detail)
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(check.level == .error ? check.level.color : Color.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if check.canAdd, let target = check.target {
+                    handlerLine(model.inputHandlers[target.id])
+                }
+            }
+
+            Spacer(minLength: 6)
+
+            if let suggestion = check.suggestion {
+                Button("Use \(suggestion)") {
+                    model.applySuggestion(check)
+                }
+                .buttonStyle(UninstallSecondaryButtonStyle())
+                .help("Replace \u{201C}\(check.token)\u{201D} with \(suggestion)")
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(check.level.color.opacity(0.06), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(check.level.color.opacity(0.22), lineWidth: 0.5)
+        )
+        .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder
+    private func handlerLine(_ info: DefaultAppInputHandlers?) -> some View {
+        if let info {
+            HStack(spacing: 5) {
+                if let current = info.current {
+                    Text("Opens in")
+                    AppIconView(bundleId: current.bundleID, url: current.url, size: 13, cornerRadius: 3)
+                    Text(current.name).fontWeight(.medium)
+                    if info.count > 1 {
+                        Text("now, \(info.count) apps can open it")
+                    } else {
+                        Text("now")
+                    }
+                } else if info.count > 0 {
+                    Text("No default yet, \(info.count) \(info.count == 1 ? "app" : "apps") can open it")
+                } else {
+                    Image(systemName: "info.circle")
+                    Text("No installed app opens this yet. Pick one with Other App… after adding.")
+                }
+            }
+            .font(.system(size: 10.5))
+            .foregroundStyle(info.current == nil && info.count == 0 ? Color.orange : Color.secondary)
+            .lineLimit(1)
+        } else {
+            HStack(spacing: 5) {
+                ProgressView().controlSize(.mini)
+                Text("Checking apps…")
+            }
+            .font(.system(size: 10.5))
+            .foregroundStyle(.secondary)
+        }
     }
 }
 

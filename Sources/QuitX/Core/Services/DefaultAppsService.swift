@@ -330,6 +330,195 @@ struct DefaultAppsMessage: Equatable, Sendable {
     let isError: Bool
 }
 
+struct DefaultAppInputCheck: Identifiable, Equatable, Sendable {
+    enum Level: Equatable, Sendable {
+        case ok
+        case warning
+        case error
+    }
+
+    let id: Int
+    let token: String
+    let target: DefaultAppTarget?
+    let level: Level
+    let title: String
+    let detail: String
+    var suggestion: String? = nil
+
+    var canAdd: Bool { target != nil && level != .error }
+}
+
+struct DefaultAppInputHandlers: Equatable, Sendable {
+    let current: HandlerApp?
+    let count: Int
+}
+
+enum DefaultAppsInputValidator {
+    static let maxTokens = 20
+    static let separators = CharacterSet(charactersIn: ",;\n")
+
+    static func tokens(_ input: String) -> [String] {
+        input.components(separatedBy: separators)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
+
+    static func checks(
+        for input: String,
+        existing: [DefaultAppTarget],
+        categories: [DefaultAppCategory]
+    ) -> [DefaultAppInputCheck] {
+        var seen = Set<String>()
+        return tokens(input).enumerated().map { index, token in
+            guard index < maxTokens else {
+                return DefaultAppInputCheck(
+                    id: index,
+                    token: token,
+                    target: nil,
+                    level: .error,
+                    title: token,
+                    detail: "Add up to \(maxTokens) at a time."
+                )
+            }
+            let check = check(token, index: index, existing: existing, categories: categories, earlier: seen)
+            if let target = check.target { seen.insert(target.id) }
+            return check
+        }
+    }
+
+    static func check(
+        _ token: String,
+        index: Int = 0,
+        existing: [DefaultAppTarget] = [],
+        categories: [DefaultAppCategory] = [],
+        earlier: Set<String> = []
+    ) -> DefaultAppInputCheck {
+        func failure(_ detail: String, title: String? = nil, suggestion: String? = nil) -> DefaultAppInputCheck {
+            DefaultAppInputCheck(id: index, token: token, target: nil, level: .error, title: title ?? token, detail: detail, suggestion: suggestion)
+        }
+
+        if token.rangeOfCharacter(from: .whitespacesAndNewlines) != nil {
+            let joined = token.components(separatedBy: .whitespacesAndNewlines).joined()
+            let suggestion = DefaultAppTarget.parse(joined) != nil ? joined : nil
+            return failure("Remove the spaces. To add several, separate them with commas.", suggestion: suggestion)
+        }
+
+        guard let target = DefaultAppTarget.parse(token) else {
+            return diagnose(token, failure: failure)
+        }
+        let shown: String
+        if case .contentType(let identifier) = target { shown = identifier } else { shown = target.title }
+
+        if target.isTooBroad {
+            return failure("\(shown) covers folders, apps or every file, so QuitX won't change it.", title: shown)
+        }
+        guard target.isResolvable else {
+            return failure("macOS doesn't recognize \(shown).", title: shown)
+        }
+        if existing.contains(target) {
+            return failure("Already in your list.", title: shown)
+        }
+        if earlier.contains(target.id) {
+            return failure("Typed twice. It will be added once.", title: shown)
+        }
+
+        var notes: [String] = ["\(target.subtitle)."]
+        if let category = categories.first(where: { category in category.targets.contains { $0.covers(target) } }) {
+            notes.append("Also under \(category.title).")
+        }
+
+        if case .fileExtension = target, target.contentTypes.allSatisfy(\.isDynamic) {
+            return DefaultAppInputCheck(
+                id: index,
+                token: token,
+                target: target,
+                level: .warning,
+                title: shown,
+                detail: "No app on this Mac declares \(target.title) yet. You can still pick one with Other App…"
+            )
+        }
+
+        return DefaultAppInputCheck(
+            id: index,
+            token: token,
+            target: target,
+            level: .ok,
+            title: shown,
+            detail: notes.joined(separator: " ")
+        )
+    }
+
+    private static func diagnose(
+        _ token: String,
+        failure: (String, String?, String?) -> DefaultAppInputCheck
+    ) -> DefaultAppInputCheck {
+        let lower = token.lowercased()
+
+        if let range = lower.range(of: "://"), !lower.hasSuffix("://") {
+            let scheme = String(lower[..<range.lowerBound])
+            if DefaultAppTarget.isValidScheme(scheme) {
+                return failure("Only the link scheme is needed, not the full address.", nil, "\(scheme):")
+            }
+        }
+
+        if lower.hasSuffix(":") || lower.hasSuffix("://") {
+            var scheme = lower
+            if scheme.hasSuffix("://") { scheme.removeLast(3) } else { scheme.removeLast() }
+            if scheme.isEmpty {
+                return failure("Type a scheme name before the colon, like vscode:.", nil, nil)
+            }
+            if let first = scheme.first, !("a"..."z").contains(first) {
+                return failure("Link schemes start with a letter, like vscode: or slack:.", nil, nil)
+            }
+            if scheme.count > 64 {
+                return failure("Link schemes can be at most 64 characters.", nil, nil)
+            }
+            let bad = invalidCharacters(in: scheme, allowed: "abcdefghijklmnopqrstuvwxyz0123456789+-.")
+            return failure("Link schemes can use letters, numbers, +, - and . only. Remove \(bad).", nil, nil)
+        }
+
+        var ext = lower
+        if ext.hasPrefix("*.") { ext.removeFirst(2) } else if ext.hasPrefix(".") { ext.removeFirst() } else if ext.contains(".") {
+            let last = ext.split(separator: ".").last.map(String.init) ?? ""
+            let suggestion = DefaultAppTarget.isValidExtension(last) && UTType(filenameExtension: last).map { !$0.isDynamic } == true ? ".\(last)" : nil
+            return failure("macOS doesn't know a type called \u{201C}\(token)\u{201D}. Check the spelling, or type an extension like .json.", nil, suggestion)
+        }
+
+        if ext.isEmpty {
+            return failure("Type an extension after the dot, like .md.", nil, nil)
+        }
+        if ext.count > 32 {
+            return failure("File extensions can be at most 32 characters.", nil, nil)
+        }
+        if ext.hasSuffix(".") {
+            return failure("A file extension can't end with a dot.", nil, String(ext.dropLast()).isEmpty ? nil : ".\(ext.dropLast())")
+        }
+        let bad = invalidCharacters(in: ext, allowed: "abcdefghijklmnopqrstuvwxyz0123456789-_+.")
+        if !bad.isEmpty {
+            return failure("File extensions can use letters, numbers, -, _ and + only. Remove \(bad).", nil, nil)
+        }
+        return failure("Type an extension like .ts, a link scheme like vscode:, or a type like public.json.", nil, nil)
+    }
+
+    private static func invalidCharacters(in text: String, allowed: String) -> String {
+        let allowedSet = Set(allowed)
+        var bad: [Character] = []
+        for character in text where !allowedSet.contains(character) && !bad.contains(character) {
+            bad.append(character)
+        }
+        return bad.map { "\u{201C}\($0)\u{201D}" }.joined(separator: ", ")
+    }
+}
+
+extension DefaultAppTarget {
+    func covers(_ other: DefaultAppTarget) -> Bool {
+        if self == other { return true }
+        if isURLScheme || other.isURLScheme { return false }
+        guard let mine = primaryType?.identifier, let theirs = other.primaryType?.identifier else { return false }
+        return mine == theirs
+    }
+}
+
 protocol DefaultAppsBackend: Sendable {
     func defaultApp(for target: DefaultAppTarget) -> URL?
     func candidateApps(for target: DefaultAppTarget) -> [URL]
@@ -490,7 +679,14 @@ final class DefaultAppsModel: ObservableObject {
     @Published private(set) var isLoadingSelectedApp = false
     @Published var expandedCategories: Set<String> = []
     @Published var message: DefaultAppsMessage?
-    @Published var customInput = ""
+    @Published var customInput = "" {
+        didSet {
+            if customInput != oldValue { inputDidChange() }
+        }
+    }
+    @Published private(set) var inputChecks: [DefaultAppInputCheck] = []
+    @Published private(set) var inputHandlers: [String: DefaultAppInputHandlers] = [:]
+    @Published private(set) var menuIcons: [String: NSImage] = [:]
 
     let categories: [DefaultAppCategory]
     private let backend: any DefaultAppsBackend
@@ -498,7 +694,12 @@ final class DefaultAppsModel: ObservableObject {
     private var generation = 0
     private var loadTask: Task<Void, Never>?
     private var selectTask: Task<Void, Never>?
+    private var inputTask: Task<Void, Never>?
+    private var iconTask: Task<Void, Never>?
     private var pendingTasks: [UUID: Task<Void, Never>] = [:]
+
+    static let menuIconSize = NSSize(width: 16, height: 16)
+    static let inputExamples = [".ts", ".md", ".json", ".yaml", "vscode:", "slack:", "zoommtg:", "public.json"]
 
     init(
         backend: any DefaultAppsBackend = LaunchServicesDefaultAppsBackend(),
@@ -523,6 +724,8 @@ final class DefaultAppsModel: ObservableObject {
     deinit {
         loadTask?.cancel()
         selectTask?.cancel()
+        inputTask?.cancel()
+        iconTask?.cancel()
         for task in pendingTasks.values { task.cancel() }
     }
 
@@ -628,34 +831,134 @@ final class DefaultAppsModel: ObservableObject {
         }
     }
 
+    var addableInputCount: Int {
+        inputChecks.filter(\.canAdd).count
+    }
+
+    var hasInputErrors: Bool {
+        inputChecks.contains { $0.level == .error }
+    }
+
     @discardableResult
     func addCustom(_ input: String) -> Bool {
-        guard let target = DefaultAppTarget.parse(input) else {
-            message = DefaultAppsMessage(text: "Type a file extension like .ts, a link scheme like vscode:, or a type identifier like public.json.", isError: true)
+        let result = addTargets(from: input)
+        if result.added.isEmpty {
+            let detail = result.rejected.first?.detail ?? "Type a file extension like .ts, a link scheme like vscode:, or a type identifier like public.json."
+            message = DefaultAppsMessage(text: detail, isError: true)
             return false
         }
-        guard !target.isTooBroad else {
-            message = DefaultAppsMessage(text: "\(target.title) covers folders, apps or every file. QuitX won't change it.", isError: true)
-            return false
-        }
-        guard target.isResolvable else {
-            message = DefaultAppsMessage(text: "macOS doesn't recognize \(target.title).", isError: true)
-            return false
-        }
-        guard !customTargets.contains(target) else {
-            message = DefaultAppsMessage(text: "\(target.title) is already in your list.", isError: false)
-            return false
-        }
-        customTargets.append(target)
-        saveCustomTargets()
         message = nil
-        reload([target])
         return true
+    }
+
+    func addCustomFromInput() {
+        let result = addTargets(from: customInput)
+        guard !result.added.isEmpty else { return }
+        let names = result.added.map(\.title)
+        let list = names.count <= 3 ? names.joined(separator: ", ") : "\(names.count) types"
+        if result.rejected.isEmpty {
+            message = DefaultAppsMessage(text: "Added \(list). Pick an app for each one below.", isError: false)
+        } else {
+            message = DefaultAppsMessage(text: "Added \(list). Fix the rest in the field above.", isError: false)
+        }
+        customInput = result.rejected.map(\.token).joined(separator: ", ")
+    }
+
+    func applySuggestion(_ check: DefaultAppInputCheck) {
+        guard let suggestion = check.suggestion else { return }
+        var tokens = DefaultAppsInputValidator.tokens(customInput)
+        guard check.id < tokens.count else { return }
+        tokens[check.id] = suggestion
+        customInput = tokens.joined(separator: ", ")
+    }
+
+    func appendExample(_ example: String) {
+        var tokens = DefaultAppsInputValidator.tokens(customInput)
+        guard !tokens.contains(where: { $0.caseInsensitiveCompare(example) == .orderedSame }) else { return }
+        tokens.append(example)
+        customInput = tokens.joined(separator: ", ")
+    }
+
+    func isExampleAvailable(_ example: String) -> Bool {
+        guard let target = DefaultAppTarget.parse(example), target.isResolvable else { return false }
+        return !customTargets.contains(target)
     }
 
     func removeCustom(_ target: DefaultAppTarget) {
         customTargets.removeAll { $0 == target }
         saveCustomTargets()
+        inputDidChange()
+    }
+
+    func menuIcon(for app: HandlerApp) -> NSImage? {
+        menuIcons[app.id]
+    }
+
+    private func addTargets(from input: String) -> (added: [DefaultAppTarget], rejected: [DefaultAppInputCheck]) {
+        let checks = DefaultAppsInputValidator.checks(for: input, existing: customTargets, categories: categories)
+        var added: [DefaultAppTarget] = []
+        var rejected: [DefaultAppInputCheck] = []
+        for check in checks {
+            if let target = check.target, check.canAdd, !customTargets.contains(target), !added.contains(target) {
+                added.append(target)
+            } else if !(check.target.map { added.contains($0) } ?? false) {
+                rejected.append(check)
+            }
+        }
+        guard !added.isEmpty else { return ([], rejected) }
+        customTargets.append(contentsOf: added)
+        saveCustomTargets()
+        reload(added)
+        return (added, rejected)
+    }
+
+    private func inputDidChange() {
+        inputTask?.cancel()
+        let checks = DefaultAppsInputValidator.checks(for: customInput, existing: customTargets, categories: categories)
+        inputChecks = checks
+        let targets = checks.compactMap { $0.canAdd ? $0.target : nil }
+        let known = inputHandlers.filter { key, _ in targets.contains { $0.id == key } }
+        if known.count != inputHandlers.count { inputHandlers = known }
+        let missing = targets.filter { inputHandlers[$0.id] == nil }
+        guard !missing.isEmpty else { return }
+        let backend = backend
+        inputTask = Task { [weak self] in
+            do {
+                try await Task.sleep(for: .milliseconds(250))
+            } catch {
+                return
+            }
+            let loaded = await DefaultAppsScanner.entries(for: missing, backend: backend)
+            guard let self, !Task.isCancelled else { return }
+            for (key, entry) in loaded {
+                self.inputHandlers[key] = DefaultAppInputHandlers(current: entry.current, count: entry.candidates.count)
+            }
+            self.warmMenuIcons(loaded.values.compactMap(\.current))
+        }
+    }
+
+    private func warmMenuIcons(_ extra: [HandlerApp] = []) {
+        let pending = (extra + knownApps).filter { menuIcons[$0.id] == nil }
+        guard !pending.isEmpty else { return }
+        iconTask?.cancel()
+        iconTask = Task { [weak self] in
+            var batch: [String: NSImage] = [:]
+            for app in pending {
+                if Task.isCancelled { return }
+                guard let self, self.menuIcons[app.id] == nil, batch[app.id] == nil else { continue }
+                if let icon = AppIconCache.icon(for: app.bundleID, url: app.url)?.copy() as? NSImage {
+                    icon.size = Self.menuIconSize
+                    batch[app.id] = icon
+                }
+                if batch.count >= 12 {
+                    self.menuIcons.merge(batch) { _, new in new }
+                    batch.removeAll()
+                }
+                await Task.yield()
+            }
+            guard let self, !batch.isEmpty else { return }
+            self.menuIcons.merge(batch) { _, new in new }
+        }
     }
 
     private func apply(_ app: HandlerApp, to targets: [DefaultAppTarget], recordHistory: Bool) {
@@ -736,6 +1039,7 @@ final class DefaultAppsModel: ObservableObject {
             }
         }
         knownApps = seen.values.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        warmMenuIcons()
     }
 
     private func saveCustomTargets() {
