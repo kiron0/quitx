@@ -28,8 +28,7 @@ private final class FakeDefaultAppsBackend: DefaultAppsBackend, @unchecked Senda
 
     func setDefault(_ appURL: URL, for target: DefaultAppTarget) async throws {
         if failing.contains(target.id) { throw DefaultAppsError.unknownType(target.title) }
-        lock.lock(); defer { lock.unlock() }
-        defaults[target.id] = appURL
+        lock.withLock { defaults[target.id] = appURL }
     }
 }
 

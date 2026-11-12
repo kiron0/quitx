@@ -11,7 +11,19 @@ ALT_DEST_APP="$HOME/Applications/$APP_NAME.app"
 cd "$ROOT_DIR"
 
 echo "🧪 [1/5] Testing..."
-swift test --build-system native 2>&1 | LC_ALL=C sed -E '/warning:.*build-system native.*deprecated/d'
+TEST_FLAGS=()
+CLT_FRAMEWORKS="/Library/Developer/CommandLineTools/Library/Developer/Frameworks"
+if [ -d "$CLT_FRAMEWORKS/Testing.framework" ]; then
+    TEST_FLAGS=(-Xswiftc -F -Xswiftc "$CLT_FRAMEWORKS")
+fi
+TEST_LOG="$(mktemp -t quitx-ship-test)"
+swift test --build-system native ${TEST_FLAGS[@]+"${TEST_FLAGS[@]}"} 2>&1 | LC_ALL=C sed -E '/warning:.*build-system native.*deprecated/d' | tee "$TEST_LOG"
+if ! grep -qE "Test run with [0-9]+ tests? .*passed" "$TEST_LOG"; then
+    rm -f "$TEST_LOG"
+    echo "❌ No passing Swift Testing run found. Refusing to ship untested build." >&2
+    exit 1
+fi
+rm -f "$TEST_LOG"
 
 echo "📦 [2/5] Bundling..."
 "$SCRIPT_DIR/build.sh"
