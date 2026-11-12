@@ -86,7 +86,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "Resource values",
-                    body: "Each row shows live CPU or memory usage. The displayed value follows the current Sort setting. Values refresh continuously while the popover is open."
+                    body: "Each row shows live CPU or memory usage, rolling up descendant helper processes, workers, and renderers into their parent app without double-counting. The displayed value follows the current Sort setting and refreshes continuously while the popover is open."
                 ),
                 QuitXHelpSection(
                     title: "Row actions",
@@ -94,11 +94,11 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Uninstall apps",
-                    body: "Choose Uninstall in an app row's menu or open Settings > Applications > Uninstall Apps. It finds each app and its application support, caches, preferences, containers, saved state, logs, and launch items. Everything starts selected; uncheck anything you want to keep, then click Remove and confirm. Hover a file to show it in Finder or remove only that file. QuitX force quits the app first, so save your work. Selected items are permanently deleted and cannot be recovered from Trash. Apple apps, parts of macOS, helpers inside other apps, and QuitX itself can't be uninstalled. Your Documents and Desktop are never touched."
+                    body: "Choose Uninstall in an app row's menu or open Settings > Applications > Uninstall Apps. It finds each app and its application support, caches, preferences, containers, saved state, logs, and launch items. Everything starts selected; uncheck anything you want to keep, then click Remove and confirm. Hover a file to show it in Finder or remove only that file. QuitX force quits the app first, so save your work, and uses resilient multi-pass removal to clear every removable file even inside partially protected folders. Selected items are permanently deleted and cannot be recovered from Trash. Apple apps, parts of macOS, helpers inside other apps, and QuitX itself can't be uninstalled. Your Documents and Desktop are never touched."
                 ),
                 QuitXHelpSection(
                     title: "Quit Other Apps",
-                    body: "Choose Quit Other Apps in any app row's menu to terminate all running apps except that specific app. Honoring your quit-all confirmation preference."
+                    body: "Choose Quit Other Apps in any app row's menu to terminate all running apps except that specific app, honoring your quit-all confirmation preference."
                 ),
                 QuitXHelpSection(
                     title: "Quit timers",
@@ -106,11 +106,11 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Multiple instances and profiles",
-                    body: "An app that runs more than once (for example Chrome with a separate data folder) shows as one row. Quit, restart, and Quit In act on every instance; restart brings each instance back with its own profile. To close only part of an app, open Windows in the row menu, shown when the app has more than one window: close single windows, or close one Chrome profile's windows. With Quit When Last Window Closes on, the app quits only when none of its instances has a window left. It then quits completely, every instance and the background processes it started, exactly like Quit in the list. Windows needs Accessibility access, granted in Automation settings."
+                    body: "An app that runs more than once (for example Chrome with a separate data folder) shows as one row. Quit, restart, and Quit In act on every instance; restart brings each instance back with its own profile. To close only part of an app, open Windows in the row menu, shown when the app has more than one window: close single windows, or close one Chrome profile's windows. With Quit When Last Window Closes on, the app quits only when none of its instances has a window left. It then quits completely, every instance and the background processes it started, exactly like Quit in the list. Windows needs Accessibility access, granted in Settings > Permissions."
                 ),
                 QuitXHelpSection(
                     title: "Background apps",
-                    body: "Show background apps temporarily from the popover gear menu or persistently from Settings > Advanced. Group Background Instances combines related helper processes into one line."
+                    body: "Show background apps temporarily from the popover gear menu or persistently with View background apps in Settings > Advanced. Group background instances combines related helper processes into one line."
                 )
             ]
         ),
@@ -144,7 +144,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "Normal quit",
-                    body: "Normal quit asks the app to terminate and waits for it to close gracefully. QuitX never forces termination on its own."
+                    body: "Normal quit asks the app to terminate and waits for it to close gracefully, cleaning up nested helper processes while leaving detached terminal background jobs running safely. QuitX never forces termination on its own."
                 ),
                 QuitXHelpSection(
                     title: "Force quit",
@@ -185,7 +185,32 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Menu bar count and diagnostics",
-                    body: "The Ports chip in Settings > General adds the number of listening ports to the menu bar stats, next to CPU, memory and battery, kept current in the background. It appears while port killing is on. Click it to open the Ports tab. Settings > Exclude has a Ports tab while port killing is on: Add Ports… excludes ports picked from the ones listening now or typed by hand, like 3000, 5173 or 8000-8010. The gear menu can export redacted diagnostics or copy recent listener history; tokens and passwords in commands are removed."
+                    body: "The Ports chip in Settings > General adds the number of listening ports to the menu bar stats, next to CPU, memory, battery and cleanup, kept current in the background. It appears while port killing is on. Click it to open the Ports tab. Settings > Exclude has a Ports tab while port killing is on: Add Ports… excludes ports picked from the ones listening now or typed by hand, like 3000, 5173 or 8000-8010. The gear menu can export redacted diagnostics or copy recent listener history; tokens and passwords in commands are removed."
+                )
+            ]
+        ),
+        QuitXHelpTopic(
+            id: "default-apps",
+            category: .essentials,
+            title: "Default Apps",
+            symbol: "app.badge.checkmark",
+            summary: "Set which applications open your file extensions, URL schemes, and categories.",
+            sections: [
+                QuitXHelpSection(
+                    title: "Categories and individual types",
+                    body: "Open Settings > Applications > Default Apps to update handlers across 11 built-in categories: Browser, Email, PDF, Images, Video, Music, Code Editor, Documents, Archives, Calendar & Contacts, and Terminal & Remote. Switch a whole category together or expand it to assign individual file extensions and link schemes."
+                ),
+                QuitXHelpSection(
+                    title: "Picker menu and App Chooser",
+                    body: "Open any handler dropdown to see candidate apps with their icons, a checkmark on the active default, Show in Finder, and Other…. Choosing Other… opens the searchable App Chooser listing suggested apps first and all installed apps, with live filtering, arrow-key + Return selection, and Browse… for custom locations."
+                ),
+                QuitXHelpSection(
+                    title: "Inspect by App",
+                    body: "Switch to By App to pick any installed application and view or claim every document type and URL scheme it declares. Click Clear beside the picker to reset the app view without changing any defaults."
+                ),
+                QuitXHelpSection(
+                    title: "Custom types and Undo",
+                    body: "Switch to Custom to register extensions (like .ts or .mdx), URL schemes (like vscode:), or UTTypes (like public.json) with live validation, typo suggestions, and safety checks that block overly broad system types. Use Undo after any change to restore previous default apps immediately."
                 )
             ]
         ),
@@ -252,7 +277,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "Menu bar stats readout",
-                    body: "Enable Show stats in menu bar in Settings > General, then click CPU, Memory, GPU, and Battery to show or hide each one, and drag them into the order you want them in the menu bar. Configure Style format with Icon (SF Symbols) or Text (CPU / MEM / GPU prefixes), and Memory format with Gigabytes (GB) or Percentage (%). Choose how often the readout updates under Refresh, from every second to every 10 seconds. Battery options appear only on Macs with a battery, and GPU only when macOS reports GPU statistics."
+                    body: "Enable Show stats in menu bar in Settings > General, then click CPU, Memory, GPU, Battery, Cleanup, or Ports (when port killing is enabled) to show or hide each one, and drag them into the order you want in the menu bar. Configure Style format with Icon (SF Symbols) or Text (CPU / MEM / GPU prefixes), Memory format with Gigabytes (GB) or Percentage (%), Refresh cadence from 1 to 10 seconds, and Cleanup scan and Background scan intervals. Battery options appear only on Macs with a battery, and GPU only when macOS reports GPU statistics."
                 ),
                 QuitXHelpSection(
                     title: "Stats detail panel",
@@ -332,6 +357,23 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             ]
         ),
         QuitXHelpTopic(
+            id: "permissions",
+            category: .preferences,
+            title: "Permissions",
+            symbol: "lock.shield",
+            summary: "Understand what macOS permissions QuitX uses and how to grant or repair them.",
+            sections: [
+                QuitXHelpSection(
+                    title: "Required and optional permissions",
+                    body: "Open Settings > Permissions to inspect Accessibility (used by Windows actions and Quit when last window closes), Full Disk Access (direct Trash and Mail cleanup without Finder prompts), Finder Automation (Apple Events fallback for protected Trash actions), Login Items approval for launch at login, and Notifications for CPU hog, memory rescue, and update alerts."
+                ),
+                QuitXHelpSection(
+                    title: "Grant, reveal, or repair",
+                    body: "Each permission card shows its live macOS status and primary action to grant or open System Settings. If Accessibility shows Needs repair after an app update, use the card action, Show QuitX in Finder, or toggle QuitX off and back on under Privacy & Security."
+                )
+            ]
+        ),
+        QuitXHelpTopic(
             id: "settings",
             category: .preferences,
             title: "Settings and Updates",
@@ -340,19 +382,19 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "Finding your way around",
-                    body: "Settings opens on Overview: a card for every feature with its current state, like On, Off or Normal. Click a card to jump to its page. The sidebar groups pages into App, Quitting, Applications, Cleanup, Developer Cleanup, Developer and QuitX. Search settings… finds a page by any word, such as sleep, docker or liquid glass. Press Return to open the first match."
+                    body: "Settings opens on Overview: a card for every feature with its current state, like On, Off or Normal. Click a card to jump to its page. The sidebar groups pages into App, Quitting, Applications, Cleanup, Developer Cleanup, Developer, QuitX, and More Apps (Marquee and Hopilo). Search settings… finds a page by any word, such as sleep, docker or liquid glass. Press Return to open the first match."
                 ),
                 QuitXHelpSection(
-                    title: "General, Automation & Advanced",
-                    body: "Settings > General controls startup, sounds, menu bar stats for CPU, memory, GPU, and battery, macOS 26 Liquid Glass vs Classic appearance theme, sort order, and defaults. Settings > Automation manages sleep scheduling, quit-on-last-window-close, health rescue thresholds, and Auto Quit. Settings > Advanced manages background apps, music protection, default selection, tips, confirmations, and Finder/Trash."
+                    title: "General, Shortcuts, Permissions & Automation",
+                    body: "Settings > General controls startup, sounds, menu bar stats (CPU, memory, GPU, battery, Cleanup, and Ports), macOS 26 Liquid Glass vs Classic appearance theme, sort order, and defaults. Settings > Shortcuts records global hotkeys. Settings > Permissions manages Accessibility, Full Disk Access, Finder Automation, Login Items, and Notifications. Settings > Automation configures sleep scheduling, quit-on-last-window-close, health rescue thresholds, and Auto Quit. Settings > Advanced manages background apps, music protection, default selection, tips, confirmations, and Finder/Trash."
                 ),
                 QuitXHelpSection(
-                    title: "Exclude & Shortcuts",
-                    body: "Settings > Exclude manages your protected apps list. Settings > Shortcuts allows recording global hotkeys with conflict checks."
+                    title: "Exclude",
+                    body: "Settings > Exclude protects chosen apps (and listening ports when port killing is enabled) from manual batch quits and automated quit rules."
                 ),
                 QuitXHelpSection(
                     title: "Applications & Cleanup",
-                    body: "Settings > Applications contains the integrated app uninstaller and a Leftovers scan for files from apps no longer installed. Default Apps sets which apps open your web links, mail, PDFs, images, video, music, code and archives, by category, per file type or by app, with custom extensions and link schemes and Undo. Cleanup lets you review System Junk, User Cache, Mail Files, Trash Bins, Large & Old Files, and AI Apps. Developer Cleanup covers Xcode, Homebrew, Node, and Docker caches. Every scan is reviewable before permanent deletion; Large & Old Files never start selected."
+                    body: "Settings > Applications contains Uninstall Apps, Leftovers for files from apps no longer installed, and Default Apps. Cleanup lets you review System Junk, User Cache, Mail Files, Trash Bins, Large & Old Files, and AI Apps; Developer Cleanup covers Xcode, Homebrew, Node, and Docker caches (leaving Docker images and volumes untouched). Removals retry recursively on partially protected folders, remeasure any locked leftovers so remaining sizes and file counts stay accurate, and always require confirmation before permanent deletion; Large & Old Files never start selected."
                 ),
                 QuitXHelpSection(
                     title: "About & Updates",
@@ -360,7 +402,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Reset defaults",
-                    body: "Click Reset All in Settings > General to restore QuitX configuration defaults to their initial clean state."
+                    body: "Click Reset All Settings in Settings > General to restore QuitX configuration defaults to their initial clean state."
                 )
             ]
         ),
@@ -369,7 +411,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             category: .support,
             title: "Troubleshooting",
             symbol: "wrench.and.screwdriver",
-            summary: "Resolve missing apps, relaunching helpers, shortcuts, and quit failures.",
+            summary: "Resolve missing apps, relaunching helpers, permissions, cleanup locks, and quit failures.",
             sections: [
                 QuitXHelpSection(
                     title: "App is missing",
@@ -382,6 +424,10 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 QuitXHelpSection(
                     title: "Badges and indicators",
                     body: "A flame badge indicates CPU usage over your chosen limit. A red triangle indicates an app that resisted normal quit — hold Option to force quit it."
+                ),
+                QuitXHelpSection(
+                    title: "Protected files remain after cleanup",
+                    body: "macOS System Integrity Protection, active file locks, or missing Full Disk Access can block parts of a folder. QuitX deletes everything inside that it can, updates remaining item sizes accurately, and reports protected items separately."
                 ),
                 QuitXHelpSection(
                     title: "Quit or shortcut fails",

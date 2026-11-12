@@ -298,7 +298,7 @@ struct HelpContentTests {
     @Test("Help topics have unique identifiers and complete content")
     func testHelpTopicsAreComplete() {
         let topics = QuitXHelpTopic.all
-        #expect(topics.count == 14)
+        #expect(topics.count == 16)
         #expect(Set(topics.map(\.id)).count == topics.count)
         #expect(Set(topics.map(\.category)) == Set(QuitXHelpCategory.allCases))
         #expect(topics.allSatisfy { !$0.title.isEmpty && !$0.summary.isEmpty && !$0.sections.isEmpty })
@@ -311,6 +311,9 @@ struct HelpContentTests {
         #expect(QuitXHelpTopic.all.first { $0.id == "recently-quit" }?.matches("reopen") == true)
         #expect(QuitXHelpTopic.all.first { $0.id == "menu-battery" }?.matches("Low Power Mode") == true)
         #expect(QuitXHelpTopic.all.first { $0.id == "ports" }?.matches("SIGKILL") == true)
+        #expect(QuitXHelpTopic.all.first { $0.id == "default-apps" }?.matches("App Chooser") == true)
+        #expect(QuitXHelpTopic.all.first { $0.id == "default-apps" }?.matches("Undo") == true)
+        #expect(QuitXHelpTopic.all.first { $0.id == "permissions" }?.matches("Full Disk Access") == true)
         #expect(QuitXHelpTopic.all.allSatisfy { $0.matches("   ") })
     }
 }
