@@ -278,14 +278,8 @@ struct DefaultAppsAppChooserView: View {
                     sectionHeader(suggested.isEmpty ? "Applications" : "All Other Apps", count: model.otherItems.count, detail: nil)
                     rows(model.otherItems)
                     if model.isLoading {
-                        HStack(spacing: 8) {
-                            ProgressView().controlSize(.small)
-                            Text("Finding installed apps…")
-                                .font(.system(size: 11.5))
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.horizontal, 10)
-                        .frame(height: 30)
+                        QuitXLoadingView(text: "Finding installed apps…")
+                            .frame(minHeight: 180)
                     }
                 }
                 .padding(.horizontal, 6)

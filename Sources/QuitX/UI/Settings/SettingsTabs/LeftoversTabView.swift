@@ -239,15 +239,7 @@ struct LeftoversTabView: View {
                 action: model.scan
             )
         case .scanning:
-            VStack(spacing: 12) {
-                ProgressView()
-                Text("Comparing Library files with installed apps…")
-                    .font(.system(size: 12, weight: .medium))
-                Text("The scan runs locally and skips Apple data.")
-                    .font(.system(size: 10.5))
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            QuitXLoadingView(text: "Comparing Library files with installed apps…", detail: "The scan runs locally and skips Apple data.")
         case .ready, .removing:
             if model.items.isEmpty {
                 emptyState(

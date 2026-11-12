@@ -281,12 +281,7 @@ struct ExcludePortPickerView: View {
 
             Group {
                 if viewModel.isLoading {
-                    VStack(spacing: 8) {
-                        ProgressView().controlSize(.small)
-                        Text("Scanning listening ports…")
-                            .font(.system(size: 11.5))
-                            .foregroundStyle(Color.secondary)
-                    }
+                    QuitXLoadingView(text: "Scanning listening ports…", symbol: "network")
                 } else {
                     let ports = viewModel.visible(excluded: excluded)
                     if ports.isEmpty {

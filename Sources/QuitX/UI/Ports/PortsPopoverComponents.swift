@@ -16,37 +16,9 @@ struct PopoverTabBar: View {
     }
 }
 
-private final class PortsLoadingPulse: ObservableObject {
-    @Published var active = false
-}
-
 struct PortsLoadingView: View {
-    @StateObject private var pulse = PortsLoadingPulse()
-
     var body: some View {
-        VStack(spacing: 10) {
-            Spacer()
-            ZStack {
-                Circle()
-                    .stroke(QuitXTheme.accent.opacity(0.35), lineWidth: 1.5)
-                    .frame(width: 36, height: 36)
-                    .scaleEffect(pulse.active ? 1.8 : 1)
-                    .opacity(pulse.active ? 0 : 0.8)
-                    .animation(.easeOut(duration: 1.4).repeatForever(autoreverses: false), value: pulse.active)
-                Circle()
-                    .fill(QuitXTheme.accent.opacity(0.12))
-                    .frame(width: 36, height: 36)
-                Image(systemName: "network")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(QuitXTheme.accent)
-            }
-            .frame(width: 64, height: 64)
-            Text("Scanning listening ports…")
-                .font(.system(size: 12))
-                .foregroundStyle(Color.secondary)
-            Spacer()
-        }
-        .onAppear { pulse.active = true }
+        QuitXLoadingView(text: "Scanning listening ports…", symbol: "network")
     }
 }
 

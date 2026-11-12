@@ -264,15 +264,7 @@ struct CleanupTabView: View {
                 action: model.scan
             )
         case .scanning:
-            VStack(spacing: 12) {
-                ProgressView()
-                Text("Scanning \(category.rawValue.lowercased())…")
-                    .font(.system(size: 12, weight: .medium))
-                Text("Large folders may take a moment.")
-                    .font(.system(size: 10.5))
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            QuitXLoadingView(text: "Scanning \(category.rawValue.lowercased())…", detail: "Large folders may take a moment.")
         case .ready, .removing:
             if model.items.isEmpty {
                 emptyState(

@@ -6,45 +6,9 @@ private final class UninstallHoverState: ObservableObject {
     @Published var button: String?
 }
 
-private final class ScanPulseState: ObservableObject {
-    @Published var pulse = false
-}
-
-private struct ScanPulse: View {
-    @StateObject private var state = ScanPulseState()
-    private let tint = Color(nsColor: .systemBlue)
-
-    var body: some View {
-        ZStack {
-            ForEach(0..<2, id: \.self) { index in
-                Circle()
-                    .stroke(tint.opacity(0.35), lineWidth: 1.5)
-                    .frame(width: 44, height: 44)
-                    .scaleEffect(state.pulse ? 1.8 : 1.0)
-                    .opacity(state.pulse ? 0 : 0.7)
-                    .animation(
-                        .easeOut(duration: 1.4)
-                            .repeatForever(autoreverses: false)
-                            .delay(Double(index) * 0.7),
-                        value: state.pulse
-                    )
-            }
-            Circle()
-                .fill(tint.opacity(0.12))
-                .frame(width: 44, height: 44)
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(tint)
-        }
-        .frame(width: 80, height: 80)
-        .onAppear { state.pulse = true }
-    }
-}
-
 struct UninstallView: View {
     @ObservedObject var model: UninstallViewModel
     @ObservedObject private var configStore: ConfigStore = ConfigStore.shared
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var embedded = false
     var onDismiss: () -> Void
 
@@ -537,24 +501,7 @@ struct UninstallView: View {
     }
 
     private func loading(_ text: String, detail: String?) -> some View {
-        VStack(spacing: 14) {
-            Spacer()
-            if reduceMotion {
-                ProgressView(text)
-            } else {
-                ScanPulse()
-                Text(text)
-                    .font(.system(size: 13, weight: .medium))
-            }
-            if let detail {
-                Text(detail)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
-            }
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        QuitXLoadingView(text: text, detail: detail)
     }
 
     private func rowDivider(leading: CGFloat) -> some View {

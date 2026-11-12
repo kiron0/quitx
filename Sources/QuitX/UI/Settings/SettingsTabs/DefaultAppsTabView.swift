@@ -764,15 +764,10 @@ private struct DefaultAppsLoadingRow: View {
     let text: String
 
     var body: some View {
-        HStack(spacing: 8) {
-            ProgressView().controlSize(.small)
-            Text(text)
-                .font(.system(size: 11.5))
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(QuitXTheme.cardBackground, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        QuitXLoadingView(text: text)
+            .frame(minHeight: 180)
+            .padding(14)
+            .background(QuitXTheme.cardBackground, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }
 

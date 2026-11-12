@@ -52,13 +52,7 @@ struct MainPopoverView: View {
             if isPortsTab {
                 portsContent
             } else if vm.isLoading && vm.apps.isEmpty {
-                VStack {
-                    Spacer()
-                    ProgressView()
-                        .scaleEffect(0.8)
-                    Spacer()
-                }
-                .frame(maxHeight: .infinity)
+                QuitXLoadingView(text: "Finding running apps…")
             } else if vm.filteredApps.isEmpty {
                 emptyAppsView
                     .frame(maxHeight: .infinity)
@@ -581,6 +575,15 @@ struct MainPopoverView: View {
             ))
             menu.addItem(.separator())
         }
+
+        menu.addItem(MenuHelper.makeItem(
+            title: "Default Apps",
+            systemSymbolName: "app.badge.checkmark",
+            action: {
+                StatusItemController.shared?.closePopover()
+                SettingsWindowController.shared.show(tab: .defaultApps)
+            }
+        ))
 
         menu.addItem(MenuHelper.makeItem(
             title: "Settings",

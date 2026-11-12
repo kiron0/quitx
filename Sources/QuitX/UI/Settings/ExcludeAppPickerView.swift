@@ -359,7 +359,7 @@ struct ExcludeAppPickerView: View {
 
             Group {
                 if viewModel.isLoading {
-                    InstalledAppsSkeletonView()
+                    QuitXLoadingView(text: "Finding installed apps…")
                 } else if visibleApplications.isEmpty {
                     emptyView
                 } else {
@@ -555,35 +555,4 @@ private struct InstalledAppPickerRow: View {
 
 private final class InstalledAppPickerRowState: ObservableObject {
     @Published var isHovered = false
-}
-
-private struct InstalledAppsSkeletonView: View {
-    @StateObject private var state = InstalledAppsSkeletonState()
-
-    var body: some View {
-        VStack(spacing: 0) {
-            ForEach(0..<14, id: \.self) { index in
-                HStack(spacing: 8) {
-                    RoundedRectangle(cornerRadius: 3).frame(width: 14, height: 14)
-                    RoundedRectangle(cornerRadius: 4).frame(width: 18, height: 18)
-                    RoundedRectangle(cornerRadius: 3)
-                        .frame(width: CGFloat(105 + ((index % 3) * 24)), height: 10)
-                    Spacer()
-                }
-                .foregroundStyle(Color.primary.opacity(state.isBright ? 0.12 : 0.055))
-                .padding(.horizontal, 8)
-                .frame(height: 29)
-            }
-            Spacer(minLength: 0)
-        }
-        .onAppear {
-            withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
-                state.isBright = true
-            }
-        }
-    }
-}
-
-private final class InstalledAppsSkeletonState: ObservableObject {
-    @Published var isBright = false
 }
