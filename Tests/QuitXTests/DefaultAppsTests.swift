@@ -443,6 +443,43 @@ struct DefaultAppsTests {
         }
     }
 
+    @Test("App chooser window stays exact size and fills bottom edge without transparency")
+    @MainActor
+    func chooserWindowFillsBottom() async throws {
+        let store = ConfigStore.shared
+        let previousGlass = store.config.liquidGlassEnabled
+        store.config.liquidGlassEnabled = false
+        defer { store.config.liquidGlassEnabled = previousGlass }
+
+        let controller = DefaultAppsAppChooserWindowController.shared
+        defer { controller.close() }
+        controller.present(DefaultAppsChooserRequest(
+            title: "Choose an App",
+            subtitle: "Test",
+            suggested: [],
+            current: nil,
+            confirmTitle: "Use App",
+            onChoose: { _ in }
+        ))
+
+        guard let window = controller.window, let contentView = window.contentView else {
+            Issue.record("Chooser window failed to open")
+            return
+        }
+        window.layoutIfNeeded()
+        contentView.layoutSubtreeIfNeeded()
+        try await Task.sleep(for: .milliseconds(100))
+
+        #expect(window.frame.size == DefaultAppsAppChooserWindowController.size)
+        #expect(contentView.bounds.size == DefaultAppsAppChooserWindowController.size)
+
+        if let rep = contentView.bitmapImageRepForCachingDisplay(in: contentView.bounds) {
+            contentView.cacheDisplay(in: contentView.bounds, to: rep)
+            let bottomColor = rep.colorAt(x: rep.pixelsWide / 2, y: rep.pixelsHigh - 2)
+            #expect((bottomColor?.alphaComponent ?? 0) >= 0.99)
+        }
+    }
+
     @Test("Default Apps lives under Applications and is searchable")
     func settingsTab() {
         #expect(SettingsTab(rawValue: "Default Apps") == .defaultApps)

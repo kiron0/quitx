@@ -125,7 +125,7 @@ final class DefaultAppsAppChooserWindowController: NSObject, NSWindowDelegate {
     static let shared = DefaultAppsAppChooserWindowController()
     static let size = NSSize(width: 520, height: 580)
 
-    private var window: NSWindow?
+    private(set) var window: NSWindow?
 
     var isOpen: Bool { window != nil }
 
@@ -147,6 +147,7 @@ final class DefaultAppsAppChooserWindowController: NSObject, NSWindowDelegate {
             onCancel: { [weak self] in self?.close() }
         )
         let hosting = NSHostingController(rootView: view)
+        hosting.sizingOptions = []
         let window = NSWindow(contentViewController: hosting)
         window.title = request.title
         window.styleMask = [.titled, .closable, .fullSizeContentView]
@@ -218,7 +219,12 @@ struct DefaultAppsAppChooserView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
         }
-        .frame(width: DefaultAppsAppChooserWindowController.size.width, height: DefaultAppsAppChooserWindowController.size.height)
+        .frame(
+            minWidth: DefaultAppsAppChooserWindowController.size.width,
+            maxWidth: .infinity,
+            minHeight: DefaultAppsAppChooserWindowController.size.height,
+            maxHeight: .infinity
+        )
         .background {
             if LiquidGlass.enabled {
                 LiquidGlassFill(shape: Rectangle()).ignoresSafeArea()
