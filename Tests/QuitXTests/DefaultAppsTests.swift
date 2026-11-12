@@ -332,6 +332,43 @@ struct DefaultAppsTests {
         }
     }
 
+    @Test("App picker menu shows each app's icon and checks the current one")
+    @MainActor
+    func appMenu() {
+        let model = DefaultAppsModel(backend: FakeDefaultAppsBackend(defaults: [:], candidates: [:]), defaults: Self.freshDefaults(), categories: [])
+        let finder = HandlerApp(url: URL(fileURLWithPath: "/System/Library/CoreServices/Finder.app"))
+        let textEdit = HandlerApp(url: URL(fileURLWithPath: "/System/Applications/TextEdit.app"))
+        var picked: HandlerApp?
+        let menu = DefaultAppsMenuBuilder.makeMenu([
+            .app(finder, title: finder.name, isCurrent: true) { picked = finder },
+            .app(textEdit, title: textEdit.name, isCurrent: false) { picked = textEdit },
+            .separator,
+            .separator,
+            .action(title: "Other App…", symbol: "folder") {},
+            .separator,
+        ]) { DefaultAppsMenuBuilder.icon(for: $0, model: model) }
+
+        func attachedIcon(_ item: NSMenuItem) -> NSImage? {
+            guard let title = item.attributedTitle, title.length > 0 else { return nil }
+            return (title.attribute(.attachment, at: 0, effectiveRange: nil) as? NSTextAttachment)?.image
+        }
+
+        #expect(menu.items.count == 4)
+        #expect(attachedIcon(menu.items[0]) != nil)
+        #expect(attachedIcon(menu.items[0])?.size == DefaultAppsModel.menuIconSize)
+        #expect(attachedIcon(menu.items[1]) != nil)
+        #expect(menu.items[0].attributedTitle?.string.hasSuffix(finder.name) == true)
+        #expect(menu.items[0].state == .on)
+        #expect(menu.items[1].state == .off)
+        #expect(menu.items[2].isSeparatorItem)
+        #expect(menu.items[3].title == "Other App…")
+        #expect(!menu.items.last!.isSeparatorItem)
+
+        let item = menu.items[1]
+        _ = (item.target as? NSObject)?.perform(item.action, with: item)
+        #expect(picked == textEdit)
+    }
+
     @Test("Default Apps lives under Applications and is searchable")
     func settingsTab() {
         #expect(SettingsTab(rawValue: "Default Apps") == .defaultApps)

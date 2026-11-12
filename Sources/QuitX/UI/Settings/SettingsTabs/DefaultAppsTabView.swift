@@ -227,34 +227,7 @@ private struct DefaultAppsPickerMenu: View {
     private var isLoaded: Bool { targets.contains { model.entry(for: $0) != nil } }
 
     var body: some View {
-        Menu {
-            let choices = model.choices(for: targets)
-            if choices.isEmpty {
-                Text("No apps found for this type")
-            }
-            ForEach(choices, id: \.app.id) { choice in
-                let isCurrent = !isMixed && choice.app.matches(current)
-                Toggle(isOn: Binding(
-                    get: { isCurrent },
-                    set: { _ in
-                        if !isCurrent { model.setDefault(choice.app, for: targets) }
-                    }
-                )) {
-                    DefaultAppsMenuItemLabel(text: label(for: choice), icon: model.menuIcon(for: choice.app))
-                }
-            }
-            Divider()
-            Button("Other App…") {
-                if let app = model.chooseOtherApp() {
-                    model.setDefault(app, for: targets)
-                }
-            }
-            if let current {
-                Button("Show \(current.name) in Finder") {
-                    NSWorkspace.shared.activateFileViewerSelecting([current.url])
-                }
-            }
-        } label: {
+        DefaultAppsMenuButton(model: model, entries: menuEntries) {
             HStack(spacing: 6) {
                 if let current, !isMixed {
                     AppIconView(bundleId: current.bundleID, url: current.url, size: 16, cornerRadius: 3)
@@ -282,9 +255,6 @@ private struct DefaultAppsPickerMenu: View {
             )
             .contentShape(Rectangle())
         }
-        .menuStyle(.button)
-        .buttonStyle(.plain)
-        .menuIndicator(.hidden)
         .fixedSize()
         .disabled(isBusy || !isLoaded)
         .help(helpText)
@@ -303,29 +273,38 @@ private struct DefaultAppsPickerMenu: View {
         return "Choose one app for all \(targets.count) types."
     }
 
+    private func menuEntries() -> [DefaultAppsMenuEntry] {
+        let choices = model.choices(for: targets)
+        var entries: [DefaultAppsMenuEntry] = []
+        if choices.isEmpty {
+            entries.append(.note("No apps found for this type"))
+        }
+        for choice in choices {
+            let isCurrent = !isMixed && choice.app.matches(current)
+            entries.append(.app(choice.app, title: label(for: choice), isCurrent: isCurrent) { [model, targets] in
+                if !isCurrent { model.setDefault(choice.app, for: targets) }
+            })
+        }
+        entries.append(.separator)
+        entries.append(.action(title: "Other App…", symbol: "folder") { [model, targets] in
+            if let app = model.chooseOtherApp() {
+                model.setDefault(app, for: targets)
+            }
+        })
+        if let current {
+            entries.append(.action(title: "Show \(current.name) in Finder", symbol: "magnifyingglass") {
+                NSWorkspace.shared.activateFileViewerSelecting([current.url])
+            })
+        }
+        return entries
+    }
+
     private func label(for choice: (app: HandlerApp, count: Int)) -> String {
         var text = choice.app.name
         if targets.count > 1, choice.count < targets.count {
             text += " (\(choice.count) of \(targets.count))"
         }
         return text
-    }
-}
-
-private struct DefaultAppsMenuItemLabel: View {
-    let text: String
-    let icon: NSImage?
-
-    var body: some View {
-        Label {
-            Text(text)
-        } icon: {
-            if let icon {
-                Image(nsImage: icon)
-            } else {
-                Image(systemName: "app.dashed")
-            }
-        }
     }
 }
 
@@ -351,22 +330,7 @@ private struct DefaultAppsByAppView: View {
             )
 
             HStack(spacing: 10) {
-                Menu {
-                    if model.knownApps.isEmpty {
-                        Text("Loading apps…")
-                    }
-                    ForEach(model.knownApps) { app in
-                        Button {
-                            model.selectApp(app)
-                        } label: {
-                            DefaultAppsMenuItemLabel(text: app.name, icon: model.menuIcon(for: app))
-                        }
-                    }
-                    Divider()
-                    Button("Other App…") {
-                        if let app = model.chooseOtherApp(prompt: "Select") { model.selectApp(app) }
-                    }
-                } label: {
+                DefaultAppsMenuButton(model: model, entries: appEntries) {
                     HStack(spacing: 6) {
                         if let app = model.selectedApp {
                             AppIconView(bundleId: app.bundleID, url: app.url, size: 16, cornerRadius: 3)
@@ -383,9 +347,6 @@ private struct DefaultAppsByAppView: View {
                     .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.primary.opacity(0.12), lineWidth: 0.5))
                     .contentShape(Rectangle())
                 }
-                .menuStyle(.button)
-                .buttonStyle(.plain)
-                .menuIndicator(.hidden)
                 .fixedSize()
                 .accessibilityLabel("Choose an app")
 
@@ -414,6 +375,23 @@ private struct DefaultAppsByAppView: View {
                 }
             }
         }
+    }
+
+    private func appEntries() -> [DefaultAppsMenuEntry] {
+        var entries: [DefaultAppsMenuEntry] = []
+        if model.knownApps.isEmpty {
+            entries.append(.note("Loading apps…"))
+        }
+        for app in model.knownApps {
+            entries.append(.app(app, title: app.name, isCurrent: app.matches(model.selectedApp)) { [model] in
+                model.selectApp(app)
+            })
+        }
+        entries.append(.separator)
+        entries.append(.action(title: "Other App…", symbol: "folder") { [model] in
+            if let app = model.chooseOtherApp(prompt: "Select") { model.selectApp(app) }
+        })
+        return entries
     }
 
     private func appHeader(_ app: HandlerApp) -> some View {
