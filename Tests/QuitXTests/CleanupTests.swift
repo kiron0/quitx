@@ -118,4 +118,25 @@ struct CleanupTests {
         #expect(items.map(\.name) == ["com.example.gone.plist"])
         #expect(items.allSatisfy { !$0.selectedByDefault })
     }
+
+    @Test("Partly removed items show what is left, fully removed items drop out")
+    func remeasureAfterPartialRemoval() async throws {
+        let fileManager = FileManager.default
+        let root = fileManager.temporaryDirectory.appendingPathComponent("quitx-remeasure-\(UUID().uuidString)")
+        defer { try? fileManager.removeItem(at: root) }
+        let partial = root.appendingPathComponent("partial")
+        let gone = root.appendingPathComponent("gone")
+        try fileManager.createDirectory(at: partial, withIntermediateDirectories: true)
+        try Data(count: 4096).write(to: partial.appendingPathComponent("left"))
+        func item(_ url: URL) -> CleanupItem {
+            CleanupItem(url: url, category: .userCache, bytes: 10_000_000, fileCount: 500, isDirectory: true, lastModified: nil, isSelectedByDefault: true)
+        }
+
+        let result = await CleanupService.remeasure([item(partial), item(gone)])
+
+        #expect(result.map(\.url) == [partial])
+        #expect(result.first?.fileCount == 1)
+        #expect((result.first?.bytes ?? 0) < 10_000_000)
+        #expect((result.first?.bytes ?? 0) > 0)
+    }
 }

@@ -156,6 +156,29 @@ enum CleanupService {
             }
     }
 
+    static func remeasure(_ items: [CleanupItem]) async -> [CleanupItem] {
+        guard !items.isEmpty else { return [] }
+        return await detachedCancellable(priority: .userInitiated) {
+            remeasureSynchronously(items)
+        }
+    }
+
+    static func remeasureSynchronously(_ items: [CleanupItem]) -> [CleanupItem] {
+        items.compactMap { item in
+            guard AppUninstaller.itemExists(atPath: item.url.path) else { return nil }
+            let measured = AppUninstaller.measure(item.url)
+            return CleanupItem(
+                url: item.url,
+                category: item.category,
+                bytes: measured.bytes,
+                fileCount: measured.files,
+                isDirectory: item.isDirectory,
+                lastModified: item.lastModified,
+                isSelectedByDefault: item.isSelectedByDefault
+            )
+        }
+    }
+
     static let trashIgnoredNames: Set<String> = [".ds_store", ".localized"]
 
     static func trashRoots(home: URL, volumeTrashes: [URL]) -> [URL] {

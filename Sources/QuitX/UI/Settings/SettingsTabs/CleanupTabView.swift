@@ -137,8 +137,16 @@ final class CleanupViewModel: ObservableObject {
             let result = await AppUninstaller.removePermanently(chosen.map(\.url))
             guard !Task.isCancelled else { return }
             let removedPaths = Set(result.trashed.map { $0.standardizedFileURL.path })
-            items.removeAll { removedPaths.contains($0.id) }
-            selected.subtract(removedPaths)
+            let failedPaths = Set(result.failed.map { $0.url.standardizedFileURL.path })
+            let leftovers = await CleanupService.remeasure(chosen.filter { failedPaths.contains($0.id) })
+            guard !Task.isCancelled else { return }
+            let gone = removedPaths.union(failedPaths.subtracting(leftovers.map(\.id)))
+            let updated = Dictionary(uniqueKeysWithValues: leftovers.map { ($0.id, $0) })
+            items = items.compactMap { item in
+                if gone.contains(item.id) { return nil }
+                return updated[item.id] ?? item
+            }
+            selected.subtract(gone)
             if result.failed.isEmpty {
                 resultMessage = "Permanently removed \(result.trashed.count) \(result.trashed.count == 1 ? "item" : "items")."
             } else {
