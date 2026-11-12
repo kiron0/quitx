@@ -2,6 +2,14 @@ import Foundation
 
 extension ChangelogProvider {
     static let appReleases: [ReleaseChangelog] = [
+        ReleaseChangelog("1.2.8", "Default Apps Manager in Settings for files, links & categories", [
+            ("New Features", [
+                "**Default Apps Manager**: Manage macOS default handlers across 11 categories (Browser, Email, PDF, Media, Code, Documents, Archives, and more) directly in Settings.",
+                "**By App & Custom Types**: Inspect all types supported by any installed app, or add custom extensions, URL schemes, and UTTypes with live input validation and safety checks.",
+                "**Instant Undo**: Roll back accidental default app reassignments in one click."
+            ])
+        ]),
+
         ReleaseChangelog("1.2.7", "Helper resource aggregation, thorough quit cleanup & Hopilo integration", [
             ("New Features", [
                 "**More Apps ▸ Hopilo**: Explore Hopilo, a free, local-first companion app for AI coding sessions and files, directly in Settings."

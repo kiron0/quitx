@@ -2,6 +2,14 @@
 
 All notable changes to QuitX macOS App will be documented in this file.
 
+## 1.2.8
+
+### Added
+
+- **Default Apps Manager in Settings**: Added a dedicated Default Apps section in Settings to view and update macOS default handlers via Launch Services across 11 built-in categories (Browser, Email, PDF, Images, Video, Music, Code Editor, Documents, Archives, Calendar & Contacts, and Terminal & Remote).
+- **Inspect by App & Custom Targets**: Browse any installed application to inspect and claim its supported file types and URL schemes, or register custom extensions (`.ts`, `.mdx`), link schemes (`vscode:`), and UTTypes (`public.json`) with live validation, typo suggestions, and safety guards against overly broad system types.
+- **One-Click Undo**: Default handler changes keep history so accidental reassignments can be rolled back immediately.
+
 ## 1.2.7
 
 ### Added
