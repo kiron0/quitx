@@ -369,6 +369,80 @@ struct DefaultAppsTests {
         #expect(picked == textEdit)
     }
 
+    @Test("App chooser lists suggested apps first, marks the current one and searches")
+    @MainActor
+    func chooser() {
+        let safari = HandlerApp(url: Self.safari, bundleID: "com.apple.Safari", name: "Safari")
+        let chrome = HandlerApp(url: Self.chrome, bundleID: "com.google.Chrome", name: "Google Chrome")
+        let notes = HandlerApp(url: URL(fileURLWithPath: "/System/Applications/Notes.app"), bundleID: "com.apple.Notes", name: "Notes")
+        let chromeCopy = HandlerApp(url: URL(fileURLWithPath: "/Users/me/Chrome.app"), bundleID: "com.google.chrome", name: "Google Chrome")
+        let request = DefaultAppsChooserRequest(
+            title: "Choose an App for Web Browser",
+            subtitle: "http:, https:",
+            suggested: [chrome, safari],
+            current: safari,
+            confirmTitle: "Use App",
+            onChoose: { _ in }
+        )
+        let items = DefaultAppsChooserModel.merge(installed: [notes, chromeCopy, safari], request: request)
+        #expect(items.count == 3)
+        #expect(items.first?.app.name == "Safari")
+        #expect(items.first?.isCurrent == true)
+        #expect(items.filter(\.isSuggested).map(\.app.name).sorted() == ["Google Chrome", "Safari"])
+        #expect(items.first { $0.app.name == "Google Chrome" }?.app.url == Self.chrome)
+
+        let model = DefaultAppsChooserModel(request: request)
+        #expect(model.selectedItem?.app.name == "Safari")
+        model.moveSelection(by: 1)
+        #expect(model.selectedItem?.app.name == "Google Chrome")
+        model.query = "safa"
+        model.selectFirstMatchIfNeeded()
+        #expect(model.visibleItems.map(\.app.name) == ["Safari"])
+        #expect(model.selectedItem?.app.name == "Safari")
+        model.query = "zzz"
+        model.selectFirstMatchIfNeeded()
+        #expect(model.visibleItems.isEmpty)
+        #expect(model.selectedItem == nil)
+    }
+
+    @Test("Render the app chooser window")
+    @MainActor
+    func renderChooser() async throws {
+        let qa = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent(".qa")
+        guard FileManager.default.fileExists(atPath: qa.path) else { return }
+        let dir = qa.appendingPathComponent("snapshots")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let preview = HandlerApp(url: URL(fileURLWithPath: "/System/Applications/Preview.app"))
+        let request = DefaultAppsChooserRequest(
+            title: "Choose an App for PDF Viewer",
+            subtitle: "PDF document",
+            suggested: [preview, HandlerApp(url: URL(fileURLWithPath: "/Applications/Safari.app"))],
+            current: preview,
+            confirmTitle: "Use App",
+            onChoose: { _ in }
+        )
+        let model = DefaultAppsChooserModel(request: request)
+        model.load()
+        for _ in 0..<100 where model.isLoading { try await Task.sleep(for: .milliseconds(50)) }
+        model.moveSelection(by: 3)
+        for dark in [true, false] {
+            let size = DefaultAppsAppChooserWindowController.size
+            let hosting = NSHostingView(rootView: DefaultAppsAppChooserView(model: model, onChoose: { _ in }, onBrowse: {}, onCancel: {}))
+            hosting.frame = NSRect(origin: .zero, size: size)
+            let window = NSWindow(contentRect: hosting.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+            window.backgroundColor = dark ? NSColor(white: 0.16, alpha: 1) : NSColor(white: 0.93, alpha: 1)
+            window.contentView = hosting
+            try await Task.sleep(nanoseconds: 900_000_000)
+            hosting.layoutSubtreeIfNeeded()
+            guard let rep = hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds) else { return }
+            hosting.cacheDisplay(in: hosting.bounds, to: rep)
+            try rep.representation(using: .png, properties: [:])?.write(to: dir.appendingPathComponent("default-apps-chooser-\(dark ? "dark" : "light").png"))
+            window.contentView = nil
+        }
+    }
+
     @Test("Default Apps lives under Applications and is searchable")
     func settingsTab() {
         #expect(SettingsTab(rawValue: "Default Apps") == .defaultApps)

@@ -797,7 +797,26 @@ final class DefaultAppsModel: ObservableObject {
         }
     }
 
-    func chooseOtherApp(prompt: String = "Choose") -> HandlerApp? {
+    func chooseApp(
+        for targets: [DefaultAppTarget],
+        current: HandlerApp?,
+        title: String,
+        subtitle: String,
+        confirmTitle: String = "Use App",
+        onChoose: @escaping @MainActor (HandlerApp) -> Void
+    ) {
+        let suggested = targets.isEmpty ? [] : choices(for: targets).map(\.app)
+        DefaultAppsAppChooserWindowController.shared.present(DefaultAppsChooserRequest(
+            title: title,
+            subtitle: subtitle,
+            suggested: suggested,
+            current: current,
+            confirmTitle: confirmTitle,
+            onChoose: onChoose
+        ))
+    }
+
+    static func browseForApp(prompt: String = "Choose") -> HandlerApp? {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.applicationBundle]
         panel.allowsMultipleSelection = false

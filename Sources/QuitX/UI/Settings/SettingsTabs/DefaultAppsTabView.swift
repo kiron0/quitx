@@ -160,7 +160,8 @@ private struct DefaultAppsCategoryCard: View {
                 model: model,
                 targets: category.targets,
                 current: summary.app,
-                isMixed: summary.isMixed
+                isMixed: summary.isMixed,
+                name: category.title
             )
         }
         .padding(.horizontal, 12)
@@ -222,9 +223,23 @@ private struct DefaultAppsPickerMenu: View {
     let current: HandlerApp?
     let isMixed: Bool
     var width: CGFloat = 170
+    var name: String? = nil
 
     private var isBusy: Bool { targets.contains { model.busyTargets.contains($0.id) } }
     private var isLoaded: Bool { targets.contains { model.entry(for: $0) != nil } }
+
+    private var chooserTitle: String {
+        if let name { return "Choose an App for \(name)" }
+        if targets.count == 1, let target = targets.first { return "Choose an App for \(target.title)" }
+        return "Choose an App for \(targets.count) Types"
+    }
+
+    private var chooserSubtitle: String {
+        if targets.count == 1, let target = targets.first { return target.subtitle }
+        let titles = targets.map(\.title)
+        let shown = titles.prefix(6).joined(separator: ", ")
+        return titles.count > 6 ? "\(shown) and \(titles.count - 6) more" : shown
+    }
 
     var body: some View {
         DefaultAppsMenuButton(model: model, entries: menuEntries) {
@@ -286,8 +301,8 @@ private struct DefaultAppsPickerMenu: View {
             })
         }
         entries.append(.separator)
-        entries.append(.action(title: "Other App…", symbol: "folder") { [model, targets] in
-            if let app = model.chooseOtherApp() {
+        entries.append(.action(title: "Other App…", symbol: "folder") { [model, targets, current, chooserTitle, chooserSubtitle] in
+            model.chooseApp(for: targets, current: current, title: chooserTitle, subtitle: chooserSubtitle) { app in
                 model.setDefault(app, for: targets)
             }
         })
@@ -351,7 +366,7 @@ private struct DefaultAppsByAppView: View {
                 .accessibilityLabel("Choose an app")
 
                 Button("Browse…") {
-                    if let app = model.chooseOtherApp(prompt: "Select") { model.selectApp(app) }
+                    openChooser()
                 }
                 .buttonStyle(UninstallSecondaryButtonStyle())
 
@@ -389,9 +404,27 @@ private struct DefaultAppsByAppView: View {
         }
         entries.append(.separator)
         entries.append(.action(title: "Other App…", symbol: "folder") { [model] in
-            if let app = model.chooseOtherApp(prompt: "Select") { model.selectApp(app) }
+            model.chooseApp(
+                for: [],
+                current: model.selectedApp,
+                title: "Choose an App",
+                subtitle: "See every file type and link it can open",
+                confirmTitle: "Select",
+                onChoose: { model.selectApp($0) }
+            )
         })
         return entries
+    }
+
+    private func openChooser() {
+        model.chooseApp(
+            for: [],
+            current: model.selectedApp,
+            title: "Choose an App",
+            subtitle: "See every file type and link it can open",
+            confirmTitle: "Select",
+            onChoose: { [model] in model.selectApp($0) }
+        )
     }
 
     private func appHeader(_ app: HandlerApp) -> some View {
