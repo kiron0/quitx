@@ -14,15 +14,22 @@ struct DefaultAppsTabView: View {
         VStack(alignment: .leading, spacing: 14) {
             QuitXSegmentedControl(segments: Self.segments, selection: $model.mode, height: 24)
 
-            if let message = model.message {
-                DefaultAppsMessageBanner(message: message) { model.message = nil }
-            }
+            ScrollView(.vertical, showsIndicators: true) {
+                VStack(alignment: .leading, spacing: 14) {
+                    if let message = model.message {
+                        DefaultAppsMessageBanner(message: message) { model.message = nil }
+                    }
 
-            switch model.mode {
-            case .categories: DefaultAppsCategoriesView(model: model)
-            case .byApp: DefaultAppsByAppView(model: model)
-            case .custom: DefaultAppsCustomView(model: model)
+                    switch model.mode {
+                    case .categories: DefaultAppsCategoriesView(model: model)
+                    case .byApp: DefaultAppsByAppView(model: model)
+                    case .custom: DefaultAppsCustomView(model: model)
+                    }
+                }
+                .padding(.bottom, 28)
+                .frame(width: SettingsTab.contentWidth, alignment: .topLeading)
             }
+            .id(model.mode)
         }
         .frame(width: SettingsTab.contentWidth, alignment: .topLeading)
         .onAppear { model.loadIfNeeded() }

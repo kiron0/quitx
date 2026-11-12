@@ -382,7 +382,7 @@ struct SettingsRootView: View {
         case .leftovers:
             LeftoversTabView(model: leftoversModel)
         case .defaultApps:
-            scrolling(DefaultAppsTabView())
+            DefaultAppsTabView()
         case .systemJunk:
             CleanupTabView(model: systemJunkModel)
         case .userCache:
