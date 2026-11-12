@@ -365,10 +365,14 @@ private struct DefaultAppsByAppView: View {
                 .fixedSize()
                 .accessibilityLabel("Choose an app")
 
-                Button("Browse…") {
-                    openChooser()
+                if model.selectedApp != nil {
+                    Button("Clear") {
+                        model.selectApp(nil)
+                    }
+                    .buttonStyle(UninstallSecondaryButtonStyle())
+                    .help("Clear the selected app without changing any default apps.")
+                    .accessibilityLabel("Clear app selection")
                 }
-                .buttonStyle(UninstallSecondaryButtonStyle())
 
                 Spacer(minLength: 0)
             }
@@ -414,17 +418,6 @@ private struct DefaultAppsByAppView: View {
             )
         })
         return entries
-    }
-
-    private func openChooser() {
-        model.chooseApp(
-            for: [],
-            current: model.selectedApp,
-            title: "Choose an App",
-            subtitle: "See every file type and link it can open",
-            confirmTitle: "Select",
-            onChoose: { [model] in model.selectApp($0) }
-        )
     }
 
     private func appHeader(_ app: HandlerApp) -> some View {
