@@ -148,9 +148,14 @@ final class DefaultAppsAppChooserWindowController: NSObject, NSWindowDelegate {
         )
         let hosting = NSHostingController(rootView: view)
         hosting.sizingOptions = []
-        let window = NSWindow(contentViewController: hosting)
+        let window = NSWindow(
+            contentRect: NSRect(origin: .zero, size: Self.size),
+            styleMask: [.titled, .closable, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+        window.contentViewController = hosting
         window.title = request.title
-        window.styleMask = [.titled, .closable, .fullSizeContentView]
         window.titlebarAppearsTransparent = true
         window.titlebarSeparatorStyle = .none
         window.titleVisibility = .hidden
@@ -219,12 +224,7 @@ struct DefaultAppsAppChooserView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
         }
-        .frame(
-            minWidth: DefaultAppsAppChooserWindowController.size.width,
-            maxWidth: .infinity,
-            minHeight: DefaultAppsAppChooserWindowController.size.height,
-            maxHeight: .infinity
-        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
             if LiquidGlass.enabled {
                 LiquidGlassFill(shape: Rectangle()).ignoresSafeArea()
