@@ -308,28 +308,7 @@ struct UninstallView: View {
     }
 
     private var searchField: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.secondary)
-            TextField("Search apps", text: $model.searchText)
-                .textFieldStyle(.plain)
-                .font(.system(size: 12))
-                .disableInitialFocus()
-            if !model.searchText.isEmpty {
-                Button {
-                    model.searchText = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.horizontal, 8)
-        .frame(height: 28)
-        .background(SearchFieldGlassBackground(isFocused: !model.searchText.isEmpty))
+        QuitXSearchField(placeholder: "Search apps", text: $model.searchText)
     }
 
     private func pickerRow(_ app: UninstallViewModel.PickerApp) -> some View {

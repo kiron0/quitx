@@ -254,37 +254,16 @@ struct DefaultAppsAppChooserView: View {
     }
 
     private var searchField: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(.secondary)
-                .accessibilityHidden(true)
-            TextField("Search apps", text: $model.query)
-                .textFieldStyle(.plain)
-                .onSubmit {
-                    if let item = model.selectedItem { onChoose(item.app) }
-                }
-                .onKeyPress(.downArrow) {
-                    model.moveSelection(by: 1)
-                    return .handled
-                }
-                .onKeyPress(.upArrow) {
-                    model.moveSelection(by: -1)
-                    return .handled
-                }
-            if !model.query.isEmpty {
-                Button {
-                    model.query = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Clear search")
-            }
-        }
-        .padding(.horizontal, 10)
-        .frame(height: 28)
-        .background(Color(NSColor.textBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
-        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.primary.opacity(0.1), lineWidth: 0.5))
+        QuitXSearchField(
+            placeholder: "Search apps",
+            text: $model.query,
+            disableInitialFocus: false,
+            onSubmit: {
+                if let item = model.selectedItem { onChoose(item.app) }
+            },
+            onMoveDown: { model.moveSelection(by: 1) },
+            onMoveUp: { model.moveSelection(by: -1) }
+        )
     }
 
     private var list: some View {

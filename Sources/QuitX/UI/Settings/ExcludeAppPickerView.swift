@@ -405,26 +405,12 @@ struct ExcludeAppPickerView: View {
 
     private var controls: some View {
         HStack(spacing: 12) {
-            HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(Color.secondary)
-                TextField("Search apps", text: $viewModel.searchQuery)
-                    .textFieldStyle(.plain)
-                    .disableInitialFocus()
-                if !viewModel.searchQuery.isEmpty {
-                    Button {
-                        viewModel.searchQuery = ""
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(Color.secondary)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 9)
-            .frame(height: 28)
-            .background(Color(NSColor.textBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
-            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.primary.opacity(0.1), lineWidth: 0.5))
+            QuitXSearchField(
+                placeholder: "Search apps",
+                text: $viewModel.searchQuery,
+                cornerRadius: 6,
+                horizontalPadding: 9
+            )
 
             Button {
                 viewModel.showBackgroundApps.toggle()

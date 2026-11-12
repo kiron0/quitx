@@ -269,17 +269,12 @@ struct ExcludePortPickerView: View {
             .padding(.horizontal, 16)
             .padding(.top, 12)
 
-            HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(Color.secondary)
-                TextField("Search listening ports", text: $viewModel.searchQuery)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 12))
-                    .disableInitialFocus()
-            }
-            .padding(.horizontal, 9)
-            .frame(height: 28)
-            .background(SearchFieldGlassBackground(isFocused: !viewModel.searchQuery.isEmpty, cornerRadius: 6))
+            QuitXSearchField(
+                placeholder: "Search listening ports",
+                text: $viewModel.searchQuery,
+                cornerRadius: 6,
+                horizontalPadding: 9
+            )
             .padding(.horizontal, 16)
             .padding(.top, 12)
             .padding(.bottom, 8)

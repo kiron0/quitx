@@ -288,32 +288,11 @@ struct ChangelogView: View {
 
     private var stickySearchHeader: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(state.searchText.isEmpty ? Color.secondary.opacity(0.85) : QuitXTheme.accent)
-
-                TextField("Search versions…", text: $state.searchText)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color.primary)
-                    .disableInitialFocus()
-
-                if !state.searchText.isEmpty {
-                    Button {
-                        state.searchText = ""
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(Color.secondary)
-                    }
-                    .buttonStyle(.plain)
-                    .transition(.opacity)
-                }
-            }
-            .padding(.horizontal, 8)
-            .frame(height: 28)
-            .background(SearchFieldGlassBackground(isFocused: !state.searchText.isEmpty))
+            QuitXSearchField(
+                placeholder: "Search versions…",
+                text: $state.searchText,
+                animateClearButton: true
+            )
             .padding(.horizontal, 10)
             .padding(.top, 38)
             .padding(.bottom, 8)

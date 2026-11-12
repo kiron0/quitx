@@ -105,34 +105,13 @@ struct SettingsRootView: View {
 
     private var searchHeader: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(navigation.searchText.isEmpty ? Color.secondary.opacity(0.85) : QuitXTheme.accent)
-
-                TextField("Search settings…", text: $navigation.searchText)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color.primary)
-                    .disableInitialFocus()
-                    .onSubmit {
-                        if let first = searchResults.first { navigation.select(first) }
-                    }
-
-                if !navigation.searchText.isEmpty {
-                    Button {
-                        navigation.searchText = ""
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(Color.secondary)
-                    }
-                    .buttonStyle(.plain)
+            QuitXSearchField(
+                placeholder: "Search settings…",
+                text: $navigation.searchText,
+                onSubmit: {
+                    if let first = searchResults.first { navigation.select(first) }
                 }
-            }
-            .padding(.horizontal, 8)
-            .frame(height: 28)
-            .background(SearchFieldGlassBackground(isFocused: !navigation.searchText.isEmpty))
+            )
             .padding(.horizontal, 10)
             .padding(.top, 38)
             .padding(.bottom, 8)
