@@ -175,6 +175,61 @@ struct QuickCleanTests {
         #expect(result.failed.map(\.url) == [locked])
         #expect(fileManager.fileExists(atPath: locked.path))
     }
+
+    @Test("One undeletable file does not stop the rest of a cache folder from being removed")
+    func partialFailureKeepsRemoving() async throws {
+        let fileManager = FileManager.default
+        let target = fileManager.temporaryDirectory.appendingPathComponent("quitx-partial-\(UUID().uuidString)")
+        let pinned = target.appendingPathComponent("m/f10")
+        defer {
+            try? fileManager.setAttributes([.immutable: false], ofItemAtPath: pinned.path)
+            try? fileManager.removeItem(at: target)
+        }
+        for folder in ["a", "m", "z"] {
+            let directory = target.appendingPathComponent(folder)
+            try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+            for index in 0..<50 {
+                try Data(count: 512).write(to: directory.appendingPathComponent("f\(index)"))
+            }
+        }
+        try fileManager.setAttributes([.immutable: true], ofItemAtPath: pinned.path)
+
+        let result = await AppUninstaller.removePermanently([target], allowAdministrator: false)
+
+        #expect(result.failed.map(\.url) == [target])
+        let remaining = fileManager.enumerator(atPath: target.path)?.allObjects as? [String] ?? []
+        #expect(Set(remaining) == ["m", "m/f10"])
+    }
+
+    @Test("Removal finishes while another writer keeps adding files")
+    func removalSurvivesConcurrentWriter() async throws {
+        let fileManager = FileManager.default
+        let target = fileManager.temporaryDirectory.appendingPathComponent("quitx-busy-\(UUID().uuidString)")
+        defer { try? fileManager.removeItem(at: target) }
+        for folder in 0..<10 {
+            let directory = target.appendingPathComponent("d\(folder)")
+            try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+            for index in 0..<100 {
+                try Data(count: 256).write(to: directory.appendingPathComponent("f\(index)"))
+            }
+        }
+        let busy = target.appendingPathComponent("d0")
+        let writer = Task.detached {
+            var index = 0
+            while !Task.isCancelled, index < 2_000 {
+                try? Data(count: 8).write(to: busy.appendingPathComponent("new\(index)"))
+                index += 1
+                try? await Task.sleep(nanoseconds: 1_000_000)
+            }
+        }
+
+        let result = await AppUninstaller.removePermanently([target], allowAdministrator: false)
+        writer.cancel()
+        _ = await writer.value
+
+        #expect(result.failed.isEmpty)
+        #expect(!fileManager.fileExists(atPath: target.path))
+    }
 }
 
 extension QuickCleanTests {

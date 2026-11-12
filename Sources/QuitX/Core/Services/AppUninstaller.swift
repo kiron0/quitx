@@ -502,6 +502,43 @@ enum AppUninstaller {
         return errno != ENOENT && errno != ENOTDIR
     }
 
+    static func removeResiliently(_ url: URL, passes: Int = 5) throws {
+        guard url.pathExtension.lowercased() != "app" else {
+            try FileManager.default.removeItem(at: url)
+            return
+        }
+        var lastError: Error?
+        for _ in 0..<max(1, passes) {
+            do {
+                try FileManager.default.removeItem(at: url)
+                return
+            } catch {
+                lastError = error
+                guard itemExists(atPath: url.path) else { return }
+                removeContentsBestEffort(url)
+            }
+        }
+        guard itemExists(atPath: url.path) else { return }
+        do {
+            try FileManager.default.removeItem(at: url)
+        } catch {
+            if itemExists(atPath: url.path) { throw lastError ?? error }
+        }
+    }
+
+    static func removeContentsBestEffort(_ url: URL) {
+        let fileManager = FileManager.default
+        guard let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey]),
+              values.isDirectory == true, values.isSymbolicLink != true,
+              let children = try? fileManager.contentsOfDirectory(at: url, includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey], options: []) else { return }
+        for child in children {
+            if (try? fileManager.removeItem(at: child)) == nil, itemExists(atPath: child.path) {
+                removeContentsBestEffort(child)
+                try? fileManager.removeItem(at: child)
+            }
+        }
+    }
+
     static func removePermanently(_ urls: [URL], allowAdministrator: Bool = true) async -> RemovalResult {
         let safeURLs = urls.filter { isSafePermanentRemoval($0) }
         var result = RemovalResult()
@@ -512,7 +549,7 @@ enum AppUninstaller {
             var partial = RemovalResult()
             for url in safeURLs {
                 do {
-                    try FileManager.default.removeItem(at: url)
+                    try removeResiliently(url)
                     partial.trashed.append(url)
                 } catch {
                     if itemExists(atPath: url.path) {
