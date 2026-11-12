@@ -7,8 +7,18 @@ All notable changes to QuitX macOS App will be documented in this file.
 ### Added
 
 - **Default Apps Manager in Settings**: Added a dedicated Default Apps section in Settings to view and update macOS default handlers via Launch Services across 11 built-in categories (Browser, Email, PDF, Images, Video, Music, Code Editor, Documents, Archives, Calendar & Contacts, and Terminal & Remote).
+- **Searchable App Chooser**: Picking `Other…` opens a dedicated App Chooser window that prioritizes suggested handlers, scans installed applications, supports instant search and keyboard navigation, and lets you browse for any app bundle.
 - **Inspect by App & Custom Targets**: Browse any installed application to inspect and claim its supported file types and URL schemes, or register custom extensions (`.ts`, `.mdx`), link schemes (`vscode:`), and UTTypes (`public.json`) with live validation, typo suggestions, and safety guards against overly broad system types.
 - **One-Click Undo**: Default handler changes keep history so accidental reassignments can be rolled back immediately.
+
+### Changed
+
+- **Native Handler Picker Menu**: Replaced the SwiftUI dropdown with a custom AppKit menu displaying crisp application icons, active checkmarks, quick Finder reveal, and direct access to the App Chooser.
+- **Unified Search Input**: Extracted a shared `QuitXSearchField` component with glass styling and consistent clear-button behavior across Default Apps Chooser, Settings, Uninstall Apps, Exclusions, Help, and What's New.
+
+### Fixed
+
+- **App Chooser Window Sizing**: Fixed an AppKit/SwiftUI safe-area sizing issue where the Default Apps App Chooser expanded past its content height and left a transparent strip along the bottom edge.
 
 ## 1.2.7
 

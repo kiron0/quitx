@@ -2,11 +2,17 @@ import Foundation
 
 extension ChangelogProvider {
     static let appReleases: [ReleaseChangelog] = [
-        ReleaseChangelog("1.2.8", "Default Apps Manager in Settings for files, links & categories", [
+        ReleaseChangelog("1.2.8", "Default Apps Manager in Settings, App Chooser & unified search", [
             ("New Features", [
                 "**Default Apps Manager**: Manage macOS default handlers across 11 categories (Browser, Email, PDF, Media, Code, Documents, Archives, and more) directly in Settings.",
+                "**Searchable App Chooser**: Choosing Other opens a dedicated chooser listing suggested handlers and installed apps with instant filtering, arrow-key navigation, and Finder browse.",
                 "**By App & Custom Types**: Inspect all types supported by any installed app, or add custom extensions, URL schemes, and UTTypes with live input validation and safety checks.",
                 "**Instant Undo**: Roll back accidental default app reassignments in one click."
+            ]),
+            ("Improvements", [
+                "**Native App Picker Menu**: Upgraded handler menus with crisp 16 pt app icons, active checkmarks, and quick Show in Finder actions.",
+                "**Unified Search Fields**: Standardized search inputs with Liquid Glass focus styling and clear buttons across Settings, Uninstall, Help, What's New, Exclusions, and the App Chooser.",
+                "**App Chooser Layout**: Fixed bottom-edge window sizing so the App Chooser fills its exact frame cleanly without transparent padding."
             ])
         ]),
 
