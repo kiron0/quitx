@@ -352,7 +352,7 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
                 ),
                 QuitXHelpSection(
                     title: "Applications & Cleanup",
-                    body: "Settings > Applications contains the integrated app uninstaller and a Leftovers scan for files from apps no longer installed. Cleanup lets you review System Junk, User Cache, Mail Files, Trash Bins, Large & Old Files, and AI Apps. Developer Cleanup covers Xcode, Homebrew, Node, and Docker caches. Every scan is reviewable before permanent deletion; Large & Old Files never start selected."
+                    body: "Settings > Applications contains the integrated app uninstaller and a Leftovers scan for files from apps no longer installed. Default Apps sets which apps open your web links, mail, PDFs, images, video, music, code and archives, by category, per file type or by app, with custom extensions and link schemes and Undo. Cleanup lets you review System Junk, User Cache, Mail Files, Trash Bins, Large & Old Files, and AI Apps. Developer Cleanup covers Xcode, Homebrew, Node, and Docker caches. Every scan is reviewable before permanent deletion; Large & Old Files never start selected."
                 ),
                 QuitXHelpSection(
                     title: "About & Updates",

@@ -29,6 +29,7 @@ enum QuitXConstants {
         static let lastAutomaticUpdateCheck = "quitx_last_automatic_update_check"
         static let lastAutomaticUpdateCheckFailed = "quitx_last_automatic_update_check_failed"
         static let launchAtLogin = "quitx_launch_at_login"
+        static let defaultAppsCustomTargets = "quitx_default_apps_custom_targets"
         static let activateMenuEnabled = "sc_activate_enabled"
         static let activateMenuKeys = "sc_activate_keys"
         static let quitAllEnabled = "sc_quit_enabled"

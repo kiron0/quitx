@@ -22,6 +22,7 @@ enum SettingsFeature: String, CaseIterable, Identifiable {
     case ports
     case uninstallApps
     case leftovers
+    case defaultApps
     case systemJunk
     case userCache
     case mailFiles
@@ -46,6 +47,7 @@ enum SettingsFeature: String, CaseIterable, Identifiable {
         case .ports: return .ports
         case .uninstallApps: return .uninstallApps
         case .leftovers: return .leftovers
+        case .defaultApps: return .defaultApps
         case .systemJunk: return .systemJunk
         case .userCache: return .userCache
         case .mailFiles: return .mailFiles
@@ -81,6 +83,7 @@ enum SettingsFeature: String, CaseIterable, Identifiable {
         case .ports: return "Port Killing"
         case .uninstallApps: return "Uninstall Apps"
         case .leftovers: return "Leftovers"
+        case .defaultApps: return "Default Apps"
         case .systemJunk: return "System Junk"
         case .userCache: return "User Cache"
         case .mailFiles: return "Mail Files"
@@ -116,6 +119,7 @@ enum SettingsFeature: String, CaseIterable, Identifiable {
         case .ports: return "Free ports held by dev servers, databases and Docker."
         case .uninstallApps: return "Remove apps and every related file from one settings page."
         case .leftovers: return "Find files left behind by apps you already removed."
+        case .defaultApps: return "Pick the browser, mail, PDF, media and code apps that open your files and links."
         case .systemJunk: return "Review system caches, logs and temporary files."
         case .userCache: return "Review regenerable cache data from your apps."
         case .mailFiles: return "Find attachments downloaded by Mail."
@@ -151,6 +155,7 @@ enum SettingsFeature: String, CaseIterable, Identifiable {
         case .ports: return "network"
         case .uninstallApps: return "xmark.app"
         case .leftovers: return "doc.questionmark"
+        case .defaultApps: return "app.badge.checkmark"
         case .systemJunk: return "gearshape.2"
         case .userCache: return "internaldrive"
         case .mailFiles: return "envelope"
@@ -210,7 +215,7 @@ enum SettingsFeature: String, CaseIterable, Identifiable {
             if apps + ports == 0 { return "Empty" }
             return "\(apps + ports) item\(apps + ports == 1 ? "" : "s")"
         case .ports: return onOff(config.portsEnabled)
-        case .uninstallApps, .leftovers, .systemJunk, .userCache, .mailFiles, .trashBins,
+        case .uninstallApps, .leftovers, .defaultApps, .systemJunk, .userCache, .mailFiles, .trashBins,
              .largeOldFiles, .aiApps, .xcodeJunk, .brewCache, .nodeCache, .dockerCache:
             return nil
         }

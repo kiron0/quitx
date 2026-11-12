@@ -17,6 +17,7 @@ struct SettingsRootView: View {
     @StateObject private var dockerCacheModel = CleanupViewModel(category: .dockerCache)
     @ObservedObject private var uninstallModel = UninstallWindowController.shared.model
     @ObservedObject private var permissionCenter = PermissionCenter.shared
+    @ObservedObject private var defaultAppsModel = DefaultAppsModel.shared
 
     private var trimmedQuery: String {
         navigation.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -260,6 +261,7 @@ struct SettingsRootView: View {
         case .leftovers: leftoversHeaderAccessory(leftoversModel)
         case .uninstallApps: uninstallHeaderAccessory(uninstallModel)
         case .permissions: permissionsHeaderAccessory
+        case .defaultApps: defaultAppsHeaderAccessory
         default: EmptyView()
         }
     }
@@ -326,6 +328,26 @@ struct SettingsRootView: View {
         }
     }
 
+    private var defaultAppsHeaderAccessory: some View {
+        HStack(spacing: 10) {
+            if let last = defaultAppsModel.history.last {
+                Button("Undo") {
+                    defaultAppsModel.undoLast()
+                }
+                .buttonStyle(UninstallSecondaryButtonStyle())
+                .disabled(defaultAppsModel.isBusy)
+                .help("Give \(last.previous.count == 1 ? last.previous[0].target.title : "\(last.previous.count) types") back to the app that opened them before \(last.app.name).")
+            }
+
+            Button(defaultAppsModel.isLoading ? "Refreshing…" : "Refresh") {
+                defaultAppsModel.refresh()
+            }
+            .buttonStyle(UninstallPrimaryButtonStyle(isEnabled: !defaultAppsModel.isLoading && !defaultAppsModel.isBusy))
+            .disabled(defaultAppsModel.isLoading || defaultAppsModel.isBusy)
+            .help("Read the current default apps from macOS again.")
+        }
+    }
+
     @ViewBuilder
     private func uninstallHeaderAccessory(_ model: UninstallViewModel) -> some View {
         if model.screen == .picker {
@@ -380,6 +402,8 @@ struct SettingsRootView: View {
             )
         case .leftovers:
             LeftoversTabView(model: leftoversModel)
+        case .defaultApps:
+            scrolling(DefaultAppsTabView())
         case .systemJunk:
             CleanupTabView(model: systemJunkModel)
         case .userCache:

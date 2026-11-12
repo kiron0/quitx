@@ -26,6 +26,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     case exclude = "Exclude"
     case uninstallApps = "Uninstall Apps"
     case leftovers = "Leftovers"
+    case defaultApps = "Default Apps"
     case systemJunk = "System Junk"
     case userCache = "User Cache"
     case mailFiles = "Mail Files"
@@ -56,7 +57,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .overview: return .start
         case .general, .shortcuts, .permissions: return .app
         case .automation, .advanced, .exclude: return .quitting
-        case .uninstallApps, .leftovers: return .applications
+        case .uninstallApps, .leftovers, .defaultApps: return .applications
         case .systemJunk, .userCache, .mailFiles, .trashBins, .largeOldFiles, .aiApps: return .cleanup
         case .xcodeJunk, .brewCache, .nodeCache, .dockerCache: return .developerCleanup
         case .ports: return .developer
@@ -76,6 +77,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .exclude:    return "nosign"
         case .uninstallApps: return "xmark.app"
         case .leftovers: return "doc.questionmark"
+        case .defaultApps: return "app.badge.checkmark"
         case .systemJunk: return "gearshape.2"
         case .userCache: return "internaldrive"
         case .mailFiles: return "envelope"
@@ -104,6 +106,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .exclude:    return "Apps and ports QuitX never quits, manually or automatically."
         case .uninstallApps: return "Remove installed apps, support files, caches, preferences and launch items."
         case .leftovers: return "Find files left behind by apps that are no longer installed."
+        case .defaultApps: return "Choose which apps open your files and links, all in one place."
         case .systemJunk: return "Review system caches, logs and temporary files."
         case .userCache: return "Review cache data created by apps in your account."
         case .mailFiles: return "Review downloaded Mail attachments stored on this Mac."
@@ -132,6 +135,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .exclude:    return "exclude exclusion list never quit protect immune ports"
         case .uninstallApps: return "applications uninstall remove app leftovers support files permanent delete"
         case .leftovers: return "applications orphan leftovers removed uninstalled files scan"
+        case .defaultApps: return "default apps open with browser email mail pdf viewer image video music player code editor text extension file type association url scheme link handler change all duti launch services"
         case .systemJunk: return "cleanup system junk caches logs temporary files"
         case .userCache: return "cleanup user app cache library caches"
         case .mailFiles: return "cleanup mail attachments downloads email"
