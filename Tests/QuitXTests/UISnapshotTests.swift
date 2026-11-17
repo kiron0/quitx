@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import QuitX
 
-extension PortListViewModelTests {
+extension GUIIntegrationTests.SnapshotTests {
     private static let snapshotDirectory: URL? = {
         let root = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

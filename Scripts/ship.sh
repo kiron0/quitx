@@ -13,7 +13,7 @@ cd "$ROOT_DIR"
 echo "🧪 [1/5] Testing..."
 TEST_LOG="$(mktemp)"
 trap 'rm -f "$TEST_LOG"' EXIT
-swift test --build-system native -Xswiftc -F -Xswiftc /Library/Developer/CommandLineTools/Library/Developer/Frameworks 2>&1 | LC_ALL=C sed -E '/warning:.*build-system native.*deprecated/d' | tee "$TEST_LOG"
+"$SCRIPT_DIR/test.sh" regression | tee "$TEST_LOG"
 if ! grep -qE "Test run with [1-9][0-9]* tests? .*passed" "$TEST_LOG"; then
   echo "❌ No passing test run found. Aborting ship."
   exit 1

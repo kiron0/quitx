@@ -3,7 +3,7 @@ import Foundation
 import Darwin
 @testable import QuitX
 
-@Suite("Port kill integration", .serialized)
+@Suite("Port kill integration", .serialized, .enabled(if: TestPhase.integration))
 struct PortKillIntegrationTests {
     struct Listener {
         let shell: Process

@@ -43,8 +43,11 @@ jobs:
           swift --version
           uname -a
 
-      - name: Run Tests
-        run: swift test || swift test --build-system native
+      - name: Run Regression Tests
+        run: ./Scripts/test.sh regression
+
+      - name: Run Process Integration Tests
+        run: ./Scripts/test.sh integration
 
       - name: Build & Package .app Bundle
         run: ./Scripts/build.sh
