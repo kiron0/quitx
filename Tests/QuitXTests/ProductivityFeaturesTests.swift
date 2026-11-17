@@ -706,6 +706,7 @@ struct LastWindowQuitTests {
         #expect(!eligible(bundleId: nil, name: "Finder"))
         #expect(!eligible(bundleId: "io.github.treposting.marquee", name: "Marquee"))
         #expect(!eligible(bundleId: "io.coreify.hopilo", name: "Hopilo"))
+        #expect(!eligible(bundleId: "io.coreify.keyli", name: "Keyli"))
     }
 
     @Test("Exclusions, music protection, and Never rules block eligibility")

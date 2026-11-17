@@ -422,6 +422,7 @@ struct SettingsOverviewView: View {
 
                     marqueeBanner
                     hopiloBanner
+                    keyliBanner
                 }
             }
             .padding(.bottom, 24)
@@ -619,6 +620,73 @@ struct SettingsOverviewView: View {
             if hovering {
                 navigation.hoveredCard = "hopilo"
             } else if navigation.hoveredCard == "hopilo" {
+                navigation.hoveredCard = nil
+            }
+        }
+    }
+    private var keyliBanner: some View {
+        let hovered = navigation.hoveredCard == "keyli"
+        return Button {
+            navigation.select(.keyli)
+        } label: {
+            HStack(spacing: 14) {
+                KeyliIconView(size: 48)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text("Keyli")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(Color.primary)
+                        Text("FREE")
+                            .font(.system(size: 9, weight: .heavy))
+                            .foregroundStyle(KeyliPromo.ink)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1.5)
+                            .background(KeyliPromo.amber, in: Capsule())
+                    }
+                    Text(KeyliPromo.tagline)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(Color.primary.opacity(0.85))
+                    Text("Click keys to type into any app without taking its focus.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 8)
+
+                HStack(spacing: 4) {
+                    Text("Take a look")
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 9, weight: .bold))
+                }
+                .font(.system(size: 11.5, weight: .semibold))
+                .foregroundStyle(KeyliPromo.ink)
+                .padding(.horizontal, 11)
+                .padding(.vertical, 6)
+                .background(KeyliPromo.amber.opacity(hovered ? 1 : 0.9), in: RoundedRectangle(cornerRadius: 7))
+            }
+            .padding(14)
+            .background(
+                LinearGradient(
+                    colors: [KeyliPromo.amber.opacity(0.20), KeyliPromo.amber.opacity(0.04)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                ),
+                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(KeyliPromo.amber.opacity(hovered ? 0.8 : 0.35), lineWidth: hovered ? 1 : 0.6)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Keyli. \(KeyliPromo.tagline)")
+        .onHover { hovering in
+            if hovering {
+                navigation.hoveredCard = "keyli"
+            } else if navigation.hoveredCard == "keyli" {
                 navigation.hoveredCard = nil
             }
         }
