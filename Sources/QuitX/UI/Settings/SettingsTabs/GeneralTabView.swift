@@ -206,10 +206,48 @@ struct GeneralTabView: View {
                         SettingsChoiceOption(value: $0, title: Self.quickCleanBackgroundTitle($0), symbol: $0 <= 10 ? "speedometer" : "tortoise")
                     }, width: 390)
                 }
-                .disabled(!cleanupStatOn)
-                .opacity(cleanupStatOn ? 1.0 : 0.42)
+                .disabled(!backgroundScanOn)
+                .opacity(backgroundScanOn ? 1.0 : 0.42)
             } help: {
-                HelpPopoverButton(text: "How often QuitX re-measures caches for the Cleanup size in the menu bar. Measuring reads a lot of small files, so a longer interval saves battery. 🔋🧹")
+                HelpPopoverButton(text: "How often QuitX re-measures caches for the Cleanup size in the menu bar and for Auto Quick Clean. Measuring reads a lot of small files, so a longer interval saves battery. 🔋🧹")
+            }
+
+            row(label: "") {
+                HStack(spacing: 6) {
+                    Text("Quick Clean")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.primary)
+                        .frame(width: 86, alignment: .leading)
+
+                    SettingsChoiceTiles(selection: Binding(
+                        get: { configStore.config.quickCleanAutoEnabled },
+                        set: {
+                            configStore.config.quickCleanAutoEnabled = $0
+                            configStore.save()
+                            QuickCleanAutoService.shared.evaluateNow()
+                        }
+                    ), options: [
+                        SettingsChoiceOption(value: false, title: "Manual", symbol: "hand.tap"),
+                        SettingsChoiceOption(value: true, title: "Auto", symbol: "wand.and.sparkles")
+                    ], width: 390)
+                }
+            } help: {
+                HelpPopoverButton(text: "Manual: you pick what to clean in the Cleanup window. Auto: QuitX cleans User Caches, User Logs and Developer Caches on its own once they grow past your limit. Trash is never emptied automatically. 🧹🤖")
+            }
+
+            row(label: "") {
+                HStack(alignment: .top, spacing: 6) {
+                    Text("Clean over")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.primary)
+                        .frame(width: 86, height: 26, alignment: .leading)
+
+                    QuickCleanThresholdField()
+                }
+                .disabled(!configStore.config.quickCleanAutoEnabled)
+                .opacity(configStore.config.quickCleanAutoEnabled ? 1.0 : 0.42)
+            } help: {
+                HelpPopoverButton(text: "Type a size between 100 MB and 500 GB. You can type the unit too, like 800mb or 2.5 GB, and QuitX switches to it. Press Return to save or Esc to undo. 📏🧹")
             }
 
             if #available(macOS 26.0, *) {
@@ -305,6 +343,10 @@ struct GeneralTabView: View {
 
     private var cleanupStatOn: Bool {
         configStore.config.showMenuBarStats && configStore.config.menuBarShowCleanup
+    }
+
+    private var backgroundScanOn: Bool {
+        cleanupStatOn || configStore.config.quickCleanAutoEnabled
     }
 
     static func quickCleanOpenTitle(_ seconds: Int) -> String {

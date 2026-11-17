@@ -2,6 +2,21 @@
 
 All notable changes to QuitX macOS App will be documented in this file.
 
+## 1.2.9
+
+### Added
+
+- **Auto Quick Clean**: Quick Clean can now run in **Auto** mode alongside the existing **Manual** mode. When User Caches, User Logs, and Developer Caches together grow past your limit, QuitX cleans them in the background and posts a notification with the space freed. Trash is never emptied automatically.
+- **Custom Clean Threshold with MB / GB**: Set the auto-clean limit anywhere from 100 MB to 500 GB in a search-style input with an MB / GB switch and stepper. Typed units (`800mb`, `2.5 GB`, `2g`) switch the unit automatically, and live validation explains empty, non-numeric, negative, zero, over-precise, and out-of-range values before anything is saved.
+
+### Changed
+
+- **Background Scan for Auto Clean**: The Background scan interval now also drives Auto Quick Clean and stays configurable whenever Auto mode is on, even with the menu bar Cleanup stat hidden. Low Power Mode stretches automatic scans to at most once an hour.
+
+### Fixed
+
+- **Ship Script Test Run**: `ship.sh` now passes the Testing framework path to `swift test` and aborts when no passing test run is reported, so builds can no longer ship after silently running zero tests.
+
 ## 1.2.8
 
 ### Added

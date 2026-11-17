@@ -64,6 +64,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         MemoryPressureService.shared.start()
         QuitTimerService.shared.start()
         HogMonitor.shared.startBackgroundMonitoring()
+        QuickCleanAutoService.shared.start()
         statusItemController?.startMenuBarStats()
         UpdateChecker.shared.startAutomaticChecks()
         _ = ShortcutManager.shared
@@ -85,6 +86,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         MemoryPressureService.shared.stop()
         QuitTimerService.shared.stop()
         HogMonitor.shared.stopBackgroundMonitoring()
+        QuickCleanAutoService.shared.stop()
         UpdateChecker.shared.stopAutomaticChecks()
         SingleInstanceService.shared.stopMonitoring()
         CpuUsageSampler.stop()

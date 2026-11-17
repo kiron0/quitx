@@ -140,6 +140,133 @@ struct QuickCleanTests {
         #expect(monitor.phase == .idle)
     }
 
+    @Test("Auto clean waits for the threshold and never empties Trash")
+    @MainActor
+    func autoCleanThreshold() async {
+        let removed = RemovedURLs()
+        let monitor = QuickCleanMonitor(
+            scanner: { Self.sampleGroups },
+            remover: { urls in
+                await removed.add(urls)
+                var result = AppUninstaller.RemovalResult()
+                result.trashed = urls
+                return result
+            }
+        )
+        #expect(!monitor.autoCleanIfNeeded(thresholdBytes: 1) { _ in })
+
+        monitor.rescan()
+        await monitor.waitForWork()
+        monitor.toggle(.userCaches)
+        #expect(monitor.autoCleanBytes == 6_000)
+        #expect(!monitor.autoCleanIfNeeded(thresholdBytes: 6_001) { _ in })
+        #expect(await removed.all.isEmpty)
+
+        var outcome: QuickCleanMonitor.Outcome?
+        #expect(monitor.autoCleanIfNeeded(thresholdBytes: 6_000) { outcome = $0 })
+        await monitor.waitForWork()
+        #expect(await removed.all.map(\.path).sorted() == ["/tmp/qx-a", "/tmp/qx-b", "/tmp/qx-c"])
+        #expect(outcome == QuickCleanMonitor.Outcome(freedBytes: 6_000, removed: 3, skipped: 0))
+    }
+
+    @Test("Auto clean settings default, round-trip, clamp and migrate")
+    func autoCleanConfig() throws {
+        let empty = try JSONDecoder().decode(QuitXConfig.self, from: Data("{}".utf8))
+        #expect(!empty.quickCleanAutoEnabled)
+        #expect(empty.quickCleanAutoThresholdMB == 5_000)
+        #expect(empty.quickCleanAutoThresholdUnit == .gb)
+        #expect(empty.quickCleanAutoThresholdBytes == 5_000_000_000)
+
+        var config = QuitXConfig.default
+        config.quickCleanAutoEnabled = true
+        config.quickCleanAutoThresholdMB = 750
+        config.quickCleanAutoThresholdUnit = .mb
+        let decoded = try JSONDecoder().decode(QuitXConfig.self, from: JSONEncoder().encode(config))
+        #expect(decoded.quickCleanAutoEnabled)
+        #expect(decoded.quickCleanAutoThresholdMB == 750)
+        #expect(decoded.quickCleanAutoThresholdUnit == .mb)
+        #expect(decoded.quickCleanAutoThresholdBytes == 750_000_000)
+
+        let low = try JSONDecoder().decode(QuitXConfig.self, from: Data(#"{"quickCleanAutoThresholdMB": 0}"#.utf8))
+        #expect(low.quickCleanAutoThresholdMB == 100)
+        let high = try JSONDecoder().decode(QuitXConfig.self, from: Data(#"{"quickCleanAutoThresholdMB": 9999999}"#.utf8))
+        #expect(high.quickCleanAutoThresholdMB == 500_000)
+        let badUnit = try JSONDecoder().decode(QuitXConfig.self, from: Data(#"{"quickCleanAutoThresholdUnit": "TB"}"#.utf8))
+        #expect(badUnit.quickCleanAutoThresholdUnit == .gb)
+        let legacy = try JSONDecoder().decode(QuitXConfig.self, from: Data(#"{"quickCleanAutoThresholdGB": 20}"#.utf8))
+        #expect(legacy.quickCleanAutoThresholdMB == 20_000)
+    }
+
+    @Test("Threshold input parses sizes and units")
+    func thresholdParsing() {
+        func mb(_ text: String, _ unit: QuickCleanSizeUnit) -> QuickCleanThreshold.Parsed? {
+            try? QuickCleanThreshold.parse(text, unit: unit).get()
+        }
+        #expect(mb("800", .mb) == .init(megabytes: 800, unit: .mb))
+        #expect(mb(" 2.5 ", .gb) == .init(megabytes: 2_500, unit: .gb))
+        #expect(mb("2,5", .gb) == .init(megabytes: 2_500, unit: .gb))
+        #expect(mb("1.250", .gb) == .init(megabytes: 1_250, unit: .gb))
+        #expect(mb(".5", .gb) == .init(megabytes: 500, unit: .gb))
+        #expect(mb("3.", .gb) == .init(megabytes: 3_000, unit: .gb))
+        #expect(mb("007", .gb) == .init(megabytes: 7_000, unit: .gb))
+        #expect(mb("+300", .mb) == .init(megabytes: 300, unit: .mb))
+        #expect(mb("800mb", .gb) == .init(megabytes: 800, unit: .mb))
+        #expect(mb("1.5 GB", .mb) == .init(megabytes: 1_500, unit: .gb))
+        #expect(mb("2g", .mb) == .init(megabytes: 2_000, unit: .gb))
+        #expect(mb("500M", .gb) == .init(megabytes: 500, unit: .mb))
+        #expect(mb("500", .gb) == .init(megabytes: 500_000, unit: .gb))
+        #expect(mb("100", .mb) == .init(megabytes: 100, unit: .mb))
+    }
+
+    @Test("Threshold input rejects bad sizes with a reason")
+    func thresholdValidation() {
+        func problem(_ text: String, _ unit: QuickCleanSizeUnit) -> QuickCleanThreshold.Problem? {
+            if case .failure(let problem) = QuickCleanThreshold.parse(text, unit: unit) { return problem }
+            return nil
+        }
+        #expect(problem("", .gb) == .empty)
+        #expect(problem("   ", .mb) == .empty)
+        #expect(problem("abc", .gb) == .notANumber)
+        #expect(problem("1.2.3", .gb) == .notANumber)
+        #expect(problem("1e3", .mb) == .notANumber)
+        #expect(problem(".", .gb) == .notANumber)
+        #expect(problem("gb", .gb) == .notANumber)
+        #expect(problem("1 000", .mb) == .notANumber)
+        #expect(problem("٥", .mb) == .notANumber)
+        #expect(problem("5 tb", .gb) == .notANumber)
+        #expect(problem("-5", .gb) == .negative)
+        #expect(problem("0", .gb) == .zero)
+        #expect(problem("0.000", .gb) == .zero)
+        #expect(problem("150.5", .mb) == .tooPrecise(.mb))
+        #expect(problem("1.2345", .gb) == .tooPrecise(.gb))
+        #expect(problem("99", .mb) == .belowMinimum)
+        #expect(problem("0.05", .gb) == .belowMinimum)
+        #expect(problem("500.001", .gb) == .aboveMaximum)
+        #expect(problem("500001", .mb) == .aboveMaximum)
+        #expect(problem("99999999999999999999", .mb) == .aboveMaximum)
+        #expect(QuickCleanThreshold.Problem.belowMinimum.message == "Minimum is 100 MB.")
+        #expect(QuickCleanThreshold.Problem.aboveMaximum.message == "Maximum is 500 GB.")
+    }
+
+    @Test("Threshold formats per unit and steps on unit boundaries")
+    func thresholdFormatAndStep() {
+        #expect(QuickCleanThreshold.format(5_000, unit: .gb) == "5")
+        #expect(QuickCleanThreshold.format(1_500, unit: .gb) == "1.5")
+        #expect(QuickCleanThreshold.format(1_005, unit: .gb) == "1.005")
+        #expect(QuickCleanThreshold.format(1_050, unit: .gb) == "1.05")
+        #expect(QuickCleanThreshold.format(1_500, unit: .mb) == "1500")
+        #expect(QuickCleanThreshold.stepped(1_500, unit: .gb, up: true) == 2_000)
+        #expect(QuickCleanThreshold.stepped(1_500, unit: .gb, up: false) == 1_000)
+        #expect(QuickCleanThreshold.stepped(2_000, unit: .gb, up: false) == 1_000)
+        #expect(QuickCleanThreshold.stepped(250, unit: .mb, up: true) == 300)
+        #expect(QuickCleanThreshold.stepped(100, unit: .mb, up: false) == 100)
+        #expect(QuickCleanThreshold.stepped(500_000, unit: .gb, up: true) == 500_000)
+        for text in ["1.5", "0.1", "2.25", "500", "12.345"] {
+            let parsed = try? QuickCleanThreshold.parse(text, unit: .gb).get()
+            #expect(parsed.map { QuickCleanThreshold.format($0.megabytes, unit: .gb) } == text)
+        }
+    }
+
     @Test("Nothing selected means nothing to confirm")
     @MainActor
     func emptySelection() async {
