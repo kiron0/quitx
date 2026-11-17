@@ -32,6 +32,9 @@ struct QuitXConfig: Codable, Equatable, Sendable {
     var menuBarShowCleanup: Bool = false
     var quickCleanOpenRefreshSeconds: Int = 60
     var quickCleanBackgroundRefreshMinutes: Int = 10
+    var quickCleanAutoEnabled: Bool = false
+    var quickCleanAutoThresholdMB: Int = 5_000
+    var quickCleanAutoThresholdUnit: QuickCleanSizeUnit = .gb
     var menuBarStatStyle: MenuBarStatStyle = .icon
     var menuBarMemoryUnit: MenuBarMemoryUnit = .gb
     var menuBarStatOrder: [MenuBarStat] = MenuBarStat.defaultOrder
@@ -58,11 +61,15 @@ struct QuitXConfig: Codable, Equatable, Sendable {
     static let quickCleanOpenRefreshChoices: [Int] = [0, 60, 300, 900]
     static let quickCleanBackgroundRefreshChoices: [Int] = [5, 10, 30, 60]
 
+    private enum LegacyCodingKeys: String, CodingKey {
+        case quickCleanAutoThresholdGB
+    }
+
     private enum CodingKeys: String, CodingKey {
         case exclude, force, includeFinder, includeTrash, includeBackground, groupBackground
         case defaultSelectAll, neverQuitMusic, musicApps, autoUpdate, autoInstallUpdates, confirmQuitAll, confirmIndividualAction, playSounds
         case quitInactiveAfterMinutes, disableQuitTips, sortBy, perAppQuitRules
-        case quitOnSleep, showMenuBarStats, menuBarShowCpu, menuBarShowMemory, menuBarShowGpu, batteryMenuBarEnabled, menuBarShowCleanup, quickCleanOpenRefreshSeconds, quickCleanBackgroundRefreshMinutes, menuBarStatStyle, menuBarMemoryUnit, menuBarStatOrder
+        case quitOnSleep, showMenuBarStats, menuBarShowCpu, menuBarShowMemory, menuBarShowGpu, batteryMenuBarEnabled, menuBarShowCleanup, quickCleanOpenRefreshSeconds, quickCleanBackgroundRefreshMinutes, quickCleanAutoEnabled, quickCleanAutoThresholdMB, quickCleanAutoThresholdUnit, menuBarStatStyle, menuBarMemoryUnit, menuBarStatOrder
         case quitWhenLastWindowClosed
         case sleepLockStartMinutes, sleepLockEndMinutes, sleepLockUse24Hour
         case hogAlertEnabled, hogCpuThreshold
@@ -183,6 +190,11 @@ struct QuitXConfig: Codable, Equatable, Sendable {
         menuBarShowCleanup = Self.dec(container, .menuBarShowCleanup, defaults.menuBarShowCleanup)
         quickCleanOpenRefreshSeconds = min(max(Self.dec(container, .quickCleanOpenRefreshSeconds, defaults.quickCleanOpenRefreshSeconds), 0), 3600)
         quickCleanBackgroundRefreshMinutes = min(max(Self.dec(container, .quickCleanBackgroundRefreshMinutes, defaults.quickCleanBackgroundRefreshMinutes), 1), 1440)
+        quickCleanAutoEnabled = Self.dec(container, .quickCleanAutoEnabled, defaults.quickCleanAutoEnabled)
+        let legacy = try? decoder.container(keyedBy: LegacyCodingKeys.self)
+        let legacyThresholdMB = ((try? legacy?.decodeIfPresent(Int.self, forKey: .quickCleanAutoThresholdGB)) ?? nil).map { $0 * 1_000 }
+        quickCleanAutoThresholdMB = QuickCleanThreshold.clamped(Self.dec(container, .quickCleanAutoThresholdMB, legacyThresholdMB ?? defaults.quickCleanAutoThresholdMB))
+        quickCleanAutoThresholdUnit = Self.dec(container, .quickCleanAutoThresholdUnit, defaults.quickCleanAutoThresholdUnit)
         menuBarStatStyle = Self.dec(container, .menuBarStatStyle, defaults.menuBarStatStyle)
         menuBarMemoryUnit = Self.dec(container, .menuBarMemoryUnit, defaults.menuBarMemoryUnit)
         let storedOrder = ((try? container.decodeIfPresent([String].self, forKey: .menuBarStatOrder)) ?? nil) ?? []
@@ -375,6 +387,10 @@ struct QuitXConfig: Codable, Equatable, Sendable {
 
     var quickCleanBackgroundMaxAge: TimeInterval {
         TimeInterval(max(1, quickCleanBackgroundRefreshMinutes) * 60)
+    }
+
+    var quickCleanAutoThresholdBytes: Int64 {
+        Int64(QuickCleanThreshold.clamped(quickCleanAutoThresholdMB)) * QuickCleanThreshold.bytesPerMB
     }
 
     var orderedMenuBarStats: [MenuBarStat] {

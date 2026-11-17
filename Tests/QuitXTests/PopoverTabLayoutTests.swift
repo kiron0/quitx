@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import QuitX
 
-extension PortListViewModelTests {
+extension GUIIntegrationTests.WindowLayoutTests {
     @Test("Switching Apps and Ports tabs keeps layout stable while the window resizes")
     func tabSwitchLayout() async throws {
         _ = NSApplication.shared

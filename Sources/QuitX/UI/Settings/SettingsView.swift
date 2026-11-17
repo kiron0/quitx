@@ -41,6 +41,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     case about = "About"
     case marquee = "Marquee"
     case hopilo = "Hopilo"
+    case keyli = "Keyli"
 
     static let windowSize = NSSize(width: 860, height: 600)
     static let sidebarWidth: CGFloat = 220
@@ -62,7 +63,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .xcodeJunk, .brewCache, .nodeCache, .dockerCache: return .developerCleanup
         case .ports: return .developer
         case .about: return .quitx
-        case .marquee, .hopilo: return .moreApps
+        case .marquee, .hopilo, .keyli: return .moreApps
         }
     }
 
@@ -92,6 +93,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .about:      return "bolt.fill"
         case .marquee:    return "viewfinder"
         case .hopilo:     return "arrow.triangle.branch"
+        case .keyli:      return "keyboard"
         }
     }
 
@@ -121,13 +123,14 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .about:      return "Version, updates and ways to get in touch."
         case .marquee:    return "Capture the screen. Keep the clipboard."
         case .hopilo:     return "Every AI session, ready to continue."
+        case .keyli:      return "An on-screen keyboard for your menu bar."
         }
     }
 
     var keywords: String {
         switch self {
         case .overview:   return "features cards everything help uninstall apps what's new changelog tools"
-        case .general:    return "login startup sounds updates download menu bar stats cpu memory gpu battery cleanup cache quick clean order drag refresh appearance liquid glass classic sort default normal force quit"
+        case .general:    return "login startup sounds updates download menu bar stats cpu memory gpu battery cleanup cache quick clean auto threshold manual order drag refresh appearance liquid glass classic sort default normal force quit"
         case .shortcuts:  return "keyboard hotkey key combo activate menu quit all force quit all settings refresh help what's new changelog uninstall apps"
         case .permissions: return "permissions privacy security accessibility full disk access automation apple events finder notifications login items approval repair reset tcc"
         case .automation: return "sleep schedule last window close accessibility cpu hog memory pressure rescue auto quit inactive idle timer"
@@ -150,6 +153,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .about:      return "version update check github contact support website"
         case .marquee:    return "more apps screenshot recording screen capture clipboard color picker measure ocr"
         case .hopilo:     return "more apps ai sessions chat handoff claude codex gemini cursor chatgpt agents export backup offline"
+        case .keyli:      return "more apps on-screen keyboard virtual typing keycap sounds themes input source layout"
         }
     }
 
@@ -158,14 +162,14 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     var headerTitle: String {
         switch self {
         case .overview: return "Overview"
-        case .marquee, .hopilo: return "More Apps"
+        case .marquee, .hopilo, .keyli: return "More Apps"
         default: return title
         }
     }
 
     var headerSummary: String {
         switch self {
-        case .marquee, .hopilo: return "Another free, open-source Mac app worth a look."
+        case .marquee, .hopilo, .keyli: return "Another free, open-source Mac app worth a look."
         default: return summary
         }
     }

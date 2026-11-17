@@ -382,11 +382,11 @@ struct QuitXHelpTopic: Identifiable, Hashable, Sendable {
             sections: [
                 QuitXHelpSection(
                     title: "Finding your way around",
-                    body: "Settings opens on Overview: a card for every feature with its current state, like On, Off or Normal. Click a card to jump to its page. The sidebar groups pages into App, Quitting, Applications, Cleanup, Developer Cleanup, Developer, QuitX, and More Apps (Marquee and Hopilo). Search settings… finds a page by any word, such as sleep, docker or liquid glass. Press Return to open the first match."
+                    body: "Settings opens on Overview: a card for every feature with its current state, like On, Off or Normal. Click a card to jump to its page. The sidebar groups pages into App, Quitting, Applications, Cleanup, Developer Cleanup, Developer, QuitX, and More Apps (Marquee, Hopilo, and Keyli). Search settings… finds a page by any word, such as sleep, docker or liquid glass. Press Return to open the first match."
                 ),
                 QuitXHelpSection(
                     title: "General, Shortcuts, Permissions & Automation",
-                    body: "Settings > General controls startup, sounds, menu bar stats (CPU, memory, GPU, battery, Cleanup, and Ports), macOS 26 Liquid Glass vs Classic appearance theme, sort order, and defaults. Settings > Shortcuts records global hotkeys. Settings > Permissions manages Accessibility, Full Disk Access, Finder Automation, Login Items, and Notifications. Settings > Automation configures sleep scheduling, quit-on-last-window-close, health rescue thresholds, and Auto Quit. Settings > Advanced manages background apps, music protection, default selection, tips, confirmations, and Finder/Trash."
+                    body: "Settings > General controls startup, sounds, menu bar stats (CPU, memory, GPU, battery, Cleanup, and Ports), Quick Clean mode (Manual or Auto with custom threshold), macOS 26 Liquid Glass vs Classic appearance theme, sort order, and defaults. Settings > Shortcuts records global hotkeys. Settings > Permissions manages Accessibility, Full Disk Access, Finder Automation, Login Items, and Notifications. Settings > Automation configures sleep scheduling, quit-on-last-window-close, health rescue thresholds, and Auto Quit. Settings > Advanced manages background apps, music protection, default selection, tips, confirmations, and Finder/Trash."
                 ),
                 QuitXHelpSection(
                     title: "Exclude",

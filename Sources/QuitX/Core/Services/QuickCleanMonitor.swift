@@ -128,10 +128,29 @@ final class QuickCleanMonitor: ObservableObject {
         confirmationShown = false
     }
 
+    var autoCleanBytes: Int64 {
+        QuickCleanService.bytes(of: groups, selected: QuickCleanService.autoCleanKinds(for: groups))
+    }
+
+    func shouldAutoClean(thresholdBytes: Int64) -> Bool {
+        phase == .idle && !confirmationShown && lastScan != nil && thresholdBytes > 0 && autoCleanBytes >= thresholdBytes
+    }
+
+    @discardableResult
+    func autoCleanIfNeeded(thresholdBytes: Int64, completion: @escaping (Outcome) -> Void) -> Bool {
+        guard shouldAutoClean(thresholdBytes: thresholdBytes) else { return false }
+        clean(kinds: QuickCleanService.autoCleanKinds(for: groups), completion: completion)
+        return true
+    }
+
     func clean(completion: @escaping (Outcome) -> Void) {
         confirmationShown = false
+        clean(kinds: selection, completion: completion)
+    }
+
+    private func clean(kinds: Set<QuickCleanGroup.Kind>, completion: @escaping (Outcome) -> Void) {
         guard phase == .idle else { return }
-        let chosen = groups.filter { selection.contains($0.kind) }.flatMap(\.items)
+        let chosen = groups.filter { kinds.contains($0.kind) }.flatMap(\.items)
         guard !chosen.isEmpty else { return }
         task?.cancel()
         phase = .cleaning

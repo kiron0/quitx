@@ -11,7 +11,13 @@ ALT_DEST_APP="$HOME/Applications/$APP_NAME.app"
 cd "$ROOT_DIR"
 
 echo "🧪 [1/5] Testing..."
-swift test --build-system native 2>&1 | LC_ALL=C sed -E '/warning:.*build-system native.*deprecated/d'
+TEST_LOG="$(mktemp)"
+trap 'rm -f "$TEST_LOG"' EXIT
+"$SCRIPT_DIR/test.sh" regression | tee "$TEST_LOG"
+if ! grep -qE "Test run with [1-9][0-9]* tests? .*passed" "$TEST_LOG"; then
+  echo "❌ No passing test run found. Aborting ship."
+  exit 1
+fi
 
 echo "📦 [2/5] Bundling..."
 "$SCRIPT_DIR/build.sh"

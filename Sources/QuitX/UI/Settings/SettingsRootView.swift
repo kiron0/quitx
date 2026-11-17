@@ -132,6 +132,8 @@ struct SettingsRootView: View {
                         MarqueeIconView(size: 16)
                     } else if tab == .hopilo {
                         HopiloIconView(size: 16)
+                    } else if tab == .keyli {
+                        KeyliIconView(size: 16)
                     } else {
                         Image(systemName: tab.symbol)
                             .font(.system(size: 12, weight: .medium))
@@ -360,6 +362,8 @@ struct SettingsRootView: View {
             MarqueePromoView()
         case .hopilo:
             HopiloPromoView()
+        case .keyli:
+            KeyliPromoView()
         case .general:
             scrolling(GeneralTabView())
         case .automation:

@@ -8,7 +8,6 @@ PID_FILE="$QA_DIR/bridge.pid"
 TIMEOUT="${QA_TIMEOUT:-2400}"
 LABEL="dev.kiron.quitx.qa-bridge"
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
-TEST_FRAMEWORKS="/Library/Developer/CommandLineTools/Library/Developer/Frameworks"
 CURRENT_JOB=""
 
 mkdir -p "$QA_DIR"
@@ -28,11 +27,9 @@ bridge_pid() {
 }
 
 swift_test() {
-    local args=(test --build-system native)
-    [[ -d "$TEST_FRAMEWORKS" ]] && args+=(-Xswiftc -F -Xswiftc "$TEST_FRAMEWORKS")
-    [[ -n "${1:-}" ]] && args+=(--filter "$1")
-    set -o pipefail
-    swift "${args[@]}" 2>&1 | LC_ALL=C sed -E '/warning:.*build-system native.*deprecated/d'
+    local args=(regression)
+    [[ -z "${1:-}" ]] || args+=(--filter "$1")
+    "$ROOT_DIR/Scripts/test.sh" "${args[@]}"
 }
 
 run_job() {
@@ -109,6 +106,9 @@ handle() {
         rebuild) run_job build clean_build ;;
         test) run_job test swift_test "$arg" ;;
         check) run_job build ./Scripts/build.sh && run_job test swift_test "$arg" ;;
+        integration) run_job integration ./Scripts/test.sh integration ;;
+        ui) run_job ui ./Scripts/test.sh ui ;;
+        snapshots) run_job snapshots ./Scripts/test.sh snapshots ;;
         last-window) run_job last-window ./Scripts/test-last-window.sh ;;
         launch) run_job launch launch_build ;;
         stats) run_job stats sample_app ;;

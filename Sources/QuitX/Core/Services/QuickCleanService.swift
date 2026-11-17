@@ -105,6 +105,10 @@ enum QuickCleanService {
         Set(groups.filter(\.isSelectedByDefault).map(\.kind))
     }
 
+    static func autoCleanKinds(for groups: [QuickCleanGroup]) -> Set<QuickCleanGroup.Kind> {
+        Set(groups.filter { $0.safety == .safe }.map(\.kind))
+    }
+
     static func bytes(of groups: [QuickCleanGroup], selected: Set<QuickCleanGroup.Kind>) -> Int64 {
         groups.filter { selected.contains($0.kind) }.reduce(0) { $0 + $1.bytes }
     }
