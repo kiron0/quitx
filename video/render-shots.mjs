@@ -20,7 +20,7 @@ const site = resolve(root, 'site/assets/shots');
 mkdirSync(readme, { recursive: true });
 mkdirSync(site, { recursive: true });
 
-const scenes = (process.env.SHOTS ? process.env.SHOTS.split(',') : ['hero', 'force', 'confirm', 'background', 'exclude', 'stats', 'quickclean', 'uninstall', 'cleanup', 'health', 'sleep', 'theme', 'sounds', 'updates', 'ports', 'portsSettings']);
+const scenes = (process.env.SHOTS ? process.env.SHOTS.split(',') : ['hero', 'force', 'confirm', 'background', 'exclude', 'stats', 'quickclean', 'autoclean', 'uninstall', 'cleanup', 'health', 'sleep', 'theme', 'sounds', 'updates', 'ports', 'portsSettings']);
 const readmeOnly = new Set(['portsSettings']);
 let browser;
 try {

@@ -273,40 +273,42 @@
         qcConfirm: 29.9,
         qcClean: 30.8,
         qcClose: 32.4,
-        sHot: 32.9,
-        nIn: 33.5,
-        rIn: 34.2,
-        rClose: 36.6,
-        stOpen: 37.2,
-        stUninstall: 39.6,
-        unSel1: 40.3,
-        unSel2: 40.9,
-        stLeftovers: 42.0,
-        stCleanup: 44.4,
-        stPorts: 46.8,
-        stAbout: 49.4,
-        stClose: 52.6,
-        slWin: 53.1,
-        slToggle: 54.0,
-        slSleep: 55.0,
-        slWake: 57.0,
-        slEnd: 58.2,
-        lwIn: 58.6,
-        lwClose: 59.6,
-        lwGone: 60.0,
-        lwEnd: 60.6,
-        thOpen: 61.0,
-        thSwap: 62.4,
-        thClose: 64.2,
-        uDot: 64.6,
-        uMenu: 65.4,
-        uClick: 66.2,
-        uDl0: 66.5,
-        uDl1: 68.1,
-        uReady: 68.7,
-        uRestart: 69.5,
-        end: 70.2,
-        total: 73.6,
+        qaIn: 33.4,
+        qaOut: 35.4,
+        sHot: 35.9,
+        nIn: 36.5,
+        rIn: 37.2,
+        rClose: 39.6,
+        stOpen: 40.2,
+        stUninstall: 42.6,
+        unSel1: 43.3,
+        unSel2: 43.9,
+        stLeftovers: 45.0,
+        stCleanup: 47.4,
+        stPorts: 49.8,
+        stAbout: 52.4,
+        stClose: 55.6,
+        slWin: 56.1,
+        slToggle: 57.0,
+        slSleep: 58.0,
+        slWake: 60.0,
+        slEnd: 61.2,
+        lwIn: 61.6,
+        lwClose: 62.6,
+        lwGone: 63.0,
+        lwEnd: 63.6,
+        thOpen: 64.0,
+        thSwap: 65.4,
+        thClose: 67.2,
+        uDot: 67.6,
+        uMenu: 68.4,
+        uClick: 69.2,
+        uDl0: 69.5,
+        uDl1: 71.1,
+        uReady: 71.7,
+        uRestart: 72.5,
+        end: 73.2,
+        total: 76.6,
       };
 
       const SFX = [
@@ -369,6 +371,8 @@
         [T.qcClean + 0.05, "laser"],
         [T.qcClean + 0.35, "success"],
         [T.qcClose, "swoosh"],
+        [T.qaIn, "notify"],
+        [T.qaIn + 0.12, "success"],
         [T.sHot, "alarm"],
         [T.nIn, "notify"],
         [T.rIn, "whoosh"],
@@ -471,10 +475,10 @@
         ],
         [
           T.qcClick - 0.2,
-          T.qcClose + 0.2,
+          T.qaOut + 0.2,
           "09",
-          "Quick Clean",
-          "Caches gone in two clicks.",
+          "Quick Clean, manual or Auto",
+          "Two clicks, or hands-free.",
         ],
         [
           T.sHot - 0.1,
@@ -817,6 +821,13 @@
         }
       }
 
+      function cleanStat(t) {
+        if (t < T.qcClean + 0.35) return "5.1 GB";
+        if (t < T.qcClose + 0.1 || t >= T.qaIn + 0.1) return "Zero KB";
+        const gb = lerp(0.2, 5.3, prog(t, T.qcClose + 0.1, T.qaIn - 0.1, ease));
+        return gb < 1 ? `${Math.round(gb * 1000)} MB` : `${gb.toFixed(1)} GB`;
+      }
+
       function renderStats(t) {
         const on = between(t, T.sIn, T.rClose + 0.6);
         const g = on
@@ -833,7 +844,7 @@
           mem: `${mem} GB`,
           gpu: `${Math.round(8 + 4 * Math.sin(t * 3))}%`,
           bat: "82%",
-          clean: t >= T.qcClean + 0.35 ? "Zero KB" : "5.1 GB",
+          clean: cleanStat(t),
         });
         const s = $("stats").firstElementChild;
         if (s && t >= T.sHot - 0.3)
@@ -939,6 +950,18 @@
 
       function renderNote(t) {
         const n = $("note");
+        if (between(t, T.qaIn, T.qaOut + 0.3)) {
+          n.innerHTML = QX.note({
+            title: "Quick Clean ran automatically",
+            body: "Auto mode: caches passed your 5 GB limit. Freed 5.3 GB. Trash was left alone.",
+          });
+          n.style.zoom = 1.2;
+          n.style.left = (1440 - 12 - 344 * 1.2) / 1.2 + "px";
+          n.style.top = "36px";
+          n.style.transform = `translateX(${(1 - prog(t, T.qaIn, T.qaIn + 0.5, out)) * 380}px)`;
+          show(n, prog(t, T.qaIn, T.qaIn + 0.5, out) * (1 - prog(t, T.qaOut - 0.1, T.qaOut + 0.3, lin)));
+          return;
+        }
         if (!between(t, T.nIn, T.rClose)) {
           show(n, 0);
           n.innerHTML = "";
@@ -1137,6 +1160,7 @@
           [T.qcClean - 0.05, ...L.qcOk],
           [T.qcClean + 0.4, ...L.qcOk],
           [T.qcClose - 0.3, L.qcOk[0] - 200, L.qcOk[1] + 200],
+          [T.qaOut, L.qcOk[0] - 240, L.qcOk[1] + 260],
           [T.sHot + 0.2, 900, 420],
           [T.rIn + 0.9, 900, 420],
           [T.rClose - 0.05, ...L.rBtn],

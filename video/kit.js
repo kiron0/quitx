@@ -178,6 +178,8 @@
   const SIDE_BG = '#2E2D30';
 
   const SF = {
+    'hand.tap': '<path d="M9.5 13.5V5.2a1.6 1.6 0 0 1 3.2 0v6.3"/><path d="M12.7 10.6a1.5 1.5 0 0 1 3 0v1.4"/><path d="M15.7 11.3a1.5 1.5 0 0 1 3 .2v3.7c0 3.4-2.2 5.8-5.6 5.8h-1.2c-2 0-3.2-.8-4.4-2.4L5 15.4a1.5 1.5 0 0 1 2.3-1.9l2.2 2.2"/><path d="M6.3 6.6a5 5 0 0 1 9.4 0"/>',
+    'wand.and.sparkles': '<path d="M4 20l11-11"/><path d="M13.5 7.5l3 3"/><path d="M17.5 2.8l.7 1.7 1.7.7-1.7.7-.7 1.7-.7-1.7-1.7-.7 1.7-.7z"/><path d="M20.5 10.5l.4 1 1 .4-1 .4-.4 1-.4-1-1-.4 1-.4z"/><path d="M9 3.5l.4 1 1 .4-1 .4-.4 1-.4-1-1-.4 1-.4z"/>',
     magnifyingglass: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.3 15.3l5.2 5.2"/>',
     'square.grid.2x2': '<rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/>',
     gearshape: '<circle cx="12" cy="12" r="3"/><path d="M12 2.8l1.6 2.3 2.7-.7.5 2.8 2.8.5-.7 2.7 2.3 1.6-2.3 1.6.7 2.7-2.8.5-.5 2.8-2.7-.7L12 21.2l-1.6-2.3-2.7.7-.5-2.8-2.8-.5.7-2.7L2.8 12l2.3-1.6-.7-2.7 2.8-.5.5-2.8 2.7.7z"/>',
@@ -387,6 +389,7 @@
   const menuChrome = (label, width) => `<span style="display:inline-flex;align-items:center;height:30px;padding:0 5px;border-radius:8px;background:${P(0.045)};box-shadow:inset 0 0 0 .5px ${P(0.09)};width:${width}px;box-sizing:border-box">${popup(label, { flex: true })}</span>`;
   const stepper = () => `<span style="display:inline-flex;flex-direction:column;width:13px;height:22px;border-radius:4px;background:${P(0.13)};box-shadow:inset 0 .5px 0 ${P(0.08)},0 .5px 1px rgba(0,0,0,.25);overflow:hidden"><span style="flex:1;display:grid;place-items:center;border-bottom:.5px solid rgba(0,0,0,.3)"><svg width="7" height="4" viewBox="0 0 7 4"><path d="M.8 3.4L3.5.8l2.7 2.6" fill="none" stroke="${INK}" stroke-width="1.2"/></svg></span><span style="flex:1;display:grid;place-items:center"><svg width="7" height="4" viewBox="0 0 7 4"><path d="M.8.6l2.7 2.6L6.2.6" fill="none" stroke="${INK}" stroke-width="1.2"/></svg></span></span>`;
   const t11 = s => `<span style="font-size:11px;color:${INK};white-space:nowrap">${s}</span>`;
+  const sizeField = (value, unit) => `<span style="display:inline-flex;align-items:center;gap:6px"><span style="display:inline-flex;align-items:center;gap:5px;width:112px;height:26px;box-sizing:border-box;padding:0 8px;border-radius:6px;background:${P(0.06)};box-shadow:inset 0 0 0 .5px ${P(0.12)}">${sf('internaldrive', 11, SUB, { w: 2 })}<span style="flex:1;text-align:right;font-size:12px;color:${INK};font-variant-numeric:tabular-nums">${value}</span><span style="font-size:11px;font-weight:500;color:${SUB}">${unit}</span></span>${stepper()}<span style="display:inline-flex;height:20px;border-radius:5px;background:${P(0.08)};padding:1px;box-sizing:border-box">${['MB', 'GB'].map(u => `<span style="width:40px;display:grid;place-items:center;border-radius:4px;font-size:10.5px;font-weight:${u === unit ? 600 : 500};color:${u === unit ? INK : SUB};${u === unit ? `background:${P(0.2)};box-shadow:0 .5px 1px rgba(0,0,0,.25)` : ''}">${u}</span>`).join('')}</span></span>`;
 
   const STAT_TITLES = { cpu: 'CPU', gpu: 'GPU', mem: 'Memory', bat: 'Battery', clean: 'Cleanup' };
   function statChips(order, on, dragging) {
@@ -409,6 +412,8 @@
       srow('', labeled('Refresh', tiles(REFRESH, '1 sec', 390)), { hl: o.hl === 'stats' }),
       srow('', labeled('Cleanup scan', tiles([['Always', 'bolt'], ['1 min', 'clock'], ['5 min', 'clock'], ['15 min', 'clock']], '1 min', 390))),
       srow('', labeled('Background scan', tiles([['5 min', 'speedometer'], ['10 min', 'speedometer'], ['30 min', 'tortoise'], ['1 hr', 'tortoise']], '10 min', 390))),
+      srow('', labeled('Quick Clean', tiles([['Manual', 'hand.tap'], ['Auto', 'wand.and.sparkles']], o.qcAuto ? 'Auto' : 'Manual', 390)), { hl: o.hl === 'quickclean', sec: 'quickclean' }),
+      srow('', labeled('Clean over', sizeField(o.qcValue || '5', o.qcUnit || 'GB')), { hl: o.hl === 'quickclean', dim: !o.qcAuto }),
       srow('Appearance', radios([['Classic', o.glass === false], ['Liquid Glass', o.glass !== false]], 18), { hl: o.hl === 'theme', sec: 'appearance' }),
       srow('Sort', tiles([['CPU High', 'arrow.down.right.circle'], ['CPU Low', 'arrow.up.right.circle'], ['Memory High', 'arrow.down.right.circle'], ['Memory Low', 'arrow.up.right.circle'], ['A–Z', 'textformat.abc'], ['Z–A', 'textformat.abc']], 'A–Z')),
       srow('Default', tiles([['Normal Quit', 'power'], ['Force Quit', 'bolt.fill']], 'Normal Quit')),
@@ -470,6 +475,7 @@
     ['APP', [
       ['power.circle', 'general', 'Open at Login', 'Start QuitX quietly every time you log in.', 'On', 'General'],
       ['chart.bar.xaxis', 'general', 'Menu Bar Stats', 'Live CPU, memory, GPU and battery right in the menu bar.', 'On', 'General'],
+      ['sparkles', 'general', 'Quick Clean', 'Clear caches by hand, or automatically past your limit.', 'Manual', 'General'],
       ['paintpalette', 'general', 'Appearance', 'Solid Classic or translucent Liquid Glass on macOS 26.', 'Classic', 'General'],
       ['speaker.wave.2', 'general', 'Sounds', 'A short arcade laser every time an app goes.', 'On', 'General'],
       ['arrow.down.circle', 'general', 'Updates', 'New versions straight from GitHub, verified before install.', 'On', 'General'],

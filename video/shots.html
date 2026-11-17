@@ -370,6 +370,37 @@
           ],
           ring: "statsItem",
         }),
+        autoclean: () => ({
+          mb: { stats: { cpu: "12%", mem: "9.4 GB", bat: "82%", clean: "Zero KB" } },
+          copy: copy(
+            "Auto Quick Clean",
+            "Caches cleared<br><span class='text-[var(--color-gold)]'>while you work.</span>",
+            "Switch Quick Clean to Auto and pick a limit in MB or GB. When caches, logs and developer caches pass it, QuitX clears them and tells you how much space came back.",
+            ["Manual or Auto", "100 MB to 500 GB", "Trash stays untouched"],
+          ),
+          ui: [
+            {
+              x: 680,
+              y: 150,
+              zoom: 1.1,
+              html: QX.settings({
+                tab: "General",
+                scrollTo: "quickclean",
+                content: QX.general({ hl: "quickclean", qcAuto: true, qcValue: "5", qcUnit: "GB" }),
+              }),
+            },
+            {
+              x: 1012,
+              y: 38,
+              zoom: 1.2,
+              html: QX.note({
+                title: "Quick Clean ran automatically",
+                body: "Auto mode: caches passed your 5 GB limit. Freed 5.3 GB. Trash was left alone.",
+              }),
+            },
+          ],
+          ring: "statsItem",
+        }),
         uninstall: () => ({
           mb: {},
           copy: copy(
