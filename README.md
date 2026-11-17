@@ -38,7 +38,13 @@
 - Warn about sustained CPU or memory pressure and rescue inactive apps.
 - Uninstall apps with reviewable leftovers and permanent removal from Settings.
 - Scan system junk, caches, Mail files, Trash, large files, AI apps, Xcode, Homebrew, Node, and Docker data before deleting anything.
+- Quick Clean caches, logs, and developer caches from the menu bar, manually or automatically once they pass a limit you set in MB or GB.
 - Use global shortcuts, Classic or Liquid Glass themes, and verified in-app updates.
+
+<p align="center">
+  <img src="Support/Screenshots/quickclean.jpg" width="49%" alt="Quick Clean window under the menu bar Cleanup stat with cache categories and a Clean button" />
+  <img src="Support/Screenshots/autoclean.jpg" width="49%" alt="General settings with Quick Clean set to Auto and a 5 GB limit, next to a notification that Quick Clean freed 5.3 GB" />
+</p>
 
 ## How it works
 
