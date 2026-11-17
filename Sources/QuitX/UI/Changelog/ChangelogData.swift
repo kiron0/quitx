@@ -2,10 +2,11 @@ import Foundation
 
 extension ChangelogProvider {
     static let appReleases: [ReleaseChangelog] = [
-        ReleaseChangelog("1.2.9", "Auto Quick Clean with a custom MB / GB threshold", [
+        ReleaseChangelog("1.2.9", "Auto Quick Clean with custom threshold & Keyli integration", [
             ("New Features", [
                 "**Auto Quick Clean**: Choose Manual or Auto. In Auto mode, QuitX cleans User Caches, User Logs, and Developer Caches once they pass your limit and notifies you how much it freed. Trash is never emptied automatically.",
-                "**Custom Threshold in MB or GB**: Set any limit from 100 MB to 500 GB with a search-style input, MB / GB switch, and stepper. Type `800mb` or `2.5 GB` and the unit follows, with clear validation messages for invalid sizes."
+                "**Custom Threshold in MB or GB**: Set any limit from 100 MB to 500 GB with a search-style input, MB / GB switch, and stepper. Type `800mb` or `2.5 GB` and the unit follows, with clear validation messages for invalid sizes.",
+                "**More Apps ▸ Keyli**: Discover Keyli, a free, open-source, and offline on-screen keyboard for your menu bar that types into any app without stealing focus, featuring latching modifiers, sound packs, and 52 themes."
             ]),
             ("Improvements", [
                 "**Smarter Background Scans**: The Background scan interval now powers Auto Quick Clean even when the menu bar Cleanup stat is hidden, and slows to hourly in Low Power Mode."
