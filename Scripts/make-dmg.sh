@@ -21,7 +21,8 @@ plain_dmg() {
     mkdir -p "$stage"
     cp -R "$APP_PATH" "$stage/"
     ln -s /Applications "$stage/Applications"
-    hdiutil create -volname "$VOLUME_NAME" -srcfolder "$stage" -ov -format ULFO "$OUT_PATH"
+    rm -f "$OUT_PATH"
+    diskutil image create from --format ULFO --volumeName "$VOLUME_NAME" "$stage" "$OUT_PATH"
 }
 
 BACKGROUND="$WORK_DIR/background.tiff"
@@ -42,7 +43,7 @@ if [[ -x "$VENV_DIR/bin/dmgbuild" ]] && "$VENV_DIR/bin/dmgbuild" \
     -D app="$APP_PATH" \
     -D background="$BACKGROUND" \
     -D icon="$ROOT_DIR/Support/Icons/AppIcon.icns" \
-    "$VOLUME_NAME" "$OUT_PATH"; then
+    "$VOLUME_NAME" "$OUT_PATH" 2>&1 | sed '/^hdiutil: WARNING: .* is deprecated/d'; then
     echo "✅ Styled DMG ready: $OUT_PATH"
 else
     echo "⚠️ dmgbuild unavailable, building a plain DMG"

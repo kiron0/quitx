@@ -309,12 +309,13 @@ struct AppUpdateTests {
         try dummyScript.write(to: execURL, atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: execURL.path)
 
-        let hdiutilProcess = Process()
-        hdiutilProcess.executableURL = URL(fileURLWithPath: "/usr/bin/hdiutil")
-        hdiutilProcess.arguments = ["create", "-volname", "QuitX", "-srcfolder", stageDir.path, "-ov", "-format", "UDZO", dmgURL.path]
-        try hdiutilProcess.run()
-        hdiutilProcess.waitUntilExit()
-        #expect(hdiutilProcess.terminationStatus == 0)
+        let imageProcess = Process()
+        imageProcess.executableURL = URL(fileURLWithPath: "/usr/sbin/diskutil")
+        imageProcess.arguments = ["image", "create", "from", "--format", "UDZO", "--volumeName", "QuitX", stageDir.path, dmgURL.path]
+        imageProcess.standardOutput = FileHandle.nullDevice
+        try imageProcess.run()
+        imageProcess.waitUntilExit()
+        #expect(imageProcess.terminationStatus == 0)
 
         defer {
             try? FileManager.default.removeItem(at: tempRoot)

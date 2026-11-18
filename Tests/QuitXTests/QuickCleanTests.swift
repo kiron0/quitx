@@ -420,7 +420,7 @@ extension QuickCleanTests {
         #expect(settings.contains("\"Applications\": (470, 215)"))
         #expect(settings.contains("symlinks = {\"Applications\": \"/Applications\"}"))
         let script = try String(contentsOf: root.appendingPathComponent("Scripts/make-dmg.sh"), encoding: .utf8)
-        #expect(script.contains("hdiutil create"))
+        #expect(script.contains("diskutil image create from"))
         #expect(FileManager.default.isExecutableFile(atPath: root.appendingPathComponent("Scripts/make-dmg.sh").path))
     }
 }
