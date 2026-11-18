@@ -374,7 +374,7 @@
                 playsinline
                 preload="metadata"
                 poster="assets/demo-poster.jpg"
-                aria-label="QuitX demo: quitting apps, port killing, normal vs force quit, background apps, exclusions, menu bar stats & core detail, Quick Clean, CPU warnings & Smart Rescue, settings dashboard with app uninstaller, leftovers and cleanup, quit after sleep, last window quit, Classic and Liquid Glass themes, and in-app updates"
+                aria-label="QuitX demo: quitting apps, port killing, normal vs force quit, background apps, exclusions, menu bar stats & core detail, Quick Clean with Auto mode, CPU warnings & Smart Rescue, settings dashboard with app uninstaller, leftovers and cleanup, quit after sleep, last window quit, Classic and Liquid Glass themes, and in-app updates"
               >
                 <source
                   src="assets/demo.webm"
@@ -714,7 +714,37 @@
                 <p
                   class="mt-[8px] text-[15.5px] text-muted lte-560:leading-[1.5]"
                 >
-                  Turn on the Cleanup stat to see reclaimable space in the menu bar. Click it, tick User Caches, Logs, Developer Caches or Trash, and confirm.
+                  Turn on the Cleanup stat to see reclaimable space in the menu bar. Click it, tick User Caches, Logs, Developer Caches or Trash, and confirm. Or switch to Auto and set a limit in MB or GB: QuitX cleans safe caches on its own once they pass it. Trash is never emptied automatically.
+                </p>
+              </div>
+            </article>
+            <article
+              class="reveal group/fcard overflow-hidden rounded-card col-span-2 lte-960:col-span-1 grid grid-cols-[1fr_1fr] lte-960:grid-cols-[1fr] opacity-0 [transform:translateY(16px)] [transition:opacity_0.6s_var(--ease-qx),transform_0.6s_var(--ease-qx)] bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface))] shadow-[inset_0_0_0_1px_var(--color-line)] [&.in]:opacity-100 [&.in]:transform-none motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:[transition:none]"
+            >
+              <div
+                class="overflow-hidden [border-right:1px_solid_var(--color-line)] lte-960:[border-right:0] lte-960:[border-bottom:1px_solid_var(--color-line)] aspect-[16/11] bg-[#120F0C]"
+              >
+                <img
+                  class="h-full w-full object-cover object-[50%_0] [transition:transform_0.6s_var(--ease-qx)] motion-reduce:[transition:none] group-hover/fcard:[transform:scale(1.02)]"
+                  src="assets/shots/autoclean.jpg"
+                  alt="QuitX General settings with Quick Clean set to Auto and a 5 GB limit, next to a notification that Quick Clean freed 5.3 GB"
+                  width="2168"
+                  height="1490"
+                  loading="lazy"
+                />
+              </div>
+              <div class="px-[26px] pt-[24px] pb-[28px] self-center">
+                <span
+                  class="mb-[12px] inline-block font-semibold text-[12.5px] leading-[1] font-mono text-gold tracking-[.04em]"
+                  >08</span
+                >
+                <h3 class="lte-560:text-[17.5px] lte-560:leading-[1.3]">
+                  Auto Quick Clean
+                </h3>
+                <p
+                  class="mt-[8px] text-[15.5px] text-muted lte-560:leading-[1.5]"
+                >
+                  Switch Quick Clean to Auto in Settings and set a limit from 100 MB to 500 GB. When caches, logs and developer caches pass it, QuitX clears them in the background and sends a notification with the space it freed. Trash is never emptied automatically.
                 </p>
               </div>
             </article>
@@ -736,7 +766,7 @@
               <div class="px-[26px] pt-[24px] pb-[28px]">
                 <span
                   class="mb-[12px] inline-block font-semibold text-[12.5px] leading-[1] font-mono text-gold tracking-[.04em]"
-                  >08</span
+                  >09</span
                 >
                 <h3 class="lte-560:text-[17.5px] lte-560:leading-[1.3]">
                   Uninstall apps
@@ -766,7 +796,7 @@
               <div class="px-[26px] pt-[24px] pb-[28px]">
                 <span
                   class="mb-[12px] inline-block font-semibold text-[12.5px] leading-[1] font-mono text-gold tracking-[.04em]"
-                  >09</span
+                  >10</span
                 >
                 <h3 class="lte-560:text-[17.5px] lte-560:leading-[1.3]">
                   Cleanup
@@ -796,7 +826,7 @@
               <div class="px-[26px] pt-[24px] pb-[28px]">
                 <span
                   class="mb-[12px] inline-block font-semibold text-[12.5px] leading-[1] font-mono text-gold tracking-[.04em]"
-                  >10</span
+                  >11</span
                 >
                 <h3 class="lte-560:text-[17.5px] lte-560:leading-[1.3]">
                   CPU &amp; memory warnings
@@ -805,8 +835,8 @@
                   class="mt-[8px] text-[15.5px] text-muted lte-560:leading-[1.5]"
                 >
                   When CPU or memory stays over your limit, QuitX notifies you
-                  and offers to quit inactive apps. Never the app you’re using,
-                  never without asking.
+                  and offers to quit inactive apps. It skips the app you’re using
+                  and waits for your OK first.
                 </p>
               </div>
             </article>
@@ -828,7 +858,7 @@
               <div class="px-[26px] pt-[24px] pb-[28px]">
                 <span
                   class="mb-[12px] inline-block font-semibold text-[12.5px] leading-[1] font-mono text-gold tracking-[.04em]"
-                  >11</span
+                  >12</span
                 >
                 <h3 class="lte-560:text-[17.5px] lte-560:leading-[1.3]">
                   Quit apps after your Mac sleeps
@@ -859,7 +889,7 @@
               <div class="px-[26px] pt-[24px] pb-[28px]">
                 <span
                   class="mb-[12px] inline-block font-semibold text-[12.5px] leading-[1] font-mono text-gold tracking-[.04em]"
-                  >12</span
+                  >13</span
                 >
                 <h3 class="lte-560:text-[17.5px] lte-560:leading-[1.3]">
                   Classic or Liquid Glass
@@ -890,7 +920,7 @@
               <div class="px-[26px] pt-[24px] pb-[28px]">
                 <span
                   class="mb-[12px] inline-block font-semibold text-[12.5px] leading-[1] font-mono text-gold tracking-[.04em]"
-                  >13</span
+                  >14</span
                 >
                 <h3 class="lte-560:text-[17.5px] lte-560:leading-[1.3]">
                   Sounds on quit
@@ -929,7 +959,7 @@
             >
               <span
                 class="mb-[12px] inline-block font-semibold text-[12.5px] leading-[1] font-mono text-gold tracking-[.04em]"
-                >14</span
+                >15</span
               >
               <h3
                 class="tracking-[-.025em] text-[30px] lte-560:text-[22px] lte-560:leading-[1.25]"
@@ -1104,8 +1134,9 @@
             <p
               class="mt-[18px] text-muted text-[length:clamp(16px,1.7vw,18px)] leading-[1.55]"
             >
-              No update server and no keys to trust. QuitX reads this project's
-              GitHub Releases and checks every download before it installs.
+              QuitX reads this project's GitHub Releases directly and checks
+              every download before it installs, so there's no separate update
+              server to trust.
             </p>
             <ol
               class="p-0 mx-0 mt-[34px] mb-0 gap-[22px] grid list-none [counter-reset:s] lte-560:mt-[24px] lte-560:gap-[16px]"
@@ -1201,10 +1232,10 @@
                   <use href="#i-lock" />
                 </svg>
               </div>
-              <h3 class="mt-[2px]">No data leaves your Mac</h3>
+              <h3 class="mt-[2px]">Your data stays on your Mac</h3>
               <p class="mt-[8px] text-muted text-[15.5px]">
-                No analytics and no account. The only request QuitX makes is
-                asking GitHub for the latest release.
+                QuitX has no analytics and needs no account. The only request
+                it makes is asking GitHub for the latest release.
               </p>
             </div>
             <div
@@ -1816,7 +1847,8 @@
           <p
             class="mx-auto mt-[16px] mb-0 relative text-muted text-[18px] max-w-[34em] lte-560:text-[15.5px]"
           >
-            No restart required.
+            Quit what's slowing you down and keep working, without
+            restarting.
           </p>
           <div
             class="mt-[30px] gap-[12px] relative flex flex-wrap justify-center"

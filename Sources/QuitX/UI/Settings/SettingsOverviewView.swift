@@ -4,6 +4,7 @@ import SwiftUI
 enum SettingsFeature: String, CaseIterable, Identifiable {
     case openAtLogin
     case menuBarStats
+    case quickClean
     case appearance
     case sounds
     case updates
@@ -38,7 +39,7 @@ enum SettingsFeature: String, CaseIterable, Identifiable {
 
     var tab: SettingsTab {
         switch self {
-        case .openAtLogin, .menuBarStats, .appearance, .sounds, .updates, .quitMode: return .general
+        case .openAtLogin, .menuBarStats, .quickClean, .appearance, .sounds, .updates, .quitMode: return .general
         case .shortcuts: return .shortcuts
         case .permissions: return .permissions
         case .quitOnSleep, .lastWindow, .rescue, .autoQuit: return .automation
@@ -65,6 +66,7 @@ enum SettingsFeature: String, CaseIterable, Identifiable {
         switch self {
         case .openAtLogin: return "Open at Login"
         case .menuBarStats: return "Menu Bar Stats"
+        case .quickClean: return "Quick Clean"
         case .appearance: return "Appearance"
         case .sounds: return "Sounds"
         case .updates: return "Updates"
@@ -101,6 +103,7 @@ enum SettingsFeature: String, CaseIterable, Identifiable {
         switch self {
         case .openAtLogin: return "Start QuitX quietly every time you log in."
         case .menuBarStats: return "Live CPU, memory, GPU and battery right in the menu bar."
+        case .quickClean: return "Clean caches and logs by hand, or automatically past a size you set."
         case .appearance: return "Solid Classic or translucent Liquid Glass on macOS 26."
         case .sounds: return "A short arcade laser every time an app goes."
         case .updates: return "New versions straight from GitHub, verified before install."
@@ -137,6 +140,7 @@ enum SettingsFeature: String, CaseIterable, Identifiable {
         switch self {
         case .openAtLogin: return "power.circle"
         case .menuBarStats: return "chart.bar.xaxis"
+        case .quickClean: return QuickCleanService.symbolName
         case .appearance: return "paintpalette"
         case .sounds: return "speaker.wave.2"
         case .updates: return "arrow.down.circle"
@@ -188,6 +192,7 @@ enum SettingsFeature: String, CaseIterable, Identifiable {
         switch self {
         case .openAtLogin: return onOff(LaunchAtLoginService.shared.isEnabled)
         case .menuBarStats: return onOff(config.availableMenuBarStatsEnabled)
+        case .quickClean: return config.quickCleanAutoEnabled ? "Auto" : "Manual"
         case .appearance:
             if #available(macOS 26.0, *) { return config.liquidGlassEnabled ? "Glass" : "Classic" }
             return "Classic"

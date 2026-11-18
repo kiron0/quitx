@@ -13,6 +13,7 @@ All notable changes to QuitX macOS App will be documented in this file.
 ### Changed
 
 - **Background Scan for Auto Clean**: The Background scan interval now also drives Auto Quick Clean and stays configurable whenever Auto mode is on, even with the menu bar Cleanup stat hidden. Low Power Mode stretches automatic scans to at most once an hour.
+- **Quick Clean in Settings Overview**: A new Quick Clean card in Settings Overview shows whether Quick Clean is in Manual or Auto mode and opens its settings in one click.
 
 ### Fixed
 

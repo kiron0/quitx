@@ -38,6 +38,24 @@ An entry matches when its name is the bundle identifier or starts with it follow
 
 Every removal asks for confirmation first. Removing the selection force quits each app (every instance, plus processes whose executable is inside its bundle) without saving, because a running app would rewrite its files. If an app can't be force quit, its files are left alone. Hovering an item shows **Show in Finder** and **Remove** for that item alone; removing a single file doesn't quit the app, removing the app bundle does. Selected items move to the Trash. QuitX doesn't edit or restart the Dock; macOS shows a removed app's Dock icon with a question mark until you drag it out. Items QuitX can't move, such as files installed by an installer package, are moved after an administrator prompt. macOS may ask you to allow QuitX under **Privacy & Security › App Management** before it can remove an app bundle.
 
+## Quick Clean
+
+Quick Clean groups four kinds of files: User Caches (`~/Library/Caches`), User Logs (`~/Library/Logs`), Developer Caches (npm, Yarn, pnpm, Homebrew, SwiftPM and rebuildable Xcode caches such as DerivedData; never Archives or device support files) and Trash. `QuickCleanService` scans them off the main actor; `QuickCleanMonitor` keeps the last scan, the selection and the clean state. Removal is permanent, with no administrator prompt.
+
+<p align="center">
+  <img src="../Support/Screenshots/quickclean.jpg" width="49%" alt="Manual Quick Clean window with cache categories and a Clean button" />
+  <img src="../Support/Screenshots/autoclean.jpg" width="49%" alt="Quick Clean set to Auto with a 5 GB limit and the notification it posts after cleaning" />
+</p>
+
+Settings ▸ General ▸ **Quick Clean** picks a mode:
+
+| Mode | Behavior |
+|---|---|
+| Manual (default) | Click the Cleanup stat in the menu bar, tick categories and confirm. Safe categories start selected; Trash never does. |
+| Auto | `QuickCleanAutoService` checks once a minute. When the last scan is older than the **Background scan** interval (at least 1 hour in Low Power Mode) it rescans. If User Caches, User Logs and Developer Caches together reach the **Clean over** limit, it removes them without asking and posts a notification with the space freed. Trash is never emptied automatically, and your manual selection is left unchanged. |
+
+The **Clean over** limit accepts 100 MB to 500 GB. Type a number in the current unit or include one (`800mb`, `2.5 GB`, `2g`); a typed unit switches the MB / GB toggle. MB takes whole numbers; GB takes up to 3 decimals. Invalid input shows the reason in red and is never saved; Return or leaving the field saves, Esc restores the saved value. The limit is stored as `quickCleanAutoThresholdMB` with its display unit in `quickCleanAutoThresholdUnit`; sizes use decimal units (1 GB = 1000 MB), matching Finder.
+
 ## Ports
 
 Settings ▸ Ports ▸ **Enable port killing** adds an Apps / Ports switch to the menu; QuitX remembers the last tab (`QuitXPopoverTab`). While the Ports tab is open, `PortListViewModel` rescans every 1–10 seconds (`portsRefreshSeconds`) on a fixed schedule (scan time is subtracted from the wait). With the listening port count on (shown in the menu bar stats item), it keeps scanning in the background at the same interval; otherwise it stops when the menu closes. When the kernel reports the same listeners as the last full scan, `PortService` reuses that scan's metadata for up to 10 s and only refreshes memory, so a 1-second interval stays cheap (no `ps`, `docker` or LaunchServices calls).

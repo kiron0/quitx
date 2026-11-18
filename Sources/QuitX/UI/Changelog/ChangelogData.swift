@@ -9,7 +9,8 @@ extension ChangelogProvider {
                 "**More Apps ▸ Keyli**: Discover Keyli, a free, open-source, and offline on-screen keyboard for your menu bar that types into any app without stealing focus, featuring latching modifiers, sound packs, and 52 themes."
             ]),
             ("Improvements", [
-                "**Smarter Background Scans**: The Background scan interval now powers Auto Quick Clean even when the menu bar Cleanup stat is hidden, and slows to hourly in Low Power Mode."
+                "**Smarter Background Scans**: The Background scan interval now powers Auto Quick Clean even when the menu bar Cleanup stat is hidden, and slows to hourly in Low Power Mode.",
+                "**Quick Clean in Overview**: A new Settings Overview card shows Manual or Auto mode at a glance and opens Quick Clean settings."
             ])
         ]),
 
