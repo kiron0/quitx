@@ -127,10 +127,6 @@ public struct PortInfo: Identifiable, Hashable {
         String(format: "%.1f%%", cpuUsage)
     }
 
-    public var portString: String {
-        String(port)
-    }
-
     public init(
         port: Int,
         pid: pid_t,

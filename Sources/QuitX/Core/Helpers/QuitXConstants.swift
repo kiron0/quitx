@@ -78,16 +78,7 @@ enum QuitXConstants {
     static let repositoryURL = URL(string: "https://github.com/\(githubRepository)")!
     static let issuesURL = URL(string: "https://github.com/\(githubRepository)/issues/new")!
     static let releasesURL = URL(string: "https://github.com/\(githubRepository)/releases")!
-    static let releasesPageURL = URL(string: "https://github.com/\(githubRepository)/releases/latest")!
     static let buyMeACoffeeURL = URL(string: "https://buymeacoffee.com/_thk")!
-
-    static var currentYear: Int {
-        Calendar.current.component(.year, from: Date())
-    }
-
-    static var copyright: String {
-        "Copyright © \(currentYear) \(author)"
-    }
 
     static var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0-dev"
@@ -95,17 +86,6 @@ enum QuitXConstants {
 
     static var buildNumber: String {
         Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "0"
-    }
-
-    static func sayHiURL() -> URL? {
-        let subject = "Saying hi from QuitX!"
-        let body = """
-        Hi Toufiq,
-
-        I wanted to say hi and drop a quick note about QuitX!
-
-        """
-        return makeMailtoURL(to: supportEmail, subject: subject, body: body)
     }
 
     static func contactURL() -> URL? {

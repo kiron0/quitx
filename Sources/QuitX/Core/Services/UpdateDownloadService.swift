@@ -77,11 +77,6 @@ final class UpdateDownloadService: NSObject, ObservableObject {
         super.init()
     }
 
-    var readyVersion: String? {
-        if case .ready(_, let version) = state { return version }
-        return nil
-    }
-
     func startDownload(from url: URL, version: String, digest: String? = nil, installWhenReady: Bool = false) {
         cancelDownload()
 

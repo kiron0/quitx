@@ -102,11 +102,6 @@ public final class DockerService {
         return list
     }
 
-    public func findContainer(for port: Int) async -> DockerInfo? {
-        let containers = await fetchContainers()
-        return containers.first(where: { $0.publishedPort == port })
-    }
-
     public func stopContainer(containerId: String, force: Bool = false, timeoutSeconds: Int = 5) async -> Bool {
         let dockerPath = Self.candidateBinaryPaths.first(where: {
             FileManager.default.isExecutableFile(atPath: $0)

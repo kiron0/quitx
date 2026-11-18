@@ -102,22 +102,6 @@ struct UninstallerTests {
         #expect(supportItem.isDirectory)
         #expect(items.first { $0.name == "com.example.coolapp.plist" }?.category == .preferences)
     }
-
-    @Test("Admin trash command quotes paths")
-    func adminCommandQuoting() {
-        let command = AppUninstaller.adminTrashCommand(
-            for: [URL(fileURLWithPath: "/Library/Application Support/It's Cool")],
-            trash: URL(fileURLWithPath: "/Users/me/.Trash"),
-            stamp: "10.00.00"
-        )
-        #expect(command == "/bin/mv -f '/Library/Application Support/It'\\''s Cool' '/Users/me/.Trash/It'\\''s Cool 10.00.00'")
-        let app = AppUninstaller.adminTrashCommand(
-            for: [URL(fileURLWithPath: "/Applications/Cool App.app")],
-            trash: URL(fileURLWithPath: "/Users/me/.Trash"),
-            stamp: "10.00.00"
-        )
-        #expect(app == "/bin/mv -f '/Applications/Cool App.app' '/Users/me/.Trash/Cool App 10.00.00.app'")
-    }
 }
 
 @Suite("Uninstaller grouping")

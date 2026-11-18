@@ -298,12 +298,6 @@ enum LastWindowQuitWindowCounter {
         return windows
     }
 
-    static func hasMinimizedWindow(for pid: pid_t) -> Bool {
-        guard AXIsProcessTrusted() else { return false }
-        guard let windows = axWindows(for: pid) else { return false }
-        return containsMinimizedWindow(windows)
-    }
-
     private static func containsMinimizedWindow(_ windows: [AXUIElement]) -> Bool {
         for window in windows {
             var minVal: CFTypeRef?
@@ -361,11 +355,6 @@ enum LastWindowQuitWindowCounter {
             }
         }
         return false
-    }
-
-    static func accessibilityWindowCount(for pid: pid_t) -> Int? {
-        guard AXIsProcessTrusted() else { return nil }
-        return axWindows(for: pid)?.count
     }
 
     static func windowCount(for pid: pid_t, visible: [pid_t: Set<CGWindowID>]? = nil) -> Int? {

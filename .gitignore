@@ -103,14 +103,4 @@ design-system/
 TODO.md
 NOTES.md
 /plans/
-/docs/plans/
 /tmp/
-
-## Marketing renders
-video/stills/
-video/tmp/
-video/node_modules/
-
-## Static site generated artifacts
-site/downloads.json
-.impeccable
