@@ -43,8 +43,8 @@ Every removal asks for confirmation first. Removing the selection force quits ea
 Quick Clean groups four kinds of files: User Caches (`~/Library/Caches`), User Logs (`~/Library/Logs`), Developer Caches (npm, Yarn, pnpm, Homebrew, SwiftPM and rebuildable Xcode caches such as DerivedData; never Archives or device support files) and Trash. `QuickCleanService` scans them off the main actor; `QuickCleanMonitor` keeps the last scan, the selection and the clean state. Removal is permanent, with no administrator prompt.
 
 <p align="center">
-  <img src="../Support/Screenshots/quickclean.jpg" width="49%" alt="Manual Quick Clean window with cache categories and a Clean button" />
-  <img src="../Support/Screenshots/autoclean.jpg" width="49%" alt="Quick Clean set to Auto with a 5 GB limit and the notification it posts after cleaning" />
+  <img src="Support/Screenshots/quickclean.jpg" width="49%" alt="Manual Quick Clean window with cache categories and a Clean button" />
+  <img src="Support/Screenshots/autoclean.jpg" width="49%" alt="Quick Clean set to Auto with a 5 GB limit and the notification it posts after cleaning" />
 </p>
 
 Settings ▸ General ▸ **Quick Clean** picks a mode:
@@ -73,7 +73,7 @@ Settings ▸ Ports ▸ **Enable port killing** adds an Apps / Ports switch to th
 
 ## Accessibility permission
 
-QuitX only needs Accessibility for window-based features. `Core/Services/AccessibilityPermission.swift` owns that state: it never prompts on its own, listens for the system `com.apple.accessibility.api` change notification, and offers Repair (`tccutil reset`) when a grant was lost. Builds use a stable designated requirement, so macOS keeps the grant across updates. See [SIGNING.md](SIGNING.md).
+QuitX only needs Accessibility for window-based features. `Core/Services/AccessibilityPermission.swift` owns that state: it never prompts on its own, listens for the system `com.apple.accessibility.api` change notification, and offers Repair (`tccutil reset`) when a grant was lost. Builds use a stable designated requirement, so macOS keeps the grant across updates. See [Signing](#signing).
 
 ## In-app updates
 
@@ -93,8 +93,18 @@ Settings and excluded apps live in `UserDefaults` (`io.coreify.quitx`), so they 
 
 ## Terminal installer
 
-`curl -fsSL https://quitx.kiron.dev/install | bash` runs `site/install`, which GitHub Pages serves from the website. It finds the latest release through the GitHub API, downloads the DMG, checks the SHA-256 digest GitHub publishes, the bundle identifier, the version and the code signature, then swaps the app into `/Applications` (restoring the old copy if that fails) and opens it. It never runs as root and uses `sudo` only when `/Applications` isn't writable.
+`curl -fsSL https://quitx.kiron.dev/install | bash` runs the `install` script the website serves. It finds the latest release through the GitHub API, downloads the DMG, checks the SHA-256 digest GitHub publishes, the bundle identifier, the version and the code signature, then swaps the app into `/Applications` (restoring the old copy if that fails) and opens it. It never runs as root and uses `sudo` only when `/Applications` isn't writable.
 
 ## Releasing
 
-See the Releasing section of [SIGNING.md](SIGNING.md) and `.github/workflows/release.yml`. The workflow tests, builds and signs the app, packages the DMG and zip, copies this version's `CHANGELOG.md` section into the release notes (which the update window shows), and publishes the GitHub Release. The website in `site/` (including the `install` script) deploys to GitHub Pages at quitx.kiron.dev through `.github/workflows/pages.yml`.
+1. Move the notes for the version into a `## X.Y.Z` section of `CHANGELOG.md`, written for users.
+2. Bump the version with `npm run bump` (updates `package.json` and `Support/Info.plist`) and commit.
+3. Push a `vX.Y.Z` tag, or run **Actions → Release**.
+
+`.github/workflows/release.yml` tests, builds and signs the app, packages the DMG and zip, copies this version's `CHANGELOG.md` section into the release notes (which the update window shows), and publishes the GitHub Release. The website (including the `install` script) lives outside this repository and deploys to Vercel at quitx.kiron.dev.
+
+### Signing
+
+Builds are signed ad hoc with a fixed designated requirement (`identifier "io.coreify.quitx"`), so macOS keeps the Accessibility grant across updates. `Scripts/build.sh` fails if the requirement would fall back to a CDHash.
+
+To sign with a stable self-signed certificate instead, run `./Scripts/create-signing-cert.sh` once and add the three values it prints as the `MACOS_SIGNING_IDENTITY`, `MACOS_SIGNING_CERT_PASSWORD` and `MACOS_SIGNING_CERT_P12` repository secrets. Keep `quitx-signing.p12` private and backed up. Release builds then sign with that certificate, and the in-app updater rejects any update not signed by it. The first certificate-signed release asks for Accessibility once more. Builds are not notarized.

@@ -48,13 +48,13 @@
 
 ## How it works
 
-Architecture, macOS APIs, safety rules, permissions, ports, updates, and release details live in [docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md).
+Architecture, macOS APIs, safety rules, permissions, ports, updates, and release details live in [HOW-IT-WORKS.md](HOW-IT-WORKS.md).
 
 ## Install
 
 QuitX isn't notarized by Apple (that needs a paid developer account), so macOS asks you to confirm it once. Full walkthrough with screenshots: [quitx.kiron.dev/#install](https://quitx.kiron.dev/#install).
 
-**Terminal** (no prompt): checks the SHA-256 checksum and code signature, installs in `/Applications`, opens QuitX. Don't use `sudo`. [Read the script](site/install).
+**Terminal** (no prompt): checks the SHA-256 checksum and code signature, installs in `/Applications`, opens QuitX. Don't use `sudo`. [Read the script](https://quitx.kiron.dev/install).
 
 ```bash
 curl -fsSL https://quitx.kiron.dev/install | bash
