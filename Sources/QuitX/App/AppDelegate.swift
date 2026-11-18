@@ -101,8 +101,4 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func showPreferencesWindow(_ sender: Any?) {
         SettingsWindowController.shared.show()
     }
-
-    @objc func showChangelogWindow(_ sender: Any?) {
-        ChangelogWindowController.shared.show()
-    }
 }

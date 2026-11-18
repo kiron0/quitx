@@ -157,8 +157,6 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         }
     }
 
-    var fallbackSymbolName: String { symbol }
-
     var headerTitle: String {
         switch self {
         case .overview: return "Overview"

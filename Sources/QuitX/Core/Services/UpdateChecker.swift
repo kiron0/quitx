@@ -70,8 +70,6 @@ final class UpdateChecker: ObservableObject {
         QuitXConstants.appVersion
     }
 
-    var releaseNotes: String? { availableUpdate?.notes }
-
     func resetState() {
         checkState = .idle
     }
@@ -312,10 +310,6 @@ final class UpdateChecker: ObservableObject {
 
     func isVersion(_ v1: String, greaterThan v2: String) -> Bool {
         VersionComparator.isGreaterThan(v1, v2)
-    }
-
-    func openReleasesPage() {
-        NSWorkspace.shared.open(availableUpdate?.releasePage ?? QuitXConstants.releasesPageURL)
     }
 }
 

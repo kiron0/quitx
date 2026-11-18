@@ -218,8 +218,6 @@ final class PortListViewModel: ObservableObject {
         StatusItemController.shared?.scheduleUpdatePopoverSize()
     }
 
-    var isAutoRefreshing: Bool { autoRefreshTask != nil }
-
     func startAutoRefresh(interval seconds: Int? = nil) {
         let interval = max(1, seconds ?? configStore.config.portsRefreshSeconds)
         guard isEnabled else {

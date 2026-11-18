@@ -84,11 +84,6 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         WindowAnimator.present(window, targetFrame: targetFrame)
     }
 
-    func switchToTab(_ tab: SettingsTab) {
-        if let window { dismissTooltips(for: window) }
-        navigation.select(tab)
-    }
-
     func close() {
         window?.close()
     }

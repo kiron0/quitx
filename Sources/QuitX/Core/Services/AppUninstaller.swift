@@ -404,40 +404,6 @@ enum AppUninstaller {
         return !isRunning(target, bundles: bundles)
     }
 
-    static func moveToTrash(_ urls: [URL]) async -> RemovalResult {
-        var result = await Task.detached(priority: .userInitiated) { () -> RemovalResult in
-            var partial = RemovalResult()
-            for url in urls {
-                do {
-                    try FileManager.default.trashItem(at: url, resultingItemURL: nil)
-                    partial.trashed.append(url)
-                } catch {
-                    if itemExists(atPath: url.path) {
-                        partial.failed.append(RemovalFailure(url: url, message: error.localizedDescription))
-                    } else {
-                        partial.trashed.append(url)
-                    }
-                }
-            }
-            return partial
-        }.value
-        guard !result.failed.isEmpty else { return result }
-
-        let retry = result.failed.map(\.url)
-        _ = await recycle(retry)
-        let stillThere = retry.filter { itemExists(atPath: $0.path) }
-        result.trashed.append(contentsOf: retry.filter { !stillThere.contains($0) })
-        result.failed = []
-        guard !stillThere.isEmpty else { return result }
-
-        let adminResult = await Task.detached(priority: .userInitiated) {
-            moveToTrashWithAdministrator(stillThere)
-        }.value
-        result.trashed.append(contentsOf: adminResult.trashed)
-        result.failed.append(contentsOf: adminResult.failed)
-        return result
-    }
-
     static func isSafePermanentRemoval(_ url: URL, home: URL = FileManager.default.homeDirectoryForCurrentUser) -> Bool {
         let path = url.standardizedFileURL.resolvingSymlinksInPath().path
         let rawPath = url.standardizedFileURL.path
@@ -594,74 +560,12 @@ enum AppUninstaller {
         return result
     }
 
-    @MainActor
-    private static func recycle(_ urls: [URL]) async -> [URL] {
-        await withCheckedContinuation { continuation in
-            NSWorkspace.shared.recycle(urls) { moved, _ in
-                continuation.resume(returning: Array(moved.keys))
-            }
-        }
-    }
-
     static func shellQuoted(_ value: String) -> String {
         "'" + value.replacingOccurrences(of: "'", with: "'\\''") + "'"
     }
 
-    static func adminTrashCommand(for urls: [URL], trash: URL, stamp: String) -> String {
-        urls.map { url -> String in
-            let keepsExtension = ["app", "plist"].contains(url.pathExtension.lowercased())
-            let base = keepsExtension ? url.deletingPathExtension().lastPathComponent : url.lastPathComponent
-            let name = keepsExtension ? "\(base) \(stamp).\(url.pathExtension)" : "\(base) \(stamp)"
-            let destination = trash.appendingPathComponent(name)
-            return "/bin/mv -f \(shellQuoted(url.path)) \(shellQuoted(destination.path))"
-        }.joined(separator: "; ")
-    }
-
     static func adminPermanentRemovalCommand(for urls: [URL]) -> String {
         "/bin/rm -rf -- " + urls.map { shellQuoted($0.path) }.joined(separator: " ")
-    }
-
-    private static func moveToTrashWithAdministrator(_ urls: [URL]) -> RemovalResult {
-        var result = RemovalResult()
-        let trash = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".Trash")
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH.mm.ss"
-        let stamp = formatter.string(from: Date())
-        var commands: [String] = []
-        for url in urls {
-            let keepsExtension = ["app", "plist"].contains(url.pathExtension.lowercased())
-            let base = keepsExtension ? url.deletingPathExtension().lastPathComponent : url.lastPathComponent
-            let name = keepsExtension ? "\(base) \(stamp).\(url.pathExtension)" : "\(base) \(stamp)"
-            let destination = trash.appendingPathComponent(name)
-            commands.append("/bin/mv -f \(shellQuoted(url.path)) \(shellQuoted(destination.path))")
-        }
-        guard !commands.isEmpty else { return result }
-
-        let tempScript = FileManager.default.temporaryDirectory
-            .appendingPathComponent("quitx-trash-\(UUID().uuidString).sh")
-        let scriptContent = "#!/bin/sh\n" + commands.joined(separator: "\n")
-        guard let data = scriptContent.data(using: .utf8) else { return result }
-        do {
-            try data.write(to: tempScript, options: [.atomic])
-            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: tempScript.path)
-        } catch {
-            return result
-        }
-        defer { try? FileManager.default.removeItem(at: tempScript) }
-
-        let quotedScriptPath = shellQuoted(tempScript.path)
-        let source = "do shell script \"/bin/sh \(quotedScriptPath)\" with administrator privileges"
-        var errorInfo: NSDictionary?
-        NSAppleScript(source: source)?.executeAndReturnError(&errorInfo)
-        for url in urls {
-            if itemExists(atPath: url.path) {
-                let message = (errorInfo?[NSAppleScript.errorMessage] as? String) ?? "Permission denied"
-                result.failed.append(RemovalFailure(url: url, message: message))
-            } else {
-                result.trashed.append(url)
-            }
-        }
-        return result
     }
 
     private static func removePermanentlyWithAdministrator(_ urls: [URL]) -> RemovalResult {

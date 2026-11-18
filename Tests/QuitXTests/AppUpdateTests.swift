@@ -93,7 +93,6 @@ struct AppUpdateTests {
     @Test("Updates come straight from the GitHub Releases API")
     func testLatestReleaseEndpoint() {
         #expect(UpdateChecker.latestReleaseURL.absoluteString == "https://api.github.com/repos/kiron0/quitx/releases/latest")
-        #expect(QuitXConstants.releasesPageURL.host == "github.com")
         #expect(QuitXConstants.buyMeACoffeeURL.absoluteString == "https://buymeacoffee.com/_thk")
     }
 
