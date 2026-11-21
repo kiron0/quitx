@@ -2,6 +2,12 @@ import Foundation
 
 extension ChangelogProvider {
     static let appReleases: [ReleaseChangelog] = [
+        ReleaseChangelog("1.3.0", "More reliable cleanup of read-only folders", [
+            ("Improvements", [
+                "**Cleanup of read-only folders**: Quick Clean and other cleanup tools can now delete nested read-only folders you own without an administrator prompt."
+            ])
+        ]),
+
         ReleaseChangelog("1.2.9", "Auto Quick Clean with custom threshold & Keyli integration", [
             ("New Features", [
                 "**Auto Quick Clean**: Choose Manual or Auto. In Auto mode, QuitX cleans User Caches, User Logs, and Developer Caches once they pass your limit and notifies you how much it freed. Trash is never emptied automatically.",

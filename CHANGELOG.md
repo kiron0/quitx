@@ -2,6 +2,12 @@
 
 All notable changes to QuitX macOS App will be documented in this file.
 
+## 1.3.0
+
+### Fixed
+
+- **Cleanup of read-only folders**: Quick Clean and other cleanup tools can now delete nested read-only folders you own without an administrator prompt.
+
 ## 1.2.9
 
 ### Added

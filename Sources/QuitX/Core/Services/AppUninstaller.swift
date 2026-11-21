@@ -495,14 +495,26 @@ enum AppUninstaller {
     static func removeContentsBestEffort(_ url: URL) {
         let fileManager = FileManager.default
         guard let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey]),
-              values.isDirectory == true, values.isSymbolicLink != true,
-              let children = try? fileManager.contentsOfDirectory(at: url, includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey], options: []) else { return }
+              values.isDirectory == true, values.isSymbolicLink != true else { return }
+        makeOwnerWritableDirectory(url)
+        guard let children = try? fileManager.contentsOfDirectory(at: url, includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey], options: []) else { return }
         for child in children {
             if (try? fileManager.removeItem(at: child)) == nil, itemExists(atPath: child.path) {
                 removeContentsBestEffort(child)
                 try? fileManager.removeItem(at: child)
             }
         }
+    }
+
+    @discardableResult
+    static func makeOwnerWritableDirectory(_ url: URL) -> Bool {
+        var info = stat()
+        guard lstat(url.path, &info) == 0,
+              (info.st_mode & S_IFMT) == S_IFDIR,
+              info.st_uid == getuid() else { return false }
+        let required = S_IRWXU
+        guard (info.st_mode & required) != required else { return true }
+        return chmod(url.path, (info.st_mode & 0o7777) | required) == 0
     }
 
     static func removePermanently(_ urls: [URL], allowAdministrator: Bool = true) async -> RemovalResult {
