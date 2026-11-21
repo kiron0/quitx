@@ -303,6 +303,33 @@ struct QuickCleanTests {
         #expect(fileManager.fileExists(atPath: locked.path))
     }
 
+    @Test("Caches with read-only folders inside are removed without an administrator prompt")
+    func readOnlyFoldersInsideCacheAreRemoved() async throws {
+        let fileManager = FileManager.default
+        let target = fileManager.temporaryDirectory.appendingPathComponent("quitx-readonly-\(UUID().uuidString)")
+        let inner = target.appendingPathComponent("10/abc/Tool.app/Contents/MacOS")
+        let middle = target.appendingPathComponent("10/abc/Tool.app/Contents")
+        let lockedFolders = [inner, middle, target.appendingPathComponent("10/abc/Tool.app"), target.appendingPathComponent("10/abc")]
+        defer {
+            for folder in lockedFolders {
+                try? fileManager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: folder.path)
+            }
+            try? fileManager.removeItem(at: target)
+        }
+        try fileManager.createDirectory(at: inner, withIntermediateDirectories: true)
+        try Data(count: 1_024).write(to: inner.appendingPathComponent("Tool"))
+        try Data(count: 512).write(to: middle.appendingPathComponent("Info.plist"))
+        for folder in lockedFolders {
+            try fileManager.setAttributes([.posixPermissions: 0o555], ofItemAtPath: folder.path)
+        }
+
+        let result = await AppUninstaller.removePermanently([target], allowAdministrator: false)
+
+        #expect(result.failed.isEmpty)
+        #expect(result.trashed == [target])
+        #expect(!fileManager.fileExists(atPath: target.path))
+    }
+
     @Test("One undeletable file does not stop the rest of a cache folder from being removed")
     func partialFailureKeepsRemoving() async throws {
         let fileManager = FileManager.default
